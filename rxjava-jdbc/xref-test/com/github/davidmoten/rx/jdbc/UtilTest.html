@@ -224,53 +224,87 @@
 <a class="jxr_linenumber" name="L216" href="#L216">216</a> 	}
 <a class="jxr_linenumber" name="L217" href="#L217">217</a> 
 <a class="jxr_linenumber" name="L218" href="#L218">218</a> 	@Test
-<a class="jxr_linenumber" name="L219" href="#L219">219</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testClose1() <strong class="jxr_keyword">throws</strong> SQLException {
-<a class="jxr_linenumber" name="L220" href="#L220">220</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
-<a class="jxr_linenumber" name="L221" href="#L221">221</a> 		expect(con.isClosed()).andThrow(<strong class="jxr_keyword">new</strong> SQLException());
-<a class="jxr_linenumber" name="L222" href="#L222">222</a> 		replay(con);
-<a class="jxr_linenumber" name="L223" href="#L223">223</a> 		closeQuietly(con);
-<a class="jxr_linenumber" name="L224" href="#L224">224</a> 		verify(con);
-<a class="jxr_linenumber" name="L225" href="#L225">225</a> 	}
-<a class="jxr_linenumber" name="L226" href="#L226">226</a> 
-<a class="jxr_linenumber" name="L227" href="#L227">227</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L228" href="#L228">228</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testClose2() <strong class="jxr_keyword">throws</strong> SQLException {
-<a class="jxr_linenumber" name="L229" href="#L229">229</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
-<a class="jxr_linenumber" name="L230" href="#L230">230</a> 		expect(con.isClosed()).andThrow(<strong class="jxr_keyword">new</strong> SQLException());
-<a class="jxr_linenumber" name="L231" href="#L231">231</a> 		replay(con);
-<a class="jxr_linenumber" name="L232" href="#L232">232</a> 		closeQuietlyIfAutoCommit(con);
-<a class="jxr_linenumber" name="L233" href="#L233">233</a> 		verify(con);
-<a class="jxr_linenumber" name="L234" href="#L234">234</a> 	}
-<a class="jxr_linenumber" name="L235" href="#L235">235</a> 
-<a class="jxr_linenumber" name="L236" href="#L236">236</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L237" href="#L237">237</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCommit() <strong class="jxr_keyword">throws</strong> SQLException {
-<a class="jxr_linenumber" name="L238" href="#L238">238</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
-<a class="jxr_linenumber" name="L239" href="#L239">239</a> 		con.commit();
-<a class="jxr_linenumber" name="L240" href="#L240">240</a> 		expectLastCall().andThrow(<strong class="jxr_keyword">new</strong> SQLException());
-<a class="jxr_linenumber" name="L241" href="#L241">241</a> 		replay(con);
-<a class="jxr_linenumber" name="L242" href="#L242">242</a> 		Util.commit(con);
-<a class="jxr_linenumber" name="L243" href="#L243">243</a> 		verify(con);
-<a class="jxr_linenumber" name="L244" href="#L244">244</a> 	}
-<a class="jxr_linenumber" name="L245" href="#L245">245</a> 
-<a class="jxr_linenumber" name="L246" href="#L246">246</a> 	@Test
-<a class="jxr_linenumber" name="L247" href="#L247">247</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCommitNullDoesNothing() {
-<a class="jxr_linenumber" name="L248" href="#L248">248</a> 		Util.commit(<strong class="jxr_keyword">null</strong>);
-<a class="jxr_linenumber" name="L249" href="#L249">249</a> 	}
-<a class="jxr_linenumber" name="L250" href="#L250">250</a> 
-<a class="jxr_linenumber" name="L251" href="#L251">251</a> 	@Test
-<a class="jxr_linenumber" name="L252" href="#L252">252</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRollbackNullDoesNothing() {
-<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		Util.rollback(<strong class="jxr_keyword">null</strong>);
-<a class="jxr_linenumber" name="L254" href="#L254">254</a> 	}
-<a class="jxr_linenumber" name="L255" href="#L255">255</a> 
-<a class="jxr_linenumber" name="L256" href="#L256">256</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L257" href="#L257">257</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRollback() <strong class="jxr_keyword">throws</strong> SQLException {
-<a class="jxr_linenumber" name="L258" href="#L258">258</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
-<a class="jxr_linenumber" name="L259" href="#L259">259</a> 		con.rollback();
-<a class="jxr_linenumber" name="L260" href="#L260">260</a> 		expectLastCall().andThrow(<strong class="jxr_keyword">new</strong> SQLException());
-<a class="jxr_linenumber" name="L261" href="#L261">261</a> 		replay(con);
-<a class="jxr_linenumber" name="L262" href="#L262">262</a> 		Util.rollback(con);
-<a class="jxr_linenumber" name="L263" href="#L263">263</a> 		verify(con);
-<a class="jxr_linenumber" name="L264" href="#L264">264</a> 	}
-<a class="jxr_linenumber" name="L265" href="#L265">265</a> }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfDoubleToBigDecimal() {
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> 		assertEquals(BigDecimal.ONE.doubleValue(),
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 				((BigDecimal) autoMap(1.0, BigDecimal.<strong class="jxr_keyword">class</strong>)).doubleValue(),
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 				0.0001);
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 	}
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 	@Test
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfIntegerToBigDecimal() {
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 		assertEquals(BigDecimal.ONE.doubleValue(),
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 				((BigDecimal) autoMap(1, BigDecimal.<strong class="jxr_keyword">class</strong>)).doubleValue(),
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 				0.0001);
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 	}
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 	@Test
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfDoubleToBigInteger() {
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 		assertEquals(1.2, (Double) autoMap(1.2, BigInteger.<strong class="jxr_keyword">class</strong>), 0.0001);
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 	}
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 	@Test
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfShortToBigInteger() {
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 		assertEquals(BigInteger.ONE, autoMap((<strong class="jxr_keyword">short</strong>) 1, BigInteger.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 	}
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> 
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 	@Test
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfIntegerToBigInteger() {
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 		assertEquals(BigInteger.ONE, autoMap(1, BigInteger.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 	}
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> 
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 	@Test
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapOfLongToBigInteger() {
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 		assertEquals(BigInteger.ONE, autoMap(1L, BigInteger.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 	}
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 	@Test
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testClose1() <strong class="jxr_keyword">throws</strong> SQLException {
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 		expect(con.isClosed()).andThrow(<strong class="jxr_keyword">new</strong> SQLException());
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 		replay(con);
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 		closeQuietly(con);
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> 		verify(con);
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 	}
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testClose2() <strong class="jxr_keyword">throws</strong> SQLException {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> 		expect(con.isClosed()).andThrow(<strong class="jxr_keyword">new</strong> SQLException());
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 		replay(con);
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 		closeQuietlyIfAutoCommit(con);
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 		verify(con);
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 	}
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCommit() <strong class="jxr_keyword">throws</strong> SQLException {
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 		con.commit();
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 		expectLastCall().andThrow(<strong class="jxr_keyword">new</strong> SQLException());
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 		replay(con);
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 		Util.commit(con);
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 		verify(con);
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 	}
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 	@Test
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCommitNullDoesNothing() {
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 		Util.commit(<strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 	}
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 	@Test
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRollbackNullDoesNothing() {
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 		Util.rollback(<strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 	}
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 	@Test(expected = RuntimeException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRollback() <strong class="jxr_keyword">throws</strong> SQLException {
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 		Connection con = createMock(Connection.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 		con.rollback();
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 		expectLastCall().andThrow(<strong class="jxr_keyword">new</strong> SQLException());
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 		replay(con);
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 		Util.rollback(con);
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 		verify(con);
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 	}
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
