@@ -14,78 +14,78 @@
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.List;
 <a class="jxr_linenumber" name="L7" href="#L7">7</a>   
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> rx.Observable;
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> rx.functions.Func1;
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple2;
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple3;
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple4;
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple5;
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple6;
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple7;
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.TupleN;
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuples;
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> * A query and its executable context.</em>
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> */</em>
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">QuerySelect</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/Query.html">Query</a> {
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String sql;
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Observable&lt;Parameter&gt; parameters;
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context;
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>  	<strong class="jxr_keyword">private</strong> Observable&lt;?&gt; depends = Observable.empty();
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>  
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment">	 * Constructor.</em>
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment">	 * @param sql</em>
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <em class="jxr_javadoccomment">	 * @param parameters</em>
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <em class="jxr_javadoccomment">	 * @param depends</em>
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <em class="jxr_javadoccomment">	 * @param context</em>
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>  	<strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">QuerySelect</a>(String sql, Observable&lt;Parameter&gt; parameters,
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>  			Observable&lt;?&gt; depends, <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context) {
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>  		<strong class="jxr_keyword">this</strong>.sql = sql;
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>  		<strong class="jxr_keyword">this</strong>.parameters = parameters;
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>  		<strong class="jxr_keyword">this</strong>.depends = depends;
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>  		<strong class="jxr_keyword">this</strong>.context = context;
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>  	}
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>  
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>  	@Override
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>  	<strong class="jxr_keyword">public</strong> String sql() {
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>  		<strong class="jxr_keyword">return</strong> sql;
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>  	}
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>  	@Override
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>  	<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context() {
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		<strong class="jxr_keyword">return</strong> context;
-<a class="jxr_linenumber" name="L54" href="#L54">54</a>  	}
-<a class="jxr_linenumber" name="L55" href="#L55">55</a>  
-<a class="jxr_linenumber" name="L56" href="#L56">56</a>  	@Override
-<a class="jxr_linenumber" name="L57" href="#L57">57</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;Parameter&gt; parameters() {
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>  		<strong class="jxr_keyword">return</strong> parameters;
-<a class="jxr_linenumber" name="L59" href="#L59">59</a>  	}
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>  
-<a class="jxr_linenumber" name="L61" href="#L61">61</a>  	@Override
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>  	<strong class="jxr_keyword">public</strong> String toString() {
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>  		<strong class="jxr_keyword">return</strong> <span class="jxr_string">"QuerySelect [sql="</span> + sql + <span class="jxr_string">"]"</span>;
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>  	}
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>  
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>  	@Override
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;?&gt; depends() {
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>  		<strong class="jxr_keyword">return</strong> depends;
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>  	}
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>  
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L72" href="#L72">72</a>  <em class="jxr_javadoccomment">	 * Returns the results of running a select query with all sets of</em>
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>  <em class="jxr_javadoccomment">	 * parameters.</em>
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>  <em class="jxr_javadoccomment">	 * @return</em>
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;ResultSet&gt; execute() {
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>  		<strong class="jxr_keyword">return</strong> context.handlers().selectHandler()
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>  				.call(bufferedParameters(<strong class="jxr_keyword">this</strong>).flatMap(executeOnce()));
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>  
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> rx.Observable.Operator;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple2;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple3;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple4;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple5;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple6;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuple7;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.TupleN;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.jdbc.tuple.Tuples;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> * A query and its executable context.</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">QuerySelect</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/Query.html">Query</a> {
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String sql;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Observable&lt;Parameter&gt; parameters;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  	<strong class="jxr_keyword">private</strong> Observable&lt;?&gt; depends = Observable.empty();
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment">	 * Constructor.</em>
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment">	 * </em>
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <em class="jxr_javadoccomment">	 * @param sql</em>
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <em class="jxr_javadoccomment">	 * @param parameters</em>
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <em class="jxr_javadoccomment">	 * @param depends</em>
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <em class="jxr_javadoccomment">	 * @param context</em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  	<strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">QuerySelect</a>(String sql, Observable&lt;Parameter&gt; parameters,
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  			Observable&lt;?&gt; depends, <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context) {
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  		<strong class="jxr_keyword">this</strong>.sql = sql;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  		<strong class="jxr_keyword">this</strong>.parameters = parameters;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  		<strong class="jxr_keyword">this</strong>.depends = depends;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  		<strong class="jxr_keyword">this</strong>.context = context;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  	}
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  	@Override
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  	<strong class="jxr_keyword">public</strong> String sql() {
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  		<strong class="jxr_keyword">return</strong> sql;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  	}
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  	@Override
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  	<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryContext.html">QueryContext</a> context() {
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  		<strong class="jxr_keyword">return</strong> context;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  	}
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  	@Override
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;Parameter&gt; parameters() {
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  		<strong class="jxr_keyword">return</strong> parameters;
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  	}
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  	@Override
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  	<strong class="jxr_keyword">public</strong> String toString() {
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  		<strong class="jxr_keyword">return</strong> <span class="jxr_string">"QuerySelect [sql="</span> + sql + <span class="jxr_string">"]"</span>;
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  	}
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  	@Override
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;?&gt; depends() {
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  		<strong class="jxr_keyword">return</strong> depends;
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  	}
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  <em class="jxr_javadoccomment">	 * Returns the results of running a select query with all sets of</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  <em class="jxr_javadoccomment">	 * parameters.</em>
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  <em class="jxr_javadoccomment">	 * </em>
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  <em class="jxr_javadoccomment">	 * @return</em>
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  	<strong class="jxr_keyword">public</strong> Observable&lt;ResultSet&gt; execute() {
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  		<strong class="jxr_keyword">return</strong> context.handlers().selectHandler()
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  				.call(bufferedParameters(<strong class="jxr_keyword">this</strong>).flatMap(executeOnce()));
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>  	}
 <a class="jxr_linenumber" name="L82" href="#L82">82</a>  
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>  	<em class="jxr_javadoccomment">/**</em>
@@ -113,14 +113,14 @@
 <a class="jxr_linenumber" name="L105" href="#L105">105</a> <em class="jxr_javadoccomment">	 * @return</em>
 <a class="jxr_linenumber" name="L106" href="#L106">106</a> <em class="jxr_javadoccomment">	 */</em>
 <a class="jxr_linenumber" name="L107" href="#L107">107</a> 	<strong class="jxr_keyword">private</strong> Observable&lt;ResultSet&gt; executeOnce(<strong class="jxr_keyword">final</strong> List&lt;Parameter&gt; params) {
-<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		<strong class="jxr_keyword">return</strong> OperationQuerySelect.execute(<strong class="jxr_keyword">this</strong>, params).subscribeOn(
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		<strong class="jxr_keyword">return</strong> QuerySelectOperation.execute(<strong class="jxr_keyword">this</strong>, params).subscribeOn(
 <a class="jxr_linenumber" name="L109" href="#L109">109</a> 				context.scheduler());
 <a class="jxr_linenumber" name="L110" href="#L110">110</a> 	}
 <a class="jxr_linenumber" name="L111" href="#L111">111</a> 
 <a class="jxr_linenumber" name="L112" href="#L112">112</a> 	<em class="jxr_javadoccomment">/**</em>
 <a class="jxr_linenumber" name="L113" href="#L113">113</a> <em class="jxr_javadoccomment">	 * Builds a {@link QuerySelect}.</em>
 <a class="jxr_linenumber" name="L114" href="#L114">114</a> <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L115" href="#L115">115</a> 	<strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> {
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 	<strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> {
 <a class="jxr_linenumber" name="L116" href="#L116">116</a> 
 <a class="jxr_linenumber" name="L117" href="#L117">117</a> 		<em class="jxr_javadoccomment">/**</em>
 <a class="jxr_linenumber" name="L118" href="#L118">118</a> <em class="jxr_javadoccomment">		 * Builds the standard stuff.</em>
@@ -133,7 +133,7 @@
 <a class="jxr_linenumber" name="L125" href="#L125">125</a> <em class="jxr_javadoccomment">		 * @param sql</em>
 <a class="jxr_linenumber" name="L126" href="#L126">126</a> <em class="jxr_javadoccomment">		 * @param db</em>
 <a class="jxr_linenumber" name="L127" href="#L127">127</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L128" href="#L128">128</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a>(String sql, <a href="../../../../../com/github/davidmoten/rx/jdbc/Database.html">Database</a> db) {
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a>(String sql, <a href="../../../../../com/github/davidmoten/rx/jdbc/Database.html">Database</a> db) {
 <a class="jxr_linenumber" name="L129" href="#L129">129</a> 			builder = <strong class="jxr_keyword">new</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryBuilder.html">QueryBuilder</a>(sql, db);
 <a class="jxr_linenumber" name="L130" href="#L130">130</a> 		}
 <a class="jxr_linenumber" name="L131" href="#L131">131</a> 
@@ -145,7 +145,7 @@
 <a class="jxr_linenumber" name="L137" href="#L137">137</a> <em class="jxr_javadoccomment">		 * @param parameters</em>
 <a class="jxr_linenumber" name="L138" href="#L138">138</a> <em class="jxr_javadoccomment">		 * @return this</em>
 <a class="jxr_linenumber" name="L139" href="#L139">139</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		<strong class="jxr_keyword">public</strong> &lt;T&gt; <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> parameters(Observable&lt;T&gt; parameters) {
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		<strong class="jxr_keyword">public</strong> &lt;T&gt; <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> parameters(Observable&lt;T&gt; parameters) {
 <a class="jxr_linenumber" name="L141" href="#L141">141</a> 			builder.parameters(parameters);
 <a class="jxr_linenumber" name="L142" href="#L142">142</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L143" href="#L143">143</a> 		}
@@ -158,7 +158,7 @@
 <a class="jxr_linenumber" name="L150" href="#L150">150</a> <em class="jxr_javadoccomment">		 * @param objects</em>
 <a class="jxr_linenumber" name="L151" href="#L151">151</a> <em class="jxr_javadoccomment">		 * @return this</em>
 <a class="jxr_linenumber" name="L152" href="#L152">152</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L153" href="#L153">153</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> parameters(Object... objects) {
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> parameters(Object... objects) {
 <a class="jxr_linenumber" name="L154" href="#L154">154</a> 			builder.parameters(objects);
 <a class="jxr_linenumber" name="L155" href="#L155">155</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L156" href="#L156">156</a> 		}
@@ -171,7 +171,7 @@
 <a class="jxr_linenumber" name="L163" href="#L163">163</a> <em class="jxr_javadoccomment">		 * @param value</em>
 <a class="jxr_linenumber" name="L164" href="#L164">164</a> <em class="jxr_javadoccomment">		 * @return this</em>
 <a class="jxr_linenumber" name="L165" href="#L165">165</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> parameter(Object value) {
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> parameter(Object value) {
 <a class="jxr_linenumber" name="L167" href="#L167">167</a> 			builder.parameter(value);
 <a class="jxr_linenumber" name="L168" href="#L168">168</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L169" href="#L169">169</a> 		}
@@ -183,7 +183,7 @@
 <a class="jxr_linenumber" name="L175" href="#L175">175</a> <em class="jxr_javadoccomment">		 * @param dependency</em>
 <a class="jxr_linenumber" name="L176" href="#L176">176</a> <em class="jxr_javadoccomment">		 * @return this</em>
 <a class="jxr_linenumber" name="L177" href="#L177">177</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L178" href="#L178">178</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> dependsOn(Observable&lt;?&gt; dependency) {
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> dependsOn(Observable&lt;?&gt; dependency) {
 <a class="jxr_linenumber" name="L179" href="#L179">179</a> 			builder.dependsOn(dependency);
 <a class="jxr_linenumber" name="L180" href="#L180">180</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L181" href="#L181">181</a> 		}
@@ -196,7 +196,7 @@
 <a class="jxr_linenumber" name="L188" href="#L188">188</a> <em class="jxr_javadoccomment">		 * </em>
 <a class="jxr_linenumber" name="L189" href="#L189">189</a> <em class="jxr_javadoccomment">		 * @return this</em>
 <a class="jxr_linenumber" name="L190" href="#L190">190</a> <em class="jxr_javadoccomment">		 */</em>
-<a class="jxr_linenumber" name="L191" href="#L191">191</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">Builder</a> dependsOnLastTransaction() {
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> dependsOnLastTransaction() {
 <a class="jxr_linenumber" name="L192" href="#L192">192</a> 			builder.dependsOnLastTransaction();
 <a class="jxr_linenumber" name="L193" href="#L193">193</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L194" href="#L194">194</a> 		}
@@ -383,9 +383,168 @@
 <a class="jxr_linenumber" name="L375" href="#L375">375</a> 				Class&lt;T5&gt; cls5, Class&lt;T6&gt; cls6, Class&lt;T7&gt; cls7) {
 <a class="jxr_linenumber" name="L376" href="#L376">376</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6, cls7));
 <a class="jxr_linenumber" name="L377" href="#L377">377</a> 		}
-<a class="jxr_linenumber" name="L378" href="#L378">378</a> 	}
-<a class="jxr_linenumber" name="L379" href="#L379">379</a> 
-<a class="jxr_linenumber" name="L380" href="#L380">380</a> }
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a> parameterOperator() {
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a>(<strong class="jxr_keyword">this</strong>, OperatorType.PARAMETER);
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> 		}
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> 
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a> dependsOnOperator() {
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a>(<strong class="jxr_keyword">this</strong>, OperatorType.DEPENDENCY);
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 		}
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 	}
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> 
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a> {
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> 
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> 		<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> builder;
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> 		<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/OperatorType.html">OperatorType</a> operatorType;
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 		<strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelect.html">OperatorBuilder</a>(<a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> builder, <a href="../../../../../com/github/davidmoten/rx/jdbc/OperatorType.html">OperatorType</a> operatorType) {
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 			<strong class="jxr_keyword">this</strong>.builder = builder;
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 			<strong class="jxr_keyword">this</strong>.operatorType = operatorType;
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 		}
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> <em class="jxr_javadoccomment">		 * Transforms the results using the given function.</em>
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> <em class="jxr_javadoccomment">		 * @param function</em>
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 		<strong class="jxr_keyword">public</strong> &lt;T&gt; Operator&lt;T, Object&gt; get(Func1&lt;ResultSet, T&gt; function) {
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> QuerySelectOperator&lt;T&gt;(builder, function, operatorType);
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 		}
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> <em class="jxr_javadoccomment">		 * Automaps the first column of the ResultSet into the target class</em>
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> <em class="jxr_javadoccomment">		 * &lt;code&gt;cls&lt;/code&gt;.</em>
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> <em class="jxr_javadoccomment">		 * @param cls</em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> 		<strong class="jxr_keyword">public</strong> &lt;S&gt; Operator&lt;S, Object&gt; getAs(Class&lt;S&gt; cls) {
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.single(cls));
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> 		}
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> <em class="jxr_javadoccomment">		 * Automaps all the columns of the {@link ResultSet} into the target</em>
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> <em class="jxr_javadoccomment">		 * class &lt;code&gt;cls&lt;/code&gt;. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> <em class="jxr_javadoccomment">		 * @param cls</em>
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 		<strong class="jxr_keyword">public</strong> &lt;S&gt; Operator&lt;TupleN&lt;S&gt;, Object&gt; getTupleN(Class&lt;S&gt; cls) {
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tupleN(cls));
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> 		}
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> <em class="jxr_javadoccomment">		 * Automaps all the columns of the {@link ResultSet} into {@link Object}</em>
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> <em class="jxr_javadoccomment">		 * . See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> <em class="jxr_javadoccomment">		 * @param cls</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> 		<strong class="jxr_keyword">public</strong> &lt;S&gt; Operator&lt;TupleN&lt;Object&gt;, Object&gt; getTupleN() {
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tupleN(Object.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> 		}
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2&gt; Operator&lt;Tuple2&lt;T1, T2&gt;, Object&gt; getAs(Class&lt;T1&gt; cls1,
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 				Class&lt;T2&gt; cls2) {
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2));
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> 		}
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> 
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> <em class="jxr_javadoccomment">		 * @param cls3</em>
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2, T3&gt; Operator&lt;Tuple3&lt;T1, T2, T3&gt;, Object&gt; getAs(
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> 				Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3) {
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3));
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> 		}
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> 
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> <em class="jxr_javadoccomment">		 * @param cls3</em>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> <em class="jxr_javadoccomment">		 * @param cls4</em>
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2, T3, T4&gt; Operator&lt;Tuple4&lt;T1, T2, T3, T4&gt;, Object&gt; getAs(
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 				Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4) {
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3, cls4));
+<a class="jxr_linenumber" name="L481" href="#L481">481</a> 		}
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> <em class="jxr_javadoccomment">		 * @param cls3</em>
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> <em class="jxr_javadoccomment">		 * @param cls4</em>
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> <em class="jxr_javadoccomment">		 * @param cls5</em>
+<a class="jxr_linenumber" name="L492" href="#L492">492</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L493" href="#L493">493</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2, T3, T4, T5&gt; Operator&lt;Tuple5&lt;T1, T2, T3, T4, T5&gt;, Object&gt; getAs(
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 				Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4,
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> 				Class&lt;T5&gt; cls5) {
+<a class="jxr_linenumber" name="L497" href="#L497">497</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5));
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 		}
+<a class="jxr_linenumber" name="L499" href="#L499">499</a> 
+<a class="jxr_linenumber" name="L500" href="#L500">500</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L501" href="#L501">501</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L503" href="#L503">503</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L504" href="#L504">504</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> <em class="jxr_javadoccomment">		 * @param cls3</em>
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> <em class="jxr_javadoccomment">		 * @param cls4</em>
+<a class="jxr_linenumber" name="L508" href="#L508">508</a> <em class="jxr_javadoccomment">		 * @param cls5</em>
+<a class="jxr_linenumber" name="L509" href="#L509">509</a> <em class="jxr_javadoccomment">		 * @param cls6</em>
+<a class="jxr_linenumber" name="L510" href="#L510">510</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L511" href="#L511">511</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2, T3, T4, T5, T6&gt; Operator&lt;Tuple6&lt;T1, T2, T3, T4, T5, T6&gt;, Object&gt; getAs(
+<a class="jxr_linenumber" name="L513" href="#L513">513</a> 				Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4,
+<a class="jxr_linenumber" name="L514" href="#L514">514</a> 				Class&lt;T5&gt; cls5, Class&lt;T6&gt; cls6) {
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6));
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> 		}
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> 
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> 		<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> <em class="jxr_javadoccomment">		 * Automaps the columns of the {@link ResultSet} into the specified</em>
+<a class="jxr_linenumber" name="L520" href="#L520">520</a> <em class="jxr_javadoccomment">		 * classes. See {@link #autoMap(Class) autoMap()}.</em>
+<a class="jxr_linenumber" name="L521" href="#L521">521</a> <em class="jxr_javadoccomment">		 * </em>
+<a class="jxr_linenumber" name="L522" href="#L522">522</a> <em class="jxr_javadoccomment">		 * @param cls1</em>
+<a class="jxr_linenumber" name="L523" href="#L523">523</a> <em class="jxr_javadoccomment">		 * @param cls2</em>
+<a class="jxr_linenumber" name="L524" href="#L524">524</a> <em class="jxr_javadoccomment">		 * @param cls3</em>
+<a class="jxr_linenumber" name="L525" href="#L525">525</a> <em class="jxr_javadoccomment">		 * @param cls4</em>
+<a class="jxr_linenumber" name="L526" href="#L526">526</a> <em class="jxr_javadoccomment">		 * @param cls5</em>
+<a class="jxr_linenumber" name="L527" href="#L527">527</a> <em class="jxr_javadoccomment">		 * @param cls6</em>
+<a class="jxr_linenumber" name="L528" href="#L528">528</a> <em class="jxr_javadoccomment">		 * @param cls7</em>
+<a class="jxr_linenumber" name="L529" href="#L529">529</a> <em class="jxr_javadoccomment">		 * @return</em>
+<a class="jxr_linenumber" name="L530" href="#L530">530</a> <em class="jxr_javadoccomment">		 */</em>
+<a class="jxr_linenumber" name="L531" href="#L531">531</a> 		<strong class="jxr_keyword">public</strong> &lt;T1, T2, T3, T4, T5, T6, T7&gt; Operator&lt;Tuple7&lt;T1, T2, T3, T4, T5, T6, T7&gt;, Object&gt; getAs(
+<a class="jxr_linenumber" name="L532" href="#L532">532</a> 				Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4,
+<a class="jxr_linenumber" name="L533" href="#L533">533</a> 				Class&lt;T5&gt; cls5, Class&lt;T6&gt; cls6, Class&lt;T7&gt; cls7) {
+<a class="jxr_linenumber" name="L534" href="#L534">534</a> 			<strong class="jxr_keyword">return</strong> get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6, cls7));
+<a class="jxr_linenumber" name="L535" href="#L535">535</a> 		}
+<a class="jxr_linenumber" name="L536" href="#L536">536</a> 
+<a class="jxr_linenumber" name="L537" href="#L537">537</a> 	}
+<a class="jxr_linenumber" name="L538" href="#L538">538</a> 
+<a class="jxr_linenumber" name="L539" href="#L539">539</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
