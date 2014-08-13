@@ -41,7 +41,7 @@
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>                  <em class="jxr_comment">// use toOperator</em>
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>                  .lift(toOperator(Functions.&lt;Observable&lt;Long&gt;&gt; identity())).take(1).first()
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>                  <em class="jxr_comment">// block and get result</em>
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>                  .toBlockingObservable().single();
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>                  .toBlocking().single();
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>          <em class="jxr_comment">// wait for expected unsubscription</em>
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>          assertTrue(detector.latch().await(AWAIT_SECONDS, TimeUnit.SECONDS));
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>  
@@ -69,8 +69,8 @@
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMultipleNonSimultaeousSubscriptions() {
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>          Observable&lt;Integer&gt; sequence = Observable.range(1, 3).lift(
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>                  toOperator(Functions.&lt;Observable&lt;Integer&gt;&gt; identity()));
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>          assertEquals(asList(1, 2, 3), sequence.toList().toBlockingObservable().single());
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>          assertEquals(asList(1, 2, 3), sequence.toList().toBlockingObservable().single());
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          assertEquals(asList(1, 2, 3), sequence.toList().toBlocking().single());
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          assertEquals(asList(1, 2, 3), sequence.toList().toBlocking().single());
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>      }
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>  
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>      @Test

@@ -133,7 +133,7 @@
 <a class="jxr_linenumber" name="L125" href="#L125">125</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> getConnection() {
 <a class="jxr_linenumber" name="L126" href="#L126">126</a>             log.debug(<span class="jxr_string">"getting connection"</span>);
 <a class="jxr_linenumber" name="L127" href="#L127">127</a>             con = query.context().connectionProvider().get();
-<a class="jxr_linenumber" name="L128" href="#L128">128</a>             log.debug(<span class="jxr_string">"cp="</span> + query.context().connectionProvider());
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>             log.debug(<span class="jxr_string">"cp={}"</span>, query.context().connectionProvider());
 <a class="jxr_linenumber" name="L129" href="#L129">129</a>         }
 <a class="jxr_linenumber" name="L130" href="#L130">130</a> 
 <a class="jxr_linenumber" name="L131" href="#L131">131</a>         <em class="jxr_javadoccomment">/**</em>
@@ -220,9 +220,9 @@
 <a class="jxr_linenumber" name="L212" href="#L212">212</a> 
 <a class="jxr_linenumber" name="L213" href="#L213">213</a>             <strong class="jxr_keyword">int</strong> count;
 <a class="jxr_linenumber" name="L214" href="#L214">214</a>             <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L215" href="#L215">215</a>                 log.debug(<span class="jxr_string">"executing sql="</span> + query.sql() + <span class="jxr_string">", parameters"</span> + parameters);
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>                 log.debug(<span class="jxr_string">"executing sql={}, parameters {}"</span>, query.sql(), parameters);
 <a class="jxr_linenumber" name="L216" href="#L216">216</a>                 count = ps.executeUpdate();
-<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 log.debug(<span class="jxr_string">"executed ps="</span> + ps);
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 log.debug(<span class="jxr_string">"executed ps={}"</span>, ps);
 <a class="jxr_linenumber" name="L218" href="#L218">218</a>             } <strong class="jxr_keyword">catch</strong> (SQLException e) {
 <a class="jxr_linenumber" name="L219" href="#L219">219</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> SQLException(<span class="jxr_string">"failed to execute sql="</span> + query.sql(), e);
 <a class="jxr_linenumber" name="L220" href="#L220">220</a>             }
@@ -256,7 +256,7 @@
 <a class="jxr_linenumber" name="L248" href="#L248">248</a> <em class="jxr_javadoccomment">         * @param subscriber</em>
 <a class="jxr_linenumber" name="L249" href="#L249">249</a> <em class="jxr_javadoccomment">         */</em>
 <a class="jxr_linenumber" name="L250" href="#L250">250</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> handleException(Exception e, Subscriber&lt;? <strong class="jxr_keyword">super</strong> Integer&gt; subscriber) {
-<a class="jxr_linenumber" name="L251" href="#L251">251</a>             log.debug(<span class="jxr_string">"onError: "</span> + e.getMessage());
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>             log.debug(<span class="jxr_string">"onError: "</span>, e.getMessage());
 <a class="jxr_linenumber" name="L252" href="#L252">252</a>             <strong class="jxr_keyword">if</strong> (subscriber.isUnsubscribed())
 <a class="jxr_linenumber" name="L253" href="#L253">253</a>                 log.debug(<span class="jxr_string">"unsubscribed"</span>);
 <a class="jxr_linenumber" name="L254" href="#L254">254</a>             <strong class="jxr_keyword">else</strong> {
