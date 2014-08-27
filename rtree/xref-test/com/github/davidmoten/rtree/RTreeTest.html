@@ -44,7 +44,7 @@
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>  	@Test
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPerformance() {
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>  		<strong class="jxr_keyword">long</strong> t = System.currentTimeMillis();
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>  		RTree tree = <strong class="jxr_keyword">new</strong> RTree();
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  		RTree tree = RTree.builder().maxChildren(4).build();
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>  		<strong class="jxr_keyword">int</strong> n = 10000;
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  		<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; n; i++) {
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>  			Entry entry = <strong class="jxr_keyword">new</strong> Entry(<strong class="jxr_keyword">new</strong> Object(), random());
@@ -57,30 +57,29 @@
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  	@Test
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testVisualizer() {
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>  		RTree tree = <strong class="jxr_keyword">new</strong> RTree();
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		<strong class="jxr_keyword">int</strong> n = 100;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  		RTree tree = RTree.builder().maxChildren(4).build();
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		<strong class="jxr_keyword">int</strong> n = 1000;
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>  		<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; n; i++) {
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>  			Entry entry = <strong class="jxr_keyword">new</strong> Entry(<strong class="jxr_keyword">new</strong> Object(), random());
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>  			tree = tree.add(entry);
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>  		}
 <a class="jxr_linenumber" name="L58" href="#L58">58</a>  		tree.visualize(600, 600, <strong class="jxr_keyword">new</strong> Rectangle(-20, -20, 1100, 1100), 5).save(
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>  				<strong class="jxr_keyword">new</strong> File(<span class="jxr_string">"target/tree.png"</span>), <span class="jxr_string">"PNG"</span>);
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>  		;
-<a class="jxr_linenumber" name="L61" href="#L61">61</a>  	}
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>  
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle r(<strong class="jxr_keyword">int</strong> n) {
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>  		<strong class="jxr_keyword">return</strong> Rectangle.create(n, n, n + 1, n + 1);
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>  	}
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>  
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle r(<strong class="jxr_keyword">int</strong> n, <strong class="jxr_keyword">int</strong> m) {
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>  		<strong class="jxr_keyword">return</strong> Rectangle.create(n, m, n + 1, m + 1);
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>  	}
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>  
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle random() {
-<a class="jxr_linenumber" name="L72" href="#L72">72</a>  		<strong class="jxr_keyword">return</strong> r((<strong class="jxr_keyword">int</strong>) Math.round(Math.sqrt(Math.random()) * 1000),
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>  				(<strong class="jxr_keyword">int</strong>) Math.round(Math.sqrt(Math.random()) * 1000));
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>  	}
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>  }
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  	}
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle r(<strong class="jxr_keyword">int</strong> n) {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  		<strong class="jxr_keyword">return</strong> Rectangle.create(n, n, n + 1, n + 1);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  	}
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle r(<strong class="jxr_keyword">int</strong> n, <strong class="jxr_keyword">int</strong> m) {
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  		<strong class="jxr_keyword">return</strong> Rectangle.create(n, m, n + 1, m + 1);
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  	}
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Rectangle random() {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  		<strong class="jxr_keyword">return</strong> r((<strong class="jxr_keyword">int</strong>) Math.round(Math.sqrt(Math.random()) * 1000),
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  				(<strong class="jxr_keyword">int</strong>) Math.round(Math.sqrt(Math.random()) * 1000));
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  	}
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
