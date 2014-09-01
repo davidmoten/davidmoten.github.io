@@ -50,7 +50,7 @@
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>      @Override
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>      <strong class="jxr_keyword">public</strong> Node&lt;T&gt; add(Entry&lt;T&gt; entry, ImmutableStack&lt;NonLeaf&lt;T&gt;&gt; stack) {
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">final</strong> List&lt;Entry&lt;T&gt;&gt; newChildren = Util.add(entries, entry);
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">if</strong> (entries.size() &lt; context.maxChildren()) {
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">if</strong> (newChildren.size() &lt;= context.maxChildren()) {
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">final</strong> Leaf&lt;T&gt; leaf = <strong class="jxr_keyword">new</strong> Leaf&lt;T&gt;(newChildren, context);
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>              <strong class="jxr_keyword">return</strong> replace(<strong class="jxr_keyword">this</strong>, leaf, stack, context).get();
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>          } <strong class="jxr_keyword">else</strong> {
@@ -162,7 +162,12 @@
 <a class="jxr_linenumber" name="L154" href="#L154">154</a>         <strong class="jxr_keyword">return</strong> <span class="jxr_string">"Leaf [entries="</span> + entries + <span class="jxr_string">", mbr="</span> + mbr + <span class="jxr_string">"]"</span>;
 <a class="jxr_linenumber" name="L155" href="#L155">155</a>     }
 <a class="jxr_linenumber" name="L156" href="#L156">156</a> 
-<a class="jxr_linenumber" name="L157" href="#L157">157</a> }
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>     @Override
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> count() {
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>         <strong class="jxr_keyword">return</strong> entries.size();
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>     }
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
