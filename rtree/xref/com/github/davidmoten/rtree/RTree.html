@@ -476,33 +476,53 @@
 <a class="jxr_linenumber" name="L468" href="#L468">468</a>         <strong class="jxr_keyword">return</strong> search(ALWAYS_TRUE);
 <a class="jxr_linenumber" name="L469" href="#L469">469</a>     }
 <a class="jxr_linenumber" name="L470" href="#L470">470</a> 
-<a class="jxr_linenumber" name="L471" href="#L471">471</a>     <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height, <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> view) {
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height, <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> view) {
 <a class="jxr_linenumber" name="L472" href="#L472">472</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a>(<strong class="jxr_keyword">this</strong>, width, height, view);
 <a class="jxr_linenumber" name="L473" href="#L473">473</a>     }
 <a class="jxr_linenumber" name="L474" href="#L474">474</a> 
-<a class="jxr_linenumber" name="L475" href="#L475">475</a>     Optional&lt;Node&lt;R&gt;&gt; root() {
-<a class="jxr_linenumber" name="L476" href="#L476">476</a>         <strong class="jxr_keyword">return</strong> root;
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height) {
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a>(<strong class="jxr_keyword">this</strong>, width, height, calculateMaxView(<strong class="jxr_keyword">this</strong>));
 <a class="jxr_linenumber" name="L477" href="#L477">477</a>     }
 <a class="jxr_linenumber" name="L478" href="#L478">478</a> 
-<a class="jxr_linenumber" name="L479" href="#L479">479</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L480" href="#L480">480</a> <em class="jxr_javadoccomment">     * Returns true if and only if the R-tree is empty of entries.</em>
-<a class="jxr_linenumber" name="L481" href="#L481">481</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L482" href="#L482">482</a> <em class="jxr_javadoccomment">     * @return is R-tree empty</em>
-<a class="jxr_linenumber" name="L483" href="#L483">483</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L484" href="#L484">484</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isEmpty() {
-<a class="jxr_linenumber" name="L485" href="#L485">485</a>         <strong class="jxr_keyword">return</strong> size == 0;
-<a class="jxr_linenumber" name="L486" href="#L486">486</a>     }
-<a class="jxr_linenumber" name="L487" href="#L487">487</a> 
-<a class="jxr_linenumber" name="L488" href="#L488">488</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L489" href="#L489">489</a> <em class="jxr_javadoccomment">     * Returns the number of entries in the RTree.</em>
-<a class="jxr_linenumber" name="L490" href="#L490">490</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L491" href="#L491">491</a> <em class="jxr_javadoccomment">     * @return the number of entries</em>
-<a class="jxr_linenumber" name="L492" href="#L492">492</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L493" href="#L493">493</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> size() {
-<a class="jxr_linenumber" name="L494" href="#L494">494</a>         <strong class="jxr_keyword">return</strong> size;
-<a class="jxr_linenumber" name="L495" href="#L495">495</a>     }
-<a class="jxr_linenumber" name="L496" href="#L496">496</a> 
-<a class="jxr_linenumber" name="L497" href="#L497">497</a> }
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> calculateMaxView(RTree&lt;R&gt; tree) {
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>         <strong class="jxr_keyword">return</strong> tree
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>                 .entries()
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>                 .reduce(Optional.&lt;Rectangle&gt; absent(),
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>                         <strong class="jxr_keyword">new</strong> Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;R&gt;, Optional&lt;Rectangle&gt;&gt;() {
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> 
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>                             @Override
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>                             <strong class="jxr_keyword">public</strong> Optional&lt;Rectangle&gt; call(Optional&lt;Rectangle&gt; r, Entry&lt;R&gt; entry) {
+<a class="jxr_linenumber" name="L487" href="#L487">487</a>                                 <strong class="jxr_keyword">if</strong> (r.isPresent())
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(r.get().add(entry.geometry().mbr()));
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>                                 <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(entry.geometry().mbr());
+<a class="jxr_linenumber" name="L491" href="#L491">491</a>                             }
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>                         }).toBlocking().single().or(<strong class="jxr_keyword">new</strong> Rectangle(0, 0, 0, 0));
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>     }
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> 
+<a class="jxr_linenumber" name="L495" href="#L495">495</a>     Optional&lt;Node&lt;R&gt;&gt; root() {
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>         <strong class="jxr_keyword">return</strong> root;
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>     }
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L500" href="#L500">500</a> <em class="jxr_javadoccomment">     * Returns true if and only if the R-tree is empty of entries.</em>
+<a class="jxr_linenumber" name="L501" href="#L501">501</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> <em class="jxr_javadoccomment">     * @return is R-tree empty</em>
+<a class="jxr_linenumber" name="L503" href="#L503">503</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isEmpty() {
+<a class="jxr_linenumber" name="L505" href="#L505">505</a>         <strong class="jxr_keyword">return</strong> size == 0;
+<a class="jxr_linenumber" name="L506" href="#L506">506</a>     }
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> 
+<a class="jxr_linenumber" name="L508" href="#L508">508</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L509" href="#L509">509</a> <em class="jxr_javadoccomment">     * Returns the number of entries in the RTree.</em>
+<a class="jxr_linenumber" name="L510" href="#L510">510</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L511" href="#L511">511</a> <em class="jxr_javadoccomment">     * @return the number of entries</em>
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L513" href="#L513">513</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> size() {
+<a class="jxr_linenumber" name="L514" href="#L514">514</a>         <strong class="jxr_keyword">return</strong> size;
+<a class="jxr_linenumber" name="L515" href="#L515">515</a>     }
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> 
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
