@@ -10,29 +10,29 @@
 <a class="jxr_linenumber" name="L2" href="#L2">2</a>   
 <a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.google.common.base.Optional.absent;
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.google.common.base.Optional.of;
-<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> rx.Observable;
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> rx.functions.Func1;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> rx.functions.Func2;
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Geometry;
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Rectangle;
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.operators.OperatorBoundedPriorityQueue;
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.util.ImmutableStack;
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.google.common.annotations.VisibleForTesting;
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.google.common.base.Optional;
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_javadoccomment"> * Immutable in-memory 2D R-Tree with configurable splitter heuristic.</em>
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment"> * </em>
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment"> * @param &lt;R&gt;</em>
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> *            the entry type</em>
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> */</em>
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> RTree&lt;R&gt; {
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> ImmutableStack&lt;NonLeaf&lt;R&gt;&gt; emptyStack = ImmutableStack.&lt;NonLeaf&lt;R&gt;&gt; empty();
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> rx.Observable;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> rx.functions.Func1;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func2;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Geometry;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Rectangle;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.operators.OperatorBoundedPriorityQueue;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.google.common.annotations.VisibleForTesting;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> com.google.common.base.Optional;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment"> * Immutable in-memory 2D R-Tree with configurable splitter heuristic.</em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> * </em>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> * @param &lt;R&gt;</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment"> *            the entry type</em>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> RTree&lt;R&gt; {
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>  
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Optional&lt;Node&lt;R&gt;&gt; root;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Optional&lt;? <strong class="jxr_keyword">extends</strong> Node&lt;R&gt;&gt; root;
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/Context.html">Context</a> context;
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>  
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>      <em class="jxr_javadoccomment">/**</em>
@@ -57,7 +57,7 @@
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  <em class="jxr_javadoccomment">     * @param context</em>
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  <em class="jxr_javadoccomment">     *            options for the R-tree</em>
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../com/github/davidmoten/rtree/RTree.html">RTree</a>(Optional&lt;Node&lt;R&gt;&gt; root, <strong class="jxr_keyword">int</strong> size, <a href="../../../../com/github/davidmoten/rtree/Context.html">Context</a> context) {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../com/github/davidmoten/rtree/RTree.html">RTree</a>(Optional&lt;? <strong class="jxr_keyword">extends</strong> Node&lt;R&gt;&gt; root, <strong class="jxr_keyword">int</strong> size, <a href="../../../../com/github/davidmoten/rtree/Context.html">Context</a> context) {
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>          <strong class="jxr_keyword">this</strong>.root = root;
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">this</strong>.size = size;
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">this</strong>.context = context;
@@ -106,7 +106,7 @@
 <a class="jxr_linenumber" name="L98" href="#L98">98</a>          <strong class="jxr_keyword">return</strong> calculateDepth(root);
 <a class="jxr_linenumber" name="L99" href="#L99">99</a>      }
 <a class="jxr_linenumber" name="L100" href="#L100">100</a> 
-<a class="jxr_linenumber" name="L101" href="#L101">101</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;R&gt; <strong class="jxr_keyword">int</strong> calculateDepth(Optional&lt;Node&lt;R&gt;&gt; root) {
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;R&gt; <strong class="jxr_keyword">int</strong> calculateDepth(Optional&lt;? <strong class="jxr_keyword">extends</strong> Node&lt;R&gt;&gt; root) {
 <a class="jxr_linenumber" name="L102" href="#L102">102</a>         <strong class="jxr_keyword">if</strong> (!root.isPresent())
 <a class="jxr_linenumber" name="L103" href="#L103">103</a>             <strong class="jxr_keyword">return</strong> 0;
 <a class="jxr_linenumber" name="L104" href="#L104">104</a>         <strong class="jxr_keyword">else</strong>
@@ -291,311 +291,335 @@
 <a class="jxr_linenumber" name="L283" href="#L283">283</a> <em class="jxr_javadoccomment">     */</em>
 <a class="jxr_linenumber" name="L284" href="#L284">284</a>     @SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
 <a class="jxr_linenumber" name="L285" href="#L285">285</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; add(Entry&lt;R&gt; entry) {
-<a class="jxr_linenumber" name="L286" href="#L286">286</a>         <strong class="jxr_keyword">if</strong> (root.isPresent())
-<a class="jxr_linenumber" name="L287" href="#L287">287</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(root.get().add(entry, emptyStack), size + 1, context);
-<a class="jxr_linenumber" name="L288" href="#L288">288</a>         <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L289" href="#L289">289</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(<strong class="jxr_keyword">new</strong> Leaf&lt;R&gt;(Lists.newArrayList(entry), context), size + 1, context);
-<a class="jxr_linenumber" name="L290" href="#L290">290</a>     }
-<a class="jxr_linenumber" name="L291" href="#L291">291</a> 
-<a class="jxr_linenumber" name="L292" href="#L292">292</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L293" href="#L293">293</a> <em class="jxr_javadoccomment">     * Adds an entry comprised of the given value and Geometry.</em>
-<a class="jxr_linenumber" name="L294" href="#L294">294</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L295" href="#L295">295</a> <em class="jxr_javadoccomment">     * @param value</em>
-<a class="jxr_linenumber" name="L296" href="#L296">296</a> <em class="jxr_javadoccomment">     *            the value of the {@link Entry} to be added</em>
-<a class="jxr_linenumber" name="L297" href="#L297">297</a> <em class="jxr_javadoccomment">     * @param geometry</em>
-<a class="jxr_linenumber" name="L298" href="#L298">298</a> <em class="jxr_javadoccomment">     *            the geometry of the {@link Entry} to be added</em>
-<a class="jxr_linenumber" name="L299" href="#L299">299</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree including the new entry</em>
-<a class="jxr_linenumber" name="L300" href="#L300">300</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L301" href="#L301">301</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; add(R value, <a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> geometry) {
-<a class="jxr_linenumber" name="L302" href="#L302">302</a>         <strong class="jxr_keyword">return</strong> add(Entry.entry(value, geometry));
-<a class="jxr_linenumber" name="L303" href="#L303">303</a>     }
-<a class="jxr_linenumber" name="L304" href="#L304">304</a> 
-<a class="jxr_linenumber" name="L305" href="#L305">305</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L306" href="#L306">306</a> <em class="jxr_javadoccomment">     * Returns a new R-tree with the current entries and the additional entries</em>
-<a class="jxr_linenumber" name="L307" href="#L307">307</a> <em class="jxr_javadoccomment">     * supplied as a parameter.</em>
-<a class="jxr_linenumber" name="L308" href="#L308">308</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L309" href="#L309">309</a> <em class="jxr_javadoccomment">     * @param entries</em>
-<a class="jxr_linenumber" name="L310" href="#L310">310</a> <em class="jxr_javadoccomment">     *            entries to add</em>
-<a class="jxr_linenumber" name="L311" href="#L311">311</a> <em class="jxr_javadoccomment">     * @return R-tree with entries added</em>
-<a class="jxr_linenumber" name="L312" href="#L312">312</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L313" href="#L313">313</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; add(Iterable&lt;Entry&lt;R&gt;&gt; entries) {
-<a class="jxr_linenumber" name="L314" href="#L314">314</a>         RTree&lt;R&gt; tree = <strong class="jxr_keyword">this</strong>;
-<a class="jxr_linenumber" name="L315" href="#L315">315</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry : entries)
-<a class="jxr_linenumber" name="L316" href="#L316">316</a>             tree = tree.add(entry);
-<a class="jxr_linenumber" name="L317" href="#L317">317</a>         <strong class="jxr_keyword">return</strong> tree;
-<a class="jxr_linenumber" name="L318" href="#L318">318</a>     }
-<a class="jxr_linenumber" name="L319" href="#L319">319</a> 
-<a class="jxr_linenumber" name="L320" href="#L320">320</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L321" href="#L321">321</a> <em class="jxr_javadoccomment">     * Returns the Observable sequence of trees created by progressively adding</em>
-<a class="jxr_linenumber" name="L322" href="#L322">322</a> <em class="jxr_javadoccomment">     * entries.</em>
-<a class="jxr_linenumber" name="L323" href="#L323">323</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L324" href="#L324">324</a> <em class="jxr_javadoccomment">     * @param entries</em>
-<a class="jxr_linenumber" name="L325" href="#L325">325</a> <em class="jxr_javadoccomment">     *            the entries to add</em>
-<a class="jxr_linenumber" name="L326" href="#L326">326</a> <em class="jxr_javadoccomment">     * @return a sequence of trees</em>
-<a class="jxr_linenumber" name="L327" href="#L327">327</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L328" href="#L328">328</a>     <strong class="jxr_keyword">public</strong> Observable&lt;RTree&lt;R&gt;&gt; add(Observable&lt;Entry&lt;R&gt;&gt; entries) {
-<a class="jxr_linenumber" name="L329" href="#L329">329</a>         <strong class="jxr_keyword">return</strong> entries.scan(<strong class="jxr_keyword">this</strong>, <strong class="jxr_keyword">new</strong> Func2&lt;RTree&lt;R&gt;, Entry&lt;R&gt;, RTree&lt;R&gt;&gt;() {
-<a class="jxr_linenumber" name="L330" href="#L330">330</a> 
-<a class="jxr_linenumber" name="L331" href="#L331">331</a>             @Override
-<a class="jxr_linenumber" name="L332" href="#L332">332</a>             <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; call(RTree&lt;R&gt; tree, Entry&lt;R&gt; entry) {
-<a class="jxr_linenumber" name="L333" href="#L333">333</a>                 <strong class="jxr_keyword">return</strong> tree.add(entry);
-<a class="jxr_linenumber" name="L334" href="#L334">334</a>             }
-<a class="jxr_linenumber" name="L335" href="#L335">335</a>         });
-<a class="jxr_linenumber" name="L336" href="#L336">336</a>     }
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>         <strong class="jxr_keyword">if</strong> (root.isPresent()) {
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>             List&lt;Node&lt;R&gt;&gt; nodes = root.get().add(entry);
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>             Node&lt;R&gt; node;
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>             <strong class="jxr_keyword">if</strong> (nodes.size() == 1)
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>                 node = nodes.get(0);
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>             <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>                 node = <strong class="jxr_keyword">new</strong> NonLeaf&lt;R&gt;(nodes, context);
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>             }
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(node, size + 1, context);
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>         } <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(<strong class="jxr_keyword">new</strong> Leaf&lt;R&gt;(Lists.newArrayList(entry), context), size + 1, context);
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>     }
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 
+<a class="jxr_linenumber" name="L299" href="#L299">299</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> <em class="jxr_javadoccomment">     * Adds an entry comprised of the given value and Geometry.</em>
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> <em class="jxr_javadoccomment">     * @param value</em>
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> <em class="jxr_javadoccomment">     *            the value of the {@link Entry} to be added</em>
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> <em class="jxr_javadoccomment">     * @param geometry</em>
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> <em class="jxr_javadoccomment">     *            the geometry of the {@link Entry} to be added</em>
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree including the new entry</em>
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L308" href="#L308">308</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; add(R value, <a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> geometry) {
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>         <strong class="jxr_keyword">return</strong> add(Entry.entry(value, geometry));
+<a class="jxr_linenumber" name="L310" href="#L310">310</a>     }
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> <em class="jxr_javadoccomment">     * Returns a new R-tree with the current entries and the additional entries</em>
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> <em class="jxr_javadoccomment">     * supplied as a parameter.</em>
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> <em class="jxr_javadoccomment">     * @param entries</em>
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> <em class="jxr_javadoccomment">     *            entries to add</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> <em class="jxr_javadoccomment">     * @return R-tree with entries added</em>
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; add(Iterable&lt;Entry&lt;R&gt;&gt; entries) {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>         RTree&lt;R&gt; tree = <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry : entries)
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>             tree = tree.add(entry);
+<a class="jxr_linenumber" name="L324" href="#L324">324</a>         <strong class="jxr_keyword">return</strong> tree;
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>     }
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> 
+<a class="jxr_linenumber" name="L327" href="#L327">327</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> <em class="jxr_javadoccomment">     * Returns the Observable sequence of trees created by progressively adding</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> <em class="jxr_javadoccomment">     * entries.</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> <em class="jxr_javadoccomment">     * @param entries</em>
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> <em class="jxr_javadoccomment">     *            the entries to add</em>
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> <em class="jxr_javadoccomment">     * @return a sequence of trees</em>
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L335" href="#L335">335</a>     <strong class="jxr_keyword">public</strong> Observable&lt;RTree&lt;R&gt;&gt; add(Observable&lt;Entry&lt;R&gt;&gt; entries) {
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>         <strong class="jxr_keyword">return</strong> entries.scan(<strong class="jxr_keyword">this</strong>, <strong class="jxr_keyword">new</strong> Func2&lt;RTree&lt;R&gt;, Entry&lt;R&gt;, RTree&lt;R&gt;&gt;() {
 <a class="jxr_linenumber" name="L337" href="#L337">337</a> 
-<a class="jxr_linenumber" name="L338" href="#L338">338</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L339" href="#L339">339</a> <em class="jxr_javadoccomment">     * Returns the Observable sequence of trees created by progressively</em>
-<a class="jxr_linenumber" name="L340" href="#L340">340</a> <em class="jxr_javadoccomment">     * deleting entries.</em>
-<a class="jxr_linenumber" name="L341" href="#L341">341</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L342" href="#L342">342</a> <em class="jxr_javadoccomment">     * @param entries</em>
-<a class="jxr_linenumber" name="L343" href="#L343">343</a> <em class="jxr_javadoccomment">     *            the entries to add</em>
-<a class="jxr_linenumber" name="L344" href="#L344">344</a> <em class="jxr_javadoccomment">     * @return a sequence of trees</em>
-<a class="jxr_linenumber" name="L345" href="#L345">345</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L346" href="#L346">346</a>     <strong class="jxr_keyword">public</strong> Observable&lt;RTree&lt;R&gt;&gt; delete(Observable&lt;Entry&lt;R&gt;&gt; entries) {
-<a class="jxr_linenumber" name="L347" href="#L347">347</a>         <strong class="jxr_keyword">return</strong> entries.scan(<strong class="jxr_keyword">this</strong>, <strong class="jxr_keyword">new</strong> Func2&lt;RTree&lt;R&gt;, Entry&lt;R&gt;, RTree&lt;R&gt;&gt;() {
-<a class="jxr_linenumber" name="L348" href="#L348">348</a> 
-<a class="jxr_linenumber" name="L349" href="#L349">349</a>             @Override
-<a class="jxr_linenumber" name="L350" href="#L350">350</a>             <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; call(RTree&lt;R&gt; tree, Entry&lt;R&gt; entry) {
-<a class="jxr_linenumber" name="L351" href="#L351">351</a>                 <strong class="jxr_keyword">return</strong> tree.delete(entry);
-<a class="jxr_linenumber" name="L352" href="#L352">352</a>             }
-<a class="jxr_linenumber" name="L353" href="#L353">353</a>         });
-<a class="jxr_linenumber" name="L354" href="#L354">354</a>     }
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>             @Override
+<a class="jxr_linenumber" name="L339" href="#L339">339</a>             <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; call(RTree&lt;R&gt; tree, Entry&lt;R&gt; entry) {
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>                 <strong class="jxr_keyword">return</strong> tree.add(entry);
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>             }
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>         });
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>     }
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> <em class="jxr_javadoccomment">     * Returns the Observable sequence of trees created by progressively</em>
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> <em class="jxr_javadoccomment">     * deleting entries.</em>
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> <em class="jxr_javadoccomment">     * @param entries</em>
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> <em class="jxr_javadoccomment">     *            the entries to add</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> <em class="jxr_javadoccomment">     * @return a sequence of trees</em>
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>     <strong class="jxr_keyword">public</strong> Observable&lt;RTree&lt;R&gt;&gt; delete(Observable&lt;Entry&lt;R&gt;&gt; entries, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> all) {
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>         <strong class="jxr_keyword">return</strong> entries.scan(<strong class="jxr_keyword">this</strong>, <strong class="jxr_keyword">new</strong> Func2&lt;RTree&lt;R&gt;, Entry&lt;R&gt;, RTree&lt;R&gt;&gt;() {
 <a class="jxr_linenumber" name="L355" href="#L355">355</a> 
-<a class="jxr_linenumber" name="L356" href="#L356">356</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L357" href="#L357">357</a> <em class="jxr_javadoccomment">     * Returns a new R-tree with the given entries deleted.</em>
-<a class="jxr_linenumber" name="L358" href="#L358">358</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L359" href="#L359">359</a> <em class="jxr_javadoccomment">     * @param entries</em>
-<a class="jxr_linenumber" name="L360" href="#L360">360</a> <em class="jxr_javadoccomment">     *            entries to delete</em>
-<a class="jxr_linenumber" name="L361" href="#L361">361</a> <em class="jxr_javadoccomment">     * @return R-tree with entries deleted</em>
-<a class="jxr_linenumber" name="L362" href="#L362">362</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L363" href="#L363">363</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Iterable&lt;Entry&lt;R&gt;&gt; entries) {
-<a class="jxr_linenumber" name="L364" href="#L364">364</a>         RTree&lt;R&gt; tree = <strong class="jxr_keyword">this</strong>;
-<a class="jxr_linenumber" name="L365" href="#L365">365</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry : entries)
-<a class="jxr_linenumber" name="L366" href="#L366">366</a>             tree = tree.delete(entry);
-<a class="jxr_linenumber" name="L367" href="#L367">367</a>         <strong class="jxr_keyword">return</strong> tree;
-<a class="jxr_linenumber" name="L368" href="#L368">368</a>     }
-<a class="jxr_linenumber" name="L369" href="#L369">369</a> 
-<a class="jxr_linenumber" name="L370" href="#L370">370</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L371" href="#L371">371</a> <em class="jxr_javadoccomment">     * Delete one entry comprised of the given value and Geometry. This method</em>
-<a class="jxr_linenumber" name="L372" href="#L372">372</a> <em class="jxr_javadoccomment">     * has no effect if the entry is not present. The entry must match on both</em>
-<a class="jxr_linenumber" name="L373" href="#L373">373</a> <em class="jxr_javadoccomment">     * value and geometry to be deleted.</em>
-<a class="jxr_linenumber" name="L374" href="#L374">374</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L375" href="#L375">375</a> <em class="jxr_javadoccomment">     * @param value</em>
-<a class="jxr_linenumber" name="L376" href="#L376">376</a> <em class="jxr_javadoccomment">     *            the value of the {@link Entry} to be deleted</em>
-<a class="jxr_linenumber" name="L377" href="#L377">377</a> <em class="jxr_javadoccomment">     * @param geometry</em>
-<a class="jxr_linenumber" name="L378" href="#L378">378</a> <em class="jxr_javadoccomment">     *            the geometry of the {@link Entry} to be deleted</em>
-<a class="jxr_linenumber" name="L379" href="#L379">379</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree without one instance of the specified</em>
-<a class="jxr_linenumber" name="L380" href="#L380">380</a> <em class="jxr_javadoccomment">     *         entry</em>
-<a class="jxr_linenumber" name="L381" href="#L381">381</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L382" href="#L382">382</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(R value, <a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> geometry) {
-<a class="jxr_linenumber" name="L383" href="#L383">383</a>         <strong class="jxr_keyword">return</strong> delete(Entry.entry(value, geometry));
-<a class="jxr_linenumber" name="L384" href="#L384">384</a>     }
-<a class="jxr_linenumber" name="L385" href="#L385">385</a> 
-<a class="jxr_linenumber" name="L386" href="#L386">386</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L387" href="#L387">387</a> <em class="jxr_javadoccomment">     * Delete one entry if it exists. If multiple copies of the entry are in the</em>
-<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_javadoccomment">     * R-tree only one will be deleted. The entry must match on both value and</em>
-<a class="jxr_linenumber" name="L389" href="#L389">389</a> <em class="jxr_javadoccomment">     * geometry to be deleted.</em>
-<a class="jxr_linenumber" name="L390" href="#L390">390</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L391" href="#L391">391</a> <em class="jxr_javadoccomment">     * @param entry</em>
-<a class="jxr_linenumber" name="L392" href="#L392">392</a> <em class="jxr_javadoccomment">     *            the {@link Entry} to be deleted</em>
-<a class="jxr_linenumber" name="L393" href="#L393">393</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree without one instance of the specified</em>
-<a class="jxr_linenumber" name="L394" href="#L394">394</a> <em class="jxr_javadoccomment">     *         entry</em>
-<a class="jxr_linenumber" name="L395" href="#L395">395</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L396" href="#L396">396</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Entry&lt;R&gt; entry) {
-<a class="jxr_linenumber" name="L397" href="#L397">397</a>         <strong class="jxr_keyword">if</strong> (root.isPresent()) {
-<a class="jxr_linenumber" name="L398" href="#L398">398</a>             <strong class="jxr_keyword">final</strong> Optional&lt;Node&lt;R&gt;&gt; newRoot = root.get().delete(entry, emptyStack);
-<a class="jxr_linenumber" name="L399" href="#L399">399</a>             <strong class="jxr_keyword">if</strong> (newRoot.equals(root))
-<a class="jxr_linenumber" name="L400" href="#L400">400</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
-<a class="jxr_linenumber" name="L401" href="#L401">401</a>             <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L402" href="#L402">402</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(newRoot, size - 1, context);
-<a class="jxr_linenumber" name="L403" href="#L403">403</a>         } <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L404" href="#L404">404</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
-<a class="jxr_linenumber" name="L405" href="#L405">405</a>     }
-<a class="jxr_linenumber" name="L406" href="#L406">406</a> 
-<a class="jxr_linenumber" name="L407" href="#L407">407</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L408" href="#L408">408</a> <em class="jxr_javadoccomment">     * &lt;p&gt;</em>
-<a class="jxr_linenumber" name="L409" href="#L409">409</a> <em class="jxr_javadoccomment">     * Returns an Observable sequence of {@link Entry} that satisfy the given</em>
-<a class="jxr_linenumber" name="L410" href="#L410">410</a> <em class="jxr_javadoccomment">     * condition. Note that this method is well-behaved only if:</em>
-<a class="jxr_linenumber" name="L411" href="#L411">411</a> <em class="jxr_javadoccomment">     * &lt;/p&gt;</em>
-<a class="jxr_linenumber" name="L412" href="#L412">412</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L413" href="#L413">413</a> <em class="jxr_javadoccomment">     * &lt;code&gt;condition(g) is true for {@link Geometry} g implies condition(r) is true for the minimum bounding rectangles of the ancestor nodes&lt;/code&gt;</em>
-<a class="jxr_linenumber" name="L414" href="#L414">414</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L415" href="#L415">415</a> <em class="jxr_javadoccomment">     * &lt;p&gt;</em>
-<a class="jxr_linenumber" name="L416" href="#L416">416</a> <em class="jxr_javadoccomment">     * &lt;code&gt;distance(g) &amp;lt; sD&lt;/code&gt; is an example of such a condition.</em>
-<a class="jxr_linenumber" name="L417" href="#L417">417</a> <em class="jxr_javadoccomment">     * &lt;/p&gt;</em>
-<a class="jxr_linenumber" name="L418" href="#L418">418</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L419" href="#L419">419</a> <em class="jxr_javadoccomment">     * @param condition</em>
-<a class="jxr_linenumber" name="L420" href="#L420">420</a> <em class="jxr_javadoccomment">     *            return Entries whose geometry satisfies the given condition</em>
-<a class="jxr_linenumber" name="L421" href="#L421">421</a> <em class="jxr_javadoccomment">     * @return sequence of matching entries</em>
-<a class="jxr_linenumber" name="L422" href="#L422">422</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L423" href="#L423">423</a>     @VisibleForTesting
-<a class="jxr_linenumber" name="L424" href="#L424">424</a>     Observable&lt;Entry&lt;R&gt;&gt; search(Func1&lt;? <strong class="jxr_keyword">super</strong> Geometry, Boolean&gt; condition) {
-<a class="jxr_linenumber" name="L425" href="#L425">425</a>         <strong class="jxr_keyword">if</strong> (root.isPresent())
-<a class="jxr_linenumber" name="L426" href="#L426">426</a>             <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> OnSubscribeSearch&lt;R&gt;(root.get(), condition));
-<a class="jxr_linenumber" name="L427" href="#L427">427</a>         <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L428" href="#L428">428</a>             <strong class="jxr_keyword">return</strong> Observable.empty();
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>             @Override
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>             <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; call(RTree&lt;R&gt; tree, Entry&lt;R&gt; entry) {
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>                 <strong class="jxr_keyword">return</strong> tree.delete(entry, all);
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>             }
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>         });
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>     }
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> <em class="jxr_javadoccomment">     * Returns a new R-tree with the given entries deleted.</em>
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> <em class="jxr_javadoccomment">     * @param entries</em>
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> <em class="jxr_javadoccomment">     *            entries to delete</em>
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> <em class="jxr_javadoccomment">     * @return R-tree with entries deleted</em>
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Iterable&lt;Entry&lt;R&gt;&gt; entries, <strong class="jxr_keyword">boolean</strong> all) {
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>         RTree&lt;R&gt; tree = <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry : entries)
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>             tree = tree.delete(entry, all);
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>         <strong class="jxr_keyword">return</strong> tree;
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>     }
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> 
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> <em class="jxr_javadoccomment">     * Delete one entry comprised of the given value and Geometry. This method</em>
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> <em class="jxr_javadoccomment">     * has no effect if the entry is not present. The entry must match on both</em>
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> <em class="jxr_javadoccomment">     * value and geometry to be deleted.</em>
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> <em class="jxr_javadoccomment">     * @param value</em>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> <em class="jxr_javadoccomment">     *            the value of the {@link Entry} to be deleted</em>
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> <em class="jxr_javadoccomment">     * @param geometry</em>
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> <em class="jxr_javadoccomment">     *            the geometry of the {@link Entry} to be deleted</em>
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree without one instance of the specified</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> <em class="jxr_javadoccomment">     *         entry</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(R value, <a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> geometry, <strong class="jxr_keyword">boolean</strong> all) {
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>         <strong class="jxr_keyword">return</strong> delete(Entry.entry(value, geometry), all);
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>     }
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(R value, <a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> geometry) {
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>         <strong class="jxr_keyword">return</strong> delete(Entry.entry(value, geometry), false);
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>     }
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> <em class="jxr_javadoccomment">     * Delete one entry if it exists. If multiple copies of the entry are in the</em>
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> <em class="jxr_javadoccomment">     * R-tree only one will be deleted. The entry must match on both value and</em>
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> <em class="jxr_javadoccomment">     * geometry to be deleted.</em>
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> <em class="jxr_javadoccomment">     * @param entry</em>
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> <em class="jxr_javadoccomment">     *            the {@link Entry} to be deleted</em>
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> <em class="jxr_javadoccomment">     * @return a new immutable R-tree without one instance of the specified</em>
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> <em class="jxr_javadoccomment">     *         entry</em>
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Entry&lt;R&gt; entry, <strong class="jxr_keyword">boolean</strong> all) {
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>         <strong class="jxr_keyword">if</strong> (root.isPresent()) {
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>             NodeAndEntries&lt;R&gt; nodeAndEntries = root.get().delete(entry, all);
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>             <strong class="jxr_keyword">if</strong> (nodeAndEntries.node().isPresent() &amp;&amp; nodeAndEntries.node().get() == root.get())
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>             <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> RTree&lt;R&gt;(nodeAndEntries.node(), size - nodeAndEntries.countDeleted()
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>                         - nodeAndEntries.entriesToAdd().size(), context).add(nodeAndEntries
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>                         .entriesToAdd());
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>         } <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L418" href="#L418">418</a>     }
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> 
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Entry&lt;R&gt; entry) {
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>         <strong class="jxr_keyword">return</strong> delete(entry, false);
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>     }
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>     <strong class="jxr_keyword">public</strong> RTree&lt;R&gt; delete(Iterable&lt;Entry&lt;R&gt;&gt; entries) {
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>         RTree&lt;R&gt; tree = <strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry : entries)
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>             tree = tree.delete(entry);
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>         <strong class="jxr_keyword">return</strong> tree;
 <a class="jxr_linenumber" name="L429" href="#L429">429</a>     }
 <a class="jxr_linenumber" name="L430" href="#L430">430</a> 
 <a class="jxr_linenumber" name="L431" href="#L431">431</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L432" href="#L432">432</a> <em class="jxr_javadoccomment">     * Returns a predicate function that indicates if {@link Geometry}</em>
-<a class="jxr_linenumber" name="L433" href="#L433">433</a> <em class="jxr_javadoccomment">     * intersects with a given rectangle.</em>
-<a class="jxr_linenumber" name="L434" href="#L434">434</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L435" href="#L435">435</a> <em class="jxr_javadoccomment">     * @param r</em>
-<a class="jxr_linenumber" name="L436" href="#L436">436</a> <em class="jxr_javadoccomment">     *            the rectangle to check intersection with</em>
-<a class="jxr_linenumber" name="L437" href="#L437">437</a> <em class="jxr_javadoccomment">     * @return whether the geometry and the rectangle intersect</em>
-<a class="jxr_linenumber" name="L438" href="#L438">438</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L439" href="#L439">439</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> Func1&lt;Geometry, Boolean&gt; intersects(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r) {
-<a class="jxr_linenumber" name="L440" href="#L440">440</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
-<a class="jxr_linenumber" name="L441" href="#L441">441</a>             @Override
-<a class="jxr_linenumber" name="L442" href="#L442">442</a>             <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> g) {
-<a class="jxr_linenumber" name="L443" href="#L443">443</a>                 <strong class="jxr_keyword">return</strong> g.intersects(r);
-<a class="jxr_linenumber" name="L444" href="#L444">444</a>             }
-<a class="jxr_linenumber" name="L445" href="#L445">445</a>         };
-<a class="jxr_linenumber" name="L446" href="#L446">446</a>     }
-<a class="jxr_linenumber" name="L447" href="#L447">447</a> 
-<a class="jxr_linenumber" name="L448" href="#L448">448</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L449" href="#L449">449</a> <em class="jxr_javadoccomment">     * Returns the always true predicate. See {@link RTree#entries()} for</em>
-<a class="jxr_linenumber" name="L450" href="#L450">450</a> <em class="jxr_javadoccomment">     * example use.</em>
-<a class="jxr_linenumber" name="L451" href="#L451">451</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L452" href="#L452">452</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Func1&lt;Geometry, Boolean&gt; ALWAYS_TRUE = <strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
-<a class="jxr_linenumber" name="L453" href="#L453">453</a>         @Override
-<a class="jxr_linenumber" name="L454" href="#L454">454</a>         <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> rectangle) {
-<a class="jxr_linenumber" name="L455" href="#L455">455</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
-<a class="jxr_linenumber" name="L456" href="#L456">456</a>         }
-<a class="jxr_linenumber" name="L457" href="#L457">457</a>     };
-<a class="jxr_linenumber" name="L458" href="#L458">458</a> 
-<a class="jxr_linenumber" name="L459" href="#L459">459</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L460" href="#L460">460</a> <em class="jxr_javadoccomment">     * Returns an {@link Observable} sequence of all {@link Entry}s in the</em>
-<a class="jxr_linenumber" name="L461" href="#L461">461</a> <em class="jxr_javadoccomment">     * R-tree whose minimum bounding rectangle intersects with the given</em>
-<a class="jxr_linenumber" name="L462" href="#L462">462</a> <em class="jxr_javadoccomment">     * rectangle.</em>
-<a class="jxr_linenumber" name="L463" href="#L463">463</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L464" href="#L464">464</a> <em class="jxr_javadoccomment">     * @param r</em>
-<a class="jxr_linenumber" name="L465" href="#L465">465</a> <em class="jxr_javadoccomment">     *            rectangle to check intersection with the entry mbr</em>
-<a class="jxr_linenumber" name="L466" href="#L466">466</a> <em class="jxr_javadoccomment">     * @return entries that intersect with the rectangle r</em>
-<a class="jxr_linenumber" name="L467" href="#L467">467</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L468" href="#L468">468</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; search(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r) {
-<a class="jxr_linenumber" name="L469" href="#L469">469</a>         <strong class="jxr_keyword">return</strong> search(intersects(r));
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> <em class="jxr_javadoccomment">     * &lt;p&gt;</em>
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> <em class="jxr_javadoccomment">     * Returns an Observable sequence of {@link Entry} that satisfy the given</em>
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> <em class="jxr_javadoccomment">     * condition. Note that this method is well-behaved only if:</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> <em class="jxr_javadoccomment">     * &lt;/p&gt;</em>
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> <em class="jxr_javadoccomment">     * &lt;code&gt;condition(g) is true for {@link Geometry} g implies condition(r) is true for the minimum bounding rectangles of the ancestor nodes&lt;/code&gt;</em>
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> <em class="jxr_javadoccomment">     * &lt;p&gt;</em>
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> <em class="jxr_javadoccomment">     * &lt;code&gt;distance(g) &amp;lt; sD&lt;/code&gt; is an example of such a condition.</em>
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> <em class="jxr_javadoccomment">     * &lt;/p&gt;</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> <em class="jxr_javadoccomment">     * @param condition</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> <em class="jxr_javadoccomment">     *            return Entries whose geometry satisfies the given condition</em>
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> <em class="jxr_javadoccomment">     * @return sequence of matching entries</em>
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>     @VisibleForTesting
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>     Observable&lt;Entry&lt;R&gt;&gt; search(Func1&lt;? <strong class="jxr_keyword">super</strong> Geometry, Boolean&gt; condition) {
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>         <strong class="jxr_keyword">if</strong> (root.isPresent())
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>             <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> OnSubscribeSearch&lt;R&gt;(root.get(), condition));
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>         <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>             <strong class="jxr_keyword">return</strong> Observable.empty();
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>     }
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> <em class="jxr_javadoccomment">     * Returns a predicate function that indicates if {@link Geometry}</em>
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> <em class="jxr_javadoccomment">     * intersects with a given rectangle.</em>
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> <em class="jxr_javadoccomment">     * @param r</em>
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> <em class="jxr_javadoccomment">     *            the rectangle to check intersection with</em>
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> <em class="jxr_javadoccomment">     * @return whether the geometry and the rectangle intersect</em>
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> Func1&lt;Geometry, Boolean&gt; intersects(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r) {
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>             @Override
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>             <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> g) {
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>                 <strong class="jxr_keyword">return</strong> g.intersects(r);
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>             }
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>         };
 <a class="jxr_linenumber" name="L470" href="#L470">470</a>     }
 <a class="jxr_linenumber" name="L471" href="#L471">471</a> 
 <a class="jxr_linenumber" name="L472" href="#L472">472</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L473" href="#L473">473</a> <em class="jxr_javadoccomment">     * Returns an {@link Observable} sequence of all {@link Entry}s in the</em>
-<a class="jxr_linenumber" name="L474" href="#L474">474</a> <em class="jxr_javadoccomment">     * R-tree whose minimum bounding rectangles are within maxDistance from the</em>
-<a class="jxr_linenumber" name="L475" href="#L475">475</a> <em class="jxr_javadoccomment">     * given rectangle.</em>
-<a class="jxr_linenumber" name="L476" href="#L476">476</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L477" href="#L477">477</a> <em class="jxr_javadoccomment">     * @param r</em>
-<a class="jxr_linenumber" name="L478" href="#L478">478</a> <em class="jxr_javadoccomment">     *            rectangle to measure distance from</em>
-<a class="jxr_linenumber" name="L479" href="#L479">479</a> <em class="jxr_javadoccomment">     * @param maxDistance</em>
-<a class="jxr_linenumber" name="L480" href="#L480">480</a> <em class="jxr_javadoccomment">     *            entries returned must be within this distance from rectangel r</em>
-<a class="jxr_linenumber" name="L481" href="#L481">481</a> <em class="jxr_javadoccomment">     * @return the sequence of matching entries</em>
-<a class="jxr_linenumber" name="L482" href="#L482">482</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L483" href="#L483">483</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; search(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">double</strong> maxDistance) {
-<a class="jxr_linenumber" name="L484" href="#L484">484</a>         <strong class="jxr_keyword">return</strong> search(<strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
-<a class="jxr_linenumber" name="L485" href="#L485">485</a>             @Override
-<a class="jxr_linenumber" name="L486" href="#L486">486</a>             <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> g) {
-<a class="jxr_linenumber" name="L487" href="#L487">487</a>                 <strong class="jxr_keyword">return</strong> g.distance(r) &lt; maxDistance;
-<a class="jxr_linenumber" name="L488" href="#L488">488</a>             }
-<a class="jxr_linenumber" name="L489" href="#L489">489</a>         });
-<a class="jxr_linenumber" name="L490" href="#L490">490</a>     }
-<a class="jxr_linenumber" name="L491" href="#L491">491</a> 
-<a class="jxr_linenumber" name="L492" href="#L492">492</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L493" href="#L493">493</a> <em class="jxr_javadoccomment">     * Returns the nearest k entries (k=maxCount) to the given rectangle where</em>
-<a class="jxr_linenumber" name="L494" href="#L494">494</a> <em class="jxr_javadoccomment">     * the entries are within a given maximum distance from the rectangle.</em>
-<a class="jxr_linenumber" name="L495" href="#L495">495</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L496" href="#L496">496</a> <em class="jxr_javadoccomment">     * @param r</em>
-<a class="jxr_linenumber" name="L497" href="#L497">497</a> <em class="jxr_javadoccomment">     *            rectangle</em>
-<a class="jxr_linenumber" name="L498" href="#L498">498</a> <em class="jxr_javadoccomment">     * @param maxDistance</em>
-<a class="jxr_linenumber" name="L499" href="#L499">499</a> <em class="jxr_javadoccomment">     *            max distance of returned entries from the rectangle</em>
-<a class="jxr_linenumber" name="L500" href="#L500">500</a> <em class="jxr_javadoccomment">     * @param maxCount</em>
-<a class="jxr_linenumber" name="L501" href="#L501">501</a> <em class="jxr_javadoccomment">     *            max number of entries to return</em>
-<a class="jxr_linenumber" name="L502" href="#L502">502</a> <em class="jxr_javadoccomment">     * @return nearest entries to maxCount</em>
-<a class="jxr_linenumber" name="L503" href="#L503">503</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L504" href="#L504">504</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; nearest(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">double</strong> maxDistance, <strong class="jxr_keyword">int</strong> maxCount) {
-<a class="jxr_linenumber" name="L505" href="#L505">505</a>         <strong class="jxr_keyword">return</strong> search(r, maxDistance).lift(
-<a class="jxr_linenumber" name="L506" href="#L506">506</a>                 <strong class="jxr_keyword">new</strong> OperatorBoundedPriorityQueue&lt;Entry&lt;R&gt;&gt;(maxCount, <a href="../../../../com/github/davidmoten/rtree/Comparators.html">Comparators</a>
-<a class="jxr_linenumber" name="L507" href="#L507">507</a>                         .&lt;R&gt; ascendingDistance(r)));
-<a class="jxr_linenumber" name="L508" href="#L508">508</a>     }
-<a class="jxr_linenumber" name="L509" href="#L509">509</a> 
-<a class="jxr_linenumber" name="L510" href="#L510">510</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L511" href="#L511">511</a> <em class="jxr_javadoccomment">     * Returns all entries in the tree as an {@link Observable} sequence.</em>
-<a class="jxr_linenumber" name="L512" href="#L512">512</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L513" href="#L513">513</a> <em class="jxr_javadoccomment">     * @return all entries in the R-tree</em>
-<a class="jxr_linenumber" name="L514" href="#L514">514</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L515" href="#L515">515</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; entries() {
-<a class="jxr_linenumber" name="L516" href="#L516">516</a>         <strong class="jxr_keyword">return</strong> search(ALWAYS_TRUE);
-<a class="jxr_linenumber" name="L517" href="#L517">517</a>     }
-<a class="jxr_linenumber" name="L518" href="#L518">518</a> 
-<a class="jxr_linenumber" name="L519" href="#L519">519</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L520" href="#L520">520</a> <em class="jxr_javadoccomment">     * Returns a {@link Visualizer} for an image of given width and height and</em>
-<a class="jxr_linenumber" name="L521" href="#L521">521</a> <em class="jxr_javadoccomment">     * restricted to the given view of the coordinates. The points in the view</em>
-<a class="jxr_linenumber" name="L522" href="#L522">522</a> <em class="jxr_javadoccomment">     * are scaled to match the aspect ratio defined by the width and height.</em>
-<a class="jxr_linenumber" name="L523" href="#L523">523</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L524" href="#L524">524</a> <em class="jxr_javadoccomment">     * @param width</em>
-<a class="jxr_linenumber" name="L525" href="#L525">525</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
-<a class="jxr_linenumber" name="L526" href="#L526">526</a> <em class="jxr_javadoccomment">     * @param height</em>
-<a class="jxr_linenumber" name="L527" href="#L527">527</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
-<a class="jxr_linenumber" name="L528" href="#L528">528</a> <em class="jxr_javadoccomment">     * @param view</em>
-<a class="jxr_linenumber" name="L529" href="#L529">529</a> <em class="jxr_javadoccomment">     *            using the coordinate system of the entries</em>
-<a class="jxr_linenumber" name="L530" href="#L530">530</a> <em class="jxr_javadoccomment">     * @return visualizer</em>
-<a class="jxr_linenumber" name="L531" href="#L531">531</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L532" href="#L532">532</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height, <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> view) {
-<a class="jxr_linenumber" name="L533" href="#L533">533</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a>(<strong class="jxr_keyword">this</strong>, width, height, view);
-<a class="jxr_linenumber" name="L534" href="#L534">534</a>     }
-<a class="jxr_linenumber" name="L535" href="#L535">535</a> 
-<a class="jxr_linenumber" name="L536" href="#L536">536</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L537" href="#L537">537</a> <em class="jxr_javadoccomment">     * Returns a {@link Visualizer} for an image of given width and height and</em>
-<a class="jxr_linenumber" name="L538" href="#L538">538</a> <em class="jxr_javadoccomment">     * restricted to the the smallest view that fully contains the coordinates.</em>
-<a class="jxr_linenumber" name="L539" href="#L539">539</a> <em class="jxr_javadoccomment">     * The points in the view are scaled to match the aspect ratio defined by</em>
-<a class="jxr_linenumber" name="L540" href="#L540">540</a> <em class="jxr_javadoccomment">     * the width and height.</em>
-<a class="jxr_linenumber" name="L541" href="#L541">541</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L542" href="#L542">542</a> <em class="jxr_javadoccomment">     * @param width</em>
-<a class="jxr_linenumber" name="L543" href="#L543">543</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
-<a class="jxr_linenumber" name="L544" href="#L544">544</a> <em class="jxr_javadoccomment">     * @param height</em>
-<a class="jxr_linenumber" name="L545" href="#L545">545</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
-<a class="jxr_linenumber" name="L546" href="#L546">546</a> <em class="jxr_javadoccomment">     * @return visualizer</em>
-<a class="jxr_linenumber" name="L547" href="#L547">547</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L548" href="#L548">548</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height) {
-<a class="jxr_linenumber" name="L549" href="#L549">549</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a>(<strong class="jxr_keyword">this</strong>, width, height, calculateMaxView(<strong class="jxr_keyword">this</strong>));
-<a class="jxr_linenumber" name="L550" href="#L550">550</a>     }
-<a class="jxr_linenumber" name="L551" href="#L551">551</a> 
-<a class="jxr_linenumber" name="L552" href="#L552">552</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> calculateMaxView(RTree&lt;R&gt; tree) {
-<a class="jxr_linenumber" name="L553" href="#L553">553</a>         <strong class="jxr_keyword">return</strong> tree
-<a class="jxr_linenumber" name="L554" href="#L554">554</a>                 .entries()
-<a class="jxr_linenumber" name="L555" href="#L555">555</a>                 .reduce(Optional.&lt;Rectangle&gt; absent(),
-<a class="jxr_linenumber" name="L556" href="#L556">556</a>                         <strong class="jxr_keyword">new</strong> Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;R&gt;, Optional&lt;Rectangle&gt;&gt;() {
-<a class="jxr_linenumber" name="L557" href="#L557">557</a> 
-<a class="jxr_linenumber" name="L558" href="#L558">558</a>                             @Override
-<a class="jxr_linenumber" name="L559" href="#L559">559</a>                             <strong class="jxr_keyword">public</strong> Optional&lt;Rectangle&gt; call(Optional&lt;Rectangle&gt; r, Entry&lt;R&gt; entry) {
-<a class="jxr_linenumber" name="L560" href="#L560">560</a>                                 <strong class="jxr_keyword">if</strong> (r.isPresent())
-<a class="jxr_linenumber" name="L561" href="#L561">561</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(r.get().add(entry.geometry().mbr()));
-<a class="jxr_linenumber" name="L562" href="#L562">562</a>                                 <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L563" href="#L563">563</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(entry.geometry().mbr());
-<a class="jxr_linenumber" name="L564" href="#L564">564</a>                             }
-<a class="jxr_linenumber" name="L565" href="#L565">565</a>                         }).toBlocking().single().or(<strong class="jxr_keyword">new</strong> Rectangle(0, 0, 0, 0));
-<a class="jxr_linenumber" name="L566" href="#L566">566</a>     }
-<a class="jxr_linenumber" name="L567" href="#L567">567</a> 
-<a class="jxr_linenumber" name="L568" href="#L568">568</a>     Optional&lt;Node&lt;R&gt;&gt; root() {
-<a class="jxr_linenumber" name="L569" href="#L569">569</a>         <strong class="jxr_keyword">return</strong> root;
-<a class="jxr_linenumber" name="L570" href="#L570">570</a>     }
-<a class="jxr_linenumber" name="L571" href="#L571">571</a> 
-<a class="jxr_linenumber" name="L572" href="#L572">572</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L573" href="#L573">573</a> <em class="jxr_javadoccomment">     * Returns true if and only if the R-tree is empty of entries.</em>
-<a class="jxr_linenumber" name="L574" href="#L574">574</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L575" href="#L575">575</a> <em class="jxr_javadoccomment">     * @return is R-tree empty</em>
-<a class="jxr_linenumber" name="L576" href="#L576">576</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L577" href="#L577">577</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isEmpty() {
-<a class="jxr_linenumber" name="L578" href="#L578">578</a>         <strong class="jxr_keyword">return</strong> size == 0;
-<a class="jxr_linenumber" name="L579" href="#L579">579</a>     }
-<a class="jxr_linenumber" name="L580" href="#L580">580</a> 
-<a class="jxr_linenumber" name="L581" href="#L581">581</a>     <em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L582" href="#L582">582</a> <em class="jxr_javadoccomment">     * Returns the number of entries in the RTree.</em>
-<a class="jxr_linenumber" name="L583" href="#L583">583</a> <em class="jxr_javadoccomment">     * </em>
-<a class="jxr_linenumber" name="L584" href="#L584">584</a> <em class="jxr_javadoccomment">     * @return the number of entries</em>
-<a class="jxr_linenumber" name="L585" href="#L585">585</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L586" href="#L586">586</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> size() {
-<a class="jxr_linenumber" name="L587" href="#L587">587</a>         <strong class="jxr_keyword">return</strong> size;
-<a class="jxr_linenumber" name="L588" href="#L588">588</a>     }
-<a class="jxr_linenumber" name="L589" href="#L589">589</a> 
-<a class="jxr_linenumber" name="L590" href="#L590">590</a> }
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> <em class="jxr_javadoccomment">     * Returns the always true predicate. See {@link RTree#entries()} for</em>
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> <em class="jxr_javadoccomment">     * example use.</em>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Func1&lt;Geometry, Boolean&gt; ALWAYS_TRUE = <strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>         @Override
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>         <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> rectangle) {
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>         }
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>     };
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> <em class="jxr_javadoccomment">     * Returns an {@link Observable} sequence of all {@link Entry}s in the</em>
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> <em class="jxr_javadoccomment">     * R-tree whose minimum bounding rectangle intersects with the given</em>
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> <em class="jxr_javadoccomment">     * rectangle.</em>
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> <em class="jxr_javadoccomment">     * @param r</em>
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> <em class="jxr_javadoccomment">     *            rectangle to check intersection with the entry mbr</em>
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> <em class="jxr_javadoccomment">     * @return entries that intersect with the rectangle r</em>
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; search(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r) {
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>         <strong class="jxr_keyword">return</strong> search(intersects(r));
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>     }
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L497" href="#L497">497</a> <em class="jxr_javadoccomment">     * Returns an {@link Observable} sequence of all {@link Entry}s in the</em>
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> <em class="jxr_javadoccomment">     * R-tree whose minimum bounding rectangles are within maxDistance from the</em>
+<a class="jxr_linenumber" name="L499" href="#L499">499</a> <em class="jxr_javadoccomment">     * given rectangle.</em>
+<a class="jxr_linenumber" name="L500" href="#L500">500</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L501" href="#L501">501</a> <em class="jxr_javadoccomment">     * @param r</em>
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> <em class="jxr_javadoccomment">     *            rectangle to measure distance from</em>
+<a class="jxr_linenumber" name="L503" href="#L503">503</a> <em class="jxr_javadoccomment">     * @param maxDistance</em>
+<a class="jxr_linenumber" name="L504" href="#L504">504</a> <em class="jxr_javadoccomment">     *            entries returned must be within this distance from rectangle r</em>
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> <em class="jxr_javadoccomment">     * @return the sequence of matching entries</em>
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L507" href="#L507">507</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; search(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">double</strong> maxDistance) {
+<a class="jxr_linenumber" name="L508" href="#L508">508</a>         <strong class="jxr_keyword">return</strong> search(<strong class="jxr_keyword">new</strong> Func1&lt;Geometry, Boolean&gt;() {
+<a class="jxr_linenumber" name="L509" href="#L509">509</a>             @Override
+<a class="jxr_linenumber" name="L510" href="#L510">510</a>             <strong class="jxr_keyword">public</strong> Boolean call(<a href="../../../../com/github/davidmoten/rtree/geometry/Geometry.html">Geometry</a> g) {
+<a class="jxr_linenumber" name="L511" href="#L511">511</a>                 <strong class="jxr_keyword">return</strong> g.distance(r) &lt; maxDistance;
+<a class="jxr_linenumber" name="L512" href="#L512">512</a>             }
+<a class="jxr_linenumber" name="L513" href="#L513">513</a>         });
+<a class="jxr_linenumber" name="L514" href="#L514">514</a>     }
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> 
+<a class="jxr_linenumber" name="L516" href="#L516">516</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> <em class="jxr_javadoccomment">     * Returns the nearest k entries (k=maxCount) to the given rectangle where</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> <em class="jxr_javadoccomment">     * the entries are within a given maximum distance from the rectangle.</em>
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L520" href="#L520">520</a> <em class="jxr_javadoccomment">     * @param r</em>
+<a class="jxr_linenumber" name="L521" href="#L521">521</a> <em class="jxr_javadoccomment">     *            rectangle</em>
+<a class="jxr_linenumber" name="L522" href="#L522">522</a> <em class="jxr_javadoccomment">     * @param maxDistance</em>
+<a class="jxr_linenumber" name="L523" href="#L523">523</a> <em class="jxr_javadoccomment">     *            max distance of returned entries from the rectangle</em>
+<a class="jxr_linenumber" name="L524" href="#L524">524</a> <em class="jxr_javadoccomment">     * @param maxCount</em>
+<a class="jxr_linenumber" name="L525" href="#L525">525</a> <em class="jxr_javadoccomment">     *            max number of entries to return</em>
+<a class="jxr_linenumber" name="L526" href="#L526">526</a> <em class="jxr_javadoccomment">     * @return nearest entries to maxCount</em>
+<a class="jxr_linenumber" name="L527" href="#L527">527</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L528" href="#L528">528</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; nearest(<strong class="jxr_keyword">final</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> r, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">double</strong> maxDistance, <strong class="jxr_keyword">int</strong> maxCount) {
+<a class="jxr_linenumber" name="L529" href="#L529">529</a>         <strong class="jxr_keyword">return</strong> search(r, maxDistance).lift(
+<a class="jxr_linenumber" name="L530" href="#L530">530</a>                 <strong class="jxr_keyword">new</strong> OperatorBoundedPriorityQueue&lt;Entry&lt;R&gt;&gt;(maxCount, <a href="../../../../com/github/davidmoten/rtree/Comparators.html">Comparators</a>
+<a class="jxr_linenumber" name="L531" href="#L531">531</a>                         .&lt;R&gt; ascendingDistance(r)));
+<a class="jxr_linenumber" name="L532" href="#L532">532</a>     }
+<a class="jxr_linenumber" name="L533" href="#L533">533</a> 
+<a class="jxr_linenumber" name="L534" href="#L534">534</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L535" href="#L535">535</a> <em class="jxr_javadoccomment">     * Returns all entries in the tree as an {@link Observable} sequence.</em>
+<a class="jxr_linenumber" name="L536" href="#L536">536</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L537" href="#L537">537</a> <em class="jxr_javadoccomment">     * @return all entries in the R-tree</em>
+<a class="jxr_linenumber" name="L538" href="#L538">538</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L539" href="#L539">539</a>     <strong class="jxr_keyword">public</strong> Observable&lt;Entry&lt;R&gt;&gt; entries() {
+<a class="jxr_linenumber" name="L540" href="#L540">540</a>         <strong class="jxr_keyword">return</strong> search(ALWAYS_TRUE);
+<a class="jxr_linenumber" name="L541" href="#L541">541</a>     }
+<a class="jxr_linenumber" name="L542" href="#L542">542</a> 
+<a class="jxr_linenumber" name="L543" href="#L543">543</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L544" href="#L544">544</a> <em class="jxr_javadoccomment">     * Returns a {@link Visualizer} for an image of given width and height and</em>
+<a class="jxr_linenumber" name="L545" href="#L545">545</a> <em class="jxr_javadoccomment">     * restricted to the given view of the coordinates. The points in the view</em>
+<a class="jxr_linenumber" name="L546" href="#L546">546</a> <em class="jxr_javadoccomment">     * are scaled to match the aspect ratio defined by the width and height.</em>
+<a class="jxr_linenumber" name="L547" href="#L547">547</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L548" href="#L548">548</a> <em class="jxr_javadoccomment">     * @param width</em>
+<a class="jxr_linenumber" name="L549" href="#L549">549</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
+<a class="jxr_linenumber" name="L550" href="#L550">550</a> <em class="jxr_javadoccomment">     * @param height</em>
+<a class="jxr_linenumber" name="L551" href="#L551">551</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
+<a class="jxr_linenumber" name="L552" href="#L552">552</a> <em class="jxr_javadoccomment">     * @param view</em>
+<a class="jxr_linenumber" name="L553" href="#L553">553</a> <em class="jxr_javadoccomment">     *            using the coordinate system of the entries</em>
+<a class="jxr_linenumber" name="L554" href="#L554">554</a> <em class="jxr_javadoccomment">     * @return visualizer</em>
+<a class="jxr_linenumber" name="L555" href="#L555">555</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L556" href="#L556">556</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height, <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> view) {
+<a class="jxr_linenumber" name="L557" href="#L557">557</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a>(<strong class="jxr_keyword">this</strong>, width, height, view);
+<a class="jxr_linenumber" name="L558" href="#L558">558</a>     }
+<a class="jxr_linenumber" name="L559" href="#L559">559</a> 
+<a class="jxr_linenumber" name="L560" href="#L560">560</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L561" href="#L561">561</a> <em class="jxr_javadoccomment">     * Returns a {@link Visualizer} for an image of given width and height and</em>
+<a class="jxr_linenumber" name="L562" href="#L562">562</a> <em class="jxr_javadoccomment">     * restricted to the the smallest view that fully contains the coordinates.</em>
+<a class="jxr_linenumber" name="L563" href="#L563">563</a> <em class="jxr_javadoccomment">     * The points in the view are scaled to match the aspect ratio defined by</em>
+<a class="jxr_linenumber" name="L564" href="#L564">564</a> <em class="jxr_javadoccomment">     * the width and height.</em>
+<a class="jxr_linenumber" name="L565" href="#L565">565</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L566" href="#L566">566</a> <em class="jxr_javadoccomment">     * @param width</em>
+<a class="jxr_linenumber" name="L567" href="#L567">567</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
+<a class="jxr_linenumber" name="L568" href="#L568">568</a> <em class="jxr_javadoccomment">     * @param height</em>
+<a class="jxr_linenumber" name="L569" href="#L569">569</a> <em class="jxr_javadoccomment">     *            of the image in pixels</em>
+<a class="jxr_linenumber" name="L570" href="#L570">570</a> <em class="jxr_javadoccomment">     * @return visualizer</em>
+<a class="jxr_linenumber" name="L571" href="#L571">571</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L572" href="#L572">572</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Visualizer.html">Visualizer</a> visualize(<strong class="jxr_keyword">int</strong> width, <strong class="jxr_keyword">int</strong> height) {
+<a class="jxr_linenumber" name="L573" href="#L573">573</a>         <strong class="jxr_keyword">return</strong> visualize(width, height, calculateMaxView(<strong class="jxr_keyword">this</strong>));
+<a class="jxr_linenumber" name="L574" href="#L574">574</a>     }
+<a class="jxr_linenumber" name="L575" href="#L575">575</a> 
+<a class="jxr_linenumber" name="L576" href="#L576">576</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../com/github/davidmoten/rtree/geometry/Rectangle.html">Rectangle</a> calculateMaxView(RTree&lt;R&gt; tree) {
+<a class="jxr_linenumber" name="L577" href="#L577">577</a>         <strong class="jxr_keyword">return</strong> tree
+<a class="jxr_linenumber" name="L578" href="#L578">578</a>                 .entries()
+<a class="jxr_linenumber" name="L579" href="#L579">579</a>                 .reduce(Optional.&lt;Rectangle&gt; absent(),
+<a class="jxr_linenumber" name="L580" href="#L580">580</a>                         <strong class="jxr_keyword">new</strong> Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;R&gt;, Optional&lt;Rectangle&gt;&gt;() {
+<a class="jxr_linenumber" name="L581" href="#L581">581</a> 
+<a class="jxr_linenumber" name="L582" href="#L582">582</a>                             @Override
+<a class="jxr_linenumber" name="L583" href="#L583">583</a>                             <strong class="jxr_keyword">public</strong> Optional&lt;Rectangle&gt; call(Optional&lt;Rectangle&gt; r, Entry&lt;R&gt; entry) {
+<a class="jxr_linenumber" name="L584" href="#L584">584</a>                                 <strong class="jxr_keyword">if</strong> (r.isPresent())
+<a class="jxr_linenumber" name="L585" href="#L585">585</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(r.get().add(entry.geometry().mbr()));
+<a class="jxr_linenumber" name="L586" href="#L586">586</a>                                 <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L587" href="#L587">587</a>                                     <strong class="jxr_keyword">return</strong> Optional.of(entry.geometry().mbr());
+<a class="jxr_linenumber" name="L588" href="#L588">588</a>                             }
+<a class="jxr_linenumber" name="L589" href="#L589">589</a>                         }).toBlocking().single().or(<strong class="jxr_keyword">new</strong> Rectangle(0, 0, 0, 0));
+<a class="jxr_linenumber" name="L590" href="#L590">590</a>     }
+<a class="jxr_linenumber" name="L591" href="#L591">591</a> 
+<a class="jxr_linenumber" name="L592" href="#L592">592</a>     Optional&lt;? <strong class="jxr_keyword">extends</strong> Node&lt;R&gt;&gt; root() {
+<a class="jxr_linenumber" name="L593" href="#L593">593</a>         <strong class="jxr_keyword">return</strong> root;
+<a class="jxr_linenumber" name="L594" href="#L594">594</a>     }
+<a class="jxr_linenumber" name="L595" href="#L595">595</a> 
+<a class="jxr_linenumber" name="L596" href="#L596">596</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L597" href="#L597">597</a> <em class="jxr_javadoccomment">     * Returns true if and only if the R-tree is empty of entries.</em>
+<a class="jxr_linenumber" name="L598" href="#L598">598</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L599" href="#L599">599</a> <em class="jxr_javadoccomment">     * @return is R-tree empty</em>
+<a class="jxr_linenumber" name="L600" href="#L600">600</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L601" href="#L601">601</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isEmpty() {
+<a class="jxr_linenumber" name="L602" href="#L602">602</a>         <strong class="jxr_keyword">return</strong> size == 0;
+<a class="jxr_linenumber" name="L603" href="#L603">603</a>     }
+<a class="jxr_linenumber" name="L604" href="#L604">604</a> 
+<a class="jxr_linenumber" name="L605" href="#L605">605</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L606" href="#L606">606</a> <em class="jxr_javadoccomment">     * Returns the number of entries in the RTree.</em>
+<a class="jxr_linenumber" name="L607" href="#L607">607</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L608" href="#L608">608</a> <em class="jxr_javadoccomment">     * @return the number of entries</em>
+<a class="jxr_linenumber" name="L609" href="#L609">609</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L610" href="#L610">610</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> size() {
+<a class="jxr_linenumber" name="L611" href="#L611">611</a>         <strong class="jxr_keyword">return</strong> size;
+<a class="jxr_linenumber" name="L612" href="#L612">612</a>     }
+<a class="jxr_linenumber" name="L613" href="#L613">613</a> 
+<a class="jxr_linenumber" name="L614" href="#L614">614</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
