@@ -45,7 +45,7 @@
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>  <em class="jxr_javadoccomment">     * Benchmarks show that this is the sweet spot for up to O(10,000) entries</em>
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>  <em class="jxr_javadoccomment">     * when using R*-tree heuristics.</em>
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> MAX_CHILDREN_DEFAULT_STAR = 10;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> MAX_CHILDREN_DEFAULT_STAR = 4;
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> size;
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>  
@@ -637,7 +637,42 @@
 <a class="jxr_linenumber" name="L629" href="#L629">629</a>         <strong class="jxr_keyword">return</strong> context;
 <a class="jxr_linenumber" name="L630" href="#L630">630</a>     }
 <a class="jxr_linenumber" name="L631" href="#L631">631</a> 
-<a class="jxr_linenumber" name="L632" href="#L632">632</a> }
+<a class="jxr_linenumber" name="L632" href="#L632">632</a>     <strong class="jxr_keyword">public</strong> String asString() {
+<a class="jxr_linenumber" name="L633" href="#L633">633</a>         <strong class="jxr_keyword">if</strong> (!root.isPresent())
+<a class="jxr_linenumber" name="L634" href="#L634">634</a>             <strong class="jxr_keyword">return</strong> <span class="jxr_string">""</span>;
+<a class="jxr_linenumber" name="L635" href="#L635">635</a>         <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L636" href="#L636">636</a>             <strong class="jxr_keyword">return</strong> asString(root.get(),<span class="jxr_string">""</span>);
+<a class="jxr_linenumber" name="L637" href="#L637">637</a>     }
+<a class="jxr_linenumber" name="L638" href="#L638">638</a> 
+<a class="jxr_linenumber" name="L639" href="#L639">639</a>     <strong class="jxr_keyword">private</strong> String asString(Node&lt;R&gt; node, String margin) {
+<a class="jxr_linenumber" name="L640" href="#L640">640</a>         <strong class="jxr_keyword">final</strong> String marginIncrement = <span class="jxr_string">"  "</span>;
+<a class="jxr_linenumber" name="L641" href="#L641">641</a>         StringBuilder s = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L642" href="#L642">642</a>         <strong class="jxr_keyword">if</strong> (node instanceof NonLeaf) {
+<a class="jxr_linenumber" name="L643" href="#L643">643</a>             s.append(margin);
+<a class="jxr_linenumber" name="L644" href="#L644">644</a>             s.append(<span class="jxr_string">"mbr="</span>+node.geometry());
+<a class="jxr_linenumber" name="L645" href="#L645">645</a>             s.append('\n');
+<a class="jxr_linenumber" name="L646" href="#L646">646</a>             NonLeaf&lt;R&gt; n = (NonLeaf&lt;R&gt;) node;
+<a class="jxr_linenumber" name="L647" href="#L647">647</a>             <strong class="jxr_keyword">for</strong> (Node&lt;R&gt; child: n.children()) {
+<a class="jxr_linenumber" name="L648" href="#L648">648</a>                 s.append(asString(child, margin + marginIncrement));
+<a class="jxr_linenumber" name="L649" href="#L649">649</a>             }
+<a class="jxr_linenumber" name="L650" href="#L650">650</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L651" href="#L651">651</a>             Leaf&lt;R&gt; leaf = (Leaf&lt;R&gt;) node;
+<a class="jxr_linenumber" name="L652" href="#L652">652</a>             s.append(margin);
+<a class="jxr_linenumber" name="L653" href="#L653">653</a>             s.append(<span class="jxr_string">"mbr="</span>);
+<a class="jxr_linenumber" name="L654" href="#L654">654</a>             s.append(leaf.geometry());
+<a class="jxr_linenumber" name="L655" href="#L655">655</a>             s.append('\n');
+<a class="jxr_linenumber" name="L656" href="#L656">656</a>             <strong class="jxr_keyword">for</strong> (Entry&lt;R&gt; entry:leaf.entries()) {
+<a class="jxr_linenumber" name="L657" href="#L657">657</a>                 s.append(margin);
+<a class="jxr_linenumber" name="L658" href="#L658">658</a>                 s.append(marginIncrement);
+<a class="jxr_linenumber" name="L659" href="#L659">659</a>                 s.append(<span class="jxr_string">"entry="</span>);
+<a class="jxr_linenumber" name="L660" href="#L660">660</a>                 s.append(entry);
+<a class="jxr_linenumber" name="L661" href="#L661">661</a>                 s.append('\n');
+<a class="jxr_linenumber" name="L662" href="#L662">662</a>             }
+<a class="jxr_linenumber" name="L663" href="#L663">663</a>         }
+<a class="jxr_linenumber" name="L664" href="#L664">664</a>         <strong class="jxr_keyword">return</strong> s.toString();
+<a class="jxr_linenumber" name="L665" href="#L665">665</a>     }
+<a class="jxr_linenumber" name="L666" href="#L666">666</a> 
+<a class="jxr_linenumber" name="L667" href="#L667">667</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
