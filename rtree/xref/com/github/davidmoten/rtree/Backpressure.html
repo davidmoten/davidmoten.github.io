@@ -23,38 +23,38 @@
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>          <em class="jxr_comment">// prevent instantiation</em>
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>      }
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">static</strong> &lt;T&gt; ImmutableStack&lt;NodePosition&lt;T&gt;&gt; search(
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; ImmutableStack&lt;NodePosition&lt;T, S&gt;&gt; search(
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>              <strong class="jxr_keyword">final</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> Geometry, Boolean&gt; condition,
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>              <strong class="jxr_keyword">final</strong> Subscriber&lt;? <strong class="jxr_keyword">super</strong> Entry&lt;T&gt;&gt; subscriber, ImmutableStack&lt;NodePosition&lt;T&gt;&gt; stack,
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>              <strong class="jxr_keyword">long</strong> request) {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>              <strong class="jxr_keyword">final</strong> Subscriber&lt;? <strong class="jxr_keyword">super</strong> Entry&lt;T, S&gt;&gt; subscriber,
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>              ImmutableStack&lt;NodePosition&lt;T, S&gt;&gt; stack, <strong class="jxr_keyword">long</strong> request) {
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>          <strong class="jxr_keyword">if</strong> (stack.isEmpty())
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>              <strong class="jxr_keyword">return</strong> stack;
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>          <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>              NodePosition&lt;T&gt; np = stack.peek();
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>              NodePosition&lt;T, S&gt; np = stack.peek();
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>              <strong class="jxr_keyword">if</strong> (subscriber.isUnsubscribed())
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>                  <strong class="jxr_keyword">return</strong> ImmutableStack.empty();
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>              <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (request == 0)
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>                  <strong class="jxr_keyword">return</strong> stack;
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>              <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (np.position() == np.node().count()) {
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>                  <em class="jxr_comment">// handle after last position in node</em>
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  ImmutableStack&lt;NodePosition&lt;T&gt;&gt; stack2 = stack.pop();
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  ImmutableStack&lt;NodePosition&lt;T, S&gt;&gt; stack2 = stack.pop();
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>                  <strong class="jxr_keyword">if</strong> (stack2.isEmpty())
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>                      <strong class="jxr_keyword">return</strong> stack2;
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>                  <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>                      NodePosition&lt;T&gt; previous = stack2.peek();
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>                      NodePosition&lt;T, S&gt; previous = stack2.peek();
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>                      stack = stack2.pop().push(previous.nextPosition());
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>                  }
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>              } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (np.node() instanceof NonLeaf) {
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>                  <em class="jxr_comment">// handle non-leaf</em>
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>                  Node&lt;T&gt; child = ((NonLeaf&lt;T&gt;) np.node()).children().get(np.position());
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>                  Node&lt;T, S&gt; child = ((NonLeaf&lt;T, S&gt;) np.node()).children().get(np.position());
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>                  <strong class="jxr_keyword">if</strong> (condition.call(child.geometry())) {
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>                      stack = stack.push(<strong class="jxr_keyword">new</strong> NodePosition&lt;T&gt;(child, 0));
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>                      stack = stack.push(<strong class="jxr_keyword">new</strong> NodePosition&lt;T, S&gt;(child, 0));
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>                  } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>                      stack = stack.pop().push(np.nextPosition());
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>                  }
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>              } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>                  <em class="jxr_comment">// handle leaf</em>
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>                  Entry&lt;T&gt; entry = ((Leaf&lt;T&gt;) np.node()).entries().get(np.position());
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>                  Entry&lt;T, S&gt; entry = ((Leaf&lt;T, S&gt;) np.node()).entries().get(np.position());
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>                  <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> nextRequest;
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>                  <strong class="jxr_keyword">if</strong> (condition.call(entry.geometry())) {
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>                      subscriber.onNext(entry);
