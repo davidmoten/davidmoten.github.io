@@ -24,9 +24,9 @@
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_javadoccomment">     * Constructor.</em>
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_javadoccomment">     * </em>
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_javadoccomment">     * @param minChildren</em>
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment">     *            minimum number of children per node</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment">     *            minimum number of children per node (at least 1)</em>
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment">     * @param maxChildren</em>
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment">     *            max number of children per node</em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment">     *            max number of children per node (minimum is 3)</em>
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment">     * @param selector</em>
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment">     *            algorithm to select search path</em>
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>  <em class="jxr_javadoccomment">     * @param splitter</em>
@@ -34,32 +34,33 @@
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>  <em class="jxr_javadoccomment">     */</em>
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Context.html">Context</a>(<strong class="jxr_keyword">int</strong> minChildren, <strong class="jxr_keyword">int</strong> maxChildren, <a href="../../../../com/github/davidmoten/rtree/Selector.html">Selector</a> selector, <a href="../../../../com/github/davidmoten/rtree/Splitter.html">Splitter</a> splitter) {
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>          Preconditions.checkNotNull(splitter);
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>          Preconditions.checkArgument(maxChildren &gt; 2);
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>          Preconditions.checkArgument(minChildren &gt;= 1);
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>          Preconditions.checkArgument(minChildren &lt; maxChildren);
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">this</strong>.selector = selector;
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">this</strong>.maxChildren = maxChildren;
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">this</strong>.minChildren = minChildren;
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <strong class="jxr_keyword">this</strong>.splitter = splitter;
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>      }
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> maxChildren() {
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <strong class="jxr_keyword">return</strong> maxChildren;
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>      }
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> minChildren() {
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">return</strong> minChildren;
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>      }
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>  
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Splitter.html">Splitter</a> splitter() {
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <strong class="jxr_keyword">return</strong> splitter;
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>      }
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>  
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Selector.html">Selector</a> selector() {
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>          <strong class="jxr_keyword">return</strong> selector;
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>      }
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>  
-<a class="jxr_linenumber" name="L54" href="#L54">54</a>  }
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>          Preconditions.checkNotNull(selector);
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          Preconditions.checkArgument(maxChildren &gt; 2);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          Preconditions.checkArgument(minChildren &gt;= 1);
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          Preconditions.checkArgument(minChildren &lt; maxChildren);
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">this</strong>.selector = selector;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">this</strong>.maxChildren = maxChildren;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <strong class="jxr_keyword">this</strong>.minChildren = minChildren;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          <strong class="jxr_keyword">this</strong>.splitter = splitter;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      }
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> maxChildren() {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          <strong class="jxr_keyword">return</strong> maxChildren;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>      }
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> minChildren() {
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">return</strong> minChildren;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      }
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Splitter.html">Splitter</a> splitter() {
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          <strong class="jxr_keyword">return</strong> splitter;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>      }
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/Selector.html">Selector</a> selector() {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <strong class="jxr_keyword">return</strong> selector;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2014. All rights reserved.</div>
