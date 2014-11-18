@@ -54,7 +54,7 @@
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>  		<strong class="jxr_keyword">if</strong> (closed) {
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>  			<em class="jxr_comment">// if this actor is marked as closed then bounce all signal messages</em>
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>  			<em class="jxr_comment">// back to sender</em>
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>  			getSender().tell(signal);
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  			getSender().tell(signal, getSelf());
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  		} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (emf != <strong class="jxr_keyword">null</strong>) {
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  			<em class="jxr_comment">// otherwise perform the event on the entity after it has been</em>
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>  			<em class="jxr_comment">// refreshed within the scope of the current entity manager</em>
@@ -97,7 +97,7 @@
 <a class="jxr_linenumber" name="L89" href="#L89">89</a>  					em.close();
 <a class="jxr_linenumber" name="L90" href="#L90">90</a>  				listener.failure(signal, e, <strong class="jxr_keyword">this</strong>);
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>  			} <strong class="jxr_keyword">finally</strong> {
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>  				getSender().tell(<strong class="jxr_keyword">new</strong> CloseEntityActor(signal.getEntity()));
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  				getSender().tell(<strong class="jxr_keyword">new</strong> CloseEntityActor(signal.getEntity()),getSelf());
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>  			}
 <a class="jxr_linenumber" name="L94" href="#L94">94</a>  		}
 <a class="jxr_linenumber" name="L95" href="#L95">95</a>  	}
