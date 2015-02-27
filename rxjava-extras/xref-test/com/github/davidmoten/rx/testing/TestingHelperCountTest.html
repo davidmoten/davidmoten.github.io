@@ -13,46 +13,43 @@
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> rx.Observable;
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> rx.functions.Func1;
 <a class="jxr_linenumber" name="L7" href="#L7">7</a>   
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx.testing.TestingHelper;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/testing/TestingHelperCountTest.html">TestingHelperCountTest</a> <strong class="jxr_keyword">extends</strong> TestCase {
 <a class="jxr_linenumber" name="L9" href="#L9">9</a>   
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rx/testing/TestingHelperCountTest.html">TestingHelperCountTest</a> <strong class="jxr_keyword">extends</strong> TestCase {
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> TestSuite suite() {
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>          <strong class="jxr_keyword">return</strong> TestingHelper
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>                  .function(COUNT)
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>                  <em class="jxr_comment">// test empty</em>
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>                  .name(<span class="jxr_string">"testCountOfEmptyReturnsZero"</span>).fromEmpty()
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>                  .expect(0)
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>                  <em class="jxr_comment">// test error</em>
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>                  .name(<span class="jxr_string">"testCountErrorReturnsError"</span>).fromError()
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> TestSuite suite() {
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>          <strong class="jxr_keyword">return</strong> TestingHelper
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>                  .function(COUNT)
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>                  <em class="jxr_comment">// test empty</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>                  .name(<span class="jxr_string">"testCountOfEmptyReturnsZero"</span>).fromEmpty()
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>                  .expect(0)
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>                  <em class="jxr_comment">// test error</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>                  .name(<span class="jxr_string">"testCountErrorReturnsError"</span>).fromError()
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>                  .expectError()
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>                  <em class="jxr_comment">// test error after some emission</em>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>                  .name(<span class="jxr_string">"testCountErrorAfterTwoEmissionsReturnsError"</span>).fromErrorAfter(5, 6)
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>                  .expectError()
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>                  <em class="jxr_comment">// test error after some emission</em>
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>                  .name(<span class="jxr_string">"testCountErrorAfterTwoEmissionsReturnsError"</span>).fromErrorAfter(5, 6)
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>                  .expectError()
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>                  <em class="jxr_comment">// test non-empty count</em>
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>                  .name(<span class="jxr_string">"testCountOfTwoReturnsTwo"</span>).from(5, 6).expect(2)
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>                  <em class="jxr_comment">// test single input</em>
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>                  .name(<span class="jxr_string">"testCountOfOneReturnsOne"</span>).from(5).expect(1)
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>                  <em class="jxr_comment">// count many</em>
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>                  .name(<span class="jxr_string">"testCountOfManyDoesNotGiveStackOverflow"</span>).from(Observable.range(1, 1000000))
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>                  .expect(1000000)
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  <em class="jxr_comment">// get test suites</em>
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>                  .testSuite(TestingHelperCountTest.<strong class="jxr_keyword">class</strong>);
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>      }
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>  
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDummy() {
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>          <em class="jxr_comment">// just here to fool eclipse</em>
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>      }
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>  
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Func1&lt;Observable&lt;Integer&gt;, Observable&lt;Integer&gt;&gt; COUNT = <strong class="jxr_keyword">new</strong> Func1&lt;Observable&lt;Integer&gt;, Observable&lt;Integer&gt;&gt;() {
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>          @Override
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">public</strong> Observable&lt;Integer&gt; call(Observable&lt;Integer&gt; o) {
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>              <strong class="jxr_keyword">return</strong> o.count();
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>          }
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>      };
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>  }
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>                  <em class="jxr_comment">// test non-empty count</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>                  .name(<span class="jxr_string">"testCountOfTwoReturnsTwo"</span>).from(5, 6).expect(2)
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>                  <em class="jxr_comment">// test single input</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>                  .name(<span class="jxr_string">"testCountOfOneReturnsOne"</span>).from(5).expect(1)
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>                  <em class="jxr_comment">// count many</em>
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>                  .name(<span class="jxr_string">"testCountOfManyDoesNotGiveStackOverflow"</span>).from(Observable.range(1, 1000000))
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>                  .expect(1000000)
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>                  <em class="jxr_comment">// get test suites</em>
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>                  .testSuite(TestingHelperCountTest.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>      }
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDummy() {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <em class="jxr_comment">// just here to fool eclipse</em>
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>      }
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Func1&lt;Observable&lt;Integer&gt;, Observable&lt;Integer&gt;&gt; COUNT = <strong class="jxr_keyword">new</strong> Func1&lt;Observable&lt;Integer&gt;, Observable&lt;Integer&gt;&gt;() {
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          @Override
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <strong class="jxr_keyword">public</strong> Observable&lt;Integer&gt; call(Observable&lt;Integer&gt; o) {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>              <strong class="jxr_keyword">return</strong> o.count();
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>          }
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>      };
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2015. All rights reserved.</div>
