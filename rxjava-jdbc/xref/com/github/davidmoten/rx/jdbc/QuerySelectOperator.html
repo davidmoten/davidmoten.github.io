@@ -8,7 +8,7 @@
 <div id="overview"><a href="../../../../../../apidocs/com/github/davidmoten/rx/jdbc/QuerySelectOperator.html">View Javadoc</a></div><pre>
 <a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.rx.jdbc;
 <a class="jxr_linenumber" name="L2" href="#L2">2</a>   
-<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.github.davidmoten.rx.OperationToOperator.toOperator;
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.github.davidmoten.rx.OperationOperator.toOperator;
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.sql.ResultSet;
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   
@@ -35,7 +35,7 @@
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>  <em class="jxr_javadoccomment">     * @param function</em>
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>  <em class="jxr_javadoccomment">     * @param operatorType</em>
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>      <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectOperator.html">QuerySelectOperator</a>(<strong class="jxr_keyword">final</strong> QuerySelect.Builder builder, <strong class="jxr_keyword">final</strong> Func1&lt;ResultSet, T&gt; function,
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>      <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectOperator.html">QuerySelectOperator</a>(<strong class="jxr_keyword">final</strong> QuerySelect.Builder builder, <strong class="jxr_keyword">final</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, T&gt; function,
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>              <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/OperatorType.html">OperatorType</a> operatorType) {
 <a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">operator</strong> = toOperator(<strong class="jxr_keyword">new</strong> ApplyQuerySelect&lt;R,T&gt;(builder, function, operatorType));
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>      }
@@ -48,10 +48,10 @@
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> ApplyQuerySelect&lt;R, T&gt; <strong class="jxr_keyword">implements</strong> Func1&lt;Observable&lt;R&gt;, Observable&lt;T&gt;&gt; {
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QueryUpdate.html">Builder</a> builder;
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">private</strong> Func1&lt;ResultSet, T&gt; function;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">private</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, T&gt; function;
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/OperatorType.html">OperatorType</a> operatorType;
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>  
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>          <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectOperator.html">ApplyQuerySelect</a>(QuerySelect.Builder builder, Func1&lt;ResultSet, T&gt; function,
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>          <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectOperator.html">ApplyQuerySelect</a>(QuerySelect.Builder builder, Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, T&gt; function,
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>                  <a href="../../../../../com/github/davidmoten/rx/jdbc/OperatorType.html">OperatorType</a> operatorType) {
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>              <strong class="jxr_keyword">this</strong>.builder = builder;
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>              <strong class="jxr_keyword">this</strong>.function = function;
@@ -82,6 +82,6 @@
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2014. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2014&#x2013;2015. All rights reserved.</div>
 </body>
 </html>

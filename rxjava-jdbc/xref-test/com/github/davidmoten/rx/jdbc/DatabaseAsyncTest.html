@@ -25,7 +25,7 @@
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDependsUsingAsynchronousQueriesWaitsForFirstByDelayingCalculation() {
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>          Database db = db().asynchronous();
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>          Observable&lt;Integer&gt; insert = db.update(<span class="jxr_string">"insert into person(name,score) values(?,?)"</span>).parameters(<span class="jxr_string">"JOHN"</span>, 45)
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>                  .count().zip(Observable.interval(100, TimeUnit.MILLISECONDS), <strong class="jxr_keyword">new</strong> Func2&lt;Integer, Long, Integer&gt;() {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>                  .count().zipWith(Observable.interval(100, TimeUnit.MILLISECONDS), <strong class="jxr_keyword">new</strong> Func2&lt;Integer, Long, Integer&gt;() {
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>                      @Override
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>                      <strong class="jxr_keyword">public</strong> Integer call(Integer t1, Long t2) {
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>                          <strong class="jxr_keyword">return</strong> t1;
@@ -39,6 +39,6 @@
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2014. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2014&#x2013;2015. All rights reserved.</div>
 </body>
 </html>

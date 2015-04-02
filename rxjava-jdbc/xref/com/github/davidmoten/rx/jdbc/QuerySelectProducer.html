@@ -25,7 +25,7 @@
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(QuerySelectProducer.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, T&gt; function;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, ? <strong class="jxr_keyword">extends</strong> T&gt; function;
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; subscriber;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Connection con;
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> PreparedStatement ps;
@@ -34,7 +34,7 @@
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>  
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AtomicLong requested = <strong class="jxr_keyword">new</strong> AtomicLong(0);
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>  
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectProducer.html">QuerySelectProducer</a>(Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, T&gt; function, Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; subscriber,
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <a href="../../../../../com/github/davidmoten/rx/jdbc/QuerySelectProducer.html">QuerySelectProducer</a>(Func1&lt;? <strong class="jxr_keyword">super</strong> ResultSet, ? <strong class="jxr_keyword">extends</strong> T&gt; function, Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; subscriber,
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>              Connection con, PreparedStatement ps, ResultSet rs) {
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">this</strong>.function = function;
 <a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">this</strong>.subscriber = subscriber;
@@ -74,18 +74,18 @@
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>          <em class="jxr_comment">// this algorithm copied generally from OnSubscribeFromIterable.java</em>
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">long</strong> previousCount = requested.getAndAdd(n);
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>          <strong class="jxr_keyword">if</strong> (previousCount == 0) {
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>              log.info(<span class="jxr_string">"getting some "</span> + n);
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>              <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>                  <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L72" href="#L72">72</a>                      <strong class="jxr_keyword">long</strong> r = requested.get();
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>                      <strong class="jxr_keyword">long</strong> numToEmit = r;
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>  
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>                      <strong class="jxr_keyword">while</strong> (keepGoing &amp;&amp; --numToEmit &gt;= 0) {
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>                          processRow(subscriber);
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>                      }
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>                      <strong class="jxr_keyword">if</strong> (keepGoing) {
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>                          <strong class="jxr_keyword">if</strong> (requested.addAndGet(-r) == 0)
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>                              <strong class="jxr_keyword">return</strong>;
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>              <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>                  <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>                      <strong class="jxr_keyword">long</strong> r = requested.get();
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>                      <strong class="jxr_keyword">long</strong> numToEmit = r;
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                      <strong class="jxr_keyword">while</strong> (keepGoing &amp;&amp; --numToEmit &gt;= 0) {
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>                          processRow(subscriber);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>                      }
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                      <strong class="jxr_keyword">if</strong> (keepGoing) {
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>                          <strong class="jxr_keyword">if</strong> (requested.addAndGet(-r) == 0) {
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>                              <strong class="jxr_keyword">return</strong>;
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>                          }
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>                      } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L82" href="#L82">82</a>                          closeQuietly();
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>                          complete(subscriber);
@@ -182,6 +182,6 @@
 <a class="jxr_linenumber" name="L174" href="#L174">174</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2014. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2014&#x2013;2015. All rights reserved.</div>
 </body>
 </html>
