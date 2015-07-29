@@ -141,7 +141,18 @@
 <a class="jxr_linenumber" name="L133" href="#L133">133</a>         ts.assertValues(1, 2, 3);
 <a class="jxr_linenumber" name="L134" href="#L134">134</a>         ts.assertError(RuntimeException.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L135" href="#L135">135</a>     }
-<a class="jxr_linenumber" name="L136" href="#L136">136</a> }
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>     @Test
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBackpressureOneByOne() {
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         TestSubscriber&lt;Integer&gt; ts = <strong class="jxr_keyword">new</strong> TestSubscriber&lt;Integer&gt;(0);
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>         Observable.just(1, 2, 3).compose(Transformers.&lt;Integer&gt; bufferEmissions()).subscribe(ts);
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>         ts.assertNoValues();
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         ts.requestMore(1);
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         ts.assertValues(1);
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         ts.requestMore(1);
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>         ts.assertValues(1, 2);
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>     }
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2015. All rights reserved.</div>
