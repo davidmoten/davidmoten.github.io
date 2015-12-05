@@ -11,10 +11,10 @@
 <a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.io.IOException;
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.io.Reader;
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> rx.Subscriber;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> rx.observables.AbstractOnSubscribe;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> rx.Observer;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> rx.observables.SyncOnSubscribe;
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../../com/github/davidmoten/rx/internal/operators/OnSubscribeReader.html">OnSubscribeReader</a> <strong class="jxr_keyword">extends</strong> AbstractOnSubscribe&lt;String, Reader&gt; {
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../../com/github/davidmoten/rx/internal/operators/OnSubscribeReader.html">OnSubscribeReader</a> <strong class="jxr_keyword">extends</strong> SyncOnSubscribe&lt;Reader,String&gt; {
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>  
 <a class="jxr_linenumber" name="L11" href="#L11">11</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Reader reader;
 <a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> size;
@@ -25,27 +25,25 @@
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>      }
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>      @Override
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">protected</strong> Reader onSubscribe(Subscriber&lt;? <strong class="jxr_keyword">super</strong> String&gt; subscriber) {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">protected</strong> Reader generateState() {
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>          <strong class="jxr_keyword">return</strong> reader;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>      }
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>      @Override
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> next(
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>              rx.observables.AbstractOnSubscribe.SubscriptionState&lt;String, Reader&gt; state) {
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>          Reader reader = state.state();
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>          <strong class="jxr_keyword">char</strong>[] buffer = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">char</strong>[size];
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>          <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>              <strong class="jxr_keyword">int</strong> count = reader.read(buffer);
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>              <strong class="jxr_keyword">if</strong> (count == -1)
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>                  state.onCompleted();
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>              <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>                  state.onNext(String.valueOf(buffer, 0, count));
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>          } <strong class="jxr_keyword">catch</strong> (IOException e) {
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>              state.onError(e);
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>          }
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>      }
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>  }
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">protected</strong> Reader next(Reader reader, Observer&lt;? <strong class="jxr_keyword">super</strong> String&gt; observer) {
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>          <strong class="jxr_keyword">char</strong>[] buffer = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">char</strong>[size];
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>              <strong class="jxr_keyword">int</strong> count = reader.read(buffer);
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>              <strong class="jxr_keyword">if</strong> (count == -1)
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>                  observer.onCompleted();
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>              <strong class="jxr_keyword">else</strong>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  observer.onNext(String.valueOf(buffer, 0, count));
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          } <strong class="jxr_keyword">catch</strong> (IOException e) {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>              observer.onError(e);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          }
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          <strong class="jxr_keyword">return</strong> reader;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      }
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2015. All rights reserved.</div>
