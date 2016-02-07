@@ -21,16 +21,16 @@
 <a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> java.io.ObjectOutputStream;
 <a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> java.io.Serializable;
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>  
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> rx.Observable;
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> rx.Subscriber;
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> rx.functions.Action1;
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func0;
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> rx.observables.AbstractOnSubscribe;
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>  
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.Kryo;
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.io.Input;
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.io.Output;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.Kryo;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.io.Input;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> com.esotericsoftware.kryo.io.Output;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> rx.Observable;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> rx.Observer;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> rx.functions.Action1;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func0;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> rx.observables.SyncOnSubscribe;
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>  
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>  <em class="jxr_javadoccomment">/**</em>
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>  <em class="jxr_javadoccomment"> * Utility class for writing Observable streams to ObjectOutputStreams and</em>
@@ -52,27 +52,27 @@
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>  <em class="jxr_javadoccomment">     *         as an {@link Observable}.</em>
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>  <em class="jxr_javadoccomment">     */</em>
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> &lt;T <strong class="jxr_keyword">extends</strong> Serializable&gt; Observable&lt;T&gt; read(<strong class="jxr_keyword">final</strong> ObjectInputStream ois) {
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> AbstractOnSubscribe&lt;T, ObjectInputStream&gt;() {
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> SyncOnSubscribe&lt;ObjectInputStream,T&gt;() {
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>  
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>              @Override
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>              <strong class="jxr_keyword">protected</strong> ObjectInputStream onSubscribe(Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; subscriber) {
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>                  <strong class="jxr_keyword">return</strong> ois;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>              <strong class="jxr_keyword">protected</strong> ObjectInputStream generateState() {
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>                 <strong class="jxr_keyword">return</strong> ois;
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>              }
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>  
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>              @Override
-<a class="jxr_linenumber" name="L55" href="#L55">55</a>              <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> next(SubscriptionState&lt;T, ObjectInputStream&gt; state) {
-<a class="jxr_linenumber" name="L56" href="#L56">56</a>                  ObjectInputStream ois = state.state();
-<a class="jxr_linenumber" name="L57" href="#L57">57</a>                  <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>                      @SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
-<a class="jxr_linenumber" name="L59" href="#L59">59</a>                      T t = (T) ois.readObject();
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>                      state.onNext(t);
-<a class="jxr_linenumber" name="L61" href="#L61">61</a>                  } <strong class="jxr_keyword">catch</strong> (EOFException e) {
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>                      state.onCompleted();
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>                  } <strong class="jxr_keyword">catch</strong> (ClassNotFoundException e) {
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>                      state.onError(e);
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>                  } <strong class="jxr_keyword">catch</strong> (IOException e) {
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>                      state.onError(e);
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>                  }
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>              <strong class="jxr_keyword">protected</strong> ObjectInputStream next(ObjectInputStream ois, Observer&lt;? <strong class="jxr_keyword">super</strong> T&gt; observer) {
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>                  <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>                      @SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>                      T t = (T) ois.readObject();
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>                      observer.onNext(t);
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>                  } <strong class="jxr_keyword">catch</strong> (EOFException e) {
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>                      observer.onCompleted();
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>                  } <strong class="jxr_keyword">catch</strong> (ClassNotFoundException e) {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>                      observer.onError(e);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>                  } <strong class="jxr_keyword">catch</strong> (IOException e) {
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>                      observer.onError(e);
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>                  }
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>                  <strong class="jxr_keyword">return</strong> ois;
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>              }
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>          });
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>      }
@@ -357,22 +357,22 @@
 <a class="jxr_linenumber" name="L349" href="#L349">349</a> 
 <a class="jxr_linenumber" name="L350" href="#L350">350</a>         <strong class="jxr_keyword">public</strong> &lt;T&gt; Observable&lt;T&gt; read(<strong class="jxr_keyword">final</strong> Class&lt;T&gt; cls, <strong class="jxr_keyword">final</strong> Input input, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> bufferSize) {
 <a class="jxr_linenumber" name="L351" href="#L351">351</a> 
-<a class="jxr_linenumber" name="L352" href="#L352">352</a>             <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> AbstractOnSubscribe&lt;T, Input&gt;() {
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>             <strong class="jxr_keyword">return</strong> Observable.create(<strong class="jxr_keyword">new</strong> SyncOnSubscribe&lt;Input,T&gt;() {
 <a class="jxr_linenumber" name="L353" href="#L353">353</a> 
 <a class="jxr_linenumber" name="L354" href="#L354">354</a>                 @Override
-<a class="jxr_linenumber" name="L355" href="#L355">355</a>                 <strong class="jxr_keyword">protected</strong> Input onSubscribe(Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; subscriber) {
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>                 <strong class="jxr_keyword">protected</strong> Input generateState() {
 <a class="jxr_linenumber" name="L356" href="#L356">356</a>                     <strong class="jxr_keyword">return</strong> input;
 <a class="jxr_linenumber" name="L357" href="#L357">357</a>                 }
 <a class="jxr_linenumber" name="L358" href="#L358">358</a> 
 <a class="jxr_linenumber" name="L359" href="#L359">359</a>                 @Override
-<a class="jxr_linenumber" name="L360" href="#L360">360</a>                 <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> next(SubscriptionState&lt;T, Input&gt; state) {
-<a class="jxr_linenumber" name="L361" href="#L361">361</a>                     Input input = state.state();
-<a class="jxr_linenumber" name="L362" href="#L362">362</a>                     <strong class="jxr_keyword">if</strong> (input.eof()) {
-<a class="jxr_linenumber" name="L363" href="#L363">363</a>                         state.onCompleted();
-<a class="jxr_linenumber" name="L364" href="#L364">364</a>                     } <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L365" href="#L365">365</a>                         T t = kryo.readObject(input, cls);
-<a class="jxr_linenumber" name="L366" href="#L366">366</a>                         state.onNext(t);
-<a class="jxr_linenumber" name="L367" href="#L367">367</a>                     }
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>                 <strong class="jxr_keyword">protected</strong> Input next(Input arg0, Observer&lt;? <strong class="jxr_keyword">super</strong> T&gt; observer) {
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>                     <strong class="jxr_keyword">if</strong> (input.eof()) {
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>                         observer.onCompleted();
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>                         T t = kryo.readObject(input, cls);
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>                         observer.onNext(t);
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>                     }
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>                     <strong class="jxr_keyword">return</strong> input;
 <a class="jxr_linenumber" name="L368" href="#L368">368</a>                 }
 <a class="jxr_linenumber" name="L369" href="#L369">369</a>             });
 <a class="jxr_linenumber" name="L370" href="#L370">370</a>         }
