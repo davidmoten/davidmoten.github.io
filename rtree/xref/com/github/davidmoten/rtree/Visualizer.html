@@ -51,7 +51,7 @@
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">if</strong> (node instanceof Leaf)
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>              <strong class="jxr_keyword">return</strong> depth + 1;
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">else</strong>
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">return</strong> calculateDepth(((NonLeaf&lt;R, S&gt;) node).children().get(0), depth + 1);
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">return</strong> calculateDepth(((NonLeaf&lt;R, S&gt;) node).child(0), depth + 1);
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>      }
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>  
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>      <strong class="jxr_keyword">public</strong> BufferedImage createImage() {
@@ -92,8 +92,8 @@
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>              }
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>          } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>              <strong class="jxr_keyword">final</strong> NonLeaf&lt;T, S&gt; n = (NonLeaf&lt;T, S&gt;) node;
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>              <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">final</strong> Node&lt;T, S&gt; child : n.children()) {
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  list.addAll(getRectangleDepths(child, depth + 1));
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>              <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; n.count(); i++) {
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  list.addAll(getRectangleDepths(n.child(i), depth + 1));
 <a class="jxr_linenumber" name="L89" href="#L89">89</a>              }
 <a class="jxr_linenumber" name="L90" href="#L90">90</a>          }
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>          <strong class="jxr_keyword">return</strong> list;
