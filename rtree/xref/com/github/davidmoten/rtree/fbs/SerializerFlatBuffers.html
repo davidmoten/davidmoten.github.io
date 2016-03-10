@@ -44,12 +44,12 @@
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>  
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> FactoryFlatBuffers&lt;T, S&gt; factory;
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>  
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rtree/fbs/SerializerFlatBuffers.html">SerializerFlatBuffers</a>(Func1&lt;T, byte[]&gt; serializer, Func1&lt;byte[], T&gt; deserializer) {
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rtree/fbs/SerializerFlatBuffers.html">SerializerFlatBuffers</a>(Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer, Func1&lt;byte[],? <strong class="jxr_keyword">extends</strong>  T&gt; deserializer) {
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>          <strong class="jxr_keyword">this</strong>.factory = <strong class="jxr_keyword">new</strong> FactoryFlatBuffers&lt;T, S&gt;(serializer, deserializer);
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>      }
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>  
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; Serializer&lt;T, S&gt; create(Func1&lt;T, byte[]&gt; serializer,
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>              Func1&lt;byte[], T&gt; deserializer) {
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; Serializer&lt;T, S&gt; create(Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer,
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>              Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer) {
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> SerializerFlatBuffers&lt;T, S&gt;(serializer, deserializer);
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>      }
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>  
@@ -78,7 +78,7 @@
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>      }
 <a class="jxr_linenumber" name="L71" href="#L71">71</a>  
 <a class="jxr_linenumber" name="L72" href="#L72">72</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; <strong class="jxr_keyword">int</strong> addNode(Node&lt;T, S&gt; node, FlatBufferBuilder builder,
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>              Func1&lt;T, byte[]&gt; serializer) {
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>              Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer) {
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>          <strong class="jxr_keyword">if</strong> (node instanceof Leaf) {
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>              Leaf&lt;T, S&gt; leaf = (Leaf&lt;T, S&gt;) node;
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>              <strong class="jxr_keyword">return</strong> FlatBuffersHelper.addEntries(leaf.entries(), builder, serializer);
@@ -127,7 +127,7 @@
 <a class="jxr_linenumber" name="L119" href="#L119">119</a>     }
 <a class="jxr_linenumber" name="L120" href="#L120">120</a> 
 <a class="jxr_linenumber" name="L121" href="#L121">121</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; Node&lt;T, S&gt; toNodeDefault(<a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Node_.html">Node_</a> node,
-<a class="jxr_linenumber" name="L122" href="#L122">122</a>             Context&lt;T, S&gt; context, Func1&lt;byte[], T&gt; deserializer) {
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>             Context&lt;T, S&gt; context, Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer) {
 <a class="jxr_linenumber" name="L123" href="#L123">123</a>         <strong class="jxr_keyword">if</strong> (node.childrenLength() &gt; 0) {
 <a class="jxr_linenumber" name="L124" href="#L124">124</a>             List&lt;Node&lt;T, S&gt;&gt; children = <strong class="jxr_keyword">new</strong> ArrayList&lt;Node&lt;T, S&gt;&gt;(node.childrenLength());
 <a class="jxr_linenumber" name="L125" href="#L125">125</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; node.childrenLength(); i++) {

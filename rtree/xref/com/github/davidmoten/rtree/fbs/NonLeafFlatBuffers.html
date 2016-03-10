@@ -37,9 +37,9 @@
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>  
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Node_.html">Node_</a> node;
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Context&lt;T, S&gt; context;
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;byte[], T&gt; deserializer;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer;
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>  
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>      <a href="../../../../../com/github/davidmoten/rtree/fbs/NonLeafFlatBuffers.html">NonLeafFlatBuffers</a>(<a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Node_.html">Node_</a> node, Context&lt;T, S&gt; context, Func1&lt;byte[], T&gt; deserializer) {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>      <a href="../../../../../com/github/davidmoten/rtree/fbs/NonLeafFlatBuffers.html">NonLeafFlatBuffers</a>(<a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Node_.html">Node_</a> node, Context&lt;T, S&gt; context, Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer) {
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>          Preconditions.checkNotNull(node);
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>          <em class="jxr_comment">// remove precondition because reduces performance</em>
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>          <em class="jxr_comment">// Preconditions.checkArgument(node.childrenLength() &gt; 0);</em>
@@ -71,7 +71,7 @@
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>      @SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; <strong class="jxr_keyword">void</strong> searchWithoutBackpressure(<a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Node_.html">Node_</a> node,
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>              Func1&lt;? <strong class="jxr_keyword">super</strong> Geometry, Boolean&gt; criterion, Subscriber&lt;? <strong class="jxr_keyword">super</strong> Entry&lt;T, S&gt;&gt; subscriber,
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>              Func1&lt;byte[], T&gt; deserializer, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Entry_.html">Entry_</a> entry, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Geometry_.html">Geometry_</a> geometry, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Box_.html">Box_</a> box) {
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>              Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Entry_.html">Entry_</a> entry, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Geometry_.html">Geometry_</a> geometry, <a href="../../../../../com/github/davidmoten/rtree/fbs/generated/Box_.html">Box_</a> box) {
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>          {
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>              node.mbb(box);
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>              <strong class="jxr_keyword">if</strong> (!criterion

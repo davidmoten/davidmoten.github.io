@@ -36,10 +36,10 @@
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>  <em class="jxr_javadoccomment"> *            the geometry type</em>
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment"> */</em>
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> FactoryFlatBuffers&lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; <strong class="jxr_keyword">implements</strong> Factory&lt;T, S&gt; {
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;T, byte[]&gt; serializer;
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;byte[], T&gt; deserializer;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer;
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>  
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rtree/fbs/FactoryFlatBuffers.html">FactoryFlatBuffers</a>(Func1&lt;T, byte[]&gt; serializer, Func1&lt;byte[], T&gt; deserializer) {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../../com/github/davidmoten/rtree/fbs/FactoryFlatBuffers.html">FactoryFlatBuffers</a>(Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer, Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer) {
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>          Preconditions.checkNotNull(serializer);
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>          Preconditions.checkNotNull(deserializer);
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>          <strong class="jxr_keyword">this</strong>.serializer = serializer;
@@ -61,11 +61,11 @@
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>          <strong class="jxr_keyword">return</strong> Entries.entry(value, geometry);
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>      }
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>  
-<a class="jxr_linenumber" name="L56" href="#L56">56</a>      <strong class="jxr_keyword">public</strong> Func1&lt;T, byte[]&gt; serializer() {
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      <strong class="jxr_keyword">public</strong> Func1&lt;? <strong class="jxr_keyword">super</strong> T, byte[]&gt; serializer() {
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>          <strong class="jxr_keyword">return</strong> serializer;
 <a class="jxr_linenumber" name="L58" href="#L58">58</a>      }
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>  
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">public</strong> Func1&lt;byte[], T&gt; deserializer() {
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">public</strong> Func1&lt;byte[], ? <strong class="jxr_keyword">extends</strong> T&gt; deserializer() {
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>          <strong class="jxr_keyword">return</strong> deserializer;
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>      }
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>  
