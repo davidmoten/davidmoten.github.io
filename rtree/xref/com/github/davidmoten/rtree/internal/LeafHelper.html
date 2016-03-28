@@ -26,9 +26,9 @@
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../com/github/davidmoten/rtree/internal/LeafHelper.html">LeafHelper</a> {
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>      
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../../com/github/davidmoten/rtree/internal/LeafHelper.html">LeafHelper</a>() {
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>          <em class="jxr_comment">//prevent instantiation</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>          <em class="jxr_comment">// prevent instantiation</em>
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>      }
 <a class="jxr_linenumber" name="L25" href="#L25">25</a>  
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; NodeAndEntries&lt;T, S&gt; delete(
@@ -72,7 +72,7 @@
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>  
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; makeLeaves(ListPair&lt;Entry&lt;T, S&gt;&gt; pair,
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>              Context&lt;T, S&gt; context) {
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>          List&lt;Node&lt;T, S&gt;&gt; list = <strong class="jxr_keyword">new</strong> ArrayList&lt;Node&lt;T, S&gt;&gt;();
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          List&lt;Node&lt;T, S&gt;&gt; list = <strong class="jxr_keyword">new</strong> ArrayList&lt;Node&lt;T, S&gt;&gt;(2);
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>          list.add(context.factory().createLeaf(pair.group1().list(), context));
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>          list.add(context.factory().createLeaf(pair.group2().list(), context));
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>          <strong class="jxr_keyword">return</strong> list;
@@ -81,21 +81,22 @@
 <a class="jxr_linenumber" name="L73" href="#L73">73</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> &lt;T, S <strong class="jxr_keyword">extends</strong> Geometry&gt; <strong class="jxr_keyword">void</strong> search(Func1&lt;? <strong class="jxr_keyword">super</strong> Geometry, Boolean&gt; condition,
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>              Subscriber&lt;? <strong class="jxr_keyword">super</strong> Entry&lt;T, S&gt;&gt; subscriber, Leaf&lt;T, S&gt; leaf) {
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>  
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>          <strong class="jxr_keyword">if</strong> (!condition.call(leaf.geometry().mbr()))
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          <strong class="jxr_keyword">if</strong> (!condition.call(leaf.geometry().mbr())) {
 <a class="jxr_linenumber" name="L77" href="#L77">77</a>              <strong class="jxr_keyword">return</strong>;
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>  
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; leaf.count(); i++) {
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>              Entry&lt;T, S&gt; entry = leaf.entry(i);
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>              <strong class="jxr_keyword">if</strong> (subscriber.isUnsubscribed())
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>                  <strong class="jxr_keyword">return</strong>;
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>              <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>                  <strong class="jxr_keyword">if</strong> (condition.call(entry.geometry()))
-<a class="jxr_linenumber" name="L85" href="#L85">85</a>                      subscriber.onNext(entry);
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>              }
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>          }
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>      }
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>  
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>  }
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>          }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; leaf.count(); i++) {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>              Entry&lt;T, S&gt; entry = leaf.entry(i);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>              <strong class="jxr_keyword">if</strong> (subscriber.isUnsubscribed()) {
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>                  <strong class="jxr_keyword">return</strong>;
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>              } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>                  <strong class="jxr_keyword">if</strong> (condition.call(entry.geometry()))
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>                      subscriber.onNext(entry);
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>              }
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>          }
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>      }
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2016. All rights reserved.</div>
