@@ -257,7 +257,31 @@
 <a class="jxr_linenumber" name="L249" href="#L249">249</a>         <strong class="jxr_keyword">return</strong> Transformers.removePairs(isCandidateForFirst, remove);
 <a class="jxr_linenumber" name="L250" href="#L250">250</a>     }
 <a class="jxr_linenumber" name="L251" href="#L251">251</a> 
-<a class="jxr_linenumber" name="L252" href="#L252">252</a> }
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>     @Test
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDelayWithPlayRate() {
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>         TestSubscriber&lt;Object&gt; ts = TestSubscriber.create();
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>         TestScheduler scheduler = <strong class="jxr_keyword">new</strong> TestScheduler();
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>         Func1&lt;Integer, Long&gt; time = <strong class="jxr_keyword">new</strong> Func1&lt;Integer, Long&gt;() {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>             @Override
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>             <strong class="jxr_keyword">public</strong> Long call(Integer t) {
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>                 <strong class="jxr_keyword">return</strong> (<strong class="jxr_keyword">long</strong>) t;
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>             }
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>         };
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         Observable <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>                 .just(1, 2, 3) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>                 .compose(Transformers.delay(time, Functions.constant0(0.001), 0, scheduler)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>                 .subscribe(ts);
+<a class="jxr_linenumber" name="L267" href="#L267">267</a>         ts.assertNoValues();
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>         scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L269" href="#L269">269</a>         ts.assertValue(1);
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>         scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>         ts.assertValues(1,2);
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>         scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>         ts.assertValues(1,2,3);
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>         ts.assertCompleted();
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>     }
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2016. All rights reserved.</div>

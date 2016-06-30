@@ -37,7 +37,7 @@
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>          <strong class="jxr_keyword">return</strong> Observable.defer(<strong class="jxr_keyword">new</strong> Func0&lt;Observable&lt;T&gt;&gt;() {
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>              @Override
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>              <strong class="jxr_keyword">public</strong> Observable&lt;T&gt; call() {
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  <strong class="jxr_keyword">final</strong> OperatorPassThroughRequest&lt;T&gt; op = <strong class="jxr_keyword">new</strong> OperatorPassThroughRequest&lt;T&gt;();
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>                  <strong class="jxr_keyword">final</strong> OperatorPassThroughAdjustedRequest&lt;T&gt; op = <strong class="jxr_keyword">new</strong> OperatorPassThroughAdjustedRequest&lt;T&gt;();
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>                  <strong class="jxr_keyword">return</strong> o.lift(op).onBackpressureBuffer().doOnRequest(<strong class="jxr_keyword">new</strong> Action1&lt;Long&gt;() {
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>  
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>                      @Override
@@ -57,7 +57,7 @@
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  <em class="jxr_javadoccomment">     * @param &lt;T&gt;</em>
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  <em class="jxr_javadoccomment">     *            stream item type</em>
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> OperatorPassThroughRequest&lt;T&gt; <strong class="jxr_keyword">implements</strong> Operator&lt;T, T&gt; {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> OperatorPassThroughAdjustedRequest&lt;T&gt; <strong class="jxr_keyword">implements</strong> Operator&lt;T, T&gt; {
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>  
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">volatile</strong> ParentSubscriber&lt;T&gt; parent;
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AtomicLong requested = <strong class="jxr_keyword">new</strong> AtomicLong();
@@ -99,7 +99,7 @@
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; child;
 <a class="jxr_linenumber" name="L92" href="#L92">92</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> AtomicLong expected = <strong class="jxr_keyword">new</strong> AtomicLong();
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>  
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <strong class="jxr_keyword">public</strong> <a href="../../../../../../com/github/davidmoten/rx/internal/operators/OperatorBufferToFile.html">ParentSubscriber</a>(Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; child) {
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <strong class="jxr_keyword">public</strong> <a href="../../../../../../com/github/davidmoten/rx/internal/operators/OperatorMaterializeLite.html">ParentSubscriber</a>(Subscriber&lt;? <strong class="jxr_keyword">super</strong> T&gt; child) {
 <a class="jxr_linenumber" name="L95" href="#L95">95</a>              <strong class="jxr_keyword">this</strong>.child = child;
 <a class="jxr_linenumber" name="L96" href="#L96">96</a>              request(0);
 <a class="jxr_linenumber" name="L97" href="#L97">97</a>          }
