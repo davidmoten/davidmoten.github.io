@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Maths.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Maths.java</span></div><h1>Maths.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import rx.Observable;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+
+public final class Maths {
+
+<span class="nc" id="L10">    private Maths() {</span>
+        // prevent instantiation
+<span class="nc" id="L12">    }</span>
+
+    public static Observable&lt;Double&gt; solveWithNewtonsMethod(final Func1&lt;Double, Double&gt; f,
+            final Func1&lt;Double, Double&gt; dfdx, double x0) {
+<span class="fc" id="L16">        return Observable.just(1).repeat().scan(x0, new Func2&lt;Double, Integer, Double&gt;() {</span>
+            @Override
+            public Double call(Double xn, Integer n) {
+<span class="fc" id="L19">                return xn - f.call(xn) / dfdx.call(xn);</span>
+            }
+        });
+    }
+
+    public static Observable&lt;Double&gt; solveWithNewtonsMethod(final Func1&lt;Double, Double&gt; f,
+            final double x0, final double h) {
+<span class="fc" id="L26">        Func1&lt;Double, Double&gt; dfdx = new Func1&lt;Double, Double&gt;() {</span>
+            @Override
+            public Double call(Double x) {
+<span class="fc" id="L29">                return (f.call(x + h) - f.call(x - h)) / 2.0 / h;</span>
+            }
+        };
+<span class="fc" id="L32">        return solveWithNewtonsMethod(f, dfdx, x0);</span>
+    }
+
+    public static Observable&lt;Long&gt; primes() {
+<span class="fc" id="L36">        return Observable.defer(new Func0&lt;Observable&lt;Long&gt;&gt;() {</span>
+<span class="fc" id="L37">            final Mutable&lt;Long&gt; n = new Mutable&lt;Long&gt;(0L);</span>
+
+            @Override
+            public Observable&lt;Long&gt; call() {
+<span class="fc" id="L41">                return Observable.just(1).repeat().map(new Func1&lt;Integer, Long&gt;() {</span>
+                    @Override
+                    public Long call(Integer t) {
+<span class="fc" id="L44">                        n.value += 1;</span>
+<span class="fc" id="L45">                        return n.value;</span>
+                    }
+                });
+            }
+<span class="fc" id="L49">        }).filter(new Func1&lt;Long, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(Long n) {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (n &lt; 2) {</span>
+<span class="fc" id="L54">                    return false;</span>
+                }
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                for (int i = 2; i &lt;= Math.floor(Math.sqrt(n)); i++) {</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                    if (n % i == 0) {</span>
+<span class="fc" id="L58">                        return false;</span>
+                    }
+                }
+<span class="fc" id="L61">                return true;</span>
+            }
+        });
+    }
+
+    private static final class Mutable&lt;T&gt; {
+        T value;
+
+<span class="fc" id="L69">        Mutable(T value) {</span>
+<span class="fc" id="L70">            this.value = value;</span>
+<span class="fc" id="L71">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

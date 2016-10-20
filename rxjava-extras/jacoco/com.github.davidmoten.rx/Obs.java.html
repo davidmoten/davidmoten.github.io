@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Obs.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Obs.java</span></div><h1>Obs.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.github.davidmoten.rx.internal.operators.OnSubscribeFromQueue;
+import com.github.davidmoten.rx.internal.operators.OnSubscribeRepeating;
+import com.github.davidmoten.rx.internal.operators.OrderedMerge;
+import com.github.davidmoten.rx.internal.operators.Permutations;
+import com.github.davidmoten.rx.internal.operators.Permutations.Swap;
+import com.github.davidmoten.rx.observables.CachedObservable;
+import com.github.davidmoten.util.Optional;
+
+import rx.Observable;
+import rx.Scheduler;
+import rx.Scheduler.Worker;
+import rx.functions.Action0;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+
+<span class="nc" id="L27">public final class Obs {</span>
+
+    /**
+     * Returns a cached {@link Observable} like {@link Observable#cache()}
+     * except that the cache can be reset by calling
+     * {@link CachedObservable#reset()}.
+     * 
+     * @param source
+     *            the observable to be cached.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return a cached observable whose cache can be reset.
+     */
+    public static &lt;T&gt; CachedObservable&lt;T&gt; cache(Observable&lt;T&gt; source) {
+<span class="fc" id="L41">        return new CachedObservable&lt;T&gt;(source);</span>
+    }
+
+    /**
+     * Returns a cached {@link Observable} like {@link Observable#cache()}
+     * except that the cache can be reset by calling
+     * {@link CachedObservable#reset()} and the cache will be automatically
+     * reset an interval after first subscription (or first subscription after
+     * reset). The interval is defined by {@code duration} and {@code unit} .
+     * 
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param worker
+     *            worker to use for scheduling reset. Don't forget to
+     *            unsubscribe the worker when no longer required.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return cached observable that resets regularly on a time interval
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; cache(final Observable&lt;T&gt; source, final long duration,
+            final TimeUnit unit, final Worker worker) {
+<span class="fc" id="L66">        final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedObservable&lt;T&gt;&gt;();</span>
+<span class="fc" id="L67">        CachedObservable&lt;T&gt; cache = new CachedObservable&lt;T&gt;(source);</span>
+<span class="fc" id="L68">        cacheRef.set(cache);</span>
+<span class="fc" id="L69">        return cache.doOnSubscribe(new Action0() {</span>
+            @Override
+            public void call() {
+<span class="fc" id="L72">                Action0 action = new Action0() {</span>
+                    @Override
+                    public void call() {
+<span class="fc" id="L75">                        cacheRef.get().reset();</span>
+<span class="fc" id="L76">                    }</span>
+                };
+<span class="fc" id="L78">                worker.schedule(action, duration, unit);</span>
+<span class="fc" id="L79">            }</span>
+        });
+    }
+
+    /**
+     * Returns a cached {@link Observable} like {@link Observable#cache()}
+     * except that the cache may be reset by the user calling
+     * {@link CloseableObservableWithReset#reset}.
+     * 
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param scheduler
+     *            scheduler to use for scheduling reset.
+     * @param &lt;T&gt;
+     *            generic type of source observable
+     * @return {@link CloseableObservableWithReset} that should be closed once
+     *         finished to prevent worker memory leak.
+     */
+    public static &lt;T&gt; CloseableObservableWithReset&lt;T&gt; cache(final Observable&lt;T&gt; source,
+            final long duration, final TimeUnit unit, final Scheduler scheduler) {
+<span class="fc" id="L103">        final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedObservable&lt;T&gt;&gt;();</span>
+<span class="fc" id="L104">        final AtomicReference&lt;Optional&lt;Worker&gt;&gt; workerRef = new AtomicReference&lt;Optional&lt;Worker&gt;&gt;(</span>
+<span class="fc" id="L105">                Optional.&lt;Worker&gt; absent());</span>
+<span class="fc" id="L106">        CachedObservable&lt;T&gt; cache = new CachedObservable&lt;T&gt;(source);</span>
+<span class="fc" id="L107">        cacheRef.set(cache);</span>
+<span class="fc" id="L108">        Action0 closeAction = new Action0() {</span>
+            @Override
+            public void call() {
+                while (true) {
+<span class="fc" id="L112">                    Optional&lt;Worker&gt; w = workerRef.get();</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                    if (w == null) {</span>
+                        // we are finished
+<span class="nc" id="L115">                        break;</span>
+                    } else {
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">                        if (workerRef.compareAndSet(w, null)) {</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                            if (w.isPresent()) {</span>
+<span class="fc" id="L119">                                w.get().unsubscribe();</span>
+                            }
+                            // we are finished
+<span class="fc" id="L122">                            workerRef.set(null);</span>
+<span class="fc" id="L123">                            break;</span>
+                        }
+                    }
+                    // if not finished then try again
+<span class="nc" id="L127">                }</span>
+<span class="fc" id="L128">            }</span>
+        };
+<span class="fc" id="L130">        Action0 resetAction = new Action0() {</span>
+
+            @Override
+            public void call() {
+<span class="fc" id="L134">                startScheduledResetAgain(duration, unit, scheduler, cacheRef, workerRef);</span>
+<span class="fc" id="L135">            }</span>
+        };
+<span class="fc" id="L137">        return new CloseableObservableWithReset&lt;T&gt;(cache, closeAction, resetAction);</span>
+    }
+
+    private static &lt;T&gt; void startScheduledResetAgain(final long duration, final TimeUnit unit,
+            final Scheduler scheduler, final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef,
+            final AtomicReference&lt;Optional&lt;Worker&gt;&gt; workerRef) {
+
+<span class="fc" id="L144">        Action0 action = new Action0() {</span>
+            @Override
+            public void call() {
+<span class="fc" id="L147">                cacheRef.get().reset();</span>
+<span class="fc" id="L148">            }</span>
+        };
+        // CAS loop to cancel the current worker and create a new one
+        while (true) {
+<span class="fc" id="L152">            Optional&lt;Worker&gt; wOld = workerRef.get();</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (wOld == null) {</span>
+                // we are finished
+<span class="nc" id="L155">                return;</span>
+            }
+<span class="fc" id="L157">            Optional&lt;Worker&gt; w = Optional.of(scheduler.createWorker());</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">            if (workerRef.compareAndSet(wOld, w)) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                if (wOld.isPresent())</span>
+<span class="fc" id="L160">                    wOld.get().unsubscribe();</span>
+<span class="fc" id="L161">                w.get().schedule(action, duration, unit);</span>
+<span class="fc" id="L162">                break;</span>
+            }
+<span class="nc" id="L164">        }</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * Returns an Observable that epeats emitting {@code t} without completing.
+     * Supports backpressure.
+     * 
+     * @param t value to repeat
+     * @param &lt;T&gt; type of t
+
+     * @return an observable that repeats t forever (or until unsubscribed)
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; repeating(final T t) {
+<span class="fc" id="L177">        return Observable.create(new OnSubscribeRepeating&lt;T&gt;(t));</span>
+    }
+
+    public static &lt;T extends Comparable&lt;? super T&gt;&gt; Observable&lt;T&gt; create(
+            Collection&lt;Observable&lt;T&gt;&gt; sources) {
+<span class="nc" id="L182">        return create(sources, false);</span>
+    }
+
+    public static &lt;T&gt; Observable&lt;T&gt; create(Collection&lt;Observable&lt;T&gt;&gt; sources,
+            Comparator&lt;? super T&gt; comparator) {
+<span class="nc" id="L187">        return create(sources, comparator, false);</span>
+    }
+
+    public static &lt;T extends Comparable&lt;? super T&gt;&gt; Observable&lt;T&gt; create(
+            Collection&lt;Observable&lt;T&gt;&gt; sources, boolean delayErrors) {
+<span class="nc" id="L192">        return OrderedMerge.create(sources, delayErrors);</span>
+    }
+
+    public static &lt;T&gt; Observable&lt;T&gt; create(Collection&lt;Observable&lt;T&gt;&gt; sources,
+            Comparator&lt;? super T&gt; comparator, boolean delayErrors) {
+<span class="nc" id="L197">        return OrderedMerge.create(sources, comparator, delayErrors);</span>
+    }
+
+    public static &lt;T&gt; Observable&lt;T&gt; fromQueue(Queue&lt;T&gt; queue) {
+<span class="nc" id="L201">        return Observable.create(new OnSubscribeFromQueue&lt;T&gt;(queue));</span>
+    }
+
+    public static &lt;T&gt; Observable&lt;List&lt;Integer&gt;&gt; permutations(int size) {
+<span class="fc" id="L205">        List&lt;Integer&gt; indexes = new ArrayList&lt;Integer&gt;(size);</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc" id="L207">            indexes.add(i);</span>
+        }
+<span class="fc" id="L209">        return Observable.from(Permutations.iterable(indexes)).scan(indexes,</span>
+<span class="fc" id="L210">                new Func2&lt;List&lt;Integer&gt;, Swap&lt;Integer&gt;, List&lt;Integer&gt;&gt;() {</span>
+
+                    @Override
+                    public List&lt;Integer&gt; call(List&lt;Integer&gt; a, Swap&lt;Integer&gt; swap) {
+<span class="fc" id="L214">                        List&lt;Integer&gt; b = new ArrayList&lt;Integer&gt;(a);</span>
+<span class="fc" id="L215">                        b.set(swap.left(), a.get(swap.right()));</span>
+<span class="fc" id="L216">                        b.set(swap.right(), a.get(swap.left()));</span>
+<span class="fc" id="L217">                        return b;</span>
+                    }
+                });
+    }
+
+    public static &lt;T&gt; Observable&lt;List&lt;T&gt;&gt; permutations(final List&lt;T&gt; list) {
+<span class="fc" id="L223">        return permutations(list.size()).map(new Func1&lt;List&lt;Integer&gt;, List&lt;T&gt;&gt;() {</span>
+
+            @Override
+            public List&lt;T&gt; call(List&lt;Integer&gt; a) {
+<span class="fc" id="L227">                List&lt;T&gt; b = new ArrayList&lt;T&gt;(a.size());</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                for (int i = 0; i &lt; a.size(); i++) {</span>
+<span class="fc" id="L229">                    b.add(list.get(a.get(i)));</span>
+                }
+<span class="fc" id="L231">                return b;</span>
+            }
+        });
+    }
+    
+    
+    public static Observable&lt;Long&gt; intervalLong(final long duration, final TimeUnit unit, final Scheduler scheduler) {
+<span class="fc" id="L238">        return Observable.defer(new Func0&lt;Observable&lt;Long&gt;&gt;() {</span>
+<span class="fc" id="L239">            final long[] count = new long[1];</span>
+            @Override
+            public Observable&lt;Long&gt; call() {
+<span class="fc" id="L242">                return Observable.interval(duration, unit, scheduler)</span>
+<span class="fc" id="L243">                        .map(new Func1&lt;Long, Long&gt;() {</span>
+
+                            @Override
+                            public Long call(Long t) {
+<span class="fc" id="L247">                                return count[0]++;</span>
+                            }});
+            }});
+    }
+    
+    public static Observable&lt;Long&gt; intervalLong(long duration, TimeUnit unit) {
+<span class="nc" id="L253">        return intervalLong(duration, unit, Schedulers.computation());</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

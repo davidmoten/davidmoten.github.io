@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FileBasedSPSCQueue.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">FileBasedSPSCQueue.java</span></div><h1>FileBasedSPSCQueue.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.github.davidmoten.rx.buffertofile.DataSerializer;
+import com.github.davidmoten.util.Preconditions;
+
+class FileBasedSPSCQueue&lt;T&gt; implements QueueWithResources&lt;T&gt; {
+
+	final File file;
+	final DataSerializer&lt;T&gt; serializer;
+	final AtomicLong size;
+	final byte[] writeBuffer;
+	final byte[] readBuffer;
+<span class="fc" id="L26">	final Object writeLock = new Object();</span>
+<span class="fc" id="L27">	private final Object accessLock = new Object();</span>
+	private final DataOutputStream output;
+	private final DataInputStream input;
+
+	// mutable state
+
+<span class="fc" id="L33">	int readBufferPosition = 0;</span>
+<span class="fc" id="L34">	long readPosition = 0;</span>
+<span class="fc" id="L35">	int readBufferLength = 0;</span>
+	volatile long writePosition;
+	volatile int writeBufferPosition;
+	// guarded by accessLock
+	private FileAccessor accessor;
+<span class="fc" id="L40">	private volatile boolean unsubscribed = false;</span>
+
+<span class="fc" id="L42">	FileBasedSPSCQueue(int bufferSizeBytes, File file, DataSerializer&lt;T&gt; serializer) {</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">		Preconditions.checkArgument(bufferSizeBytes &gt; 0, &quot;bufferSizeBytes must be greater than zero&quot;);</span>
+<span class="fc" id="L44">		Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L45">		Preconditions.checkNotNull(serializer);</span>
+<span class="fc" id="L46">		this.readBuffer = new byte[bufferSizeBytes];</span>
+<span class="fc" id="L47">		this.writeBuffer = new byte[bufferSizeBytes];</span>
+		try {
+<span class="fc" id="L49">			file.getParentFile().mkdirs();</span>
+<span class="fc" id="L50">			file.createNewFile();</span>
+<span class="fc" id="L51">			this.file = file;</span>
+<span class="nc" id="L52">		} catch (IOException e) {</span>
+<span class="nc" id="L53">			throw new RuntimeException(e);</span>
+<span class="fc" id="L54">		}</span>
+<span class="fc" id="L55">		this.accessor = new FileAccessor(file);</span>
+<span class="fc" id="L56">		this.serializer = serializer;</span>
+<span class="fc" id="L57">		this.size = new AtomicLong(0);</span>
+<span class="fc" id="L58">		this.output = new DataOutputStream(new QueueWriter());</span>
+<span class="fc" id="L59">		this.input = new DataInputStream(new QueueReader());</span>
+<span class="fc" id="L60">	}</span>
+
+	private final static class FileAccessor {
+		final RandomAccessFile fWrite;
+		final RandomAccessFile fRead;
+
+<span class="fc" id="L66">		FileAccessor(File file) {</span>
+			try {
+<span class="fc" id="L68">				this.fWrite = new RandomAccessFile(file, &quot;rw&quot;);</span>
+<span class="fc" id="L69">				this.fRead = new RandomAccessFile(file, &quot;r&quot;);</span>
+<span class="nc" id="L70">			} catch (FileNotFoundException e) {</span>
+<span class="nc" id="L71">				throw new RuntimeException(e);</span>
+<span class="fc" id="L72">			}</span>
+<span class="fc" id="L73">		}</span>
+
+		public void close() {
+			try {
+<span class="fc" id="L77">				fWrite.close();</span>
+<span class="fc" id="L78">				fRead.close();</span>
+<span class="nc" id="L79">			} catch (IOException e) {</span>
+<span class="nc" id="L80">				throw new RuntimeException(e);</span>
+<span class="fc" id="L81">			}</span>
+<span class="fc" id="L82">		}</span>
+	}
+
+<span class="fc" id="L85">	private final class QueueWriter extends OutputStream {</span>
+
+		@Override
+		public void write(int b) throws IOException {
+			// minimize reads of volatile writeBufferPosition
+<span class="fc" id="L90">			int wbp = writeBufferPosition;</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">			if (wbp &lt; writeBuffer.length) {</span>
+<span class="fc" id="L92">				writeBuffer[wbp] = (byte) b;</span>
+<span class="fc" id="L93">				writeBufferPosition = wbp + 1;</span>
+			} else
+<span class="fc" id="L95">				synchronized (writeLock) {</span>
+					// minimize reads of volatile writePosition
+<span class="fc" id="L97">					long wp = writePosition;</span>
+<span class="fc" id="L98">					accessor.fWrite.seek(wp);</span>
+<span class="fc" id="L99">					accessor.fWrite.write(writeBuffer);</span>
+<span class="fc" id="L100">					writeBuffer[0] = (byte) b;</span>
+<span class="fc" id="L101">					writeBufferPosition = 1;</span>
+<span class="fc" id="L102">					writePosition = wp + writeBuffer.length;</span>
+<span class="pc" id="L103">				}</span>
+<span class="fc" id="L104">		}</span>
+	}
+
+	// create the exception once to avoid building many Exception objects
+<span class="fc" id="L108">	private static final EOFException EOF = new EOFException();</span>
+
+<span class="fc" id="L110">	private final class QueueReader extends InputStream {</span>
+
+		@Override
+		public int read() throws IOException {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">			if (size.get() == 0) {</span>
+<span class="fc" id="L115">				throw EOF;</span>
+			} else {
+<span class="fc bfc" id="L117" title="All 2 branches covered.">				if (readBufferPosition &lt; readBufferLength) {</span>
+<span class="fc" id="L118">					byte b = readBuffer[readBufferPosition];</span>
+<span class="fc" id="L119">					readBufferPosition++;</span>
+<span class="fc" id="L120">					return toUnsignedInteger(b);</span>
+				} else {
+					// before reading more from file we see if we can emit
+					// directly from the writeBuffer by checking if the read
+					// position is past the write position
+					while (true) {
+						long wp;
+						int wbp;
+<span class="fc" id="L128">						synchronized (writeLock) {</span>
+<span class="fc" id="L129">							wp = writePosition;</span>
+<span class="fc" id="L130">							wbp = writeBufferPosition;</span>
+<span class="pc" id="L131">						}</span>
+<span class="fc" id="L132">						long over = wp - readPosition;</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">						if (over &gt; 0) {</span>
+							// read position is not past the write position
+<span class="fc" id="L135">							readBufferLength = (int) Math.min(readBuffer.length, over);</span>
+<span class="fc" id="L136">							synchronized (accessLock) {</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">								if (accessor == null) {</span>
+<span class="nc" id="L138">									accessor = new FileAccessor(file);</span>
+								}
+<span class="fc" id="L140">								accessor.fRead.seek(readPosition);</span>
+<span class="fc" id="L141">								accessor.fRead.read(readBuffer, 0, readBufferLength);</span>
+<span class="pc" id="L142">							}</span>
+<span class="fc" id="L143">							readPosition += readBufferLength;</span>
+<span class="fc" id="L144">							readBufferPosition = 1;</span>
+<span class="fc" id="L145">							return toUnsignedInteger(readBuffer[0]);</span>
+						} else {
+							// read position is at or past the write position
+<span class="fc" id="L148">							int index = -(int) over;</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">							if (index &gt;= writeBuffer.length) {</span>
+<span class="nc" id="L150">								throw EOF;</span>
+							} else {
+<span class="fc" id="L152">								int b = toUnsignedInteger(writeBuffer[index]);</span>
+								final boolean writeBufferUnchanged;
+<span class="fc" id="L154">								synchronized (writeLock) {</span>
+<span class="fc bfc" id="L155" title="All 4 branches covered.">									writeBufferUnchanged = wp == writePosition &amp;&amp; wbp == writeBufferPosition;</span>
+									// if (writeBufferUnchanged) {
+									// // reset write buffer a bit and the
+									// readPosition so that we avoid writing
+									// // the full contents of the write buffer
+									// if (index &gt;= writeBuffer.length / 2 &amp;&amp;
+									// index &lt; writeBufferPosition) {
+									// System.arraycopy(writeBuffer, index + 1,
+									// writeBuffer, 0,
+									// writeBufferPosition - index - 1);
+									// writeBufferPosition -= index + 1;
+									// readPosition = writePosition;
+									// } else {
+									// readPosition++;
+									// }
+									// }
+<span class="pc" id="L171">								}</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">								if (writeBufferUnchanged) {</span>
+<span class="fc" id="L173">									readPosition++;</span>
+<span class="fc" id="L174">									return b;</span>
+								}
+							}
+						}
+<span class="fc" id="L178">					}</span>
+				}
+			}
+		}
+	}
+
+	private static int toUnsignedInteger(byte b) {
+<span class="fc" id="L185">		return b &amp; 0x000000FF;</span>
+	}
+
+	@Override
+	public void unsubscribe() {
+		// must not run concurrently with offer/poll
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">		if (unsubscribed) {</span>
+<span class="nc" id="L192">			return;</span>
+		}
+<span class="fc" id="L194">		unsubscribed = true;</span>
+<span class="fc" id="L195">		synchronized (accessLock) {</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">			if (accessor != null) {</span>
+<span class="fc" id="L197">				accessor.close();</span>
+<span class="fc" id="L198">				accessor = null;</span>
+			}
+<span class="fc" id="L200">			size.set(0);</span>
+<span class="pc" id="L201">		}</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">		if (!file.delete()) {</span>
+<span class="nc" id="L203">			throw new RuntimeException(&quot;could not delete file &quot; + file);</span>
+		}
+<span class="fc" id="L205">	}</span>
+
+	@Override
+	public boolean isUnsubscribed() {
+<span class="nc" id="L209">		return unsubscribed;</span>
+	}
+
+	@Override
+	public boolean offer(T t) {
+		// limited thread-safety
+		// offer calls must be sequential but can happen concurrently with other
+		// methods except unsubscribe
+		try {
+<span class="fc" id="L218">			serializer.serialize(output, t);</span>
+<span class="fc" id="L219">			size.incrementAndGet();</span>
+<span class="fc" id="L220">			return true;</span>
+<span class="nc" id="L221">		} catch (IOException e) {</span>
+<span class="nc" id="L222">			throw new RuntimeException(e);</span>
+		}
+	}
+
+	@Override
+	public T poll() {
+		// limited thread-safety
+		// poll calls must be sequential but can happen concurrently with other
+		// methods except unsubscribe
+		try {
+<span class="fc" id="L232">			T t = serializer.deserialize(input);</span>
+<span class="fc" id="L233">			size.decrementAndGet();</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">			if (t == null) {</span>
+				// this is a trick that we can get away with due to type erasure
+				// in java as long as the return value of poll() is checked
+				// using NullSentinel.isNullSentinel(t) (?)
+<span class="fc" id="L238">				return NullSentinel.instance();</span>
+			} else {
+<span class="fc" id="L240">				return t;</span>
+			}
+<span class="fc" id="L242">		} catch (EOFException e) {</span>
+<span class="fc" id="L243">			return null;</span>
+<span class="nc" id="L244">		} catch (IOException e) {</span>
+<span class="nc" id="L245">			throw new RuntimeException(e);</span>
+		}
+	}
+
+	@Override
+	public boolean isEmpty() {
+<span class="fc bfc" id="L251" title="All 2 branches covered.">		return size.get() == 0;</span>
+	}
+
+	@Override
+	public void freeResources() {
+<span class="fc" id="L256">		synchronized (accessLock) {</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">			if (accessor != null) {</span>
+<span class="fc" id="L258">				accessor.close();</span>
+			}
+<span class="fc" id="L260">			accessor = null;</span>
+<span class="pc" id="L261">		}</span>
+<span class="fc" id="L262">	}</span>
+
+	@Override
+	public long resourcesSize() {
+<span class="fc" id="L266">		return writePosition;</span>
+	}
+
+	@Override
+	public T element() {
+<span class="nc" id="L271">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public T peek() {
+<span class="nc" id="L276">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public int size() {
+<span class="nc" id="L281">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean add(T e) {
+<span class="nc" id="L286">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public T remove() {
+<span class="nc" id="L291">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean contains(Object o) {
+<span class="nc" id="L296">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public Iterator&lt;T&gt; iterator() {
+<span class="nc" id="L301">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public Object[] toArray() {
+<span class="nc" id="L306">		throw new UnsupportedOperationException();</span>
+	}
+
+	@SuppressWarnings(&quot;hiding&quot;)
+	@Override
+	public &lt;T&gt; T[] toArray(T[] a) {
+<span class="nc" id="L312">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean remove(Object o) {
+<span class="nc" id="L317">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean containsAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L322">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean addAll(Collection&lt;? extends T&gt; c) {
+<span class="nc" id="L327">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean removeAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L332">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public boolean retainAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L337">		throw new UnsupportedOperationException();</span>
+	}
+
+	@Override
+	public void clear() {
+<span class="nc" id="L342">		throw new UnsupportedOperationException();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

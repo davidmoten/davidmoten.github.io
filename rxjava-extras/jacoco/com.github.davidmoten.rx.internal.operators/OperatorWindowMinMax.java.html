@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorWindowMinMax.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorWindowMinMax.java</span></div><h1>OperatorWindowMinMax.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.github.davidmoten.util.Preconditions;
+
+import rx.Observable.Operator;
+import rx.Producer;
+import rx.Subscriber;
+
+/**
+ * Uses a double-ended queue and collapses entries when they are redundant
+ * (whenever a value is added to the queue all values at the end of the queue
+ * that are greater or equal to that value are removed).
+ * 
+ * @param &lt;T&gt;
+ *            generic type of stream emissions
+ */
+public final class OperatorWindowMinMax&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+    private final int windowSize;
+    private final Comparator&lt;? super T&gt; comparator;
+    private final Metric metric;
+
+<span class="fc" id="L29">    public OperatorWindowMinMax(int windowSize, Comparator&lt;? super T&gt; comparator, Metric metric) {</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        Preconditions.checkArgument(windowSize &gt; 0, &quot;windowSize must be greater than zero&quot;);</span>
+<span class="fc" id="L31">        Preconditions.checkNotNull(comparator, &quot;comparator cannot be null&quot;);</span>
+<span class="fc" id="L32">        Preconditions.checkNotNull(metric, &quot;metric cannot be null&quot;);</span>
+<span class="fc" id="L33">        this.windowSize = windowSize;</span>
+<span class="fc" id="L34">        this.comparator = comparator;</span>
+<span class="fc" id="L35">        this.metric = metric;</span>
+<span class="fc" id="L36">    }</span>
+
+<span class="pc" id="L38">    public enum Metric {</span>
+<span class="fc" id="L39">        MIN, MAX;</span>
+    }
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(final Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L44">        return new Subscriber&lt;T&gt;(child) {</span>
+
+<span class="fc" id="L46">            long count = 0;</span>
+
+            // queue of indices
+<span class="fc" id="L49">            final Deque&lt;Long&gt; q = new ArrayDeque&lt;Long&gt;();</span>
+
+            // map index to value
+<span class="fc" id="L52">            final Map&lt;Long, T&gt; values = new HashMap&lt;Long, T&gt;();</span>
+
+            @Override
+            public void onCompleted() {
+<span class="fc" id="L56">                child.onCompleted();</span>
+<span class="fc" id="L57">            }</span>
+
+            @Override
+            public void onError(Throwable e) {
+<span class="fc" id="L61">                child.onError(e);</span>
+<span class="fc" id="L62">            }</span>
+
+            @Override
+            public void onNext(T t) {
+<span class="fc" id="L66">                count++;</span>
+                // add to queue
+<span class="fc" id="L68">                addToQueue(t);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                if (count &gt;= windowSize) {</span>
+                    // emit max
+
+                    // head of queue is max
+<span class="fc" id="L73">                    Long head = q.peekFirst();</span>
+                    final T value;
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                    if (head == count - windowSize) {</span>
+                        // if window past that index then remove from map
+<span class="fc" id="L77">                        values.remove(q.pollFirst());</span>
+<span class="fc" id="L78">                        value = values.get(q.peekFirst());</span>
+                    } else {
+<span class="fc" id="L80">                        value = values.get(head);</span>
+                    }
+<span class="fc" id="L82">                    child.onNext(value);</span>
+                }
+<span class="fc" id="L84">            }</span>
+
+            private void addToQueue(T t) {
+                Long v;
+<span class="fc bfc" id="L88" title="All 4 branches covered.">                while ((v = q.peekLast()) != null &amp;&amp; compare(t, values.get(v)) &lt;= 0) {</span>
+<span class="fc" id="L89">                    values.remove(q.pollLast());</span>
+                }
+<span class="fc" id="L91">                values.put(count, t);</span>
+<span class="fc" id="L92">                q.offerLast(count);</span>
+<span class="fc" id="L93">            }</span>
+
+            @Override
+            public void setProducer(final Producer producer) {
+<span class="fc" id="L97">                child.setProducer(producer);</span>
+<span class="fc" id="L98">                producer.request(windowSize - 1);</span>
+<span class="fc" id="L99">            }</span>
+
+        };
+    }
+
+    private int compare(T a, T b) {
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (metric == Metric.MIN) {</span>
+<span class="fc" id="L106">            return comparator.compare(a, b);</span>
+        } else {
+<span class="fc" id="L108">            return comparator.compare(b, a);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

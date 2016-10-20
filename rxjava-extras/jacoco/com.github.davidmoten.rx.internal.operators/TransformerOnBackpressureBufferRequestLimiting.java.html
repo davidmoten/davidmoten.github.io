@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerOnBackpressureBufferRequestLimiting.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">TransformerOnBackpressureBufferRequestLimiting.java</span></div><h1>TransformerOnBackpressureBufferRequestLimiting.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.github.davidmoten.rx.Actions;
+import com.github.davidmoten.rx.Transformers;
+import com.github.davidmoten.rx.util.BackpressureUtils;
+
+import rx.Observable;
+import rx.Observable.Operator;
+import rx.Observable.Transformer;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Func0;
+import rx.schedulers.Schedulers;
+
+<span class="nc" id="L18">public final class TransformerOnBackpressureBufferRequestLimiting&lt;T&gt; implements Transformer&lt;T, T&gt; {</span>
+
+<span class="nc" id="L20">    private static final TransformerOnBackpressureBufferRequestLimiting&lt;Object&gt; instance = new TransformerOnBackpressureBufferRequestLimiting&lt;Object&gt;();</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static final &lt;T&gt; TransformerOnBackpressureBufferRequestLimiting&lt;T&gt; instance() {
+<span class="nc" id="L24">        return (TransformerOnBackpressureBufferRequestLimiting&lt;T&gt;) instance;</span>
+    }
+
+    @Override
+    public Observable&lt;T&gt; call(final Observable&lt;T&gt; o) {
+<span class="nc" id="L29">        return Observable.defer(new Func0&lt;Observable&lt;T&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call() {
+<span class="nc" id="L32">                final OperatorPassThroughAdjustedRequest&lt;T&gt; op = new OperatorPassThroughAdjustedRequest&lt;T&gt;();</span>
+<span class="nc" id="L33">                return o.lift(op).onBackpressureBuffer().doOnRequest(new Action1&lt;Long&gt;() {</span>
+
+                    @Override
+                    public void call(Long n) {
+<span class="nc" id="L37">                        op.requestMore(n);</span>
+<span class="nc" id="L38">                    }</span>
+                });
+            }
+        });
+    }
+
+    /**
+     * Only used with an immediate downstream operator that requests
+     * {@code Long.MAX_VALUE} and should only be subscribed to once (use it
+     * within a {@code defer} block}.
+     *
+     * @param &lt;T&gt;
+     *            stream item type
+     */
+<span class="nc" id="L52">    private static final class OperatorPassThroughAdjustedRequest&lt;T&gt; implements Operator&lt;T, T&gt; {</span>
+
+        private volatile ParentSubscriber&lt;T&gt; parent;
+<span class="nc" id="L55">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="nc" id="L56">        private final Object lock = new Object();</span>
+
+        @Override
+        public Subscriber&lt;? super T&gt; call(Subscriber&lt;? super T&gt; child) {
+            // this method should only be called once for this instance
+            // assume child requests MAX_VALUE
+<span class="nc" id="L62">            ParentSubscriber&lt;T&gt; p = new ParentSubscriber&lt;T&gt;(child);</span>
+<span class="nc" id="L63">            synchronized (lock) {</span>
+<span class="nc" id="L64">                parent = p;</span>
+<span class="nc" id="L65">            }</span>
+<span class="nc" id="L66">            p.requestMore(requested.get());</span>
+<span class="nc" id="L67">            child.add(p);</span>
+<span class="nc" id="L68">            return p;</span>
+        }
+
+        public void requestMore(long n) {
+<span class="nc" id="L72">            ParentSubscriber&lt;T&gt; p = parent;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (p != null) {</span>
+<span class="nc" id="L74">                p.requestMore(n);</span>
+            } else {
+<span class="nc" id="L76">                synchronized (lock) {</span>
+<span class="nc" id="L77">                    ParentSubscriber&lt;T&gt; par = parent;</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    if (par == null) {</span>
+<span class="nc" id="L79">                        BackpressureUtils.getAndAddRequest(requested, n);</span>
+                    } else {
+<span class="nc" id="L81">                        par.requestMore(n);</span>
+                    }
+<span class="nc" id="L83">                }</span>
+            }
+<span class="nc" id="L85">        }</span>
+
+    }
+
+    private static final class ParentSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+
+        private final Subscriber&lt;? super T&gt; child;
+<span class="nc" id="L92">        private final AtomicLong expected = new AtomicLong();</span>
+
+<span class="nc" id="L94">        public ParentSubscriber(Subscriber&lt;? super T&gt; child) {</span>
+<span class="nc" id="L95">            this.child = child;</span>
+<span class="nc" id="L96">            request(0);</span>
+<span class="nc" id="L97">        }</span>
+
+        public void requestMore(long n) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (n &lt;= 0) {</span>
+<span class="nc" id="L101">                return;</span>
+            }
+<span class="nc" id="L103">            long r = expected.get();</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            if (r == Long.MAX_VALUE) {</span>
+<span class="nc" id="L105">                return;</span>
+            } else {
+<span class="nc" id="L107">                long u = r;</span>
+                while (true) {
+<span class="nc" id="L109">                    long sum = u + n;</span>
+                    final long v;
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                    if (sum &lt; 0) {</span>
+<span class="nc" id="L112">                        v = Long.MAX_VALUE;</span>
+                    } else {
+<span class="nc" id="L114">                        v = sum;</span>
+                    }
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                    if (expected.compareAndSet(u, v)) {</span>
+                        // if v negative (more have arrived than requested)
+<span class="nc" id="L118">                        long diff = Math.max(0, v);</span>
+<span class="nc" id="L119">                        long req = Math.min(n, diff);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                        if (req &gt; 0) {</span>
+<span class="nc" id="L121">                            request(req);</span>
+                        }
+<span class="nc" id="L123">                        return;</span>
+                    } else {
+<span class="nc" id="L125">                        u = expected.get();</span>
+                    }
+<span class="nc" id="L127">                }</span>
+            }
+        }
+
+        @Override
+        public void onCompleted() {
+<span class="nc" id="L133">            child.onCompleted();</span>
+<span class="nc" id="L134">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="nc" id="L138">            child.onError(e);</span>
+<span class="nc" id="L139">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="nc" id="L143">            expected.decrementAndGet();</span>
+<span class="nc" id="L144">            child.onNext(t);</span>
+<span class="nc" id="L145">        }</span>
+
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+<span class="nc" id="L150">        Observable.range(1, 10000) //</span>
+<span class="nc" id="L151">                .doOnRequest(new Action1&lt;Long&gt;() {</span>
+                    @Override
+                    public void call(Long n) {
+<span class="nc" id="L154">                        System.out.println(&quot;requested &quot; + n);</span>
+<span class="nc" id="L155">                    }</span>
+<span class="nc" id="L156">                }).doOnUnsubscribe(new Action0() {</span>
+                    @Override
+                    public void call() {
+<span class="nc" id="L159">                        System.out.println(&quot;unsubscribed&quot;);</span>
+<span class="nc" id="L160">                    }</span>
+                }) //
+<span class="nc" id="L162">                .compose(Transformers.&lt;Integer&gt; onBackpressureBufferRequestLimiting()) //</span>
+<span class="nc" id="L163">                .take(10) //</span>
+<span class="nc" id="L164">                .subscribeOn(Schedulers.io()) //</span>
+<span class="nc" id="L165">                .doOnNext(Actions.println()) //</span>
+<span class="nc" id="L166">                .count().toBlocking().single();</span>
+<span class="nc" id="L167">        Thread.sleep(2000);</span>
+<span class="nc" id="L168">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

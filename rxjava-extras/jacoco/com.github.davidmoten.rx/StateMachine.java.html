@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>StateMachine.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">StateMachine.java</span></div><h1>StateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import com.github.davidmoten.rx.util.BackpressureStrategy;
+
+import rx.Observable.Transformer;
+import rx.Subscriber;
+import rx.functions.Func0;
+import rx.functions.Func2;
+import rx.functions.Func3;
+
+public final class StateMachine {
+
+<span class="nc" id="L13">    private StateMachine() {</span>
+        // prevent instantiation
+<span class="nc" id="L15">    }</span>
+
+    public static interface Transition&lt;State, In, Out&gt;
+            extends Func3&lt;State, In, Subscriber&lt;Out&gt;, State&gt; {
+
+        // override so IDEs have better suggestions for parameters
+        @Override
+        public State call(State state, In value, Subscriber&lt;Out&gt; subscriber);
+
+    }
+
+    public static interface Completion&lt;State, Out&gt; extends Func2&lt;State, Subscriber&lt;Out&gt;, Boolean&gt; {
+
+        // override so IDEs have better suggestions for parameters
+        @Override
+        public Boolean call(State state, Subscriber&lt;Out&gt; subscriber);
+
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L35">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="fc" id="L40">        private Builder() {</span>
+            // prevent instantiation from other packages
+<span class="fc" id="L42">        }</span>
+
+        public &lt;State&gt; Builder2&lt;State&gt; initialStateFactory(Func0&lt;State&gt; initialState) {
+<span class="nc" id="L45">            return new Builder2&lt;State&gt;(initialState);</span>
+        }
+
+        public &lt;State&gt; Builder2&lt;State&gt; initialState(final State initialState) {
+<span class="fc" id="L49">            return new Builder2&lt;State&gt;(Functions.constant0(initialState));</span>
+        }
+
+    }
+
+    public static final class Builder2&lt;State&gt; {
+
+        private final Func0&lt;State&gt; initialState;
+
+<span class="fc" id="L58">        private Builder2(Func0&lt;State&gt; initialState) {</span>
+<span class="fc" id="L59">            this.initialState = initialState;</span>
+<span class="fc" id="L60">        }</span>
+
+        public &lt;In, Out&gt; Builder3&lt;State, In, Out&gt; transition(
+                Transition&lt;State, In, Out&gt; transition) {
+<span class="fc" id="L64">            return new Builder3&lt;State, In, Out&gt;(initialState, transition);</span>
+        }
+
+    }
+
+    public static final class Builder3&lt;State, In, Out&gt; {
+
+        private final Func0&lt;State&gt; initialState;
+        private final Transition&lt;State, In, Out&gt; transition;
+<span class="fc" id="L73">        private Completion&lt;State, Out&gt; completion = CompletionAlwaysTrueHolder.instance();</span>
+<span class="fc" id="L74">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+<span class="fc" id="L75">        private int initialRequest = Transformers.DEFAULT_INITIAL_BATCH;</span>
+
+<span class="fc" id="L77">        private Builder3(Func0&lt;State&gt; initialState, Transition&lt;State, In, Out&gt; transition) {</span>
+<span class="fc" id="L78">            this.initialState = initialState;</span>
+<span class="fc" id="L79">            this.transition = transition;</span>
+<span class="fc" id="L80">        }</span>
+
+        public Builder3&lt;State, In, Out&gt; completion(Completion&lt;State, Out&gt; completion) {
+<span class="fc" id="L83">            this.completion = completion;</span>
+<span class="fc" id="L84">            return this;</span>
+        }
+
+        public Builder3&lt;State, In, Out&gt; backpressureStrategy(
+                BackpressureStrategy backpressureStrategy) {
+<span class="fc" id="L89">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L90">            return this;</span>
+        }
+
+        public Builder3&lt;State, In, Out&gt; initialRequest(int value) {
+<span class="nc" id="L94">            this.initialRequest = value;</span>
+<span class="nc" id="L95">            return this;</span>
+        }
+
+        public Transformer&lt;In, Out&gt; build() {
+<span class="fc" id="L99">            return Transformers.stateMachine(initialState, transition, completion,</span>
+                    backpressureStrategy, initialRequest);
+        }
+
+    }
+
+<span class="nc" id="L105">    private static final class CompletionAlwaysTrueHolder {</span>
+
+<span class="fc" id="L107">        private static final Completion&lt;Object, Object&gt; INSTANCE = new Completion&lt;Object, Object&gt;() {</span>
+            @Override
+            public Boolean call(Object t1, Subscriber&lt;Object&gt; t2) {
+<span class="fc" id="L110">                return true;</span>
+            }
+        };
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;State, Out&gt; Completion&lt;State, Out&gt; instance() {
+<span class="fc" id="L116">            return (Completion&lt;State, Out&gt;) INSTANCE;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

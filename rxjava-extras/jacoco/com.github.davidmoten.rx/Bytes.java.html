@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Bytes.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Bytes.java</span></div><h1>Bytes.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import com.github.davidmoten.rx.internal.operators.OnSubscribeInputStream;
+import com.github.davidmoten.rx.util.ZippedEntry;
+
+import rx.Observable;
+import rx.Observable.Transformer;
+import rx.Observer;
+import rx.functions.Action1;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.observables.SyncOnSubscribe;
+
+public final class Bytes {
+
+<span class="fc" id="L27">    private Bytes() {</span>
+        // prevent instantiation
+<span class="fc" id="L29">    }</span>
+
+    /**
+     * Returns an Observable stream of byte arrays from the given
+     * {@link InputStream} between 1 and {@code size} bytes.
+     * 
+     * @param is
+     *            input stream of bytes
+     * @param size
+     *            max emitted byte array size
+     * @return a stream of byte arrays
+     */
+    public static Observable&lt;byte[]&gt; from(InputStream is, int size) {
+<span class="fc" id="L42">        return Observable.create(new OnSubscribeInputStream(is, size));</span>
+    }
+
+    public static Observable&lt;byte[]&gt; from(File file) {
+<span class="nc" id="L46">        return from(file, 8192);</span>
+    }
+
+    public static Observable&lt;byte[]&gt; from(final File file, final int size) {
+<span class="fc" id="L50">        Func0&lt;InputStream&gt; resourceFactory = new Func0&lt;InputStream&gt;() {</span>
+
+            @Override
+            public InputStream call() {
+                try {
+<span class="fc" id="L55">                    return new BufferedInputStream(new FileInputStream(file), size);</span>
+<span class="nc" id="L56">                } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L57">                    throw new RuntimeException(e);</span>
+                }
+            }
+        };
+<span class="fc" id="L61">        Func1&lt;InputStream, Observable&lt;byte[]&gt;&gt; observableFactory = new Func1&lt;InputStream, Observable&lt;byte[]&gt;&gt;() {</span>
+
+            @Override
+            public Observable&lt;byte[]&gt; call(InputStream is) {
+<span class="fc" id="L65">                return from(is, size);</span>
+            }
+        };
+<span class="fc" id="L68">        return Observable.using(resourceFactory, observableFactory, InputStreamCloseHolder.INSTANCE, true);</span>
+    }
+    
+<span class="nc" id="L71">    private static class InputStreamCloseHolder {</span>
+<span class="fc" id="L72">        private static final Action1&lt;InputStream&gt; INSTANCE = new Action1&lt;InputStream&gt;() {</span>
+
+            @Override
+            public void call(InputStream is) {
+                try {
+<span class="fc" id="L77">                    is.close();</span>
+<span class="nc" id="L78">                } catch (IOException e) {</span>
+<span class="nc" id="L79">                    throw new RuntimeException(e);</span>
+<span class="fc" id="L80">                }</span>
+<span class="fc" id="L81">            }</span>
+        };
+    }
+
+    /**
+     * Returns an Observable stream of byte arrays from the given
+     * {@link InputStream} of {@code 8192} bytes. The final byte array may be
+     * less than {@code 8192} bytes.
+     * 
+     * @param is
+     *            input stream of bytes
+     * @return a stream of byte arrays
+     */
+    public static Observable&lt;byte[]&gt; from(InputStream is) {
+<span class="nc" id="L95">        return from(is, 8192);</span>
+    }
+
+    public static Observable&lt;ZippedEntry&gt; unzip(final File file) {
+<span class="fc" id="L99">        Func0&lt;ZipInputStream&gt; resourceFactory = new Func0&lt;ZipInputStream&gt;() {</span>
+            @Override
+            public ZipInputStream call() {
+                try {
+<span class="fc" id="L103">                    return new ZipInputStream(new FileInputStream(file));</span>
+<span class="nc" id="L104">                } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L105">                    throw new RuntimeException(e);</span>
+                }
+            }
+        };
+<span class="fc" id="L109">        Func1&lt;ZipInputStream, Observable&lt;ZippedEntry&gt;&gt; observableFactory = ZipHolder.OBSERVABLE_FACTORY;</span>
+<span class="fc" id="L110">        Action1&lt;ZipInputStream&gt; disposeAction = ZipHolder.DISPOSER;</span>
+<span class="fc" id="L111">        return Observable.using(resourceFactory, observableFactory, disposeAction);</span>
+    }
+
+<span class="nc" id="L114">    private static final class ZipHolder {</span>
+<span class="fc" id="L115">        static final Action1&lt;ZipInputStream&gt; DISPOSER = new Action1&lt;ZipInputStream&gt;() {</span>
+
+            @Override
+            public void call(ZipInputStream zis) {
+                try {
+<span class="fc" id="L120">                    zis.close();</span>
+<span class="nc" id="L121">                } catch (IOException e) {</span>
+<span class="nc" id="L122">                    throw new RuntimeException(e);</span>
+<span class="fc" id="L123">                }</span>
+<span class="fc" id="L124">            }</span>
+        };
+<span class="fc" id="L126">        final static Func1&lt;ZipInputStream, Observable&lt;ZippedEntry&gt;&gt; OBSERVABLE_FACTORY = new Func1&lt;ZipInputStream, Observable&lt;ZippedEntry&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;ZippedEntry&gt; call(ZipInputStream zis) {
+<span class="fc" id="L129">                return unzip(zis);</span>
+            }
+        };
+    }
+
+    public static Observable&lt;ZippedEntry&gt; unzip(final InputStream is) {
+<span class="fc" id="L135">        return unzip(new ZipInputStream(is));</span>
+    }
+
+    public static Observable&lt;ZippedEntry&gt; unzip(final ZipInputStream zis) {
+<span class="fc" id="L139">        return Observable.create(new SyncOnSubscribe&lt;ZipInputStream, ZippedEntry&gt;() {</span>
+
+            @Override
+            protected ZipInputStream generateState() {
+<span class="fc" id="L143">                return zis;</span>
+            }
+
+            @Override
+            protected ZipInputStream next(ZipInputStream zis, Observer&lt;? super ZippedEntry&gt; observer) {
+                try {
+<span class="fc" id="L149">                    ZipEntry zipEntry = zis.getNextEntry();</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">                    if (zipEntry != null) {</span>
+<span class="fc" id="L151">                        observer.onNext(new ZippedEntry(zipEntry, zis));</span>
+                    } else {
+<span class="fc" id="L153">                        zis.close();</span>
+<span class="fc" id="L154">                        observer.onCompleted();</span>
+                    }
+<span class="nc" id="L156">                } catch (IOException e) {</span>
+<span class="nc" id="L157">                    observer.onError(e);</span>
+<span class="fc" id="L158">                }</span>
+<span class="fc" id="L159">                return zis;</span>
+            }
+        });
+    }
+
+    public static Transformer&lt;byte[], byte[]&gt; collect() {
+<span class="fc" id="L165">        return new Transformer&lt;byte[], byte[]&gt;() {</span>
+
+            @Override
+            public Observable&lt;byte[]&gt; call(Observable&lt;byte[]&gt; source) {
+<span class="fc" id="L169">                return source.collect(BosCreatorHolder.INSTANCE, BosCollectorHolder.INSTANCE)</span>
+<span class="fc" id="L170">                        .map(BosToArrayHolder.INSTANCE);</span>
+            }
+        };
+    }
+
+<span class="nc" id="L175">    private static final class BosCreatorHolder {</span>
+
+<span class="fc" id="L177">        static final Func0&lt;ByteArrayOutputStream&gt; INSTANCE = new Func0&lt;ByteArrayOutputStream&gt;() {</span>
+
+            @Override
+            public ByteArrayOutputStream call() {
+<span class="fc" id="L181">                return new ByteArrayOutputStream();</span>
+            }
+        };
+    }
+
+<span class="nc" id="L186">    private static final class BosCollectorHolder {</span>
+
+<span class="fc" id="L188">        static final Action2&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new Action2&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
+
+            @Override
+            public void call(ByteArrayOutputStream bos, byte[] bytes) {
+                try {
+<span class="fc" id="L193">                    bos.write(bytes);</span>
+<span class="nc" id="L194">                } catch (IOException e) {</span>
+<span class="nc" id="L195">                    throw new RuntimeException(e);</span>
+<span class="fc" id="L196">                }</span>
+<span class="fc" id="L197">            }</span>
+        };
+    }
+
+<span class="nc" id="L201">    private static final class BosToArrayHolder {</span>
+<span class="fc" id="L202">        static final Func1&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new Func1&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
+            @Override
+            public byte[] call(ByteArrayOutputStream bos) {
+<span class="fc" id="L205">                return bos.toByteArray();</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

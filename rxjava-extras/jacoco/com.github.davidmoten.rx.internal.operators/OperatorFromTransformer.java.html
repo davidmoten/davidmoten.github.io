@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorFromTransformer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorFromTransformer.java</span></div><h1>OperatorFromTransformer.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.Observable.Operator;
+import rx.Producer;
+import rx.Subscriber;
+import rx.functions.Func1;
+
+/**
+ * Converts an Transformer (a function converting one Observable into another)
+ * into an {@link Operator}.
+ * 
+ * @param &lt;R&gt;
+ *            to type
+ * @param &lt;T&gt;
+ *            from type
+ */
+public final class OperatorFromTransformer&lt;R, T&gt; implements Operator&lt;R, T&gt; {
+
+    public static &lt;R, T&gt; Operator&lt;R, T&gt; toOperator(
+            Func1&lt;? super Observable&lt;T&gt;, ? extends Observable&lt;R&gt;&gt; operation) {
+<span class="fc" id="L23">        return new OperatorFromTransformer&lt;R, T&gt;(operation);</span>
+    }
+
+    /**
+     * The operation to convert.
+     */
+    private final Func1&lt;? super Observable&lt;T&gt;, ? extends Observable&lt;R&gt;&gt; operation;
+
+    /**
+     * Constructor.
+     * 
+     * @param operation
+     *            to be converted into {@link Operator}
+     */
+    public OperatorFromTransformer(
+<span class="fc" id="L38">            Func1&lt;? super Observable&lt;T&gt;, ? extends Observable&lt;R&gt;&gt; operation) {</span>
+<span class="fc" id="L39">        this.operation = operation;</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(Subscriber&lt;? super R&gt; subscriber) {
+<span class="fc" id="L44">        final ParentSubscriber&lt;T&gt; parent = new ParentSubscriber&lt;T&gt;();</span>
+<span class="fc" id="L45">        Observable&lt;T&gt; middle = Observable.create(new ForwarderOnSubscribe&lt;T&gt;(parent));</span>
+<span class="fc" id="L46">        subscriber.add(parent);</span>
+<span class="fc" id="L47">        operation.call(middle).unsafeSubscribe(subscriber);</span>
+<span class="fc" id="L48">        return parent;</span>
+    }
+
+    static final class ForwarderOnSubscribe&lt;T&gt; implements OnSubscribe&lt;T&gt; {
+
+        private final ParentSubscriber&lt;T&gt; parent;
+
+<span class="fc" id="L55">        ForwarderOnSubscribe(ParentSubscriber&lt;T&gt; parent) {</span>
+<span class="fc" id="L56">            this.parent = parent;</span>
+<span class="fc" id="L57">        }</span>
+
+        @Override
+        public void call(Subscriber&lt;? super T&gt; sub) {
+<span class="fc" id="L61">            parent.subscriber = sub;</span>
+<span class="fc" id="L62">            sub.setProducer(new Producer() {</span>
+
+                @Override
+                public void request(long n) {
+<span class="fc" id="L66">                    parent.requestMore(n);</span>
+<span class="fc" id="L67">                }</span>
+            });
+<span class="fc" id="L69">        }</span>
+    }
+
+<span class="fc" id="L72">    static final class ParentSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {</span>
+
+        // TODO may not need to be volatile
+        volatile Subscriber&lt;? super T&gt; subscriber;
+
+        void requestMore(long n) {
+<span class="fc" id="L78">            request(n);</span>
+<span class="fc" id="L79">        }</span>
+
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L83">            subscriber.onCompleted();</span>
+<span class="fc" id="L84">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="nc" id="L88">            subscriber.onError(e);</span>
+<span class="nc" id="L89">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L93">            subscriber.onNext(t);</span>
+<span class="fc" id="L94">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

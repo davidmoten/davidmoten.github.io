@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Functions.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Functions.java</span></div><h1>Functions.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.util.Comparator;
+import java.util.concurrent.Callable;
+
+import rx.Observable;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+
+public final class Functions {
+
+<span class="fc" id="L13">    private Functions() {</span>
+        // prevent instantiation
+<span class="fc" id="L15">    }</span>
+
+    public static &lt;T&gt; Func1&lt;T, T&gt; identity() {
+<span class="fc" id="L18">        return new Func1&lt;T, T&gt;() {</span>
+            @Override
+            public T call(T t) {
+<span class="fc" id="L21">                return t;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Boolean&gt; alwaysTrue() {
+<span class="fc" id="L27">        return new Func1&lt;T, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(T t) {
+<span class="fc" id="L30">                return true;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Boolean&gt; alwaysFalse() {
+<span class="fc" id="L36">        return new Func1&lt;T, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(T t) {
+<span class="fc" id="L39">                return false;</span>
+            }
+        };
+    }
+
+    public static &lt;T, R&gt; Func1&lt;T, R&gt; constant(final R r) {
+<span class="fc" id="L45">        return new Func1&lt;T, R&gt;() {</span>
+            @Override
+            public R call(T t) {
+<span class="fc" id="L48">                return r;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func0&lt;T&gt; constant0(final T t) {
+<span class="fc" id="L54">        return new Func0&lt;T&gt;() {</span>
+
+            @Override
+            public T call() {
+<span class="fc" id="L58">                return t;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Boolean&gt; not(final Func1&lt;T, Boolean&gt; f) {
+<span class="fc" id="L64">        return new Func1&lt;T, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(T t) {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                return !f.call(t);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Observable&lt;T&gt;&gt; just() {
+<span class="nc" id="L73">        return new Func1&lt;T, Observable&lt;T&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(T t) {
+<span class="nc" id="L76">                return Observable.just(t);</span>
+            }
+        };
+    }
+
+    /**
+     * Returns a Func2 that adds numbers. Useful for Observable.reduce but not
+     * particularly performant as it does instanceOf checks.
+     * 
+     * @param &lt;T&gt;
+     *            generic type of Number being added
+     * @return Func2 that adds numbers
+     */
+    public static &lt;T extends Number&gt; Func2&lt;T, T, T&gt; add() {
+<span class="nc" id="L90">        return new Func2&lt;T, T, T&gt;() {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+            @Override
+            public T call(T a, T b) {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                if (a instanceof Integer)</span>
+<span class="nc" id="L95">                    return (T) (Number) (a.intValue() + b.intValue());</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                else if (a instanceof Long)</span>
+<span class="nc" id="L97">                    return (T) (Number) (a.longValue() + b.longValue());</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                else if (a instanceof Double)</span>
+<span class="nc" id="L99">                    return (T) (Number) (a.doubleValue() + b.doubleValue());</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                else if (a instanceof Float)</span>
+<span class="nc" id="L101">                    return (T) (Number) (a.floatValue() + b.floatValue());</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                else if (a instanceof Byte)</span>
+<span class="nc" id="L103">                    return (T) (Number) (a.byteValue() + b.byteValue());</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                else if (a instanceof Short)</span>
+<span class="nc" id="L105">                    return (T) (Number) (a.shortValue() + b.shortValue());</span>
+                else
+<span class="nc" id="L107">                    throw new RuntimeException(&quot;not implemented&quot;);</span>
+            }
+        };
+    }
+
+    public static &lt;T extends Number&gt; Func2&lt;Statistics, T, Statistics&gt; collectStats() {
+<span class="fc" id="L113">        return new Func2&lt;Statistics, T, Statistics&gt;() {</span>
+
+            @Override
+            public Statistics call(Statistics s, T t) {
+<span class="fc" id="L117">                return s.add(t);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func2&lt;T, T, Integer&gt; toFunc2(final Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L123">        return new Func2&lt;T, T, Integer&gt;() {</span>
+            @Override
+            public Integer call(T t1, T t2) {
+<span class="fc" id="L126">                return comparator.compare(t1, t2);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Comparator&lt;T&gt; toComparator(final Func2&lt;? super T, ? super T, Integer&gt; f) {
+<span class="nc" id="L132">        return new Comparator&lt;T&gt;() {</span>
+            @Override
+            public int compare(T a, T b) {
+<span class="nc" id="L135">                return f.call(a, b);</span>
+            }
+        };
+    }
+
+    public static &lt;T, R&gt; Func2&lt;T, R, Boolean&gt; alwaysTrue2() {
+<span class="fc" id="L141">        return new Func2&lt;T, R, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(T t1, R t2) {
+<span class="nc" id="L145">                return true;</span>
+            }
+        };
+    }
+
+    public static &lt;T, R&gt; Func2&lt;T, R, Boolean&gt; alwaysFalse2() {
+<span class="nc" id="L151">        return new Func2&lt;T, R, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(T t1, R t2) {
+<span class="nc" id="L155">                return false;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Boolean&gt; isNull() {
+<span class="nc" id="L161">        return new Func1&lt;T, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(T t) {
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                return t == null;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func1&lt;T, Boolean&gt; isNotNull() {
+<span class="nc" id="L171">        return new Func1&lt;T, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(T t) {
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                return t != null;</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Func0&lt;T&gt; toFunc0(final Callable&lt;T&gt; f) {
+<span class="nc" id="L181">        return new Func0&lt;T&gt;() {</span>
+
+            @Override
+            public T call() {
+                try {
+<span class="nc" id="L186">                    return f.call();</span>
+<span class="nc" id="L187">                } catch (Exception e) {</span>
+<span class="nc" id="L188">                    throw new RuntimeException(e);</span>
+                }
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

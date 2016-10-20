@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OrderedMerge.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OrderedMerge.java</span></div><h1>OrderedMerge.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
+
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.Producer;
+import rx.Subscriber;
+import rx.exceptions.CompositeException;
+import rx.exceptions.MissingBackpressureException;
+import rx.internal.operators.BackpressureUtils;
+import rx.internal.operators.NotificationLite;
+import rx.internal.util.RxRingBuffer;
+import rx.internal.util.unsafe.MpscLinkedQueue;
+
+/**
+ * @author David Karnokd
+ *
+ * @param &lt;T&gt;
+ *            type of observable
+ */
+public final class OrderedMerge&lt;T&gt; implements OnSubscribe&lt;T&gt; {
+    final List&lt;Observable&lt;T&gt;&gt; sources;
+    final Comparator&lt;? super T&gt; comparator;
+    final boolean delayErrors;
+
+    public static &lt;U extends Comparable&lt;? super U&gt;&gt; Observable&lt;U&gt; create(
+            Collection&lt;Observable&lt;U&gt;&gt; sources) {
+<span class="fc" id="L34">        return create(sources, false);</span>
+    }
+
+    public static &lt;U&gt; Observable&lt;U&gt; create(Collection&lt;Observable&lt;U&gt;&gt; sources,
+            Comparator&lt;? super U&gt; comparator) {
+<span class="nc" id="L39">        return create(sources, comparator, false);</span>
+    }
+
+    public static &lt;U extends Comparable&lt;? super U&gt;&gt; Observable&lt;U&gt; create(
+            Collection&lt;Observable&lt;U&gt;&gt; sources, boolean delayErrors) {
+<span class="fc" id="L44">        return Observable.create(new OrderedMerge&lt;U&gt;(sources, new Comparator&lt;U&gt;() {</span>
+            @Override
+            public int compare(U o1, U o2) {
+<span class="fc" id="L47">                return o1.compareTo(o2);</span>
+            }
+        }, delayErrors));
+    }
+
+    public static &lt;U&gt; Observable&lt;U&gt; create(Collection&lt;Observable&lt;U&gt;&gt; sources,
+            Comparator&lt;? super U&gt; comparator, boolean delayErrors) {
+<span class="fc" id="L54">        return Observable.create(new OrderedMerge&lt;U&gt;(sources, comparator, delayErrors));</span>
+    }
+
+    private OrderedMerge(Collection&lt;Observable&lt;T&gt;&gt; sources,
+<span class="fc" id="L58">            Comparator&lt;? super T&gt; comparator, boolean delayErrors) {</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        this.sources = sources instanceof List ? (List&lt;Observable&lt;T&gt;&gt;) sources</span>
+                : new ArrayList&lt;Observable&lt;T&gt;&gt;(sources);
+<span class="fc" id="L61">        this.comparator = comparator;</span>
+<span class="fc" id="L62">        this.delayErrors = delayErrors;</span>
+<span class="fc" id="L63">    }</span>
+
+    @Override
+    public void call(Subscriber&lt;? super T&gt; child) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L68">        SourceSubscriber&lt;T&gt;[] sources = new SourceSubscriber[this.sources.size()];</span>
+<span class="fc" id="L69">        MergeProducer&lt;T&gt; mp = new MergeProducer&lt;T&gt;(sources, child, comparator, delayErrors);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        for (int i = 0; i &lt; sources.length; i++) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (child.isUnsubscribed()) {</span>
+<span class="nc" id="L72">                return;</span>
+            }
+<span class="fc" id="L74">            SourceSubscriber&lt;T&gt; s = new SourceSubscriber&lt;T&gt;(mp);</span>
+<span class="fc" id="L75">            sources[i] = s;</span>
+<span class="fc" id="L76">            child.add(s);</span>
+        }
+<span class="fc" id="L78">        mp.set(0); // release contents of the array</span>
+<span class="fc" id="L79">        child.setProducer(mp);</span>
+<span class="fc" id="L80">        int i = 0;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (Observable&lt;? extends T&gt; source : this.sources) {</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (child.isUnsubscribed()) {</span>
+<span class="nc" id="L83">                return;</span>
+            }
+<span class="fc" id="L85">            source.unsafeSubscribe(sources[i]);</span>
+<span class="fc" id="L86">            i++;</span>
+<span class="fc" id="L87">        }</span>
+<span class="fc" id="L88">    }</span>
+
+    static final class MergeProducer&lt;T&gt; extends AtomicLong implements Producer {
+        /** */
+        private static final long serialVersionUID = -812969080497027108L;
+
+<span class="fc" id="L94">        final NotificationLite&lt;T&gt; nl = NotificationLite.instance();</span>
+
+        final boolean delayErrors;
+        final Comparator&lt;? super T&gt; comparator;
+        @SuppressWarnings(&quot;rawtypes&quot;)
+        final SourceSubscriber[] sources;
+        final Subscriber&lt;? super T&gt; child;
+
+        final Queue&lt;Throwable&gt; errors;
+
+        boolean emitting;
+        boolean missed;
+
+        @SuppressWarnings(&quot;rawtypes&quot;)
+        public MergeProducer(SourceSubscriber[] sources, Subscriber&lt;? super T&gt; child,
+<span class="fc" id="L109">                Comparator&lt;? super T&gt; comparator, boolean delayErrors) {</span>
+<span class="fc" id="L110">            this.sources = sources;</span>
+<span class="fc" id="L111">            this.delayErrors = delayErrors;</span>
+<span class="fc" id="L112">            this.errors = new MpscLinkedQueue&lt;Throwable&gt;();</span>
+<span class="fc" id="L113">            this.child = child;</span>
+<span class="fc" id="L114">            this.comparator = comparator;</span>
+<span class="fc" id="L115">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L119">            BackpressureUtils.getAndAddRequest(this, n);</span>
+<span class="fc" id="L120">            emit();</span>
+<span class="fc" id="L121">        }</span>
+
+        public void error(Throwable ex) {
+<span class="fc" id="L124">            errors.offer(ex);</span>
+<span class="fc" id="L125">            emit();</span>
+<span class="fc" id="L126">        }</span>
+
+        public void emit() {
+<span class="fc" id="L129">            synchronized (this) {</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                if (emitting) {</span>
+<span class="fc" id="L131">                    missed = true;</span>
+<span class="fc" id="L132">                    return;</span>
+                }
+<span class="fc" id="L134">                emitting = true;</span>
+<span class="pc" id="L135">            }</span>
+            // lift into local variables, just in case
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L138">            final SourceSubscriber&lt;T&gt;[] sources = this.sources;</span>
+<span class="fc" id="L139">            final int n = sources.length;</span>
+<span class="fc" id="L140">            final Subscriber&lt;? super T&gt; child = this.child;</span>
+
+            for (;;) {
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                if (child.isUnsubscribed()) {</span>
+<span class="nc" id="L144">                    return;</span>
+                }
+                // eagerly check for errors
+<span class="fc bfc" id="L147" title="All 4 branches covered.">                if (!delayErrors &amp;&amp; !errors.isEmpty()) {</span>
+<span class="fc" id="L148">                    child.onError(errors.poll());</span>
+<span class="fc" id="L149">                    return;</span>
+                }
+                // the current requested
+<span class="fc" id="L152">                long r = get();</span>
+                // aggregate total emissions
+<span class="fc" id="L154">                long e = 0;</span>
+                // even without request, terminal events can be fired if the
+                // state is right
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (r == 0) {</span>
+<span class="fc" id="L158">                    int doneCount = 0;</span>
+                    // for each source
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                    for (SourceSubscriber&lt;T&gt; s : sources) {</span>
+                        // if completed earlier
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">                        if (s == null) {</span>
+<span class="nc" id="L163">                            doneCount++;</span>
+                        } else {
+                            // or just completed
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">                            if (s.done &amp;&amp; s.queue.isEmpty()) {</span>
+<span class="nc" id="L167">                                doneCount++;</span>
+                            }
+                        }
+                    }
+                    // if all of them are completed
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">                    if (doneCount == n) {</span>
+<span class="nc" id="L173">                        reportErrorOrComplete(child);</span>
+<span class="nc" id="L174">                        return;</span>
+                    }
+                }
+                // until there is request
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                while (r != 0L) {</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">                    if (child.isUnsubscribed()) {</span>
+<span class="nc" id="L180">                        return;</span>
+                    }
+                    // eagerly check for errors
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">                    if (!delayErrors &amp;&amp; !errors.isEmpty()) {</span>
+<span class="nc" id="L184">                        child.onError(errors.poll());</span>
+<span class="nc" id="L185">                        return;</span>
+                    }
+                    // indicates that every active source has at least one value
+<span class="fc" id="L188">                    boolean fullRow = true;</span>
+                    // indicates that at least one value is available
+<span class="fc" id="L190">                    boolean hasAtLeastOne = false;</span>
+                    // holds the smallest of the available values
+<span class="fc" id="L192">                    T minimum = null;</span>
+                    // indicates which source's value is taken so it can be
+                    // polled/replenished
+<span class="fc" id="L195">                    int toPoll = -1;</span>
+                    // number of completed sources
+<span class="fc" id="L197">                    int doneCount = 0;</span>
+                    // for each source
+<span class="fc bfc" id="L199" title="All 2 branches covered.">                    for (int i = 0; i &lt; n; i++) {</span>
+<span class="fc" id="L200">                        SourceSubscriber&lt;T&gt; s = sources[i];</span>
+                        // terminated and emptied sources are ignored
+<span class="fc bfc" id="L202" title="All 2 branches covered.">                        if (s == null) {</span>
+<span class="fc" id="L203">                            doneCount++;</span>
+<span class="fc" id="L204">                            continue;</span>
+                        }
+                        // read the terminal indicator first
+<span class="fc" id="L207">                        boolean d = s.done;</span>
+                        // peek into the queue
+<span class="fc" id="L209">                        Object o = s.queue.peek();</span>
+                        // no value available
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                        if (o == null) {</span>
+                            // because it terminated?
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L214">                                sources[i] = null;</span>
+<span class="fc" id="L215">                                doneCount++;</span>
+<span class="fc" id="L216">                                continue;</span>
+                            }
+                            // otherwise, indicate not all queues are ready
+<span class="fc" id="L219">                            fullRow = false;</span>
+<span class="fc" id="L220">                            break;</span>
+                        }
+                        // if we already found a value, compare it against the
+                        // current
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                        if (hasAtLeastOne) {</span>
+<span class="fc" id="L225">                            T v = nl.getValue(o);</span>
+<span class="fc" id="L226">                            int c = comparator.compare(minimum, v);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                            if (c &gt; 0) {</span>
+<span class="fc" id="L228">                                minimum = v;</span>
+<span class="fc" id="L229">                                toPoll = i;</span>
+                            }
+<span class="fc" id="L231">                        } else {</span>
+                            // this is the first value found
+<span class="fc" id="L233">                            minimum = nl.getValue(o);</span>
+<span class="fc" id="L234">                            hasAtLeastOne = true;</span>
+<span class="fc" id="L235">                            toPoll = i;</span>
+                        }
+                    }
+                    // in case all of the sources completed
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                    if (doneCount == n) {</span>
+<span class="fc" id="L240">                        reportErrorOrComplete(child);</span>
+<span class="fc" id="L241">                        return;</span>
+                    }
+                    // if there was a full row of available values
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                    if (fullRow) {</span>
+                        // given the winner
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">                        if (toPoll &gt;= 0) {</span>
+<span class="fc" id="L247">                            SourceSubscriber&lt;T&gt; s = sources[toPoll];</span>
+                            // remove the winning value from its queue
+<span class="fc" id="L249">                            s.queue.poll();</span>
+                            // request replenishment
+<span class="fc" id="L251">                            s.requestMore(1);</span>
+                        }
+                        // emit the smallest
+<span class="fc" id="L254">                        child.onNext(minimum);</span>
+                        // decrement the available request and increment the
+                        // emit count
+<span class="fc bfc" id="L257" title="All 2 branches covered.">                        if (r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L258">                            r--;</span>
+<span class="fc" id="L259">                            e++;</span>
+                        }
+                    } else {
+                        // if some sources weren't ready, just quit
+                        break;
+                    }
+<span class="fc" id="L265">                }</span>
+
+                // if there was emission, adjust the downstream request amount
+<span class="fc bfc" id="L268" title="All 2 branches covered.">                if (e != 0L) {</span>
+<span class="fc" id="L269">                    addAndGet(-e);</span>
+                }
+
+<span class="fc" id="L272">                synchronized (this) {</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                    if (!missed) {</span>
+<span class="fc" id="L274">                        emitting = false;</span>
+<span class="fc" id="L275">                        return;</span>
+                    }
+<span class="fc" id="L277">                    missed = false;</span>
+<span class="pc" id="L278">                }</span>
+<span class="fc" id="L279">            }</span>
+        }
+
+        void reportErrorOrComplete(Subscriber&lt;? super T&gt; child) {
+<span class="pc bpc" id="L283" title="1 of 4 branches missed.">            if (delayErrors &amp;&amp; !errors.isEmpty()) {</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">                if (errors.size() == 1) {</span>
+<span class="fc" id="L285">                    child.onError(errors.poll());</span>
+                } else {
+<span class="nc" id="L287">                    child.onError(new CompositeException(errors));</span>
+                }
+            } else {
+<span class="fc" id="L290">                child.onCompleted();</span>
+            }
+<span class="fc" id="L292">        }</span>
+    }
+
+    static final class SourceSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+        final RxRingBuffer queue;
+        final MergeProducer&lt;T&gt; parent;
+        volatile boolean done;
+
+<span class="fc" id="L300">        public SourceSubscriber(MergeProducer&lt;T&gt; parent) {</span>
+<span class="fc" id="L301">            queue = RxRingBuffer.getSpscInstance();</span>
+<span class="fc" id="L302">            this.parent = parent;</span>
+<span class="fc" id="L303">        }</span>
+
+        @Override
+        public void onStart() {
+<span class="fc" id="L307">            add(queue);</span>
+<span class="fc" id="L308">            request(RxRingBuffer.SIZE);</span>
+<span class="fc" id="L309">        }</span>
+
+        public void requestMore(long n) {
+<span class="fc" id="L312">            request(n);</span>
+<span class="fc" id="L313">        }</span>
+
+        @Override
+        public void onNext(T t) {
+            try {
+<span class="fc" id="L318">                queue.onNext(parent.nl.next(t));</span>
+<span class="nc" id="L319">            } catch (MissingBackpressureException mbe) {</span>
+                try {
+<span class="nc" id="L321">                    onError(mbe);</span>
+                } finally {
+<span class="nc" id="L323">                    unsubscribe();</span>
+<span class="nc" id="L324">                }</span>
+<span class="nc" id="L325">                return;</span>
+<span class="nc" id="L326">            } catch (IllegalStateException ex) {</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">                if (!isUnsubscribed()) {</span>
+                    try {
+<span class="nc" id="L329">                        onError(ex);</span>
+                    } finally {
+<span class="nc" id="L331">                        unsubscribe();</span>
+<span class="nc" id="L332">                    }</span>
+                }
+<span class="nc" id="L334">                return;</span>
+<span class="fc" id="L335">            }</span>
+<span class="fc" id="L336">            parent.emit();</span>
+<span class="fc" id="L337">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L341">            done = true;</span>
+<span class="fc" id="L342">            parent.error(e);</span>
+<span class="fc" id="L343">        }</span>
+
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L347">            done = true;</span>
+<span class="fc" id="L348">            parent.emit();</span>
+<span class="fc" id="L349">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

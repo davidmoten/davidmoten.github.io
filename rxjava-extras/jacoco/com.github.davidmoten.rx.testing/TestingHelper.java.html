@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TestingHelper.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.testing</a> &gt; <span class="el_source">TestingHelper.java</span></div><h1>TestingHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.testing;
+
+import static com.github.davidmoten.util.Optional.of;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+
+import rx.Observable;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.functions.Func1;
+
+import com.github.davidmoten.util.Optional;
+import com.github.davidmoten.util.Preconditions;
+
+/**
+ * Testing utility functions.
+ */
+<span class="nc" id="L32">public final class TestingHelper {</span>
+
+<span class="fc" id="L34">    private static final Optional&lt;Long&gt; ABSENT = Optional.absent();</span>
+
+    /**
+     * Sets the transformation to be tested and returns a builder to create test
+     * cases.
+     * 
+     * @param function
+     *            the transformation to be tested
+     * @param &lt;T&gt;
+     *            generic type of the from side of the transformation being
+     *            tested
+     * @param &lt;R&gt;
+     *            generic type of the to side of the transformation being tested
+     * @return builder for creating test cases
+     */
+    public static &lt;T, R&gt; Builder&lt;T, R&gt; function(Func1&lt;Observable&lt;T&gt;, Observable&lt;R&gt;&gt; function) {
+<span class="fc" id="L50">        return new Builder&lt;T, R&gt;().function(function);</span>
+    }
+
+    /**
+     * Defines test cases and builds a JUnit test suite.
+     * 
+     * @param &lt;T&gt;
+     *            generic type of the from side of the transformation being
+     *            tested
+     * @param &lt;R&gt;
+     *            generic type of the to side of the transformation being tested
+     */
+    public static class Builder&lt;T, R&gt; {
+
+<span class="fc" id="L64">        private final List&lt;Case&lt;T, R&gt;&gt; cases = new ArrayList&lt;Case&lt;T, R&gt;&gt;();</span>
+        private Func1&lt;Observable&lt;T&gt;, Observable&lt;R&gt;&gt; function;
+<span class="fc" id="L66">        private long waitForUnusbscribeMs = 100;</span>
+<span class="fc" id="L67">        private long waitForTerminalEventMs = 10000;</span>
+<span class="fc" id="L68">        private long waitForMoreTerminalEventsMs = 50;</span>
+
+<span class="fc" id="L70">        private Builder() {</span>
+            // must instantiate via TestingHelper.function method above
+<span class="fc" id="L72">        }</span>
+
+        /**
+         * Sets transformation to be tested and returns the current builder.
+         * 
+         * @param function
+         *            transformation to be tested
+         * @return builder
+         */
+        public Builder&lt;T, R&gt; function(Func1&lt;Observable&lt;T&gt;, Observable&lt;R&gt;&gt; function) {
+<span class="fc" id="L82">            Preconditions.checkNotNull(function, &quot;function cannot be null&quot;);</span>
+<span class="fc" id="L83">            this.function = function;</span>
+<span class="fc" id="L84">            return this;</span>
+        }
+
+        /**
+         * Sets duration to wait for unusubscription to occur (either of source
+         * or of downstream subscriber).
+         * 
+         * @param duration
+         *            number of time units
+         * @param unit
+         *            time unit
+         * @return builder
+         */
+        public Builder&lt;T, R&gt; waitForUnsubscribe(long duration, TimeUnit unit) {
+<span class="fc" id="L98">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L99">            waitForUnusbscribeMs = unit.toMillis(duration);</span>
+<span class="fc" id="L100">            return this;</span>
+        }
+
+        /**
+         * Sets duration to wait for a terminal event (completed or error) when
+         * one is expected.
+         * 
+         * @param duration
+         *            number of time units
+         * @param unit
+         *            time unit
+         * @return builder
+         */
+        public Builder&lt;T, R&gt; waitForTerminalEvent(long duration, TimeUnit unit) {
+<span class="fc" id="L114">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L115">            waitForTerminalEventMs = unit.toMillis(duration);</span>
+<span class="fc" id="L116">            return this;</span>
+        }
+
+        /**
+         * Sets duration to wait for more terminal events after one has been
+         * received.
+         * 
+         * @param duration
+         *            number of time units
+         * @param unit
+         *            time unit
+         * @return builder
+         */
+        public Builder&lt;T, R&gt; waitForMoreTerminalEvents(long duration, TimeUnit unit) {
+<span class="fc" id="L130">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L131">            waitForMoreTerminalEventsMs = unit.toMillis(duration);</span>
+<span class="fc" id="L132">            return this;</span>
+        }
+
+        /**
+         * Sets the name of the test which is used in the name of a junit test.
+         * 
+         * @param name
+         *            name of the test
+         * @return case builder
+         */
+        public CaseBuilder&lt;T, R&gt; name(String name) {
+<span class="fc" id="L143">            Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="fc" id="L144">            return new CaseBuilder&lt;T, R&gt;(this, Observable.&lt;T&gt; empty(), name);</span>
+        }
+
+        /**
+         * Returns the JUnit {@link TestSuite} comprised of the test cases
+         * created so far. The cases will be listed under the root test named
+         * according to the given class.
+         * 
+         * @param cls
+         *            class corresponding to the tests root
+         * @return test suite
+         */
+        public TestSuite testSuite(Class&lt;?&gt; cls) {
+<span class="fc" id="L157">            Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L158">            return new TestSuiteFromCases&lt;T, R&gt;(cls, new ArrayList&lt;Case&lt;T, R&gt;&gt;(this.cases));</span>
+        }
+
+        private Builder&lt;T, R&gt; expect(Observable&lt;T&gt; from, Optional&lt;List&lt;R&gt;&gt; expected,
+                boolean ordered, Optional&lt;Long&gt; expectSize, boolean checkSourceUnsubscribed,
+                String name, Optional&lt;Integer&gt; unsubscribeAfter,
+                Optional&lt;Class&lt;? extends Throwable&gt;&gt; expectError,
+                Optional&lt;Class&lt;? extends RuntimeException&gt;&gt; expectException) {
+<span class="fc" id="L166">            cases.add(new Case&lt;T, R&gt;(from, expected, ordered, expectSize, checkSourceUnsubscribed,</span>
+                    function, name, unsubscribeAfter, expectError, waitForUnusbscribeMs,
+                    waitForTerminalEventMs, waitForMoreTerminalEventsMs, expectException));
+<span class="fc" id="L169">            return this;</span>
+        }
+    }
+
+    public static class CaseBuilder&lt;T, R&gt; {
+        private final Builder&lt;T, R&gt; builder;
+        private String name;
+<span class="fc" id="L176">        private Observable&lt;T&gt; from = Observable.empty();</span>
+<span class="fc" id="L177">        private boolean checkSourceUnsubscribed = true;</span>
+<span class="fc" id="L178">        private Optional&lt;Integer&gt; unsubscribeAfter = Optional.absent();</span>
+
+<span class="fc" id="L180">        private CaseBuilder(Builder&lt;T, R&gt; builder, Observable&lt;T&gt; from, String name) {</span>
+<span class="fc" id="L181">            Preconditions.checkNotNull(builder);</span>
+<span class="fc" id="L182">            Preconditions.checkNotNull(from);</span>
+<span class="fc" id="L183">            Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L184">            this.builder = builder;</span>
+<span class="fc" id="L185">            this.from = from;</span>
+<span class="fc" id="L186">            this.name = name;</span>
+<span class="fc" id="L187">        }</span>
+
+        public CaseBuilder&lt;T, R&gt; name(String name) {
+<span class="nc" id="L190">            Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="nc" id="L191">            this.name = name;</span>
+<span class="nc" id="L192">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; fromEmpty() {
+<span class="fc" id="L196">            from = Observable.empty();</span>
+<span class="fc" id="L197">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; from(T... source) {
+<span class="fc" id="L201">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L202">            from = Observable.from(source);</span>
+<span class="fc" id="L203">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; from(Observable&lt;T&gt; source) {
+<span class="fc" id="L207">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L208">            from = source;</span>
+<span class="fc" id="L209">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; fromError() {
+<span class="fc" id="L213">            from = Observable.error(new TestingException());</span>
+<span class="fc" id="L214">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; fromErrorAfter(T... source) {
+<span class="fc" id="L218">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L219">            from = Observable.from(source).concatWith(Observable.&lt;T&gt; error(new TestingException()));</span>
+<span class="fc" id="L220">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; fromErrorAfter(Observable&lt;T&gt; source) {
+<span class="nc" id="L224">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="nc" id="L225">            from = source;</span>
+<span class="nc" id="L226">            return this;</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; skipUnsubscribedCheck() {
+<span class="nc" id="L230">            this.checkSourceUnsubscribed = false;</span>
+<span class="nc" id="L231">            return this;</span>
+        }
+
+        public Builder&lt;T, R&gt; expectEmpty() {
+<span class="fc" id="L235">            return expect(Collections.&lt;R&gt; emptyList());</span>
+        }
+
+        public Builder&lt;T, R&gt; expectError() {
+<span class="fc" id="L239">            return expectError(TestingException.class);</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder&lt;T, R&gt; expectError(Class&lt;? extends Throwable&gt; cls) {
+<span class="fc" id="L244">            Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L245">            return builder.expect(from, Optional.&lt;List&lt;R&gt;&gt; absent(), true, ABSENT,</span>
+                    checkSourceUnsubscribed, name, unsubscribeAfter,
+<span class="fc" id="L247">                    (Optional&lt;Class&lt;? extends Throwable&gt;&gt;) (Optional&lt;?&gt;) of(cls),</span>
+<span class="fc" id="L248">                    Optional.&lt;Class&lt;? extends RuntimeException&gt;&gt; absent());</span>
+        }
+
+        public Builder&lt;T, R&gt; expect(R... source) {
+<span class="fc" id="L252">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L253">            return expect(Arrays.asList(source));</span>
+        }
+
+        public Builder&lt;T, R&gt; expectSize(long n) {
+<span class="fc" id="L257">            return builder.expect(from, Optional.&lt;List&lt;R&gt;&gt; absent(), true, of(n),</span>
+                    checkSourceUnsubscribed, name, unsubscribeAfter,
+<span class="fc" id="L259">                    Optional.&lt;Class&lt;? extends Throwable&gt;&gt; absent(),</span>
+<span class="fc" id="L260">                    Optional.&lt;Class&lt;? extends RuntimeException&gt;&gt; absent());</span>
+        }
+
+        public Builder&lt;T, R&gt; expect(List&lt;R&gt; source) {
+<span class="fc" id="L264">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L265">            return expect(source, true);</span>
+        }
+
+        private Builder&lt;T, R&gt; expect(List&lt;R&gt; items, boolean ordered) {
+<span class="fc" id="L269">            return builder.expect(from, of(items), ordered, ABSENT, checkSourceUnsubscribed, name,</span>
+<span class="fc" id="L270">                    unsubscribeAfter, Optional.&lt;Class&lt;? extends Throwable&gt;&gt; absent(),</span>
+<span class="fc" id="L271">                    Optional.&lt;Class&lt;? extends RuntimeException&gt;&gt; absent());</span>
+        }
+
+        public Builder&lt;T, R&gt; expectAnyOrder(R... source) {
+<span class="fc" id="L275">            Preconditions.checkNotNull(source, &quot;source cannot be null&quot;);</span>
+<span class="fc" id="L276">            return expect(Arrays.asList(source), false);</span>
+        }
+
+        public CaseBuilder&lt;T, R&gt; unsubscribeAfter(int n) {
+<span class="fc" id="L280">            unsubscribeAfter = of(n);</span>
+<span class="fc" id="L281">            return this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder&lt;T, R&gt; expectException(Class&lt;? extends RuntimeException&gt; cls) {
+<span class="fc" id="L286">            return builder.expect(from, Optional.&lt;List&lt;R&gt;&gt; absent(), true, ABSENT,</span>
+                    checkSourceUnsubscribed, name, unsubscribeAfter,
+<span class="fc" id="L288">                    Optional.&lt;Class&lt;? extends Throwable&gt;&gt; absent(),</span>
+<span class="fc" id="L289">                    (Optional&lt;Class&lt;? extends RuntimeException&gt;&gt;) (Optional&lt;?&gt;) Optional.of(cls));</span>
+        }
+
+    }
+
+    private static class Case&lt;T, R&gt; {
+        final String name;
+        final Observable&lt;T&gt; from;
+        final Optional&lt;List&lt;R&gt;&gt; expected;
+        final boolean checkSourceUnsubscribed;
+        final Func1&lt;Observable&lt;T&gt;, Observable&lt;R&gt;&gt; function;
+        final Optional&lt;Integer&gt; unsubscribeAfter;
+        final boolean ordered;
+        final Optional&lt;Long&gt; expectSize;
+        final Optional&lt;Class&lt;? extends Throwable&gt;&gt; expectError;
+        final long waitForUnusbscribeMs;
+        final long waitForTerminalEventMs;
+        final long waitForMoreTerminalEventsMs;
+        final Optional&lt;Class&lt;? extends RuntimeException&gt;&gt; expectedException;
+
+        Case(Observable&lt;T&gt; from, Optional&lt;List&lt;R&gt;&gt; expected, boolean ordered,
+                Optional&lt;Long&gt; expectSize, boolean checkSourceUnsubscribed,
+                Func1&lt;Observable&lt;T&gt;, Observable&lt;R&gt;&gt; function, String name,
+                Optional&lt;Integer&gt; unsubscribeAfter,
+                Optional&lt;Class&lt;? extends Throwable&gt;&gt; expectError, long waitForUnusbscribeMs,
+                long waitForTerminalEventMs, long waitForMoreTerminalEventsMs,
+<span class="fc" id="L315">                Optional&lt;Class&lt;? extends RuntimeException&gt;&gt; expectedException) {</span>
+<span class="fc" id="L316">            Preconditions.checkNotNull(from);</span>
+<span class="fc" id="L317">            Preconditions.checkNotNull(expected);</span>
+<span class="fc" id="L318">            Preconditions.checkNotNull(expectSize);</span>
+<span class="fc" id="L319">            Preconditions.checkNotNull(function);</span>
+<span class="fc" id="L320">            Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L321">            Preconditions.checkNotNull(unsubscribeAfter);</span>
+<span class="fc" id="L322">            Preconditions.checkNotNull(expectError);</span>
+<span class="fc" id="L323">            Preconditions.checkNotNull(expectedException);</span>
+<span class="fc" id="L324">            this.from = from;</span>
+<span class="fc" id="L325">            this.expected = expected;</span>
+<span class="fc" id="L326">            this.ordered = ordered;</span>
+<span class="fc" id="L327">            this.expectSize = expectSize;</span>
+<span class="fc" id="L328">            this.checkSourceUnsubscribed = checkSourceUnsubscribed;</span>
+<span class="fc" id="L329">            this.function = function;</span>
+<span class="fc" id="L330">            this.name = name;</span>
+<span class="fc" id="L331">            this.unsubscribeAfter = unsubscribeAfter;</span>
+<span class="fc" id="L332">            this.expectError = expectError;</span>
+<span class="fc" id="L333">            this.waitForUnusbscribeMs = waitForUnusbscribeMs;</span>
+<span class="fc" id="L334">            this.waitForTerminalEventMs = waitForTerminalEventMs;</span>
+<span class="fc" id="L335">            this.waitForMoreTerminalEventsMs = waitForMoreTerminalEventsMs;</span>
+<span class="fc" id="L336">            this.expectedException = expectedException;</span>
+<span class="fc" id="L337">        }</span>
+    }
+
+    private static &lt;T, R&gt; void runTest(Case&lt;T, R&gt; c, TestType testType) {
+        try {
+<span class="fc" id="L342">            CountDownLatch sourceUnsubscribeLatch = new CountDownLatch(1);</span>
+<span class="fc" id="L343">            MyTestSubscriber&lt;R&gt; sub = createTestSubscriber(testType, c.unsubscribeAfter);</span>
+<span class="fc" id="L344">            c.function.call(c.from.doOnUnsubscribe(countDown(sourceUnsubscribeLatch)))</span>
+<span class="fc" id="L345">                    .subscribe(sub);</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            if (c.unsubscribeAfter.isPresent()) {</span>
+<span class="fc" id="L347">                waitForUnsubscribe(sourceUnsubscribeLatch, c.waitForUnusbscribeMs,</span>
+                        TimeUnit.MILLISECONDS);
+                // if unsubscribe has occurred there is no mandated behaviour in
+                // terms of terminal events so we don't check them
+            } else {
+<span class="fc" id="L352">                sub.awaitTerminalEvent(c.waitForTerminalEventMs, TimeUnit.MILLISECONDS);</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">                if (c.expectError.isPresent()) {</span>
+<span class="fc" id="L354">                    sub.assertError(c.expectError.get());</span>
+                    // wait for more terminal events
+<span class="fc" id="L356">                    pause(c.waitForMoreTerminalEventsMs, TimeUnit.MILLISECONDS);</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">                    if (sub.numOnCompletedEvents() &gt; 0)</span>
+<span class="nc" id="L358">                        throw new UnexpectedOnCompletedException();</span>
+                } else {
+<span class="fc" id="L360">                    sub.assertNoErrors();</span>
+                    // wait for more terminal events
+<span class="fc" id="L362">                    pause(c.waitForMoreTerminalEventsMs, TimeUnit.MILLISECONDS);</span>
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">                    if (sub.numOnCompletedEvents() &gt; 1)</span>
+<span class="nc" id="L364">                        throw new TooManyOnCompletedException();</span>
+<span class="fc" id="L365">                    sub.assertNoErrors();</span>
+                }
+            }
+
+<span class="fc bfc" id="L369" title="All 2 branches covered.">            if (c.expected.isPresent())</span>
+<span class="fc" id="L370">                sub.assertReceivedOnNext(c.expected.get(), c.ordered);</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">            if (c.expectSize.isPresent())</span>
+<span class="fc" id="L372">                sub.assertReceivedCountIs(c.expectSize.get());</span>
+<span class="fc" id="L373">            sub.assertUnsubscribed();</span>
+<span class="pc bpc" id="L374" title="1 of 2 branches missed.">            if (c.checkSourceUnsubscribed)</span>
+<span class="fc" id="L375">                waitForUnsubscribe(sourceUnsubscribeLatch, c.waitForUnusbscribeMs,</span>
+                        TimeUnit.MILLISECONDS);
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">            if (c.expectedException.isPresent())</span>
+<span class="nc" id="L378">                throw new ExpectedExceptionNotThrownException();</span>
+<span class="fc" id="L379">        } catch (RuntimeException e) {</span>
+<span class="pc bpc" id="L380" title="2 of 4 branches missed.">            if (!c.expectedException.isPresent() || !c.expectedException.get().isInstance(e))</span>
+<span class="nc" id="L381">                throw e;</span>
+            // otherwise was expected
+<span class="fc" id="L383">        }</span>
+<span class="fc" id="L384">    }</span>
+
+    private static Action0 countDown(final CountDownLatch latch) {
+<span class="fc" id="L387">        return new Action0() {</span>
+            @Override
+            public void call() {
+<span class="fc" id="L390">                latch.countDown();</span>
+<span class="fc" id="L391">            }</span>
+        };
+    }
+
+    private static &lt;T&gt; void waitForUnsubscribe(CountDownLatch latch, long duration, TimeUnit unit) {
+        try {
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            if (!latch.await(duration, unit))</span>
+<span class="fc" id="L398">                throw new UnsubscriptionFromSourceTimeoutException();</span>
+<span class="nc" id="L399">        } catch (InterruptedException e) {</span>
+            // do nothing
+<span class="fc" id="L401">        }</span>
+<span class="fc" id="L402">    }</span>
+
+<span class="fc" id="L404">    public static class UnsubscriptionFromSourceTimeoutException extends RuntimeException {</span>
+        private static final long serialVersionUID = -1142604414390722544L;
+    }
+
+    private static void pause(long duration, TimeUnit unit) {
+        try {
+<span class="fc" id="L410">            Thread.sleep(unit.toMillis(duration));</span>
+<span class="nc" id="L411">        } catch (InterruptedException e) {</span>
+            // do nothing
+<span class="fc" id="L413">        }</span>
+<span class="fc" id="L414">    }</span>
+
+    private static final class MyTestSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+
+<span class="fc" id="L418">        private final List&lt;T&gt; next = new ArrayList&lt;T&gt;();</span>
+        private final Optional&lt;Long&gt; onStartRequest;
+        private final Optional&lt;Long&gt; onNextRequest;
+        private final Optional&lt;Integer&gt; unsubscribeAfter;
+        private final CountDownLatch terminalLatch;
+<span class="fc" id="L423">        private int completed = 0;</span>
+<span class="fc" id="L424">        private int count = 0;</span>
+<span class="fc" id="L425">        private int errors = 0;</span>
+<span class="fc" id="L426">        private final AtomicLong expected = new AtomicLong();</span>
+<span class="fc" id="L427">        private Optional&lt;Throwable&gt; lastError = Optional.absent();</span>
+        private Optional&lt;Long&gt; onNextRequest2;
+
+        MyTestSubscriber(Optional&lt;Integer&gt; unsubscribeAfter, final Optional&lt;Long&gt; onStartRequest,
+<span class="fc" id="L431">                final Optional&lt;Long&gt; onNextRequest, final Optional&lt;Long&gt; onNextRequest2) {</span>
+<span class="fc" id="L432">            this.unsubscribeAfter = unsubscribeAfter;</span>
+<span class="fc" id="L433">            this.onStartRequest = onStartRequest;</span>
+<span class="fc" id="L434">            this.onNextRequest = onNextRequest;</span>
+<span class="fc" id="L435">            this.onNextRequest2 = onNextRequest2;</span>
+<span class="fc" id="L436">            this.terminalLatch = new CountDownLatch(1);</span>
+<span class="fc" id="L437">        }</span>
+
+        MyTestSubscriber(Optional&lt;Integer&gt; unsubscribeAfter) {
+<span class="fc" id="L440">            this(unsubscribeAfter, ABSENT, ABSENT, ABSENT);</span>
+<span class="fc" id="L441">        }</span>
+
+        @Override
+        public void onStart() {
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            if (!onStartRequest.isPresent())</span>
+                // if nothing requested in onStart then must be requesting all
+<span class="fc" id="L447">                expected.set(Long.MAX_VALUE);</span>
+            else
+<span class="fc" id="L449">                expected.set(0);</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">            if (onStartRequest.isPresent())</span>
+<span class="fc" id="L451">                requestMore(onStartRequest.get());</span>
+<span class="fc" id="L452">        }</span>
+
+        private void requestMore(long n) {
+<span class="fc bfc" id="L455" title="All 2 branches covered.">            if (expected.get() != Long.MAX_VALUE) {</span>
+<span class="fc bfc" id="L456" title="All 2 branches covered.">                if (n &gt; 0)</span>
+<span class="fc" id="L457">                    expected.addAndGet(n);</span>
+                // allow zero or negative requests to pass through as a test
+<span class="fc" id="L459">                request(n);</span>
+            }
+<span class="fc" id="L461">        }</span>
+
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L465">            completed++;</span>
+<span class="fc" id="L466">            terminalLatch.countDown();</span>
+<span class="fc" id="L467">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L471">            errors++;</span>
+<span class="fc" id="L472">            lastError = of(e);</span>
+<span class="fc" id="L473">            terminalLatch.countDown();</span>
+<span class="fc" id="L474">        }</span>
+
+        @Override
+        public void onNext(T t) {
+            final long exp;
+<span class="fc bfc" id="L479" title="All 2 branches covered.">            if (expected.get() != Long.MAX_VALUE)</span>
+<span class="fc" id="L480">                exp = expected.decrementAndGet();</span>
+            else
+<span class="fc" id="L482">                exp = expected.get();</span>
+<span class="fc" id="L483">            next.add(t);</span>
+<span class="fc" id="L484">            count++;</span>
+<span class="pc bpc" id="L485" title="1 of 2 branches missed.">            if (exp &lt; 0)</span>
+<span class="nc" id="L486">                onError(new DeliveredMoreThanRequestedException());</span>
+<span class="pc bpc" id="L487" title="1 of 4 branches missed.">            else if (unsubscribeAfter.isPresent() &amp;&amp; count == unsubscribeAfter.get())</span>
+<span class="fc" id="L488">                unsubscribe();</span>
+            else {
+<span class="fc bfc" id="L490" title="All 2 branches covered.">                if (onNextRequest.isPresent())</span>
+<span class="fc" id="L491">                    requestMore(onNextRequest.get());</span>
+<span class="fc bfc" id="L492" title="All 2 branches covered.">                if (onNextRequest2.isPresent())</span>
+<span class="fc" id="L493">                    requestMore(onNextRequest2.get());</span>
+            }
+<span class="fc" id="L495">        }</span>
+
+        void assertError(Class&lt;?&gt; cls) {
+<span class="pc bpc" id="L498" title="2 of 4 branches missed.">            if (errors != 1 || !cls.isInstance(lastError.get()))</span>
+<span class="nc" id="L499">                throw new ExpectedErrorNotReceivedException();</span>
+<span class="fc" id="L500">        }</span>
+
+        void assertReceivedCountIs(long count) {
+<span class="pc bpc" id="L503" title="1 of 2 branches missed.">            if (count != next.size())</span>
+<span class="nc" id="L504">                throw new WrongOnNextCountException();</span>
+<span class="fc" id="L505">        }</span>
+
+        void awaitTerminalEvent(long duration, TimeUnit unit) {
+            try {
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">                if (!terminalLatch.await(duration, unit))</span>
+<span class="nc" id="L510">                    throw new TerminalEventTimeoutException();</span>
+<span class="nc" id="L511">            } catch (InterruptedException e) {</span>
+                // do nothing
+<span class="fc" id="L513">            }</span>
+<span class="fc" id="L514">        }</span>
+
+        void assertReceivedOnNext(List&lt;T&gt; expected, boolean ordered) {
+<span class="pc bpc" id="L517" title="1 of 2 branches missed.">            if (!TestingHelper.equals(expected, next, ordered))</span>
+<span class="nc" id="L518">                throw new UnexpectedOnNextException(&quot;expected=&quot; + expected + &quot;, actual=&quot; + next);</span>
+<span class="fc" id="L519">        }</span>
+
+        void assertUnsubscribed() {
+<span class="pc bpc" id="L522" title="1 of 2 branches missed.">            if (!isUnsubscribed())</span>
+<span class="nc" id="L523">                throw new DownstreamUnsubscriptionDidNotOccurException();</span>
+<span class="fc" id="L524">        }</span>
+
+        int numOnCompletedEvents() {
+<span class="fc" id="L527">            return completed;</span>
+        }
+
+        void assertNoErrors() {
+<span class="pc bpc" id="L531" title="1 of 2 branches missed.">            if (errors &gt; 0) {</span>
+<span class="nc" id="L532">                lastError.get().printStackTrace();</span>
+<span class="nc" id="L533">                throw new UnexpectedOnErrorException();</span>
+            }
+<span class="fc" id="L535">        }</span>
+
+    }
+
+<span class="nc" id="L539">    public static class TerminalEventTimeoutException extends RuntimeException {</span>
+        private static final long serialVersionUID = -7355281653999339840L;
+    }
+
+<span class="nc" id="L543">    public static class ExpectedErrorNotReceivedException extends RuntimeException {</span>
+        private static final long serialVersionUID = -567146145612029349L;
+    }
+
+<span class="nc" id="L547">    public static class ExpectedExceptionNotThrownException extends RuntimeException {</span>
+        private static final long serialVersionUID = -104410457605712970L;
+    }
+
+<span class="nc" id="L551">    public static class WrongOnNextCountException extends RuntimeException {</span>
+        private static final long serialVersionUID = 984672575527784559L;
+    }
+
+<span class="nc" id="L555">    public static class UnexpectedOnCompletedException extends RuntimeException {</span>
+        private static final long serialVersionUID = 7164517608988798969L;
+    }
+
+<span class="nc" id="L559">    public static class UnexpectedOnErrorException extends RuntimeException {</span>
+        private static final long serialVersionUID = -813740137771756205L;
+    }
+
+<span class="nc" id="L563">    public static class TooManyOnCompletedException extends RuntimeException {</span>
+        private static final long serialVersionUID = -405328882928962333L;
+    }
+
+<span class="nc" id="L567">    public static class DownstreamUnsubscriptionDidNotOccurException extends RuntimeException {</span>
+        private static final long serialVersionUID = 7218646111664183642L;
+    }
+
+    public static class UnexpectedOnNextException extends RuntimeException {
+        private static final long serialVersionUID = -3656406263739222767L;
+
+        public UnexpectedOnNextException(String message) {
+<span class="nc" id="L575">            super(message);</span>
+<span class="nc" id="L576">        }</span>
+
+    }
+
+<span class="pc" id="L580">    private static enum TestType {</span>
+<span class="fc" id="L581">        WITHOUT_BACKP, BACKP_INITIAL_REQUEST_MAX, BACKP_INITIAL_REQUEST_MAX_THEN_BY_ONE, BACKP_ONE_BY_ONE, BACKP_TWO_BY_TWO, BACKP_REQUEST_ZERO, BACKP_FIVE_BY_FIVE, BACKP_FIFTY_BY_FIFTY, BACKP_THOUSAND_BY_THOUSAND, BACKP_REQUEST_OVERFLOW;</span>
+    }
+
+    private static &lt;T&gt; MyTestSubscriber&lt;T&gt; createTestSubscriber(Optional&lt;Integer&gt; unsubscribeAfter,
+            long onStartRequest, Optional&lt;Long&gt; onNextRequest) {
+<span class="fc" id="L586">        return new MyTestSubscriber&lt;T&gt;(unsubscribeAfter, of(onStartRequest), onNextRequest, ABSENT);</span>
+    }
+
+    private static &lt;T&gt; MyTestSubscriber&lt;T&gt; createTestSubscriber(TestType testType,
+            final Optional&lt;Integer&gt; unsubscribeAfter) {
+
+<span class="fc bfc" id="L592" title="All 2 branches covered.">        if (testType == TestType.WITHOUT_BACKP)</span>
+<span class="fc" id="L593">            return new MyTestSubscriber&lt;T&gt;(unsubscribeAfter);</span>
+<span class="fc bfc" id="L594" title="All 2 branches covered.">        else if (testType == TestType.BACKP_INITIAL_REQUEST_MAX)</span>
+<span class="fc" id="L595">            return createTestSubscriber(unsubscribeAfter, Long.MAX_VALUE, ABSENT);</span>
+<span class="fc bfc" id="L596" title="All 2 branches covered.">        else if (testType == TestType.BACKP_INITIAL_REQUEST_MAX_THEN_BY_ONE)</span>
+<span class="fc" id="L597">            return createTestSubscriber(unsubscribeAfter, Long.MAX_VALUE, of(1L));</span>
+<span class="fc bfc" id="L598" title="All 2 branches covered.">        else if (testType == TestType.BACKP_ONE_BY_ONE)</span>
+<span class="fc" id="L599">            return createTestSubscriber(unsubscribeAfter, 1L, of(1L));</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">        else if (testType == TestType.BACKP_REQUEST_ZERO)</span>
+<span class="fc" id="L601">            return new MyTestSubscriber&lt;T&gt;(unsubscribeAfter, of(1L), of(0L), of(1L));</span>
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">        else if (testType == TestType.BACKP_REQUEST_OVERFLOW)</span>
+<span class="nc" id="L603">            return new MyTestSubscriber&lt;T&gt;(unsubscribeAfter, of(1L), of(Long.MAX_VALUE / 3 * 2),</span>
+<span class="nc" id="L604">                    of(Long.MAX_VALUE / 3 * 2));</span>
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        else if (testType == TestType.BACKP_TWO_BY_TWO)</span>
+<span class="fc" id="L606">            return createTestSubscriberWithBackpNbyN(unsubscribeAfter, 2);</span>
+<span class="fc bfc" id="L607" title="All 2 branches covered.">        else if (testType == TestType.BACKP_FIVE_BY_FIVE)</span>
+<span class="fc" id="L608">            return createTestSubscriberWithBackpNbyN(unsubscribeAfter, 5);</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">        else if (testType == TestType.BACKP_FIFTY_BY_FIFTY)</span>
+<span class="fc" id="L610">            return createTestSubscriberWithBackpNbyN(unsubscribeAfter, 50);</span>
+<span class="pc bpc" id="L611" title="1 of 2 branches missed.">        else if (testType == TestType.BACKP_THOUSAND_BY_THOUSAND)</span>
+<span class="fc" id="L612">            return createTestSubscriberWithBackpNbyN(unsubscribeAfter, 1000);</span>
+        else
+<span class="nc" id="L614">            throw new RuntimeException(testType + &quot; not implemented&quot;);</span>
+
+    }
+
+    private static &lt;T&gt; MyTestSubscriber&lt;T&gt; createTestSubscriberWithBackpNbyN(
+            final Optional&lt;Integer&gt; unsubscribeAfter, final long requestSize) {
+<span class="fc" id="L620">        return new MyTestSubscriber&lt;T&gt;(unsubscribeAfter, of(requestSize), ABSENT, of(requestSize));</span>
+    }
+
+    @RunWith(Suite.class)
+    @SuiteClasses({})
+    private static class TestSuiteFromCases&lt;T, R&gt; extends TestSuite {
+
+        TestSuiteFromCases(Class&lt;?&gt; cls, List&lt;Case&lt;T, R&gt;&gt; cases) {
+<span class="fc" id="L628">            super(cls);</span>
+<span class="fc bfc" id="L629" title="All 2 branches covered.">            for (Case&lt;T, R&gt; c : cases) {</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">                for (TestType testType : TestType.values())</span>
+<span class="fc bfc" id="L631" title="All 2 branches covered.">                    if (testType != TestType.BACKP_REQUEST_OVERFLOW)</span>
+<span class="fc" id="L632">                        addTest(new MyTestCase&lt;T, R&gt;(c.name + &quot;_&quot; + testType.name(), c, testType));</span>
+<span class="fc" id="L633">            }</span>
+<span class="fc" id="L634">        }</span>
+    }
+
+    private static class MyTestCase&lt;T, R&gt; extends TestCase {
+
+        private final Case&lt;T, R&gt; c;
+        private final TestType testType;
+
+        MyTestCase(String name, Case&lt;T, R&gt; c, TestType testType) {
+<span class="fc" id="L643">            super(name);</span>
+<span class="fc" id="L644">            this.c = c;</span>
+<span class="fc" id="L645">            this.testType = testType;</span>
+<span class="fc" id="L646">        }</span>
+
+        @Override
+        protected void runTest() throws Throwable {
+<span class="fc" id="L650">            TestingHelper.runTest(c, testType);</span>
+<span class="fc" id="L651">        }</span>
+
+    }
+
+    private static &lt;T&gt; boolean equals(Collection&lt;T&gt; a, Collection&lt;T&gt; b, boolean ordered) {
+<span class="pc bpc" id="L656" title="1 of 2 branches missed.">        if (a == null)</span>
+<span class="nc bnc" id="L657" title="All 2 branches missed.">            return b == null;</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">        else if (b == null)</span>
+<span class="nc bnc" id="L659" title="All 2 branches missed.">            return a == null;</span>
+<span class="pc bpc" id="L660" title="1 of 2 branches missed.">        else if (a.size() != b.size())</span>
+<span class="nc" id="L661">            return false;</span>
+<span class="fc bfc" id="L662" title="All 2 branches covered.">        else if (ordered)</span>
+<span class="fc" id="L663">            return a.equals(b);</span>
+        else {
+<span class="fc" id="L665">            List&lt;T&gt; list = new ArrayList&lt;T&gt;(a);</span>
+<span class="fc bfc" id="L666" title="All 2 branches covered.">            for (T t : b) {</span>
+<span class="pc bpc" id="L667" title="1 of 2 branches missed.">                if (!list.remove(t))</span>
+<span class="nc" id="L668">                    return false;</span>
+<span class="fc" id="L669">            }</span>
+<span class="fc" id="L670">            return true;</span>
+        }
+    }
+
+<span class="fc" id="L674">    private static class TestingException extends RuntimeException {</span>
+
+        private static final long serialVersionUID = 4467514769366847747L;
+
+    }
+
+    /**
+     * RuntimeException implementation to represent the situation of more items
+     * being delivered by a source than are requested via backpressure.
+     */
+    public static class DeliveredMoreThanRequestedException extends RuntimeException {
+        private static final long serialVersionUID = 1369440545774454215L;
+
+        public DeliveredMoreThanRequestedException() {
+<span class="nc" id="L688">            super(&quot;more items arrived than requested&quot;);</span>
+<span class="nc" id="L689">        }</span>
+    }
+
+    /**
+     * RuntimeException implementation to represent an assertion failure.
+     */
+    public static class AssertionException extends RuntimeException {
+        private static final long serialVersionUID = -6846674323693517388L;
+
+        public AssertionException(String message) {
+<span class="nc" id="L699">            super(message);</span>
+<span class="nc" id="L700">        }</span>
+    }
+
+    /**
+     * Returns a {@link Func1} For use with {@code Observable.to()}. Enables
+     * method chaining from observable to assertions.
+     * 
+     * @param &lt;T&gt;
+     *            type of item in observable stream
+     * @return Func1
+     */
+    public static &lt;T&gt; Func1&lt;Observable&lt;T&gt;, TestSubscriber2&lt;T&gt;&gt; test() {
+<span class="fc" id="L712">        return TestSubscriber2.test();</span>
+    }
+
+    /**
+     * Returns a {@link Func1} For use with {@code Observable.to()}. Enables
+     * method chaining from observable to assertions.
+     * 
+     * @param initialRequest
+     *            amount to be requested in the {@code onStart} method of the
+     *            subscriber.
+     * @param &lt;T&gt;
+     *            type of item in observable stream
+     * @return Func1
+     */
+    public static &lt;T&gt; Func1&lt;Observable&lt;T&gt;, TestSubscriber2&lt;T&gt;&gt; testWithRequest(
+            long initialRequest) {
+<span class="fc" id="L728">        return TestSubscriber2.testWithRequest(initialRequest);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TestSubscriber2.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.testing</a> &gt; <span class="el_source">TestSubscriber2.java</span></div><h1>TestSubscriber2.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.testing;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import rx.Observable;
+import rx.Producer;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.functions.Func1;
+import rx.observers.TestSubscriber;
+
+public class TestSubscriber2&lt;T&gt; extends Subscriber&lt;T&gt; {
+
+    private final TestSubscriber&lt;T&gt; ts;
+
+<span class="fc" id="L17">    private TestSubscriber2(TestSubscriber&lt;T&gt; ts) {</span>
+<span class="fc" id="L18">        this.ts = ts;</span>
+<span class="fc" id="L19">    }</span>
+
+    public static &lt;T&gt; TestSubscriber2&lt;T&gt; createWithRequest(long initialRequest) {
+<span class="fc" id="L22">        TestSubscriber&lt;T&gt; t1 = new TestSubscriber&lt;T&gt;(initialRequest);</span>
+<span class="fc" id="L23">        TestSubscriber2&lt;T&gt; t2 = new TestSubscriber2&lt;T&gt;(t1);</span>
+<span class="fc" id="L24">        t2.add(t1);</span>
+<span class="fc" id="L25">        return t2;</span>
+    }
+
+    static &lt;T&gt; Func1&lt;Observable&lt;T&gt;, TestSubscriber2&lt;T&gt;&gt; test() {
+<span class="fc" id="L29">        return testWithRequest(Long.MAX_VALUE);</span>
+    }
+
+    static &lt;T&gt; Func1&lt;Observable&lt;T&gt;, TestSubscriber2&lt;T&gt;&gt; testWithRequest(final long initialRequest) {
+<span class="fc" id="L33">        return new Func1&lt;Observable&lt;T&gt;, TestSubscriber2&lt;T&gt;&gt;() {</span>
+
+            @Override
+            public TestSubscriber2&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L37">                TestSubscriber2&lt;T&gt; ts2 = createWithRequest(initialRequest);</span>
+<span class="fc" id="L38">                o.subscribe(ts2.ts);</span>
+<span class="fc" id="L39">                return ts2;</span>
+            }
+
+        };
+    }
+
+    public void onStart() {
+<span class="nc" id="L46">        ts.onStart();</span>
+<span class="nc" id="L47">    }</span>
+
+    public void onCompleted() {
+<span class="nc" id="L50">        ts.onCompleted();</span>
+<span class="nc" id="L51">    }</span>
+
+    public void setProducer(Producer p) {
+<span class="nc" id="L54">        ts.setProducer(p);</span>
+<span class="nc" id="L55">    }</span>
+
+    public final int getCompletions() {
+<span class="nc" id="L58">        return ts.getCompletions();</span>
+    }
+
+    public void onError(Throwable e) {
+<span class="nc" id="L62">        ts.onError(e);</span>
+<span class="nc" id="L63">    }</span>
+
+    public List&lt;Throwable&gt; getOnErrorEvents() {
+<span class="nc" id="L66">        return ts.getOnErrorEvents();</span>
+    }
+
+    public void onNext(T t) {
+<span class="nc" id="L70">        ts.onNext(t);</span>
+<span class="nc" id="L71">    }</span>
+
+    public String toString() {
+<span class="nc" id="L74">        return ts.toString();</span>
+    }
+
+    public final int getValueCount() {
+<span class="nc" id="L78">        return ts.getValueCount();</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; requestMore(long n) {
+<span class="fc" id="L82">        ts.requestMore(n);</span>
+<span class="fc" id="L83">        return this;</span>
+    }
+
+    public List&lt;T&gt; getOnNextEvents() {
+<span class="nc" id="L87">        return ts.getOnNextEvents();</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertReceivedOnNext(List&lt;T&gt; items) {
+<span class="nc" id="L91">        ts.assertReceivedOnNext(items);</span>
+<span class="nc" id="L92">        return this;</span>
+    }
+
+    public final boolean awaitValueCount(int expected, long timeout, TimeUnit unit) {
+<span class="nc" id="L96">        return ts.awaitValueCount(expected, timeout, unit);</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertTerminalEvent() {
+<span class="nc" id="L100">        ts.assertTerminalEvent();</span>
+<span class="nc" id="L101">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertUnsubscribed() {
+<span class="nc" id="L105">        ts.assertUnsubscribed();</span>
+<span class="nc" id="L106">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertNoErrors() {
+<span class="fc" id="L110">        ts.assertNoErrors();</span>
+<span class="fc" id="L111">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; awaitTerminalEvent() {
+<span class="fc" id="L115">        ts.awaitTerminalEvent();</span>
+<span class="fc" id="L116">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; awaitTerminalEvent(long timeout, TimeUnit unit) {
+<span class="fc" id="L120">        ts.awaitTerminalEvent(timeout, unit);</span>
+<span class="fc" id="L121">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; awaitTerminalEventAndUnsubscribeOnTimeout(long timeout,
+            TimeUnit unit) {
+<span class="nc" id="L126">        ts.awaitTerminalEventAndUnsubscribeOnTimeout(timeout, unit);</span>
+<span class="nc" id="L127">        return this;</span>
+    }
+
+    public Thread getLastSeenThread() {
+<span class="nc" id="L131">        return ts.getLastSeenThread();</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertCompleted() {
+<span class="fc" id="L135">        ts.assertCompleted();</span>
+<span class="fc" id="L136">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertNotCompleted() {
+<span class="fc" id="L140">        ts.assertNotCompleted();</span>
+<span class="fc" id="L141">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertError(Class&lt;? extends Throwable&gt; clazz) {
+<span class="nc" id="L145">        ts.assertError(clazz);</span>
+<span class="nc" id="L146">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertError(Throwable throwable) {
+<span class="fc" id="L150">        ts.assertError(throwable);</span>
+<span class="fc" id="L151">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertNoTerminalEvent() {
+<span class="fc" id="L155">        ts.assertNoTerminalEvent();</span>
+<span class="fc" id="L156">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertNoValues() {
+<span class="fc" id="L160">        ts.assertNoValues();</span>
+<span class="fc" id="L161">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertValueCount(int count) {
+<span class="nc" id="L165">        ts.assertValueCount(count);</span>
+<span class="nc" id="L166">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertValues(T... values) {
+<span class="fc" id="L170">        ts.assertValues(values);</span>
+<span class="fc" id="L171">        return this;</span>
+    }
+
+    public TestSubscriber2&lt;T&gt; assertValue(T value) {
+<span class="fc" id="L175">        ts.assertValue(value);</span>
+<span class="fc" id="L176">        return this;</span>
+    }
+
+    public final TestSubscriber2&lt;T&gt; assertValuesAndClear(T expectedFirstValue,
+            T... expectedRestValues) {
+<span class="fc" id="L181">        ts.assertValuesAndClear(expectedFirstValue, expectedRestValues);</span>
+<span class="fc" id="L182">        return this;</span>
+    }
+
+    public final TestSubscriber2&lt;T&gt; perform(Action0 action) {
+<span class="nc" id="L186">        action.call();</span>
+<span class="nc" id="L187">        return this;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

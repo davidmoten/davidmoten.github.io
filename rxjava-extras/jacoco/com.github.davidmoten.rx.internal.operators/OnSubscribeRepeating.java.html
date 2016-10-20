@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OnSubscribeRepeating.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OnSubscribeRepeating.java</span></div><h1>OnSubscribeRepeating.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import rx.Observable.OnSubscribe;
+import rx.Producer;
+import rx.Subscriber;
+import rx.internal.operators.BackpressureUtils;
+
+public final class OnSubscribeRepeating&lt;T&gt; implements OnSubscribe&lt;T&gt; {
+
+    private final T value;
+
+<span class="fc" id="L14">    public OnSubscribeRepeating(T value) {</span>
+<span class="fc" id="L15">        this.value = value;</span>
+<span class="fc" id="L16">    }</span>
+
+    @Override
+    public void call(Subscriber&lt;? super T&gt; subscriber) {
+<span class="fc" id="L20">        RepeatingProducer&lt;T&gt; producer = new RepeatingProducer&lt;T&gt;(subscriber, value);</span>
+<span class="fc" id="L21">        subscriber.setProducer(producer);</span>
+<span class="fc" id="L22">    }</span>
+
+    @SuppressWarnings(&quot;serial&quot;)
+    private static final class RepeatingProducer&lt;T&gt; extends AtomicLong implements Producer {
+
+        private final Subscriber&lt;? super T&gt; subscriber;
+        private final T v;
+
+<span class="fc" id="L30">        public RepeatingProducer(Subscriber&lt;? super T&gt; subscriber, T v) {</span>
+<span class="fc" id="L31">            this.subscriber = subscriber;</span>
+<span class="fc" id="L32">            this.v = v;</span>
+<span class="fc" id="L33">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L38">                throw new IllegalArgumentException(&quot;reuest must be &gt;=0&quot;);</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            } else if (n == 0) {</span>
+<span class="fc" id="L40">                return;</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            } else if (BackpressureUtils.getAndAddRequest(this, n) == 0) {</span>
+<span class="fc" id="L42">                long requested = n;</span>
+<span class="fc" id="L43">                long emitted = 0;</span>
+                do {
+<span class="fc" id="L45">                    emitted = requested;</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">                    while (requested-- &gt; 0 &amp;&amp; !subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L47">                        subscriber.onNext(v);</span>
+                    }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">                } while ((requested = this.addAndGet(-emitted)) &gt; 0);</span>
+            }
+<span class="fc" id="L51">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorBufferPredicateBoundary.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorBufferPredicateBoundary.java</span></div><h1>OperatorBufferPredicateBoundary.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.*;
+import java.util.concurrent.atomic.*;
+
+import rx.*;
+import rx.Observable;
+import rx.Observable.*;
+import rx.exceptions.*;
+import rx.functions.Func1;
+import rx.internal.operators.*;
+import rx.internal.util.atomic.SpscAtomicArrayQueue;
+import rx.internal.util.unsafe.*;
+
+/**
+ * Buffers values into a continuous, non-overlapping Lists where the boundary is determined
+ * by a predicate returning true.
+ *
+ * @param &lt;T&gt; the source and List element type
+ */
+public final class OperatorBufferPredicateBoundary&lt;T&gt; implements Transformer&lt;T, List&lt;T&gt;&gt; {
+
+    final Func1&lt;? super T, Boolean&gt; predicate;
+    
+    final int prefetch;
+    
+    final int capacityHint;
+    
+    final boolean after;
+    
+<span class="fc" id="L31">    public OperatorBufferPredicateBoundary(Func1&lt;? super T, Boolean&gt; predicate, int prefetch, int capacityHint, boolean after) {</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (predicate == null) {</span>
+<span class="fc" id="L33">            throw new NullPointerException(&quot;predicate&quot;);</span>
+        }
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (prefetch &lt;= 0) {</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;prefetch &gt; 0 required but it was &quot; + prefetch);</span>
+        }
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (capacityHint &lt;= 0) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;capacityHint &gt; 0 required but it was &quot; + capacityHint);</span>
+        }
+<span class="fc" id="L41">        this.predicate = predicate;</span>
+<span class="fc" id="L42">        this.prefetch = prefetch;</span>
+<span class="fc" id="L43">        this.capacityHint = capacityHint;</span>
+<span class="fc" id="L44">        this.after = after;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    public Observable&lt;List&lt;T&gt;&gt; call(Observable&lt;T&gt; source) {
+<span class="fc" id="L49">        return source.lift(new Operator&lt;List&lt;T&gt;, T&gt;() {</span>
+            @Override
+            public Subscriber&lt;? super T&gt; call(Subscriber&lt;? super List&lt;T&gt;&gt; child) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                final BoundedSubscriber&lt;T&gt; parent = after </span>
+                        ? new BoundedAfterSubscriber&lt;T&gt;(child, capacityHint, predicate, prefetch)
+                        : new BoundedBeforeSubscriber&lt;T&gt;(child, capacityHint, predicate, prefetch);
+                        
+<span class="fc" id="L56">                child.add(parent);</span>
+<span class="fc" id="L57">                child.setProducer(new Producer() {</span>
+                    @Override
+                    public void request(long n) {
+<span class="fc" id="L60">                        parent.requestMore(n);</span>
+<span class="fc" id="L61">                    }</span>
+                });
+                
+<span class="fc" id="L64">                return parent;</span>
+            }
+        });
+    }
+    
+    static abstract class BoundedSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+        final Subscriber&lt;? super List&lt;T&gt;&gt; actual;
+        
+        final int capacityHint;
+        
+        final Func1&lt;? super T, Boolean&gt; predicate;
+        
+        final Queue&lt;Object&gt; queue;
+        
+        final AtomicLong requested;
+
+        final AtomicInteger wip;
+        
+        final NotificationLite&lt;T&gt; nl;
+        
+        final int limit;
+
+        List&lt;T&gt; buffer;
+        
+        long upstreamConsumed;
+        
+        volatile boolean done;
+        Throwable error;
+
+        public BoundedSubscriber(Subscriber&lt;? super List&lt;T&gt;&gt; actual, int capacityHint,
+<span class="fc" id="L94">                Func1&lt;? super T, Boolean&gt; predicate, int prefetch) {</span>
+<span class="fc" id="L95">            this.actual = actual;</span>
+<span class="fc" id="L96">            this.capacityHint = capacityHint;</span>
+<span class="fc" id="L97">            this.predicate = predicate;</span>
+            Queue&lt;Object&gt; q;
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (UnsafeAccess.isUnsafeAvailable()) {</span>
+<span class="fc" id="L100">                q = new SpscArrayQueue&lt;Object&gt;(prefetch);</span>
+            } else {
+<span class="nc" id="L102">                q = new SpscAtomicArrayQueue&lt;Object&gt;(prefetch);</span>
+            }
+<span class="fc" id="L104">            queue = q;</span>
+<span class="fc" id="L105">            buffer = new ArrayList&lt;T&gt;(capacityHint);</span>
+<span class="fc" id="L106">            requested = new AtomicLong();</span>
+<span class="fc" id="L107">            wip = new AtomicInteger();</span>
+<span class="fc" id="L108">            nl = NotificationLite.instance();</span>
+<span class="fc" id="L109">            limit = prefetch - (prefetch &gt;&gt; 2);</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (prefetch == Integer.MAX_VALUE) {</span>
+<span class="nc" id="L111">                request(Long.MAX_VALUE);</span>
+            } else {
+<span class="fc" id="L113">                request(prefetch);</span>
+            }
+<span class="fc" id="L115">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (!queue.offer(nl.next(t))) {</span>
+<span class="nc" id="L120">                unsubscribe();</span>
+<span class="nc" id="L121">                onError(new MissingBackpressureException());</span>
+            } else {
+<span class="fc" id="L123">                drain();</span>
+            }
+<span class="fc" id="L125">        }</span>
+        
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L129">            error = e;</span>
+<span class="fc" id="L130">            done = true;</span>
+<span class="fc" id="L131">            drain();</span>
+<span class="fc" id="L132">        }</span>
+        
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L136">            done = true;</span>
+<span class="fc" id="L137">            drain();</span>
+<span class="fc" id="L138">        }</span>
+        
+        void requestMore(long n) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            if (n &gt; 0) {</span>
+<span class="fc" id="L142">                BackpressureUtils.getAndAddRequest(requested, n);</span>
+<span class="fc" id="L143">                drain();</span>
+            } else
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L146">                throw new IllegalArgumentException(&quot;n &gt;= 0 required but it was &quot; + n);</span>
+            }
+<span class="fc" id="L148">        }</span>
+
+        abstract void drain();
+    }
+    
+    static final class BoundedAfterSubscriber&lt;T&gt; extends BoundedSubscriber&lt;T&gt; {
+
+        public BoundedAfterSubscriber(Subscriber&lt;? super List&lt;T&gt;&gt; actual, int capacityHint,
+                Func1&lt;? super T, Boolean&gt; predicate, int prefetch) {
+<span class="fc" id="L157">            super(actual, capacityHint, predicate, prefetch);</span>
+<span class="fc" id="L158">        }</span>
+        
+        @Override
+        void drain() {
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (wip.getAndIncrement() != 0) {</span>
+<span class="fc" id="L163">                return;</span>
+            }
+            
+<span class="fc" id="L166">            final Subscriber&lt;? super List&lt;T&gt;&gt; localSubscriber = actual;</span>
+<span class="fc" id="L167">            final Queue&lt;Object&gt; localQueue = queue;</span>
+<span class="fc" id="L168">            int missed = 1;</span>
+            
+            for (;;) {
+
+<span class="fc" id="L172">                long localRequested = requested.get();</span>
+<span class="fc" id="L173">                long localEmission = 0L;</span>
+<span class="fc" id="L174">                long localConsumption = 0L;</span>
+<span class="fc" id="L175">                List&lt;T&gt; localBuffer = buffer;</span>
+                
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                while (localEmission != localRequested) {</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">                    if (localSubscriber.isUnsubscribed()) {</span>
+<span class="nc" id="L179">                        return;</span>
+                    }
+                    
+<span class="fc" id="L182">                    boolean mainDone = done;</span>
+                    
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                    if (mainDone) {</span>
+<span class="fc" id="L185">                        Throwable exception = error;</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                        if (exception != null) {</span>
+<span class="fc" id="L187">                            buffer = null;</span>
+<span class="fc" id="L188">                            localSubscriber.onError(exception);</span>
+<span class="fc" id="L189">                            return;</span>
+                        }
+                    }
+                    
+<span class="fc" id="L193">                    Object notification = localQueue.poll();</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                    boolean empty = notification == null;</span>
+                    
+<span class="fc bfc" id="L196" title="All 4 branches covered.">                    if (mainDone &amp;&amp; empty) {</span>
+<span class="fc" id="L197">                        buffer = null;</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                        if (!localBuffer.isEmpty()) {</span>
+<span class="fc" id="L199">                            localSubscriber.onNext(localBuffer);</span>
+                        }
+<span class="fc" id="L201">                        localSubscriber.onCompleted();</span>
+<span class="fc" id="L202">                        return;</span>
+                    }
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                    if (empty) {</span>
+<span class="fc" id="L205">                        break;</span>
+                    }
+                    
+<span class="fc" id="L208">                    T value = nl.getValue(notification);</span>
+                    
+<span class="fc" id="L210">                    localBuffer.add(value);</span>
+<span class="fc" id="L211">                    localConsumption++;</span>
+                    
+                    boolean emit;
+                    
+                    try {
+<span class="fc" id="L216">                        emit = predicate.call(value);</span>
+<span class="fc" id="L217">                    } catch (Throwable ex) {</span>
+<span class="fc" id="L218">                        unsubscribe();</span>
+<span class="fc" id="L219">                        buffer = null;</span>
+<span class="fc" id="L220">                        Exceptions.throwOrReport(ex, localSubscriber, value);</span>
+<span class="fc" id="L221">                        return;</span>
+<span class="fc" id="L222">                    }</span>
+                    
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                    if (emit) {</span>
+<span class="fc" id="L225">                        localSubscriber.onNext(localBuffer);</span>
+<span class="fc" id="L226">                        localBuffer = new ArrayList&lt;T&gt;(capacityHint);</span>
+<span class="fc" id="L227">                        buffer = localBuffer;</span>
+                        
+<span class="fc" id="L229">                        localEmission++;</span>
+                    }
+<span class="fc" id="L231">                }</span>
+                
+<span class="fc bfc" id="L233" title="All 2 branches covered.">                if (localEmission == localRequested) {</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                    if (localSubscriber.isUnsubscribed()) {</span>
+<span class="nc" id="L235">                        return;</span>
+                    }
+                    
+<span class="fc" id="L238">                    boolean mainDone = done;</span>
+
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">                    if (mainDone) {</span>
+<span class="nc" id="L241">                        Throwable exception = error;</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                        if (exception != null) {</span>
+<span class="nc" id="L243">                            buffer = null;</span>
+<span class="nc" id="L244">                            localSubscriber.onError(exception);</span>
+<span class="nc" id="L245">                            return;</span>
+                        } else
+<span class="nc bnc" id="L247" title="All 4 branches missed.">                        if (localQueue.isEmpty() &amp;&amp; localBuffer.isEmpty()) {</span>
+<span class="nc" id="L248">                            buffer = null;</span>
+<span class="nc" id="L249">                            localSubscriber.onCompleted();</span>
+<span class="nc" id="L250">                            return;</span>
+                        }
+                    }
+                }
+                
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                if (localEmission != 0L) {</span>
+<span class="fc" id="L256">                    BackpressureUtils.produced(requested, localEmission);</span>
+                }
+<span class="fc bfc" id="L258" title="All 2 branches covered.">                if (localConsumption != 0L) {</span>
+<span class="fc" id="L259">                    long p = upstreamConsumed + localConsumption;</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">                    if (p &gt;= limit) {</span>
+<span class="fc" id="L261">                        upstreamConsumed = 0L;</span>
+<span class="fc" id="L262">                        request(p);</span>
+                    } else {
+<span class="fc" id="L264">                        upstreamConsumed = p;</span>
+                    }
+                }
+                
+<span class="fc" id="L268">                missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L270">                    break;</span>
+                }
+<span class="fc" id="L272">            }</span>
+<span class="fc" id="L273">        }</span>
+    }
+
+    static final class BoundedBeforeSubscriber&lt;T&gt; extends BoundedSubscriber&lt;T&gt; {
+        public BoundedBeforeSubscriber(Subscriber&lt;? super List&lt;T&gt;&gt; actual, int capacityHint,
+                Func1&lt;? super T, Boolean&gt; predicate, int prefetch) {
+<span class="fc" id="L279">            super(actual, capacityHint, predicate, prefetch);</span>
+<span class="fc" id="L280">        }</span>
+
+        @Override
+        void drain() {
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            if (wip.getAndIncrement() != 0) {</span>
+<span class="fc" id="L285">                return;</span>
+            }
+            
+<span class="fc" id="L288">            final Subscriber&lt;? super List&lt;T&gt;&gt; localSubscriber = actual;</span>
+<span class="fc" id="L289">            final Queue&lt;Object&gt; localQueue = queue;</span>
+<span class="fc" id="L290">            int missed = 1;</span>
+            
+            for (;;) {
+
+<span class="fc" id="L294">                long localRequested = requested.get();</span>
+<span class="fc" id="L295">                long localEmission = 0L;</span>
+<span class="fc" id="L296">                long localConsumption = 0L;</span>
+<span class="fc" id="L297">                List&lt;T&gt; localBuffer = buffer;</span>
+                
+<span class="fc bfc" id="L299" title="All 2 branches covered.">                while (localEmission != localRequested) {</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">                    if (localSubscriber.isUnsubscribed()) {</span>
+<span class="nc" id="L301">                        return;</span>
+                    }
+                    
+<span class="fc" id="L304">                    boolean mainDone = done;</span>
+                    
+<span class="fc bfc" id="L306" title="All 2 branches covered.">                    if (mainDone) {</span>
+<span class="fc" id="L307">                        Throwable exception = error;</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                        if (exception != null) {</span>
+<span class="fc" id="L309">                            buffer = null;</span>
+<span class="fc" id="L310">                            localSubscriber.onError(exception);</span>
+<span class="fc" id="L311">                            return;</span>
+                        }
+                    }
+                    
+<span class="fc" id="L315">                    Object o = localQueue.poll();</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                    boolean empty = o == null;</span>
+                    
+<span class="fc bfc" id="L318" title="All 4 branches covered.">                    if (mainDone &amp;&amp; empty) {</span>
+<span class="fc" id="L319">                        buffer = null;</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">                        if (!localBuffer.isEmpty()) {</span>
+<span class="fc" id="L321">                            localSubscriber.onNext(localBuffer);</span>
+                        }
+<span class="fc" id="L323">                        localSubscriber.onCompleted();</span>
+<span class="fc" id="L324">                        return;</span>
+                    }
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                    if (empty) {</span>
+<span class="fc" id="L327">                        break;</span>
+                    }
+                    
+<span class="fc" id="L330">                    T value = nl.getValue(o);</span>
+                    
+                    boolean emit;
+                    
+                    try {
+<span class="fc" id="L335">                        emit = predicate.call(value);</span>
+<span class="fc" id="L336">                    } catch (Throwable ex) {</span>
+<span class="fc" id="L337">                        unsubscribe();</span>
+<span class="fc" id="L338">                        buffer = null;</span>
+<span class="fc" id="L339">                        Exceptions.throwOrReport(ex, localSubscriber, value);</span>
+<span class="fc" id="L340">                        return;</span>
+<span class="fc" id="L341">                    }</span>
+                    
+<span class="fc bfc" id="L343" title="All 4 branches covered.">                    if (emit &amp;&amp; !localBuffer.isEmpty()) {</span>
+<span class="fc" id="L344">                        localSubscriber.onNext(localBuffer);</span>
+<span class="fc" id="L345">                        localBuffer = new ArrayList&lt;T&gt;(capacityHint);</span>
+<span class="fc" id="L346">                        buffer = localBuffer;</span>
+                        
+<span class="fc" id="L348">                        localEmission++;</span>
+                    }
+                    
+<span class="fc" id="L351">                    localBuffer.add(value);</span>
+                    
+<span class="fc" id="L353">                    localConsumption++;</span>
+<span class="fc" id="L354">                }</span>
+                
+<span class="fc bfc" id="L356" title="All 2 branches covered.">                if (localEmission == localRequested) {</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">                    if (localSubscriber.isUnsubscribed()) {</span>
+<span class="nc" id="L358">                        return;</span>
+                    }
+                    
+<span class="fc" id="L361">                    boolean mainDone = done;</span>
+
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">                    if (mainDone) {</span>
+<span class="nc" id="L364">                        Throwable exception = error;</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">                        if (exception != null) {</span>
+<span class="nc" id="L366">                            buffer = null;</span>
+<span class="nc" id="L367">                            localSubscriber.onError(exception);</span>
+<span class="nc" id="L368">                            return;</span>
+                        } else
+<span class="nc bnc" id="L370" title="All 4 branches missed.">                        if (localQueue.isEmpty() &amp;&amp; localBuffer.isEmpty()) {</span>
+<span class="nc" id="L371">                            buffer = null;</span>
+<span class="nc" id="L372">                            localSubscriber.onCompleted();</span>
+<span class="nc" id="L373">                            return;</span>
+                        }
+                    }
+                }
+                
+<span class="fc bfc" id="L378" title="All 2 branches covered.">                if (localEmission != 0L) {</span>
+<span class="fc" id="L379">                    BackpressureUtils.produced(requested, localEmission);</span>
+                }
+                
+<span class="fc bfc" id="L382" title="All 2 branches covered.">                if (localConsumption != 0L) {</span>
+<span class="fc" id="L383">                    long produced = upstreamConsumed + localConsumption;</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">                    if (produced &gt;= limit) {</span>
+<span class="fc" id="L385">                        upstreamConsumed = 0L;</span>
+<span class="fc" id="L386">                        request(produced);</span>
+                    } else {
+<span class="fc" id="L388">                        upstreamConsumed = produced;</span>
+                    }
+                }
+                
+<span class="fc" id="L392">                missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L394">                    break;</span>
+                }
+<span class="fc" id="L396">            }</span>
+<span class="fc" id="L397">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorBufferToFile.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorBufferToFile.java</span></div><h1>OperatorBufferToFile.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.io.File;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.github.davidmoten.rx.buffertofile.DataSerializer;
+import com.github.davidmoten.rx.buffertofile.Options;
+import com.github.davidmoten.util.Preconditions;
+
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.Observable.Operator;
+import rx.Producer;
+import rx.Scheduler;
+import rx.Scheduler.Worker;
+import rx.Subscriber;
+import rx.exceptions.Exceptions;
+import rx.functions.Action0;
+import rx.functions.Func0;
+import rx.internal.operators.BackpressureUtils;
+import rx.observers.Subscribers;
+
+public final class OperatorBufferToFile&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+    private final DataSerializer&lt;T&gt; dataSerializer;
+    private final Scheduler scheduler;
+    private final Options options;
+
+    public OperatorBufferToFile(DataSerializer&lt;T&gt; dataSerializer, Scheduler scheduler,
+<span class="fc" id="L32">            Options options) {</span>
+<span class="fc" id="L33">        Preconditions.checkNotNull(dataSerializer);</span>
+<span class="fc" id="L34">        Preconditions.checkNotNull(scheduler);</span>
+<span class="fc" id="L35">        Preconditions.checkNotNull(options);</span>
+<span class="fc" id="L36">        this.scheduler = scheduler;</span>
+<span class="fc" id="L37">        this.dataSerializer = dataSerializer;</span>
+<span class="fc" id="L38">        this.options = options;</span>
+<span class="fc" id="L39">    }</span>
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(Subscriber&lt;? super T&gt; child) {
+
+        // create the file based queue
+<span class="fc" id="L45">        final QueueWithSubscription&lt;T&gt; queue = createFileBasedQueue(dataSerializer, options);</span>
+
+        // hold a reference to the queueProducer which will be set on
+        // subscription to `source`
+<span class="fc" id="L49">        final AtomicReference&lt;QueueProducer&lt;T&gt;&gt; queueProducer = new AtomicReference&lt;QueueProducer&lt;T&gt;&gt;();</span>
+
+        // emissions will propagate to downstream via this worker
+<span class="fc" id="L52">        final Worker worker = scheduler.createWorker();</span>
+
+        // set up the observable to read from the file based queue
+<span class="fc" id="L55">        Observable&lt;T&gt; source = Observable</span>
+<span class="fc" id="L56">                .create(new OnSubscribeFromQueue&lt;T&gt;(queueProducer, queue, worker, options));</span>
+
+        // create the parent subscriber
+<span class="fc" id="L59">        Subscriber&lt;T&gt; parentSubscriber = new ParentSubscriber&lt;T&gt;(queueProducer);</span>
+
+        // link unsubscription
+<span class="fc" id="L62">        child.add(parentSubscriber);</span>
+
+        // close and delete file based queues in RollingQueue on unsubscription
+<span class="fc" id="L65">        child.add(queue);</span>
+
+        // ensure onStart not called twice
+<span class="fc" id="L68">        Subscriber&lt;T&gt; wrappedChild = Subscribers.wrap(child);</span>
+
+        // ensure worker gets unsubscribed (last)
+<span class="fc" id="L71">        child.add(worker);</span>
+
+        // subscribe to queue
+<span class="fc" id="L74">        source.unsafeSubscribe(wrappedChild);</span>
+
+<span class="fc" id="L76">        return parentSubscriber;</span>
+    }
+
+<span class="fc" id="L79">    private static final boolean MEMORY_MAPPED = &quot;true&quot;</span>
+<span class="fc" id="L80">            .equals(System.getProperty(&quot;memory.mappped&quot;));</span>
+
+    private static &lt;T&gt; QueueWithSubscription&lt;T&gt; createFileBasedQueue(
+            final DataSerializer&lt;T&gt; dataSerializer, final Options options) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (MEMORY_MAPPED) {</span>
+            // warning: still in development!
+            final int size;
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            if (options.rolloverSizeBytes() &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L88">                size = 20 * 1024 * 1024;// 20MB</span>
+            } else {
+<span class="nc" id="L90">                size = (int) options.rolloverSizeBytes();</span>
+            }
+<span class="nc" id="L92">            return new FileBasedSPSCQueueMemoryMapped&lt;T&gt;(options.fileFactory(), size,</span>
+                    dataSerializer);
+        }
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (options.rolloverEvery() == Long.MAX_VALUE</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                &amp;&amp; options.rolloverSizeBytes() == Long.MAX_VALUE) {</span>
+            // skip the Rollover version
+<span class="nc" id="L98">            return new QueueWithResourcesNonBlockingUnsubscribe&lt;T&gt;(new FileBasedSPSCQueue&lt;T&gt;(</span>
+<span class="nc" id="L99">                    options.bufferSizeBytes(), options.fileFactory().call(), dataSerializer));</span>
+        } else {
+<span class="fc" id="L101">            final Func0&lt;QueueWithResources&lt;T&gt;&gt; queueFactory = new Func0&lt;QueueWithResources&lt;T&gt;&gt;() {</span>
+                @Override
+                public QueueWithResources&lt;T&gt; call() {
+                    // create the file to be used for queue storage (and whose
+                    // file name will determine the names of other files used
+                    // for storage if multiple are required per queue)
+<span class="fc" id="L107">                    File file = options.fileFactory().call();</span>
+
+<span class="fc" id="L109">                    return new FileBasedSPSCQueue&lt;T&gt;(options.bufferSizeBytes(), file,</span>
+                            dataSerializer);
+                }
+            };
+            // the wrapping class ensures that unsubscribe happens in the same
+            // thread as the offer or poll which avoids the unsubscribe action
+            // not getting a time-slice so that the open file limit is not
+            // exceeded (new files are opened in the offer() call).
+<span class="fc" id="L117">            return new QueueWithResourcesNonBlockingUnsubscribe&lt;T&gt;(new RollingSPSCQueue&lt;T&gt;(</span>
+<span class="fc" id="L118">                    queueFactory, options.rolloverSizeBytes(), options.rolloverEvery()));</span>
+        }
+    }
+
+    private static final class OnSubscribeFromQueue&lt;T&gt; implements OnSubscribe&lt;T&gt; {
+
+        private final AtomicReference&lt;QueueProducer&lt;T&gt;&gt; queueProducer;
+        private final QueueWithSubscription&lt;T&gt; queue;
+        private final Worker worker;
+        private final Options options;
+
+        OnSubscribeFromQueue(AtomicReference&lt;QueueProducer&lt;T&gt;&gt; queueProducer,
+<span class="fc" id="L130">                QueueWithSubscription&lt;T&gt; queue, Worker worker, Options options) {</span>
+<span class="fc" id="L131">            this.queueProducer = queueProducer;</span>
+<span class="fc" id="L132">            this.queue = queue;</span>
+<span class="fc" id="L133">            this.worker = worker;</span>
+<span class="fc" id="L134">            this.options = options;</span>
+<span class="fc" id="L135">        }</span>
+
+        @Override
+        public void call(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L139">            QueueProducer&lt;T&gt; qp = new QueueProducer&lt;T&gt;(queue, child, worker, options.delayError());</span>
+<span class="fc" id="L140">            queueProducer.set(qp);</span>
+<span class="fc" id="L141">            child.setProducer(qp);</span>
+<span class="fc" id="L142">        }</span>
+    }
+
+    private static final class ParentSubscriber&lt;T&gt; extends Subscriber&lt;T&gt; {
+
+        private final AtomicReference&lt;QueueProducer&lt;T&gt;&gt; queueProducer;
+
+<span class="fc" id="L149">        ParentSubscriber(AtomicReference&lt;QueueProducer&lt;T&gt;&gt; queueProducer) {</span>
+<span class="fc" id="L150">            this.queueProducer = queueProducer;</span>
+<span class="fc" id="L151">        }</span>
+
+        @Override
+        public void onStart() {
+<span class="fc" id="L155">            request(Long.MAX_VALUE);</span>
+<span class="fc" id="L156">        }</span>
+
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L160">            queueProducer.get().onCompleted();</span>
+<span class="fc" id="L161">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L165">            queueProducer.get().onError(e);</span>
+<span class="fc" id="L166">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L170">            queueProducer.get().onNext(t);</span>
+<span class="fc" id="L171">        }</span>
+
+    }
+
+    private static final class QueueProducer&lt;T&gt; extends AtomicLong implements Producer, Action0 {
+
+        // inherits from AtomicLong to represent the oustanding requests count
+
+        private static final long serialVersionUID = 2521533710633950102L;
+
+        private final QueueWithSubscription&lt;T&gt; queue;
+<span class="fc" id="L182">        private final AtomicInteger drainRequested = new AtomicInteger(0);</span>
+        private final Subscriber&lt;? super T&gt; child;
+        private final Worker worker;
+        private final boolean delayError;
+        private volatile boolean done;
+
+        // Is set just before the volatile `done` is set and read just after
+        // `done` is read. Thus doesn't need to be volatile.
+<span class="fc" id="L190">        private Throwable error = null;</span>
+
+        QueueProducer(QueueWithSubscription&lt;T&gt; queue, Subscriber&lt;? super T&gt; child, Worker worker,
+                boolean delayError) {
+<span class="fc" id="L194">            super();</span>
+<span class="fc" id="L195">            this.queue = queue;</span>
+<span class="fc" id="L196">            this.child = child;</span>
+<span class="fc" id="L197">            this.worker = worker;</span>
+<span class="fc" id="L198">            this.delayError = delayError;</span>
+<span class="fc" id="L199">            this.done = false;</span>
+<span class="fc" id="L200">        }</span>
+
+        void onNext(T t) {
+            try {
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">                if (!queue.offer(t)) {</span>
+<span class="nc" id="L205">                    onError(new RuntimeException(</span>
+                            &quot;could not place item on queue (queue.offer(item) returned false), item= &quot;
+                                    + t));
+<span class="nc" id="L208">                    return;</span>
+                } else {
+<span class="fc" id="L210">                    drain();</span>
+                }
+<span class="nc" id="L212">            } catch (Throwable e) {</span>
+<span class="nc" id="L213">                Exceptions.throwIfFatal(e);</span>
+<span class="nc" id="L214">                onError(e);</span>
+<span class="fc" id="L215">            }</span>
+<span class="fc" id="L216">        }</span>
+
+        void onError(Throwable e) {
+            // must assign error before assign done = true to avoid race
+            // condition in finished() and also so appropriate memory barrier in
+            // place given error is non-volatile
+<span class="fc" id="L222">            error = e;</span>
+<span class="fc" id="L223">            done = true;</span>
+<span class="fc" id="L224">            drain();</span>
+<span class="fc" id="L225">        }</span>
+
+        void onCompleted() {
+<span class="fc" id="L228">            done = true;</span>
+<span class="fc" id="L229">            drain();</span>
+<span class="fc" id="L230">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            if (n &gt; 0) {</span>
+<span class="fc" id="L235">                BackpressureUtils.getAndAddRequest(this, n);</span>
+<span class="fc" id="L236">                drain();</span>
+            }
+<span class="fc" id="L238">        }</span>
+
+        private void drain() {
+            // only schedule a drain if current drain has finished
+            // otherwise the drainRequested counter will be incremented
+            // and the drain loop will ensure that another drain cycle occurs if
+            // required
+<span class="fc bfc" id="L245" title="All 4 branches covered.">            if (!child.isUnsubscribed() &amp;&amp; drainRequested.getAndIncrement() == 0) {</span>
+<span class="fc" id="L246">                worker.schedule(this);</span>
+            }
+<span class="fc" id="L248">        }</span>
+
+        // this method executed from drain() only
+        @Override
+        public void call() {
+            // catch exceptions related to file based queue in drainNow()
+            try {
+<span class="fc" id="L255">                drainNow();</span>
+<span class="nc" id="L256">            } catch (Throwable e) {</span>
+<span class="nc" id="L257">                child.onError(e);</span>
+<span class="fc" id="L258">            }</span>
+<span class="fc" id="L259">        }</span>
+
+        private void drainNow() {
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">            if (child.isUnsubscribed()) {</span>
+                // leave drainRequested &gt; 0 to prevent more
+                // scheduling of drains
+<span class="nc" id="L265">                return;</span>
+            }
+            // get the number of unsatisfied requests
+<span class="fc" id="L268">            long requests = get();</span>
+
+            for (;;) {
+                // reset drainRequested counter
+<span class="fc" id="L272">                drainRequested.set(1);</span>
+<span class="fc" id="L273">                long emitted = 0;</span>
+<span class="fc bfc" id="L274" title="All 2 branches covered.">                while (emitted &lt; requests) {</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                    if (child.isUnsubscribed()) {</span>
+                        // leave drainRequested &gt; 0 to prevent more
+                        // scheduling of drains
+<span class="fc" id="L278">                        return;</span>
+                    }
+<span class="fc" id="L280">                    T item = queue.poll();</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">                    if (item == null) {</span>
+                        // queue is empty
+<span class="fc bfc" id="L283" title="All 2 branches covered.">                        if (finished()) {</span>
+<span class="fc" id="L284">                            return;</span>
+                        } else {
+                            // another drain was requested so go
+                            // round again but break out of this
+                            // while loop to the outer loop so we
+                            // can update requests and reset drainRequested
+                            break;
+                        }
+                    } else {
+                        // there was an item on the queue
+<span class="fc bfc" id="L294" title="All 2 branches covered.">                        if (NullSentinel.isNullSentinel(item)) {</span>
+<span class="fc" id="L295">                            child.onNext(null);</span>
+                        } else {
+<span class="fc" id="L297">                            child.onNext(item);</span>
+                        }
+<span class="fc" id="L299">                        emitted++;</span>
+                    }
+<span class="fc" id="L301">                }</span>
+                // update requests with emitted value and any new requests
+<span class="fc" id="L303">                requests = BackpressureUtils.produced(this, emitted);</span>
+<span class="fc bfc" id="L304" title="All 6 branches covered.">                if (child.isUnsubscribed() || (requests == 0L &amp;&amp; finished())) {</span>
+<span class="fc" id="L305">                    return;</span>
+                }
+<span class="fc" id="L307">            }</span>
+        }
+
+        private boolean finished() {
+        	//cannot pass queueKnownToBeEmpty flag to this method because 
+        	//to avoid a race condition we must do an actual check on queue.isEmpty()
+        	//after finding done is true
+<span class="fc bfc" id="L314" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L315">                Throwable t = error;</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                if (queue.isEmpty()) {</span>
+                    // first close the queue (which in this case though
+                    // empty also disposes of its resources)
+<span class="fc" id="L319">                    queue.unsubscribe();</span>
+
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                    if (t != null) {</span>
+<span class="fc" id="L322">                        child.onError(t);</span>
+                    } else {
+<span class="fc" id="L324">                        child.onCompleted();</span>
+                    }
+                    // leave drainRequested &gt; 0 so that further drain
+                    // requests are ignored
+<span class="fc" id="L328">                    return true;</span>
+<span class="pc bpc" id="L329" title="1 of 4 branches missed.">                } else if (t != null &amp;&amp; !delayError) {</span>
+                    // queue is not empty but we are going to shortcut
+                    // that because delayError is false
+
+                    // first close the queue (which in this case also
+                    // disposes of its resources)
+<span class="fc" id="L335">                    queue.unsubscribe();</span>
+
+                    // now report the error
+<span class="fc" id="L338">                    child.onError(t);</span>
+
+                    // leave drainRequested &gt; 0 so that further drain
+                    // requests are ignored
+<span class="fc" id="L342">                    return true;</span>
+                } else {
+                    // otherwise we need to wait for all items waiting
+                    // on the queue to be requested and delivered
+                    // (delayError=true)
+<span class="fc" id="L347">                    return drainRequested.compareAndSet(1, 0);</span>
+                }
+            } else {
+<span class="fc" id="L350">                return drainRequested.compareAndSet(1, 0);</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

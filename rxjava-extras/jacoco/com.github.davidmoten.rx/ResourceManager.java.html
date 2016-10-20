@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ResourceManager.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">ResourceManager.java</span></div><h1>ResourceManager.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.github.davidmoten.util.Preconditions;
+
+import rx.Observable;
+import rx.functions.Action1;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.plugins.RxJavaHooks;
+
+//TODO as suggested by George Campbell, may replace with his PR
+public class ResourceManager&lt;T&gt; {
+
+    private final Func0&lt;T&gt; resourceFactory;
+    private final Action1&lt;? super T&gt; disposeAction;
+    private final boolean disposeEagerly;
+
+    protected ResourceManager(Func0&lt;T&gt; resourceFactory, Action1&lt;? super T&gt; disposeAction,
+<span class="nc" id="L24">            boolean disposeEagerly) {</span>
+<span class="nc" id="L25">        Preconditions.checkNotNull(resourceFactory);</span>
+<span class="nc" id="L26">        Preconditions.checkNotNull(disposeAction);</span>
+<span class="nc" id="L27">        this.resourceFactory = resourceFactory;</span>
+<span class="nc" id="L28">        this.disposeAction = disposeAction;</span>
+<span class="nc" id="L29">        this.disposeEagerly = disposeEagerly;</span>
+<span class="nc" id="L30">    }</span>
+
+    public static &lt;T&gt; ResourceManagerBuilder&lt;T&gt; resourceFactory(Func0&lt;T&gt; resourceFactory) {
+<span class="nc" id="L33">        return new ResourceManagerBuilder&lt;T&gt;(resourceFactory);</span>
+    }
+
+    public static &lt;T extends Closeable&gt; CloseableResourceManagerBuilder&lt;T&gt; closeableResourceFactory(
+            Func0&lt;T&gt; resourceFactory) {
+<span class="nc" id="L38">        return new CloseableResourceManagerBuilder&lt;T&gt;(resourceFactory);</span>
+    }
+
+    public final static class ResourceManagerBuilder&lt;T&gt; {
+
+        private final Func0&lt;T&gt; resourceFactory;
+<span class="nc" id="L44">        private boolean disposeEagerly = false;</span>
+
+<span class="nc" id="L46">        private ResourceManagerBuilder(Func0&lt;T&gt; resourceFactory) {</span>
+<span class="nc" id="L47">            this.resourceFactory = resourceFactory;</span>
+<span class="nc" id="L48">        }</span>
+
+        public ResourceManagerBuilder&lt;T&gt; disposeEagerly(boolean value) {
+<span class="nc" id="L51">            this.disposeEagerly = value;</span>
+<span class="nc" id="L52">            return this;</span>
+        }
+
+        public ResourceManager&lt;T&gt; disposeAction(Action1&lt;? super T&gt; disposeAction) {
+<span class="nc" id="L56">            return new ResourceManager&lt;T&gt;(resourceFactory, disposeAction, disposeEagerly);</span>
+        }
+    }
+
+    public final static class CloseableResourceManagerBuilder&lt;T extends Closeable&gt; {
+
+        private final Func0&lt;T&gt; resourceFactory;
+<span class="nc" id="L63">        private boolean disposeEagerly = false;</span>
+
+<span class="nc" id="L65">        private CloseableResourceManagerBuilder(Func0&lt;T&gt; resourceFactory) {</span>
+<span class="nc" id="L66">            this.resourceFactory = resourceFactory;</span>
+<span class="nc" id="L67">        }</span>
+
+        public CloseableResourceManagerBuilder&lt;T&gt; disposeEagerly(boolean value) {
+<span class="nc" id="L70">            this.disposeEagerly = value;</span>
+<span class="nc" id="L71">            return this;</span>
+        }
+
+        public ResourceManager&lt;T&gt; create() {
+<span class="nc" id="L75">            return new ResourceManager&lt;T&gt;(resourceFactory, CloserHolder.INSTANCE, disposeEagerly);</span>
+        }
+
+    }
+
+    public static &lt;T&gt; ResourceManager&lt;T&gt; create(Func0&lt;T&gt; resourceFactory,
+            Action1&lt;? super T&gt; disposeAction) {
+<span class="nc" id="L82">        return new ResourceManager&lt;T&gt;(resourceFactory, disposeAction, false);</span>
+    }
+
+    public static &lt;T&gt; ResourceManager&lt;T&gt; create(Callable&lt;T&gt; resourceFactory,
+            Action1&lt;? super T&gt; disposeAction) {
+<span class="nc" id="L87">        return new ResourceManager&lt;T&gt;(Functions.toFunc0(resourceFactory), disposeAction, false);</span>
+    }
+
+    public static &lt;T&gt; ResourceManager&lt;T&gt; create(Callable&lt;T&gt; resourceFactory,
+            Checked.A1&lt;? super T&gt; disposeAction) {
+<span class="nc" id="L92">        return new ResourceManager&lt;T&gt;(Functions.toFunc0(resourceFactory), Checked.a1(disposeAction),</span>
+                false);
+    }
+
+    public static &lt;T extends Closeable&gt; ResourceManager&lt;T&gt; create(Func0&lt;T&gt; resourceFactory) {
+<span class="nc" id="L97">        return create(resourceFactory, CloserHolder.INSTANCE);</span>
+    }
+
+    public static &lt;T extends Closeable&gt; ResourceManager&lt;T&gt; create(Callable&lt;T&gt; resourceFactory) {
+<span class="nc" id="L101">        return create(Functions.toFunc0(resourceFactory), CloserHolder.INSTANCE);</span>
+    }
+
+    public &lt;R&gt; Observable&lt;R&gt; observable(
+            Func1&lt;? super T, ? extends Observable&lt;? extends R&gt;&gt; observableFactory) {
+<span class="nc" id="L106">        return Observable.using(resourceFactory, observableFactory, disposeAction, disposeEagerly);</span>
+    }
+
+    public &lt;R&gt; ResourceManager&lt;R&gt; map(final Checked.F1&lt;? super T, ? extends R&gt; resourceMapper,
+            final Checked.A1&lt;? super R&gt; disposeAction) {
+<span class="nc" id="L111">        return map(Checked.f1(resourceMapper), Checked.a1(disposeAction));</span>
+    }
+
+    public &lt;R&gt; ResourceManager&lt;R&gt; map(final Func1&lt;? super T, ? extends R&gt; resourceMapper,
+            final Action1&lt;? super R&gt; disposeAction) {
+<span class="nc" id="L116">        final AtomicReference&lt;T&gt; ref = new AtomicReference&lt;T&gt;();</span>
+<span class="nc" id="L117">        Func0&lt;R&gt; rf = new Func0&lt;R&gt;() {</span>
+            @Override
+            public R call() {
+<span class="nc" id="L120">                T a = resourceFactory.call();</span>
+                try {
+<span class="nc" id="L122">                    R b = resourceMapper.call(a);</span>
+<span class="nc" id="L123">                    ref.set(a);</span>
+<span class="nc" id="L124">                    return b;</span>
+<span class="nc" id="L125">                } catch (Throwable e) {</span>
+<span class="nc" id="L126">                    ResourceManager.this.disposeAction.call(a);</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                    if (e instanceof RuntimeException) {</span>
+<span class="nc" id="L128">                        throw (RuntimeException) e;</span>
+                    } else {
+<span class="nc" id="L130">                        throw new RuntimeException(e);</span>
+                    }
+                }
+            }
+        };
+<span class="nc" id="L135">        Action1&lt;R&gt; disposer = new Action1&lt;R&gt;() {</span>
+            @Override
+            public void call(R r) {
+                try {
+<span class="nc" id="L139">                    disposeAction.call(r);</span>
+<span class="nc" id="L140">                } catch (Throwable e) {</span>
+<span class="nc" id="L141">                    RxJavaHooks.onError(e);</span>
+<span class="nc" id="L142">                }</span>
+                try {
+<span class="nc" id="L144">                    ResourceManager.this.disposeAction.call(ref.get());</span>
+<span class="nc" id="L145">                } catch (Throwable e) {</span>
+<span class="nc" id="L146">                    RxJavaHooks.onError(e);</span>
+<span class="nc" id="L147">                }</span>
+<span class="nc" id="L148">            }</span>
+        };
+<span class="nc" id="L150">        return create(rf, disposer);</span>
+    }
+
+    public &lt;R extends Closeable&gt; ResourceManager&lt;R&gt; map(
+            final Func1&lt;? super T, ? extends R&gt; resourceMapper) {
+<span class="nc" id="L155">        return map(resourceMapper, CloserHolder.INSTANCE);</span>
+    }
+
+<span class="nc" id="L158">    private static final class CloserHolder {</span>
+
+<span class="nc" id="L160">        static final Action1&lt;Closeable&gt; INSTANCE = new Action1&lt;Closeable&gt;() {</span>
+
+            @Override
+            public void call(Closeable c) {
+                try {
+<span class="nc" id="L165">                    c.close();</span>
+<span class="nc" id="L166">                } catch (IOException e) {</span>
+<span class="nc" id="L167">                    RxJavaHooks.onError(e);</span>
+<span class="nc" id="L168">                }</span>
+<span class="nc" id="L169">            }</span>
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

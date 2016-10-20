@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PublishSubjectSingleSubscriber.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.subjects</a> &gt; <span class="el_source">PublishSubjectSingleSubscriber.java</span></div><h1>PublishSubjectSingleSubscriber.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.subjects;
+
+import java.util.concurrent.atomic.AtomicReference;
+
+import rx.Subscriber;
+import rx.subjects.Subject;
+
+/**
+ * A {@link Subject} that supports a maximum of one {@link Subscriber}. When
+ * there is no subscriber any notifications (&lt;code&gt;onNext&lt;/code&gt;,
+ * &lt;code&gt;onError&lt;/code&gt;, &lt;code&gt;onCompleted&lt;/code&gt;) are ignored.
+ * 
+ * @param &lt;T&gt;
+ *            type of items being emitted/observed by this subject
+ */
+public final class PublishSubjectSingleSubscriber&lt;T&gt; extends Subject&lt;T, T&gt; {
+
+    // Visible for testing
+    static final String ONLY_ONE_SUBSCRIPTION_IS_ALLOWED = &quot;only one subscription is allowed&quot;;
+
+    private final SingleSubscribeOnSubscribe&lt;T&gt; onSubscribe;
+
+    private PublishSubjectSingleSubscriber(SingleSubscribeOnSubscribe&lt;T&gt; onSubscribe) {
+<span class="fc" id="L24">        super(onSubscribe);</span>
+<span class="fc" id="L25">        this.onSubscribe = onSubscribe;</span>
+<span class="fc" id="L26">    }</span>
+
+    private PublishSubjectSingleSubscriber() {
+<span class="fc" id="L29">        this(new SingleSubscribeOnSubscribe&lt;T&gt;());</span>
+<span class="fc" id="L30">    }</span>
+
+    /**
+     * Returns a new instance of a {@link PublishSubjectSingleSubscriber}.
+     * 
+     * @return the new instance
+     * @param &lt;T&gt;
+     *            type of items being emitted/observed by this subject
+     */
+    public static &lt;T&gt; PublishSubjectSingleSubscriber&lt;T&gt; create() {
+<span class="fc" id="L40">        return new PublishSubjectSingleSubscriber&lt;T&gt;();</span>
+    }
+
+    @Override
+    public void onCompleted() {
+<span class="fc" id="L45">    	Subscriber&lt;? super T&gt; sub = onSubscribe.subscriber.get();</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (sub != null) {</span>
+<span class="fc" id="L47">            sub.onCompleted();</span>
+        }
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public void onError(Throwable e) {
+<span class="fc" id="L53">    	Subscriber&lt;? super T&gt; sub = onSubscribe.subscriber.get();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (sub != null) {</span>
+<span class="fc" id="L55">            sub.onError(e);</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    @Override
+    public void onNext(T t) {
+<span class="fc" id="L61">        Subscriber&lt;? super T&gt; sub = onSubscribe.subscriber.get();</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (sub != null) {</span>
+<span class="fc" id="L63">            sub.onNext(t);</span>
+        }
+<span class="fc" id="L65">    }</span>
+
+<span class="fc" id="L67">    private static class SingleSubscribeOnSubscribe&lt;T&gt; implements OnSubscribe&lt;T&gt; {</span>
+
+<span class="fc" id="L69">        final AtomicReference&lt;Subscriber&lt;? super T&gt;&gt; subscriber = new AtomicReference&lt;Subscriber&lt;? super T&gt;&gt;();</span>
+
+        @Override
+        public void call(Subscriber&lt;? super T&gt; sub) {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (!subscriber.compareAndSet(null, sub))</span>
+<span class="fc" id="L74">                throw new RuntimeException(ONLY_ONE_SUBSCRIPTION_IS_ALLOWED);</span>
+<span class="fc" id="L75">        }</span>
+
+    }
+
+    @Override
+    public boolean hasObservers() {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        return onSubscribe.subscriber.get() != null;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

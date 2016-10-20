@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerDecode.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">TransformerDecode.java</span></div><h1>TransformerDecode.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+
+import com.github.davidmoten.rx.Transformers;
+
+import rx.Observable.Transformer;
+import rx.Subscriber;
+import rx.functions.Func0;
+import rx.functions.Func2;
+import rx.functions.Func3;
+
+<span class="nc" id="L17">public final class TransformerDecode {</span>
+
+    public static Transformer&lt;byte[], String&gt; decode(final CharsetDecoder decoder) {
+<span class="fc" id="L20">        Func0&lt;ByteBuffer&gt; initialState = new Func0&lt;ByteBuffer&gt;() {</span>
+
+            @Override
+            public ByteBuffer call() {
+<span class="fc" id="L24">                return null;</span>
+            }
+        };
+<span class="fc" id="L27">        Func3&lt;ByteBuffer, byte[], Subscriber&lt;String&gt;, ByteBuffer&gt; transition = new Func3&lt;ByteBuffer, byte[], Subscriber&lt;String&gt;, ByteBuffer&gt;() {</span>
+
+            @Override
+            public ByteBuffer call(ByteBuffer last, byte[] next, Subscriber&lt;String&gt; o) {
+<span class="fc" id="L31">                Result result = process(next, last, false, decoder, o);</span>
+<span class="fc" id="L32">                return result.leftOver;</span>
+            }
+        };
+<span class="fc" id="L35">        Func2&lt;ByteBuffer, Subscriber&lt;String&gt;, Boolean&gt; completion = new Func2&lt;ByteBuffer, Subscriber&lt;String&gt;, Boolean&gt;() {</span>
+
+            @Override
+            public Boolean call(ByteBuffer last, Subscriber&lt;String&gt; subscriber) {
+<span class="fc" id="L39">                return process(null, last, true, decoder, subscriber).canEmitFurther;</span>
+            }
+        };
+
+<span class="fc" id="L43">        return Transformers.stateMachine(initialState, transition, completion);</span>
+    }
+
+    private static final class Result {
+        final ByteBuffer leftOver;
+        final boolean canEmitFurther;
+
+<span class="fc" id="L50">        Result(ByteBuffer leftOver, boolean canEmitFurther) {</span>
+<span class="fc" id="L51">            this.leftOver = leftOver;</span>
+<span class="fc" id="L52">            this.canEmitFurther = canEmitFurther;</span>
+<span class="fc" id="L53">        }</span>
+
+    }
+
+    public static Result process(byte[] next, ByteBuffer last, boolean endOfInput,
+            CharsetDecoder decoder, Subscriber&lt;String&gt; o) {
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (o.isUnsubscribed())</span>
+<span class="nc" id="L60">            return new Result(null, false);</span>
+
+        ByteBuffer bb;
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (last != null) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (next != null) {</span>
+                // merge leftover in front of the next bytes
+<span class="fc" id="L66">                bb = ByteBuffer.allocate(last.remaining() + next.length);</span>
+<span class="fc" id="L67">                bb.put(last);</span>
+<span class="fc" id="L68">                bb.put(next);</span>
+<span class="fc" id="L69">                bb.flip();</span>
+            } else { // next == null
+<span class="fc" id="L71">                bb = last;</span>
+            }
+        } else { // last == null
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (next != null) {</span>
+<span class="fc" id="L75">                bb = ByteBuffer.wrap(next);</span>
+            } else { // next == null
+<span class="fc" id="L77">                return new Result(null, true);</span>
+            }
+        }
+
+<span class="fc" id="L81">        CharBuffer cb = CharBuffer.allocate((int) (bb.limit() * decoder.averageCharsPerByte()));</span>
+<span class="fc" id="L82">        CoderResult cr = decoder.decode(bb, cb, endOfInput);</span>
+<span class="fc" id="L83">        cb.flip();</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (cr.isError()) {</span>
+            try {
+<span class="nc" id="L87">                cr.throwException();</span>
+<span class="fc" id="L88">            } catch (CharacterCodingException e) {</span>
+<span class="fc" id="L89">                o.onError(e);</span>
+<span class="fc" id="L90">                return new Result(null, false);</span>
+<span class="nc" id="L91">            }</span>
+        }
+
+        ByteBuffer leftOver;
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (bb.remaining() &gt; 0) {</span>
+<span class="fc" id="L96">            leftOver = bb;</span>
+        } else {
+<span class="fc" id="L98">            leftOver = null;</span>
+        }
+
+<span class="fc" id="L101">        String string = cb.toString();</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (!string.isEmpty())</span>
+<span class="fc" id="L103">            o.onNext(string);</span>
+
+<span class="fc" id="L105">        return new Result(leftOver, true);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

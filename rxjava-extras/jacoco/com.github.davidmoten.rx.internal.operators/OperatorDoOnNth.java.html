@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorDoOnNth.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorDoOnNth.java</span></div><h1>OperatorDoOnNth.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import rx.Observable.Operator;
+import rx.Subscriber;
+import rx.functions.Action1;
+
+public final class OperatorDoOnNth&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+    public static &lt;T&gt; OperatorDoOnNth&lt;T&gt; create(Action1&lt;? super T&gt; action, int n) {
+<span class="fc" id="L10">        return new OperatorDoOnNth&lt;T&gt;(action, n);</span>
+    }
+
+    private final Action1&lt;? super T&gt; action;
+    private final int n;
+
+<span class="fc" id="L16">    private OperatorDoOnNth(Action1&lt;? super T&gt; action, int n) {</span>
+<span class="fc" id="L17">        this.action = action;</span>
+<span class="fc" id="L18">        this.n = n;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(final Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L23">        return new Subscriber&lt;T&gt;(child) {</span>
+            int count;
+
+            @Override
+            public void onCompleted() {
+<span class="fc" id="L28">                child.onCompleted();</span>
+<span class="fc" id="L29">            }</span>
+
+            @Override
+            public void onError(Throwable e) {
+<span class="nc" id="L33">                child.onError(e);</span>
+<span class="nc" id="L34">            }</span>
+
+            @Override
+            public void onNext(T t) {
+<span class="fc" id="L38">                count++;</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">                if (count == n) {</span>
+<span class="fc" id="L40">                    action.call(t);</span>
+                }
+<span class="fc" id="L42">                child.onNext(t);</span>
+<span class="fc" id="L43">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

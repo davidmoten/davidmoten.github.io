@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Statistics.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Statistics.java</span></div><h1>Statistics.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+public final class Statistics {
+
+    private final long count;
+    private final double sumX;
+    private final double sumX2;
+
+<span class="fc" id="L9">    private Statistics(long count, double sumX, double sumX2) {</span>
+<span class="fc" id="L10">        this.count = count;</span>
+<span class="fc" id="L11">        this.sumX = sumX;</span>
+<span class="fc" id="L12">        this.sumX2 = sumX2;</span>
+<span class="fc" id="L13">    }</span>
+
+    public static Statistics create() {
+<span class="fc" id="L16">        return new Statistics(0, 0, 0);</span>
+    }
+
+    public Statistics add(Number number) {
+<span class="fc" id="L20">        double x = number.doubleValue();</span>
+<span class="fc" id="L21">        return new Statistics(count + 1, sumX + x, sumX2 + x * x);</span>
+    }
+
+    public long count() {
+<span class="fc" id="L25">        return count;</span>
+    }
+
+    public double sum() {
+<span class="fc" id="L29">        return sumX;</span>
+    }
+
+    public double sumSquares() {
+<span class="nc" id="L33">        return sumX2;</span>
+    }
+
+    public double mean() {
+<span class="fc" id="L37">        return sumX / count;</span>
+    }
+
+    public double sd() {
+<span class="fc" id="L41">        double m = mean();</span>
+<span class="fc" id="L42">        return Math.sqrt(sumX2 / count - m * m);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L47">        StringBuilder builder = new StringBuilder();</span>
+<span class="nc" id="L48">        builder.append(&quot;Statistics [count=&quot;);</span>
+<span class="nc" id="L49">        builder.append(count);</span>
+<span class="nc" id="L50">        builder.append(&quot;, sum=&quot;);</span>
+<span class="nc" id="L51">        builder.append(sum());</span>
+<span class="nc" id="L52">        builder.append(&quot;, mean=&quot;);</span>
+<span class="nc" id="L53">        builder.append(mean());</span>
+<span class="nc" id="L54">        builder.append(&quot;, sd=&quot;);</span>
+<span class="nc" id="L55">        builder.append(sd());</span>
+<span class="nc" id="L56">        builder.append(&quot;]&quot;);</span>
+<span class="nc" id="L57">        return builder.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

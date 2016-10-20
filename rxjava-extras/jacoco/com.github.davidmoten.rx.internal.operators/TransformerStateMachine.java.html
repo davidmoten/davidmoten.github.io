@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerStateMachine.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">TransformerStateMachine.java</span></div><h1>TransformerStateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import com.github.davidmoten.rx.util.BackpressureStrategy;
+import com.github.davidmoten.util.Preconditions;
+
+import rx.Notification;
+import rx.Observable;
+import rx.Observable.OnSubscribe;
+import rx.Observable.Transformer;
+import rx.Subscriber;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.functions.Func3;
+
+public final class TransformerStateMachine&lt;State, In, Out&gt; implements Transformer&lt;In, Out&gt; {
+
+    private final Func0&lt;? extends State&gt; initialState;
+    private final Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition;
+    private final Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion;
+    private final BackpressureStrategy backpressureStrategy;
+    private final int initialRequest;
+
+    private TransformerStateMachine(Func0&lt;? extends State&gt; initialState,
+            Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion,
+<span class="fc" id="L27">            BackpressureStrategy backpressureStrategy, int initialRequest) {</span>
+<span class="fc" id="L28">        Preconditions.checkNotNull(initialState);</span>
+<span class="fc" id="L29">        Preconditions.checkNotNull(transition);</span>
+<span class="fc" id="L30">        Preconditions.checkNotNull(completion);</span>
+<span class="fc" id="L31">        Preconditions.checkNotNull(backpressureStrategy);</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        Preconditions.checkArgument(initialRequest &gt; 0, &quot;initialRequest must be greater than zero&quot;);</span>
+<span class="fc" id="L33">        this.initialState = initialState;</span>
+<span class="fc" id="L34">        this.transition = transition;</span>
+<span class="fc" id="L35">        this.completion = completion;</span>
+<span class="fc" id="L36">        this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L37">        this.initialRequest = initialRequest;</span>
+<span class="fc" id="L38">    }</span>
+
+    public static &lt;State, In, Out&gt; Transformer&lt;In, Out&gt; create(Func0&lt;? extends State&gt; initialState,
+            Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion,
+            BackpressureStrategy backpressureStrategy, int initialRequest) {
+<span class="fc" id="L44">        return new TransformerStateMachine&lt;State, In, Out&gt;(initialState, transition, completion,</span>
+                backpressureStrategy, initialRequest);
+    }
+
+    @Override
+    public Observable&lt;Out&gt; call(final Observable&lt;In&gt; source) {
+        // use defer so we can have a single state reference for each
+        // subscription
+<span class="fc" id="L52">        return Observable.defer(new Func0&lt;Observable&lt;Out&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;Out&gt; call() {
+<span class="fc" id="L55">                Mutable&lt;State&gt; state = new Mutable&lt;State&gt;(initialState.call());</span>
+<span class="fc" id="L56">                return source.materialize()</span>
+                        // do state transitions and emit notifications
+                        // use flatMap to emit notification values
+<span class="fc" id="L59">                        .flatMap(execute(transition, completion, state, backpressureStrategy),</span>
+<span class="fc" id="L60">                                initialRequest)</span>
+                        // complete if we encounter an unsubscribed sentinel
+<span class="fc" id="L62">                        .takeWhile(NOT_UNSUBSCRIBED)</span>
+                        // flatten notifications to a stream which will enable
+                        // early termination from the state machine if desired
+<span class="fc" id="L65">                        .dematerialize();</span>
+            }
+        });
+    }
+
+    private static &lt;State, Out, In&gt; Func1&lt;Notification&lt;In&gt;, Observable&lt;Notification&lt;Out&gt;&gt;&gt; execute(
+            final Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            final Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion,
+            final Mutable&lt;State&gt; state, final BackpressureStrategy backpressureStrategy) {
+
+<span class="fc" id="L75">        return new Func1&lt;Notification&lt;In&gt;, Observable&lt;Notification&lt;Out&gt;&gt;&gt;() {</span>
+
+            @Override
+            public Observable&lt;Notification&lt;Out&gt;&gt; call(final Notification&lt;In&gt; in) {
+
+<span class="fc" id="L80">                Observable&lt;Notification&lt;Out&gt;&gt; o = Observable</span>
+<span class="fc" id="L81">                        .create(new OnSubscribe&lt;Notification&lt;Out&gt;&gt;() {</span>
+
+                    @Override
+                    public void call(Subscriber&lt;? super Notification&lt;Out&gt;&gt; subscriber) {
+<span class="fc" id="L85">                        Subscriber&lt;Out&gt; w = wrap(subscriber);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                        if (in.hasValue()) {</span>
+<span class="fc" id="L87">                            state.value = transition.call(state.value, in.getValue(), w);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                            if (!subscriber.isUnsubscribed())</span>
+<span class="fc" id="L89">                                subscriber.onCompleted();</span>
+                            else {
+                                // this is a special emission to indicate that the
+                                // transition called unsubscribe. It will be
+                                // filtered later.
+<span class="fc" id="L94">                                subscriber.onNext(UnsubscribedNotificationHolder.&lt;Out&gt;unsubscribedNotification());</span>
+                            }
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                        } else if (in.isOnCompleted()) {</span>
+<span class="fc bfc" id="L97" title="All 4 branches covered.">                            if (completion.call(state.value, w) &amp;&amp; !subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L98">                                w.onCompleted();</span>
+                            }
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                        } else if (!subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L101">                            w.onError(in.getThrowable());</span>
+                        }
+<span class="fc" id="L103">                    }</span>
+                });
+                // because the observable we just created does not
+                // support backpressure we need to apply a backpressure
+                // handling operator. This operator is supplied by the
+                // user.
+<span class="fc" id="L109">                return applyBackpressure(o, backpressureStrategy);</span>
+            }
+
+        };
+    }
+    
+<span class="nc" id="L115">    private static final class UnsubscribedNotificationHolder {</span>
+<span class="fc" id="L116">        private static final Notification&lt;Object&gt; INSTANCE = Notification.createOnNext(null);</span>
+        
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; Notification&lt;T&gt; unsubscribedNotification() {
+<span class="fc" id="L120">            return (Notification&lt;T&gt;) INSTANCE;</span>
+        }
+    }
+
+    private static &lt;Out&gt; Observable&lt;Notification&lt;Out&gt;&gt; applyBackpressure(
+            Observable&lt;Notification&lt;Out&gt;&gt; o, final BackpressureStrategy backpressureStrategy) {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (backpressureStrategy == BackpressureStrategy.BUFFER)</span>
+<span class="fc" id="L127">            return o.onBackpressureBuffer();</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        else if (backpressureStrategy == BackpressureStrategy.DROP)</span>
+<span class="nc" id="L129">            return o.onBackpressureDrop();</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        else if (backpressureStrategy == BackpressureStrategy.LATEST)</span>
+<span class="nc" id="L131">            return o.onBackpressureLatest();</span>
+        else
+<span class="nc" id="L133">            throw new IllegalArgumentException(</span>
+                    &quot;backpressure strategy not supported: &quot; + backpressureStrategy);
+    }
+
+<span class="fc" id="L137">    private static final Func1&lt;Notification&lt;?&gt;, Boolean&gt; NOT_UNSUBSCRIBED = new Func1&lt;Notification&lt;?&gt;, Boolean&gt;() {</span>
+
+        @Override
+        public Boolean call(Notification&lt;?&gt; t) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            return t != UnsubscribedNotificationHolder.unsubscribedNotification();</span>
+        }
+
+    };
+
+    private static final class Mutable&lt;T&gt; {
+        T value;
+
+<span class="fc" id="L149">        Mutable(T value) {</span>
+<span class="fc" id="L150">            this.value = value;</span>
+<span class="fc" id="L151">        }</span>
+    }
+
+    private static &lt;Out&gt; NotificationSubscriber&lt;Out&gt; wrap(
+            Subscriber&lt;? super Notification&lt;Out&gt;&gt; sub) {
+<span class="fc" id="L156">        return new NotificationSubscriber&lt;Out&gt;(sub);</span>
+    }
+
+    private static final class NotificationSubscriber&lt;Out&gt; extends Subscriber&lt;Out&gt; {
+
+        private final Subscriber&lt;? super Notification&lt;Out&gt;&gt; sub;
+
+<span class="fc" id="L163">        NotificationSubscriber(Subscriber&lt;? super Notification&lt;Out&gt;&gt; sub) {</span>
+<span class="fc" id="L164">            this.sub = sub;</span>
+<span class="fc" id="L165">            add(sub);</span>
+<span class="fc" id="L166">        }</span>
+
+        @Override
+        public void onCompleted() {
+<span class="fc" id="L170">            sub.onNext(Notification.&lt;Out&gt; createOnCompleted());</span>
+<span class="fc" id="L171">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L175">            sub.onNext(Notification.&lt;Out&gt; createOnError(e));</span>
+<span class="fc" id="L176">        }</span>
+
+        @Override
+        public void onNext(Out t) {
+<span class="fc" id="L180">            sub.onNext(Notification.createOnNext(t));</span>
+<span class="fc" id="L181">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

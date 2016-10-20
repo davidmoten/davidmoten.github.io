@@ -1,0 +1,1315 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Transformers.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Transformers.java</span></div><h1>Transformers.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.nio.charset.CharsetDecoder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
+
+import com.github.davidmoten.rx.StateMachine.Completion;
+import com.github.davidmoten.rx.StateMachine.Transition;
+import com.github.davidmoten.rx.buffertofile.DataSerializer;
+import com.github.davidmoten.rx.buffertofile.DataSerializers;
+import com.github.davidmoten.rx.buffertofile.Options;
+import com.github.davidmoten.rx.internal.operators.OnSubscribeDoOnEmpty;
+import com.github.davidmoten.rx.internal.operators.OnSubscribeMapLast;
+import com.github.davidmoten.rx.internal.operators.OperatorBufferPredicateBoundary;
+import com.github.davidmoten.rx.internal.operators.OperatorBufferToFile;
+import com.github.davidmoten.rx.internal.operators.OperatorDoOnNth;
+import com.github.davidmoten.rx.internal.operators.OperatorFromTransformer;
+import com.github.davidmoten.rx.internal.operators.TransformerOnTerminateResume;
+import com.github.davidmoten.rx.internal.operators.OperatorSampleFirst;
+import com.github.davidmoten.rx.internal.operators.OperatorWindowMinMax;
+import com.github.davidmoten.rx.internal.operators.OperatorWindowMinMax.Metric;
+import com.github.davidmoten.rx.internal.operators.OrderedMerge;
+import com.github.davidmoten.rx.internal.operators.TransformerDecode;
+import com.github.davidmoten.rx.internal.operators.TransformerDelayFinalUnsubscribe;
+import com.github.davidmoten.rx.internal.operators.TransformerLimitSubscribers;
+import com.github.davidmoten.rx.internal.operators.TransformerOnBackpressureBufferRequestLimiting;
+import com.github.davidmoten.rx.internal.operators.TransformerStateMachine;
+import com.github.davidmoten.rx.internal.operators.TransformerStringSplit;
+import com.github.davidmoten.rx.util.BackpressureStrategy;
+import com.github.davidmoten.rx.util.MapWithIndex;
+import com.github.davidmoten.rx.util.MapWithIndex.Indexed;
+import com.github.davidmoten.rx.util.Pair;
+import com.github.davidmoten.util.Optional;
+
+import rx.Notification;
+import rx.Observable;
+import rx.Observable.Operator;
+import rx.Observable.Transformer;
+import rx.Observer;
+import rx.Scheduler;
+import rx.Scheduler.Worker;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.functions.Func3;
+import rx.internal.util.RxRingBuffer;
+import rx.observables.GroupedObservable;
+import rx.schedulers.Schedulers;
+
+<span class="nc" id="L63">public final class Transformers {</span>
+
+    static final int DEFAULT_INITIAL_BATCH = 1;
+
+    public static &lt;T, R&gt; Operator&lt;R, T&gt; toOperator(
+            Func1&lt;? super Observable&lt;T&gt;, ? extends Observable&lt;R&gt;&gt; function) {
+<span class="nc" id="L69">        return OperatorFromTransformer.toOperator(function);</span>
+    }
+
+    public static &lt;T extends Number&gt; Transformer&lt;T, Statistics&gt; collectStats() {
+<span class="fc" id="L73">        return new Transformer&lt;T, Statistics&gt;() {</span>
+
+            @Override
+            public Observable&lt;Statistics&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L77">                return o.scan(Statistics.create(), Functions.collectStats());</span>
+            }
+        };
+    }
+
+    public static &lt;T, R extends Number&gt; Transformer&lt;T, Pair&lt;T, Statistics&gt;&gt; collectStats(
+            final Func1&lt;? super T, ? extends R&gt; function) {
+<span class="fc" id="L84">        return new Transformer&lt;T, Pair&lt;T, Statistics&gt;&gt;() {</span>
+
+            @Override
+            public Observable&lt;Pair&lt;T, Statistics&gt;&gt; call(Observable&lt;T&gt; source) {
+<span class="fc" id="L88">                return source.scan(Pair.create((T) null, Statistics.create()),</span>
+<span class="fc" id="L89">                        new Func2&lt;Pair&lt;T, Statistics&gt;, T, Pair&lt;T, Statistics&gt;&gt;() {</span>
+                            @Override
+                            public Pair&lt;T, Statistics&gt; call(Pair&lt;T, Statistics&gt; pair, T t) {
+<span class="fc" id="L92">                                return Pair.create(t, pair.b().add(function.call(t)));</span>
+                            }
+<span class="fc" id="L94">                        }).skip(1);</span>
+            }
+        };
+    }
+
+    public static &lt;T extends Comparable&lt;? super T&gt;&gt; Transformer&lt;T, T&gt; sort() {
+<span class="fc" id="L100">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L104">                return o.toSortedList().flatMapIterable(Functions.&lt;List&lt;T&gt;&gt;identity());</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; sort(final Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L110">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L114">                return o.toSortedList(Functions.toFunc2(comparator))</span>
+<span class="fc" id="L115">                        .flatMapIterable(Functions.&lt;List&lt;T&gt;&gt;identity());</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, Set&lt;T&gt;&gt; toSet() {
+<span class="nc" id="L121">        return new Transformer&lt;T, Set&lt;T&gt;&gt;() {</span>
+
+            @Override
+            public Observable&lt;Set&lt;T&gt;&gt; call(Observable&lt;T&gt; o) {
+<span class="nc" id="L125">                return o.collect(new Func0&lt;Set&lt;T&gt;&gt;() {</span>
+
+                    @Override
+                    public Set&lt;T&gt; call() {
+<span class="nc" id="L129">                        return new HashSet&lt;T&gt;();</span>
+                    }
+<span class="nc" id="L131">                }, new Action2&lt;Set&lt;T&gt;, T&gt;() {</span>
+
+                    @Override
+                    public void call(Set&lt;T&gt; set, T t) {
+<span class="nc" id="L135">                        set.add(t);</span>
+<span class="nc" id="L136">                    }</span>
+                });
+            }
+        };
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that wraps stream emissions with their
+     * corresponding zero based index numbers (0,1,2,3,..) in instances of
+     * {@link Indexed}.
+     * &lt;p&gt;
+     * Example usage:
+     * 
+     * &lt;pre&gt;
+     * 
+     *  {@code
+     *    Observable
+     *      .just(&quot;a&quot;,&quot;b&quot;,&quot;c)
+     *      .mapWithIndex(Transformers.mapWithIndex())
+     *      .map(x -&gt; x.index() + &quot;-&gt;&quot; + x.value())
+     *      .forEach(System.out::println);
+     *  }
+     * &lt;/pre&gt;
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/mapWithIndex.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param &lt;T&gt;
+     *            generic type of the stream being supplemented with an index
+     * @return transformer that supplements each stream emission with its index
+     *         (zero-based position) in the stream.
+     */
+    public static &lt;T&gt; Transformer&lt;T, Indexed&lt;T&gt;&gt; mapWithIndex() {
+<span class="fc" id="L172">        return MapWithIndex.instance();</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that allows processing of the source stream
+     * to be defined in a state machine where transitions of the state machine
+     * may also emit items to downstream that are buffered if necessary when
+     * backpressure is requested. &lt;code&gt;flatMap&lt;/code&gt; is part of the processing
+     * chain so the source may experience requests for more items than are
+     * strictly required by the endpoint subscriber.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/stateMachine.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param initialStateFactory
+     *            the factory to create the initial state of the state machine.
+     * @param transition
+     *            defines state transitions and consequent emissions to
+     *            downstream when an item arrives from upstream. The
+     *            {@link Subscriber} is called with the emissions to downstream.
+     *            You can optionally call {@link Subscriber#isUnsubscribed()} to
+     *            check if you can stop emitting from the transition. If you do
+     *            wish to terminate the Observable then call
+     *            {@link Subscriber#unsubscribe()} and return anything (say
+     *            {@code null} from the transition (as the next state which will
+     *            not be used). You can also complete the Observable by calling
+     *            {@link Subscriber#onCompleted} or {@link Subscriber#onError}
+     *            from within the transition and return anything from the
+     *            transition (will not be used). The transition should run
+     *            synchronously so that completion of a call to the transition
+     *            should also signify all emissions from that transition have
+     *            been made.
+     * @param completion
+     *            defines activity that should happen based on the final state
+     *            just before downstream &lt;code&gt;onCompleted()&lt;/code&gt; is called.
+     *            For example any buffered emissions in state could be emitted
+     *            at this point. Don't call &lt;code&gt;observer.onCompleted()&lt;/code&gt;
+     *            as it is called for you after the action completes if and only
+     *            if you return true from this function.
+     * @param backpressureStrategy
+     *            is applied to the emissions from one call of transition and
+     *            should enforce backpressure.
+     * @param &lt;State&gt;
+     *            the class representing the state of the state machine
+     * @param &lt;In&gt;
+     *            the input observable type
+     * @param &lt;Out&gt;
+     *            the output observable type
+     * @throws NullPointerException
+     *             if {@code initialStateFactory} or {@code transition},or
+     *             {@code completionAction} is null
+     * @return a backpressure supporting transformer that implements the state
+     *         machine specified by the parameters
+     */
+    public static &lt;State, In, Out&gt; Transformer&lt;In, Out&gt; stateMachine(
+            Func0&lt;State&gt; initialStateFactory,
+            Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion,
+            BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L234">        return TransformerStateMachine.&lt;State, In, Out&gt;create(initialStateFactory, transition,</span>
+                completion, backpressureStrategy, DEFAULT_INITIAL_BATCH);
+    }
+
+    public static &lt;State, In, Out&gt; Transformer&lt;In, Out&gt; stateMachine(
+            Func0&lt;State&gt; initialStateFactory,
+            Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion,
+            BackpressureStrategy backpressureStrategy, int initialRequest) {
+<span class="fc" id="L243">        return TransformerStateMachine.&lt;State, In, Out&gt;create(initialStateFactory, transition,</span>
+                completion, backpressureStrategy, initialRequest);
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that allows processing of the source stream
+     * to be defined in a state machine where transitions of the state machine
+     * may also emit items to downstream that are buffered if necessary when
+     * backpressure is requested. &lt;code&gt;flatMap&lt;/code&gt; is part of the processing
+     * chain so the source may experience requests for more items than are
+     * strictly required by the endpoint subscriber. The backpressure strategy
+     * used for emissions from the transition into the flatMap is
+     * {@link BackpressureStrategy#BUFFER} which corresponds to
+     * {@link Observable#onBackpressureBuffer}.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/stateMachine.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param initialStateFactory
+     *            the factory to create the initial state of the state machine.
+     * @param transition
+     *            defines state transitions and consequent emissions to
+     *            downstream when an item arrives from upstream. The
+     *            {@link Subscriber} is called with the emissions to downstream.
+     *            You can optionally call {@link Subscriber#isUnsubscribed()} to
+     *            check if you can stop emitting from the transition. If you do
+     *            wish to terminate the Observable then call
+     *            {@link Subscriber#unsubscribe()} and return anything (say
+     *            {@code null} from the transition (as the next state which will
+     *            not be used). You can also complete the Observable by calling
+     *            {@link Subscriber#onCompleted} or {@link Subscriber#onError}
+     *            from within the transition and return anything from the
+     *            transition (will not be used). The transition should run
+     *            synchronously so that completion of a call to the transition
+     *            should also signify all emissions from that transition have
+     *            been made.
+     * @param completion
+     *            defines activity that should happen based on the final state
+     *            just before downstream &lt;code&gt;onCompleted()&lt;/code&gt; is called.
+     *            For example any buffered emissions in state could be emitted
+     *            at this point. Don't call &lt;code&gt;observer.onCompleted()&lt;/code&gt;
+     *            as it is called for you after the action completes if and only
+     *            if you return true from this function.
+     * @param &lt;State&gt;
+     *            the class representing the state of the state machine
+     * @param &lt;In&gt;
+     *            the input observable type
+     * @param &lt;Out&gt;
+     *            the output observable type
+     * @throws NullPointerException
+     *             if {@code initialStateFactory} or {@code transition},or
+     *             {@code completion} is null
+     * @return a backpressure supporting transformer that implements the state
+     *         machine specified by the parameters
+     */
+    public static &lt;State, In, Out&gt; Transformer&lt;In, Out&gt; stateMachine(
+            Func0&lt;? extends State&gt; initialStateFactory,
+            Func3&lt;? super State, ? super In, ? super Subscriber&lt;Out&gt;, ? extends State&gt; transition,
+            Func2&lt;? super State, ? super Subscriber&lt;Out&gt;, Boolean&gt; completion) {
+<span class="fc" id="L305">        return TransformerStateMachine.&lt;State, In, Out&gt;create(initialStateFactory, transition,</span>
+                completion, BackpressureStrategy.BUFFER, DEFAULT_INITIAL_BATCH);
+    }
+
+    public static StateMachine.Builder stateMachine() {
+<span class="fc" id="L310">        return StateMachine.builder();</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns the source {@link Observable} merged with the &lt;code&gt;other&lt;/code&gt;
+     * observable using the given {@link Comparator} for order. A precondition
+     * is that the source and other are already ordered. This transformer
+     * supports backpressure and its inputs must also support backpressure.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/orderedMerge.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param other
+     *            the other already ordered observable
+     * @param comparator
+     *            the ordering to use
+     * @param &lt;T&gt;
+     *            the generic type of the objects being compared
+     * @return merged and ordered observable
+     */
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; orderedMergeWith(final Observable&lt;T&gt; other,
+            final Comparator&lt;? super T&gt; comparator) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L336">        Collection&lt;Observable&lt;T&gt;&gt; collection = Arrays.asList(other);</span>
+<span class="fc" id="L337">        return orderedMergeWith(collection, comparator);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns the source {@link Observable} merged with all of the other
+     * observables using the given {@link Comparator} for order. A precondition
+     * is that the source and other are already ordered. This transformer
+     * supports backpressure and its inputs must also support backpressure.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/orderedMerge.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param others
+     *            a collection of already ordered observables to merge with
+     * @param comparator
+     *            the ordering to use
+     * @param &lt;T&gt;
+     *            the generic type of the objects being compared
+     * @return merged and ordered observable
+     */
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; orderedMergeWith(
+            final Collection&lt;Observable&lt;T&gt;&gt; others, final Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L362">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; source) {
+<span class="fc" id="L366">                List&lt;Observable&lt;T&gt;&gt; collection = new ArrayList&lt;Observable&lt;T&gt;&gt;();</span>
+<span class="fc" id="L367">                collection.add(source);</span>
+<span class="fc" id="L368">                collection.addAll(others);</span>
+<span class="fc" id="L369">                return OrderedMerge.&lt;T&gt;create(collection, comparator, false);</span>
+            }
+        };
+    }
+
+    /**
+     * Returns a {@link Transformer} that returns an {@link Observable} that is
+     * a buffering of the source Observable into lists of sequential items that
+     * are equal.
+     * 
+     * &lt;p&gt;
+     * For example, the stream
+     * {@code Observable.just(1, 1, 2, 2, 1).compose(toListUntilChanged())}
+     * would emit {@code [1,1], [2], [1]}.
+     * 
+     * @param &lt;T&gt;
+     *            the generic type of the source Observable
+     * @return transformer as above
+     */
+    public static &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListUntilChanged() {
+<span class="fc" id="L389">        Func2&lt;Collection&lt;T&gt;, T, Boolean&gt; equal = HolderEquals.instance();</span>
+<span class="fc" id="L390">        return toListWhile(equal);</span>
+    }
+
+<span class="nc" id="L393">    private static class HolderEquals {</span>
+<span class="fc" id="L394">        private static final Func2&lt;Collection&lt;Object&gt;, Object, Boolean&gt; INSTANCE = new Func2&lt;Collection&lt;Object&gt;, Object, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(Collection&lt;Object&gt; list, Object t) {
+<span class="fc bfc" id="L397" title="All 4 branches covered.">                return list.isEmpty() || list.iterator().next().equals(t);</span>
+            }
+        };
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; Func2&lt;Collection&lt;T&gt;, T, Boolean&gt; instance() {
+<span class="fc" id="L403">            return (Func2&lt;Collection&lt;T&gt;, T, Boolean&gt;) (Func2&lt;?, ?, Boolean&gt;) INSTANCE;</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that returns an {@link Observable} that is
+     * a buffering of the source Observable into lists of sequential items that
+     * satisfy the condition {@code condition}.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/toListWhile.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param condition
+     *            condition function that must return true if an item is to be
+     *            part of the list being prepared for emission
+     * @param &lt;T&gt;
+     *            the generic type of the source Observable
+     * @return transformer as above
+     */
+    public static &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListWhile(
+            final Func2&lt;? super List&lt;T&gt;, ? super T, Boolean&gt; condition) {
+
+<span class="fc" id="L428">        Func0&lt;List&lt;T&gt;&gt; initialState = new Func0&lt;List&lt;T&gt;&gt;() {</span>
+            @Override
+            public List&lt;T&gt; call() {
+<span class="fc" id="L431">                return new ArrayList&lt;T&gt;();</span>
+            }
+        };
+
+<span class="fc" id="L435">        Action2&lt;List&lt;T&gt;, T&gt; collect = new Action2&lt;List&lt;T&gt;, T&gt;() {</span>
+
+            @Override
+            public void call(List&lt;T&gt; list, T n) {
+<span class="fc" id="L439">                list.add(n);</span>
+<span class="fc" id="L440">            }</span>
+        };
+<span class="fc" id="L442">        return collectWhile(initialState, collect, condition);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that returns an {@link Observable} that is
+     * collected into {@code Collection} instances created by {@code factory}
+     * that are emitted when the collection and latest emission do not satisfy
+     * {@code condition} or on completion.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/collectWhile.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param factory
+     *            collection instance creator
+     * @param collect
+     *            collection action
+     * @param condition
+     *            returns true if and only if emission should be collected in
+     *            current collection being prepared for emission
+     * @param isEmpty
+     *            indicates that the collection is empty
+     * @param &lt;T&gt;
+     *            generic type of source observable
+     * @param &lt;R&gt;
+     *            collection type emitted by transformed Observable
+     * @return transformer as above
+     */
+    public static &lt;T, R&gt; Transformer&lt;T, R&gt; collectWhile(final Func0&lt;R&gt; factory,
+            final Action2&lt;? super R, ? super T&gt; collect,
+            final Func2&lt;? super R, ? super T, Boolean&gt; condition,
+            final Func1&lt;? super R, Boolean&gt; isEmpty) {
+<span class="fc" id="L476">        Func3&lt;R, T, Observer&lt;R&gt;, R&gt; transition = new Func3&lt;R, T, Observer&lt;R&gt;, R&gt;() {</span>
+
+            @Override
+            public R call(R collection, T t, Observer&lt;R&gt; observer) {
+
+<span class="fc bfc" id="L481" title="All 2 branches covered.">                if (condition.call(collection, t)) {</span>
+<span class="fc" id="L482">                    collect.call(collection, t);</span>
+<span class="fc" id="L483">                    return collection;</span>
+                } else {
+<span class="fc" id="L485">                    observer.onNext(collection);</span>
+<span class="fc" id="L486">                    R r = factory.call();</span>
+<span class="fc" id="L487">                    collect.call(r, t);</span>
+<span class="fc" id="L488">                    return r;</span>
+                }
+            }
+
+        };
+<span class="fc" id="L493">        Func2&lt;R, Observer&lt;R&gt;, Boolean&gt; completionAction = new Func2&lt;R, Observer&lt;R&gt;, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(R collection, Observer&lt;R&gt; observer) {
+<span class="fc bfc" id="L496" title="All 2 branches covered.">                if (!isEmpty.call(collection)) {</span>
+<span class="fc" id="L497">                    observer.onNext(collection);</span>
+                }
+<span class="fc" id="L499">                return true;</span>
+            }
+        };
+<span class="fc" id="L502">        return Transformers.stateMachine(factory, transition, completionAction);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a {@link Transformer} that returns an {@link Observable} that is
+     * collected into {@code Collection} instances created by {@code factory}
+     * that are emitted when items are not equal or on completion.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/collectWhile.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param factory
+     *            collection instance creator
+     * @param collect
+     *            collection action
+     * @param &lt;T&gt;
+     *            generic type of source observable
+     * @param &lt;R&gt;
+     *            collection type emitted by transformed Observable
+     * @return transformer as above
+     */
+    public static &lt;T, R extends Collection&lt;T&gt;&gt; Transformer&lt;T, R&gt; collectWhile(
+            final Func0&lt;R&gt; factory, final Action2&lt;? super R, ? super T&gt; collect) {
+<span class="nc" id="L528">        return collectWhile(factory, collect, HolderEquals.&lt;T&gt;instance());</span>
+    }
+
+    public static &lt;T, R extends Iterable&lt;?&gt;&gt; Transformer&lt;T, R&gt; collectWhile(final Func0&lt;R&gt; factory,
+            final Action2&lt;? super R, ? super T&gt; collect,
+            final Func2&lt;? super R, ? super T, Boolean&gt; condition) {
+<span class="fc" id="L534">        Func1&lt;R, Boolean&gt; isEmpty = new Func1&lt;R, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(R collection) {
+<span class="fc bfc" id="L537" title="All 2 branches covered.">                return !collection.iterator().hasNext();</span>
+            }
+        };
+<span class="fc" id="L540">        return collectWhile(factory, collect, condition, isEmpty);</span>
+    }
+
+    /**
+     * Returns a {@link Transformer} that applied to a source {@link Observable}
+     * calls the given action on the {@code n}th onNext emission.
+     * 
+     * @param n
+     *            the 1-based count of onNext to do the action on
+     * @param action
+     *            is performed on {@code n}th onNext.
+     * @param &lt;T&gt;
+     *            the generic type of the Observable being transformed
+     * @return Transformer that applied to a source Observable calls the given
+     *         action on the nth onNext emission.
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; doOnNext(final int n, final Action1&lt;? super T&gt; action) {
+<span class="fc" id="L557">        return new Transformer&lt;T, T&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L560">                return o.lift(OperatorDoOnNth.create(action, n));</span>
+            }
+        };
+    }
+
+    /**
+     * Returns a {@link Transformer} that applied to a source {@link Observable}
+     * calls the given action on the first onNext emission.
+     * 
+     * @param action
+     *            is performed on first onNext
+     * @param &lt;T&gt;
+     *            the generic type of the Observable being transformed
+     * @return Transformer that applied to a source Observable calls the given
+     *         action on the first onNext emission.
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; doOnFirst(final Action1&lt;? super T&gt; action) {
+<span class="nc" id="L577">        return doOnNext(1, action);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns an observable that subscribes to {@code this} and wait for
+     * completion but doesn't emit any items and once completes emits the
+     * {@code next} observable.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://github.com/davidmoten/rxjava-extras/blob/master/src/docs/ignoreElementsThen.png?raw=true&quot;
+     * alt=&quot;marble diagram&quot;&gt;
+     * 
+     * @param &lt;R&gt;
+     *            input observable type
+     * @param &lt;T&gt;
+     *            output observable type
+     * @param next
+     *            observable to be emitted after ignoring elements of
+     *            {@code this}
+     * @return Transformer that applied to a source Observable ignores the
+     *         elements of the source and emits the elements of a second
+     *         observable
+     */
+    public static &lt;R, T&gt; Transformer&lt;T, R&gt; ignoreElementsThen(final Observable&lt;R&gt; next) {
+<span class="nc" id="L603">        return new Transformer&lt;T, R&gt;() {</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+            @Override
+            public Observable&lt;R&gt; call(Observable&lt;T&gt; source) {
+<span class="nc" id="L608">                return ((Observable&lt;R&gt;) (Observable&lt;?&gt;) source.ignoreElements()).concatWith(next);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;String, String&gt; split(String pattern) {
+<span class="fc" id="L614">        return TransformerStringSplit.split(pattern, null);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;String, String&gt; split(Pattern pattern) {
+<span class="fc" id="L618">        return TransformerStringSplit.split(null, pattern);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Decodes a stream of multibyte chunks into a stream of strings that works
+     * on infinite streams and handles when a multibyte character spans two
+     * chunks. This method allows for more control over how malformed and
+     * unmappable characters are handled.
+     * &lt;p&gt;
+     * &lt;img width=&quot;640&quot; src=
+     * &quot;https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/St.decode.png&quot;
+     * alt=&quot;&quot;&gt;
+     * 
+     * @param charsetDecoder
+     *            decodes the bytes into strings
+     * @return the Observable returning a stream of decoded strings
+     */
+    public static Transformer&lt;byte[], String&gt; decode(final CharsetDecoder charsetDecoder) {
+<span class="fc" id="L637">        return TransformerDecode.decode(charsetDecoder);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; limitSubscribers(AtomicInteger subscriberCount,
+            int maxSubscribers) {
+<span class="nc" id="L642">        return new TransformerLimitSubscribers&lt;T&gt;(subscriberCount, maxSubscribers);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; limitSubscribers(int maxSubscribers) {
+<span class="fc" id="L646">        return new TransformerLimitSubscribers&lt;T&gt;(new AtomicInteger(), maxSubscribers);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; cache(final long duration, final TimeUnit unit,
+            final Worker worker) {
+<span class="fc" id="L651">        return new Transformer&lt;T, T&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L654">                return Obs.cache(o, duration, unit, worker);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; sampleFirst(final long duration, final TimeUnit unit) {
+<span class="nc" id="L660">        return sampleFirst(duration, unit, Schedulers.computation());</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; sampleFirst(final long duration, final TimeUnit unit,
+            final Scheduler scheduler) {
+<span class="fc bfc" id="L665" title="All 2 branches covered.">        if (duration &lt;= 0) {</span>
+<span class="fc" id="L666">            throw new IllegalArgumentException(&quot;duration must be &gt; 0&quot;);</span>
+        }
+<span class="fc" id="L668">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; source) {
+<span class="fc" id="L672">                return source.lift(new OperatorSampleFirst&lt;T&gt;(duration, unit, scheduler));</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; onBackpressureBufferToFile() {
+<span class="fc" id="L678">        return onBackpressureBufferToFile(DataSerializers.&lt;T&gt;javaIO(), Schedulers.computation(),</span>
+<span class="fc" id="L679">                Options.defaultInstance());</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; onBackpressureBufferToFile(
+            final DataSerializer&lt;T&gt; serializer) {
+<span class="nc" id="L684">        return onBackpressureBufferToFile(serializer, Schedulers.computation(),</span>
+<span class="nc" id="L685">                Options.defaultInstance());</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; onBackpressureBufferToFile(
+            final DataSerializer&lt;T&gt; serializer, final Scheduler scheduler) {
+<span class="fc" id="L690">        return onBackpressureBufferToFile(serializer, scheduler, Options.defaultInstance());</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; onBackpressureBufferToFile(
+            final DataSerializer&lt;T&gt; serializer, final Scheduler scheduler, final Options options) {
+<span class="fc" id="L695">        return new Transformer&lt;T, T&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L698">                return o.lift(new OperatorBufferToFile&lt;T&gt;(serializer, scheduler, options));</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; windowMin(final int windowSize,
+            final Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L705">        return new Transformer&lt;T, T&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L708">                return o.lift(new OperatorWindowMinMax&lt;T&gt;(windowSize, comparator, Metric.MIN));</span>
+            }
+        };
+    }
+
+    public static &lt;T extends Comparable&lt;T&gt;&gt; Transformer&lt;T, T&gt; windowMax(final int windowSize) {
+<span class="fc" id="L714">        return windowMax(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; windowMax(final int windowSize,
+            final Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L719">        return new Transformer&lt;T, T&gt;() {</span>
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L722">                return o.lift(new OperatorWindowMinMax&lt;T&gt;(windowSize, comparator, Metric.MAX));</span>
+            }
+        };
+    }
+
+    public static &lt;T extends Comparable&lt;T&gt;&gt; Transformer&lt;T, T&gt; windowMin(final int windowSize) {
+<span class="fc" id="L728">        return windowMin(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
+    }
+
+<span class="nc" id="L731">    private static class NaturalComparatorHolder {</span>
+<span class="fc" id="L732">        static final Comparator&lt;Comparable&lt;Object&gt;&gt; INSTANCE = new Comparator&lt;Comparable&lt;Object&gt;&gt;() {</span>
+
+            @Override
+            public int compare(Comparable&lt;Object&gt; o1, Comparable&lt;Object&gt; o2) {
+<span class="fc" id="L736">                return o1.compareTo(o2);</span>
+            }
+        };
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T extends Comparable&lt;T&gt;&gt; Comparator&lt;T&gt; naturalComparator() {
+<span class="fc" id="L743">        return (Comparator&lt;T&gt;) (Comparator&lt;?&gt;) NaturalComparatorHolder.INSTANCE;</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Groups the items emitted by an {@code Observable} according to a
+     * specified criterion, and emits these grouped items as
+     * {@link GroupedObservable}s. The emitted {@code GroupedObservable} allows
+     * only a single {@link Subscriber} during its lifetime and if this
+     * {@code Subscriber} unsubscribes before the source terminates, the next
+     * emission by the source having the same key will trigger a new
+     * {@code GroupedObservable} emission.
+     * &lt;p&gt;
+     * &lt;img width=&quot;640&quot; height=&quot;360&quot; src=
+     * &quot;https://raw.github.com/wiki/ReactiveX/RxJava/images/rx-operators/groupBy.png&quot;
+     * alt=&quot;&quot;&gt;
+     * &lt;p&gt;
+     * &lt;em&gt;Note:&lt;/em&gt; A {@link GroupedObservable} will cache the items it is to
+     * emit until such time as it is subscribed to. For this reason, in order to
+     * avoid memory leaks, you should not simply ignore those
+     * {@code GroupedObservable}s that do not concern you. Instead, you can
+     * signal to them that they may discard their buffers by applying an
+     * operator like {@code .ignoreElements()} to them.
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;{@code groupBy} does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param keySelector
+     *            a function that extracts the key for each item
+     * @param elementSelector
+     *            a function that extracts the return element for each item
+     * @param evictingMapFactory
+     *            a function that given an eviction action returns a {@link Map}
+     *            instance that will be used to assign items to the appropriate
+     *            {@code GroupedObservable}s. The {@code Map} instance must be
+     *            thread-safe and any eviction must trigger a call to the
+     *            supplied action (synchronously or asynchronously). This can be
+     *            used to limit the size of the map by evicting keys by maximum
+     *            size or access time for instance. If
+     *            {@code evictingMapFactory} is null then no eviction strategy
+     *            will be applied (and a suitable default thread-safe
+     *            implementation of {@code Map} will be supplied). Here's an
+     *            example using Guava's {@code CacheBuilder} from v19.0:
+     * 
+     *            &lt;pre&gt;
+     *            {@code
+     *            Func1&lt;Action1&lt;K&gt;, Map&lt;K, Object&gt;&gt; mapFactory 
+     *              = action -&gt; CacheBuilder.newBuilder()
+     *                  .maximumSize(1000)
+     *                  .expireAfterAccess(12, TimeUnit.HOUR)
+     *                  .removalListener(key -&gt; action.call(key))
+     *                  .&lt;K, Object&gt; build().asMap();
+     *            }
+     *            &lt;/pre&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the type of the input observable
+     * @param &lt;K&gt;
+     *            the key type
+     * @param &lt;R&gt;
+     *            the element type
+     * @return an {@code Observable} that emits {@link GroupedObservable}s, each
+     *         of which corresponds to a unique key value and each of which
+     *         emits those items from the source Observable that share that key
+     *         value
+     * @see &lt;a href=&quot;http://reactivex.io/documentation/operators/groupby.html&quot;&gt;
+     *      ReactiveX operators documentation: GroupBy&lt;/a&gt;
+     */
+    public static &lt;T, K, R&gt; Transformer&lt;T, GroupedObservable&lt;K, R&gt;&gt; groupByEvicting(
+            final Func1&lt;? super T, ? extends K&gt; keySelector,
+            final Func1&lt;? super T, ? extends R&gt; elementSelector,
+            final Func1&lt;Action1&lt;K&gt;, Map&lt;K, Object&gt;&gt; evictingMapFactory) {
+<span class="nc" id="L817">        return new Transformer&lt;T, GroupedObservable&lt;K, R&gt;&gt;() {</span>
+
+            @Override
+            public Observable&lt;GroupedObservable&lt;K, R&gt;&gt; call(Observable&lt;T&gt; o) {
+<span class="nc" id="L821">                return o.groupBy(keySelector, elementSelector, evictingMapFactory);</span>
+            }
+        };
+    }
+
+    /**
+     * If multiple concurrently open subscriptions happen to a source
+     * transformed by this method then an additional do-nothing subscription
+     * will be maintained to the source and will only be closed after the
+     * specified duration has passed from the final unsubscription of the open
+     * subscriptions. If another subscription happens during this wait period
+     * then the scheduled unsubscription will be cancelled.
+     * 
+     * @param duration
+     *            duration of period to leave at least one source subscription
+     *            open
+     * @param unit
+     *            units for duration
+     * @param &lt;T&gt;
+     *            generic type of stream
+     * @return transformer
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; delayFinalUnsubscribe(long duration, TimeUnit unit) {
+<span class="nc" id="L844">        return delayFinalUnsubscribe(duration, unit, Schedulers.computation());</span>
+    }
+
+    /**
+     * If multiple concurrently open subscriptions happen to a source
+     * transformed by this method then an additional do-nothing subscription
+     * will be maintained to the source and will only be closed after the
+     * specified duration has passed from the final unsubscription of the open
+     * subscriptions. If another subscription happens during this wait period
+     * then the scheduled unsubscription will be cancelled.
+     * 
+     * @param duration
+     *            duration of period to leave at least one source subscription
+     *            open
+     * @param unit
+     *            units for duration
+     * @param scheduler
+     *            scheduler to use to schedule wait for unsubscribe
+     * @param &lt;T&gt;
+     *            generic type of stream
+     * @return transformer
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; delayFinalUnsubscribe(long duration, TimeUnit unit,
+            Scheduler scheduler) {
+<span class="fc" id="L868">        return new TransformerDelayFinalUnsubscribe&lt;T&gt;(unit.toMillis(duration), scheduler);</span>
+    }
+
+    /**
+     * Removes pairs non-recursively from a stream. Uses
+     * {@code Transformers.stateMachine()} under the covers to ensure items are
+     * emitted as soon as possible (if an item can't be in a pair then it is
+     * emitted straight away).
+     * 
+     * @param isCandidateForFirst
+     *            returns true if item is potentially the first of a pair that
+     *            we want to remove
+     * @param remove
+     *            returns true if a pair should be removed
+     * @param &lt;T&gt;
+     *            generic type of stream being transformed
+     * @return transformed stream
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; removePairs(
+            final Func1&lt;? super T, Boolean&gt; isCandidateForFirst,
+            final Func2&lt;? super T, ? super T, Boolean&gt; remove) {
+<span class="fc" id="L889">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L893">                return o.compose(Transformers. //</span>
+<span class="fc" id="L894">                stateMachine() //</span>
+<span class="fc" id="L895">                        .initialState(Optional.&lt;T&gt;absent()) //</span>
+<span class="fc" id="L896">                        .transition(new Transition&lt;Optional&lt;T&gt;, T, T&gt;() {</span>
+
+                            @Override
+                            public Optional&lt;T&gt; call(Optional&lt;T&gt; state, T value,
+                                    Subscriber&lt;T&gt; subscriber) {
+<span class="fc bfc" id="L901" title="All 2 branches covered.">                                if (!state.isPresent()) {</span>
+<span class="fc bfc" id="L902" title="All 2 branches covered.">                                    if (isCandidateForFirst.call(value)) {</span>
+<span class="fc" id="L903">                                        return Optional.of(value);</span>
+                                    } else {
+<span class="fc" id="L905">                                        subscriber.onNext(value);</span>
+<span class="fc" id="L906">                                        return Optional.absent();</span>
+                                    }
+                                } else {
+<span class="fc bfc" id="L909" title="All 2 branches covered.">                                    if (remove.call(state.get(), value)) {</span>
+                                        // emit nothing and reset state
+<span class="fc" id="L911">                                        return Optional.absent();</span>
+                                    } else {
+<span class="fc" id="L913">                                        subscriber.onNext(state.get());</span>
+<span class="pc bpc" id="L914" title="1 of 2 branches missed.">                                        if (isCandidateForFirst.call(value)) {</span>
+<span class="fc" id="L915">                                            return Optional.of(value);</span>
+                                        } else {
+<span class="nc" id="L917">                                            subscriber.onNext(value);</span>
+<span class="nc" id="L918">                                            return Optional.absent();</span>
+                                        }
+                                    }
+                                }
+                            }
+<span class="fc" id="L923">                        }).completion(new Completion&lt;Optional&lt;T&gt;, T&gt;() {</span>
+
+                            @Override
+                            public Boolean call(Optional&lt;T&gt; state, Subscriber&lt;T&gt; subscriber) {
+<span class="fc bfc" id="L927" title="All 2 branches covered.">                                if (state.isPresent())</span>
+<span class="fc" id="L928">                                    subscriber.onNext(state.get());</span>
+                                // yes, complete
+<span class="fc" id="L930">                                return true;</span>
+                            }
+<span class="fc" id="L932">                        }).build());</span>
+            }
+        };
+    }
+
+    /**
+     * Rather than requesting {@code Long.MAX_VALUE} of upstream as does
+     * `Observable.onBackpressureBuffer`, this variant only requests of upstream
+     * what is requested of it. Thus an operator can be written that
+     * overproduces.
+     * 
+     * @param &lt;T&gt;
+     *            the value type
+     * @return transformer that buffers on backpressure but only requests of
+     *         upstream what is requested of it
+     */
+    public static &lt;T&gt; Transformer&lt;T, T&gt; onBackpressureBufferRequestLimiting() {
+<span class="nc" id="L949">        return TransformerOnBackpressureBufferRequestLimiting.instance();</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, after being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, after being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; bufferUntil(
+            Func1&lt;? super T, Boolean&gt; predicate) {
+<span class="fc" id="L980">        return bufferUntil(predicate, 10);</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, after being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, after being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListUntil(
+            Func1&lt;? super T, Boolean&gt; predicate) {
+<span class="nc" id="L1011">        return bufferUntil(predicate);</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, after being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, after being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @param capacityHint
+     *            the expected number of items in each buffer
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; bufferUntil(Func1&lt;? super T, Boolean&gt; predicate,
+            int capacityHint) {
+<span class="fc" id="L1044">        return new OperatorBufferPredicateBoundary&lt;T&gt;(predicate, RxRingBuffer.SIZE, capacityHint,</span>
+                true);
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, after being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, after being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @param capacityHint
+     *            the expected number of items in each buffer
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListUntil(Func1&lt;? super T, Boolean&gt; predicate,
+            int capacityHint) {
+<span class="nc" id="L1078">        return bufferUntil(predicate, capacityHint);</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, before or
+     * after being buffered, and returns true to indicate a new buffer should
+     * start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, before being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; bufferWhile(
+            Func1&lt;? super T, Boolean&gt; predicate) {
+<span class="fc" id="L1110">        return bufferWhile(predicate, 10);</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, before or
+     * after being buffered, and returns true to indicate a new buffer should
+     * start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, before being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListWhile(
+            Func1&lt;? super T, Boolean&gt; predicate) {
+<span class="nc" id="L1142">        return bufferWhile(predicate);</span>
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, before being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, before being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @param capacityHint
+     *            the expected number of items in each buffer
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; bufferWhile(Func1&lt;? super T, Boolean&gt; predicate,
+            int capacityHint) {
+<span class="fc" id="L1175">        return new OperatorBufferPredicateBoundary&lt;T&gt;(predicate, RxRingBuffer.SIZE, capacityHint,</span>
+                false);
+    }
+
+    /**
+     * Buffers the elements into continuous, non-overlapping Lists where the
+     * boundary is determined by a predicate receiving each item, before being
+     * buffered, and returns true to indicate a new buffer should start.
+     * 
+     * &lt;p&gt;
+     * The operator won't return an empty first or last buffer.
+     * 
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Backpressure Support:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator supports backpressure.&lt;/dd&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;This operator does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the input value type
+     * @param predicate
+     *            the Func1 that receives each item, before being buffered, and
+     *            should return true to indicate a new buffer has to start.
+     * @param capacityHint
+     *            the expected number of items in each buffer
+     * @return the new Observable instance
+     * @see #bufferWhile(Func1)
+     * @since (if this graduates from Experimental/Beta to supported, replace
+     *        this parenthetical with the release number)
+     */
+    public static final &lt;T&gt; Transformer&lt;T, List&lt;T&gt;&gt; toListWhile(Func1&lt;? super T, Boolean&gt; predicate,
+            int capacityHint) {
+<span class="nc" id="L1209">        return bufferWhile(predicate, capacityHint);</span>
+    }
+
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; delay(final Func1&lt;? super T, Long&gt; time,
+            final Func0&lt;Double&gt; playRate, final long startTime, final Scheduler scheduler) {
+<span class="fc" id="L1214">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(final Observable&lt;T&gt; o) {
+<span class="fc" id="L1218">                return Observable.defer(new Func0&lt;Observable&lt;T&gt;&gt;() {</span>
+<span class="fc" id="L1219">                    long startActual = scheduler.now();</span>
+
+                    @Override
+                    public Observable&lt;T&gt; call() {
+<span class="fc" id="L1223">                        return o.concatMap(new Func1&lt;T, Observable&lt;T&gt;&gt;() {</span>
+
+                            @Override
+                            public Observable&lt;T&gt; call(T t) {
+<span class="fc" id="L1227">                                return Observable.just(t) //</span>
+<span class="fc" id="L1228">                                        .delay(delay(startActual, startTime, time.call(t), playRate,</span>
+<span class="fc" id="L1229">                                                scheduler.now()), TimeUnit.MILLISECONDS, scheduler);</span>
+                            }
+
+                        });
+                    }
+                });
+            }
+        };
+
+    }
+
+    private static long delay(long startActual, long startTime, long emissionTimestamp,
+            Func0&lt;Double&gt; playRate, long now) {
+<span class="fc" id="L1242">        long elapsedActual = now - startActual;</span>
+<span class="fc" id="L1243">        return Math.max(0,</span>
+<span class="fc" id="L1244">                Math.round((emissionTimestamp - startTime) / playRate.call() - elapsedActual));</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Modifies the source Observable so that it invokes an action when it calls
+     * {@code onCompleted} and no items were emitted.
+     * &lt;dl&gt;
+     * &lt;dt&gt;&lt;b&gt;Scheduler:&lt;/b&gt;&lt;/dt&gt;
+     * &lt;dd&gt;{@code doOnEmpty} does not operate by default on a particular
+     * {@link Scheduler}.&lt;/dd&gt;
+     * &lt;/dl&gt;
+     *
+     * @param onEmpty
+     *            the action to invoke when the source Observable calls
+     *            {@code onCompleted}, contingent on no items were emitted
+     * @param &lt;T&gt;
+     *            generic type of observable being transformed
+     * @return the source Observable with the side-effecting behavior applied
+     */
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; doOnEmpty(final Action0 onEmpty) {
+<span class="fc" id="L1265">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L1269">                return Observable.create(new OnSubscribeDoOnEmpty&lt;T&gt;(o, onEmpty));</span>
+            }
+        };
+    }
+
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; onTerminateResume(
+            final Func1&lt;Throwable, Observable&lt;T&gt;&gt; onError, final Observable&lt;T&gt; onCompleted) {
+<span class="nc" id="L1276">        return new TransformerOnTerminateResume&lt;T&gt;(onError, onCompleted);</span>
+    }
+
+    public static final &lt;T&gt; Transformer&lt;T, T&gt; repeatLast() {
+<span class="fc" id="L1280">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; o) {
+<span class="fc" id="L1284">                return o.materialize().buffer(2, 1)</span>
+<span class="fc" id="L1285">                        .flatMap(new Func1&lt;List&lt;Notification&lt;T&gt;&gt;, Observable&lt;T&gt;&gt;() {</span>
+                            @Override
+                            public Observable&lt;T&gt; call(List&lt;Notification&lt;T&gt;&gt; list) {
+<span class="fc" id="L1288">                                Notification&lt;T&gt; a = list.get(0);</span>
+<span class="fc bfc" id="L1289" title="All 4 branches covered.">                                if (list.size() == 2 &amp;&amp; list.get(1).isOnCompleted()) {</span>
+<span class="fc" id="L1290">                                    return Observable.just(a.getValue()).repeat();</span>
+<span class="fc bfc" id="L1291" title="All 2 branches covered.">                                } else if (a.isOnError()) {</span>
+<span class="fc" id="L1292">                                    return Observable.error(list.get(0).getThrowable());</span>
+<span class="fc bfc" id="L1293" title="All 2 branches covered.">                                } else if (a.isOnCompleted()) {</span>
+<span class="fc" id="L1294">                                    return Observable.empty();</span>
+                                } else {
+<span class="fc" id="L1296">                                    return Observable.just(a.getValue());</span>
+                                }
+                            }
+                        });
+            }
+        };
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; mapLast(final Func1&lt;? super T, ? extends T&gt; function) {
+
+<span class="fc" id="L1306">        return new Transformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Observable&lt;T&gt; call(Observable&lt;T&gt; source) {
+<span class="fc" id="L1310">                return Observable.create(new OnSubscribeMapLast&lt;T&gt;(source, function));</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

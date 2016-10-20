@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Permutations.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">Permutations.java</span></div><h1>Permutations.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.Iterator;
+import java.util.List;
+
+public final class Permutations {
+
+<span class="fc" id="L8">    private Permutations() {</span>
+        // prevent instantiation
+<span class="fc" id="L10">    }</span>
+
+    public static &lt;T&gt; Iterable&lt;Swap&lt;T&gt;&gt; iterable(final List&lt;T&gt; list) {
+<span class="fc" id="L13">        return new Iterable&lt;Swap&lt;T&gt;&gt;() {</span>
+            @Override
+            public Iterator&lt;Swap&lt;T&gt;&gt; iterator() {
+<span class="fc" id="L16">                return new PermutationsSwapIterator&lt;T&gt;(list);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Iterator&lt;Swap&lt;T&gt;&gt; iterator(List&lt;T&gt; list) {
+<span class="nc" id="L22">        return new PermutationsSwapIterator&lt;T&gt;(list);</span>
+    }
+
+    private static class PermutationsSwapIterator&lt;T&gt; implements Iterator&lt;Swap&lt;T&gt;&gt; {
+
+        /**
+         * After
+         * http://www.cut-the-knot.org/Curriculum/Combinatorics/JohnsonTrotter.
+         * shtml
+         * 
+         */
+        private final T[] values;
+        private final DirectedReference[] references;
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L37">        public PermutationsSwapIterator(List&lt;T&gt; list) {</span>
+<span class="fc" id="L38">            this.values = (T[]) list.toArray();</span>
+<span class="fc" id="L39">            this.references = new DirectedReference[list.size()];</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            for (int i = 0; i &lt; this.references.length; i++) {</span>
+<span class="fc" id="L41">                this.references[i] = new DirectedReference(-1, i);</span>
+            }
+<span class="fc" id="L43">        }</span>
+
+        private boolean isMobile(int index) {
+<span class="fc bfc" id="L46" title="All 4 branches covered.">            if (index == 0 &amp;&amp; references[index].direction == -1) {</span>
+<span class="fc" id="L47">                return false;</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">            } else if (index == references.length - 1 &amp;&amp; references[index].direction == 1) {</span>
+<span class="fc" id="L49">                return false;</span>
+<span class="fc" id="L50">            } else if (references[index</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                    + references[index].direction].reference &gt; references[index].reference) {</span>
+<span class="fc" id="L52">                return false;</span>
+            } else {
+<span class="fc" id="L54">                return true;</span>
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            for (int i = 0; i &lt; references.length; i++) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                if (isMobile(i)) {</span>
+<span class="fc" id="L62">                    return true;</span>
+                }
+            }
+<span class="fc" id="L65">            return false;</span>
+        }
+
+        @Override
+        public Swap&lt;T&gt; next() {
+            // find the largest mobile reference &quot;chosen&quot;
+<span class="fc" id="L71">            int chosen = Integer.MIN_VALUE;</span>
+<span class="fc" id="L72">            int chosenIndex = -1;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            for (int i = 0; i &lt; references.length; i++) {</span>
+<span class="fc bfc" id="L74" title="All 4 branches covered.">                if (isMobile(i) &amp;&amp; references[i].reference &gt; chosen) {</span>
+<span class="fc" id="L75">                    chosen = references[i].reference;</span>
+<span class="fc" id="L76">                    chosenIndex = i;</span>
+                }
+            }
+
+            // swaps it in the indicated direction
+<span class="fc" id="L81">            int neighbourIndex = chosenIndex + references[chosenIndex].direction;</span>
+<span class="fc" id="L82">            Swap&lt;T&gt; swap = new Swap&lt;T&gt;(values[references[chosenIndex].reference],</span>
+<span class="fc" id="L83">                    values[references[neighbourIndex].reference]);</span>
+
+<span class="fc" id="L85">            DirectedReference tmp = references[chosenIndex];</span>
+<span class="fc" id="L86">            references[chosenIndex] = references[neighbourIndex];</span>
+<span class="fc" id="L87">            references[neighbourIndex] = tmp;</span>
+
+            // reverse the direction of all references larger than &quot;chosen&quot;
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            for (int i = 0; i &lt; references.length; i++) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                if (references[i].reference &gt; chosen) {</span>
+<span class="fc" id="L92">                    references[i].reverse();</span>
+                }
+            }
+
+<span class="fc" id="L96">            return swap;</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L101">            throw new UnsupportedOperationException(&quot;cannot remove from permutations&quot;);</span>
+        }
+
+    }
+
+    public static class Swap&lt;T&gt; {
+        private final T left;
+        private final T right;
+
+<span class="fc" id="L110">        Swap(T left, T right) {</span>
+<span class="fc" id="L111">            this.left = left;</span>
+<span class="fc" id="L112">            this.right = right;</span>
+<span class="fc" id="L113">        }</span>
+
+        public T left() {
+<span class="fc" id="L116">            return left;</span>
+        }
+
+        public T right() {
+<span class="fc" id="L120">            return right;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L125">            return &quot;Swap [left=&quot; + left + &quot;, right=&quot; + right + &quot;]&quot;;</span>
+        }
+
+    }
+
+    private static class DirectedReference {
+        private final int reference;
+        private int direction;
+
+<span class="fc" id="L134">        DirectedReference(int direction, int reference) {</span>
+<span class="fc" id="L135">            this.direction = direction;</span>
+<span class="fc" id="L136">            this.reference = reference;</span>
+<span class="fc" id="L137">        }</span>
+
+        public void reverse() {
+<span class="fc" id="L140">            this.direction = -this.direction;</span>
+<span class="fc" id="L141">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L145">            String val = String.valueOf(reference);</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            String result = direction == -1 ? &quot;&lt;&quot; + val : val + &quot;&gt;&quot;;</span>
+<span class="nc" id="L147">            return result + String.valueOf(reference);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

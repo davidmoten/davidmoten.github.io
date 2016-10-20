@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Strings.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Strings.java</span></div><h1>Strings.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.github.davidmoten.rx.internal.operators.OnSubscribeReader;
+import com.github.davidmoten.util.Preconditions;
+
+import rx.Observable;
+import rx.functions.Action1;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
+
+<span class="nc" id="L26">public final class Strings {</span>
+
+<span class="fc" id="L28">    private static final Charset DEFAULT_CHARSET = Charset.forName(&quot;UTF-8&quot;);</span>
+
+    /**
+     * Returns null if input is null otherwise returns input.toString().trim().
+     */
+<span class="fc" id="L33">    private static Func1&lt;Object, String&gt; TRIM = new Func1&lt;Object, String&gt;() {</span>
+
+        @Override
+        public String call(Object input) {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            if (input == null)</span>
+<span class="fc" id="L38">                return null;</span>
+            else
+<span class="fc" id="L40">                return input.toString().trim();</span>
+        }
+    };
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Func1&lt;T, String&gt; trim() {
+<span class="fc" id="L46">        return (Func1&lt;T, String&gt;) TRIM;</span>
+    }
+
+    public static Observable&lt;String&gt; from(Reader reader, int bufferSize) {
+<span class="fc" id="L50">        return Observable.create(new OnSubscribeReader(reader, bufferSize));</span>
+    }
+
+    public static Observable&lt;String&gt; from(Reader reader) {
+<span class="fc" id="L54">        return from(reader, 8192);</span>
+    }
+
+    public static Observable&lt;String&gt; from(InputStream is) {
+<span class="fc" id="L58">        return from(new InputStreamReader(is));</span>
+    }
+
+    public static Observable&lt;String&gt; from(InputStream is, Charset charset) {
+<span class="nc" id="L62">        return from(new InputStreamReader(is, charset));</span>
+    }
+
+    public static Observable&lt;String&gt; from(InputStream is, Charset charset, int bufferSize) {
+<span class="nc" id="L66">        return from(new InputStreamReader(is, charset), bufferSize);</span>
+    }
+
+    public static Observable&lt;String&gt; split(Observable&lt;String&gt; source, String pattern) {
+<span class="fc" id="L70">        return source.compose(Transformers.split(pattern));</span>
+    }
+
+    public static Observable&lt;String&gt; concat(Observable&lt;String&gt; source) {
+<span class="nc" id="L74">        return join(source, &quot;&quot;);</span>
+    }
+
+    public static Observable&lt;String&gt; concat(Observable&lt;String&gt; source, final String delimiter) {
+<span class="nc" id="L78">        return join(source, delimiter);</span>
+    }
+
+    public static Observable&lt;String&gt; strings(Observable&lt;?&gt; source) {
+<span class="nc" id="L82">        return source.map(new Func1&lt;Object, String&gt;() {</span>
+            @Override
+            public String call(Object t) {
+<span class="nc" id="L85">                return String.valueOf(t);</span>
+            }
+        });
+    }
+
+    public static Observable&lt;String&gt; from(File file) {
+<span class="fc" id="L91">        return from(file, DEFAULT_CHARSET);</span>
+    }
+
+    public static Observable&lt;String&gt; from(final File file, final Charset charset) {
+<span class="fc" id="L95">        Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L96">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L97">        Func0&lt;Reader&gt; resourceFactory = new Func0&lt;Reader&gt;() {</span>
+            @Override
+            public Reader call() {
+                try {
+<span class="fc" id="L101">                    return new InputStreamReader(new FileInputStream(file), charset);</span>
+<span class="nc" id="L102">                } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L103">                    throw new RuntimeException(e);</span>
+                }
+            }
+        };
+<span class="fc" id="L107">        return from(resourceFactory);</span>
+    }
+
+    public static Observable&lt;String&gt; fromClasspath(final String resource, final Charset charset) {
+<span class="fc" id="L111">        Preconditions.checkNotNull(resource);</span>
+<span class="fc" id="L112">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L113">        Func0&lt;Reader&gt; resourceFactory = new Func0&lt;Reader&gt;() {</span>
+            @Override
+            public Reader call() {
+<span class="fc" id="L116">                return new InputStreamReader(Strings.class.getResourceAsStream(resource), charset);</span>
+            }
+        };
+<span class="fc" id="L119">        return from(resourceFactory);</span>
+    }
+
+    public static Observable&lt;String&gt; fromClasspath(final String resource) {
+<span class="fc" id="L123">        return fromClasspath(resource, Utf8Holder.INSTANCE);</span>
+    }
+
+<span class="nc" id="L126">    private static class Utf8Holder {</span>
+<span class="fc" id="L127">        static final Charset INSTANCE = Charset.forName(&quot;UTF-8&quot;);</span>
+    }
+
+    public static Observable&lt;String&gt; from(final Func0&lt;Reader&gt; readerFactory) {
+<span class="fc" id="L131">        Func1&lt;Reader, Observable&lt;String&gt;&gt; observableFactory = new Func1&lt;Reader, Observable&lt;String&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;String&gt; call(Reader reader) {
+<span class="fc" id="L134">                return from(reader);</span>
+            }
+        };
+<span class="fc" id="L137">        return Observable.using(readerFactory, observableFactory, DisposeActionHolder.INSTANCE,</span>
+                true);
+    }
+
+<span class="nc" id="L141">    private static class DisposeActionHolder {</span>
+<span class="fc" id="L142">        static final Action1&lt;Reader&gt; INSTANCE = new Action1&lt;Reader&gt;() {</span>
+            @Override
+            public void call(Reader reader) {
+                try {
+<span class="fc" id="L146">                    reader.close();</span>
+<span class="nc" id="L147">                } catch (IOException e) {</span>
+<span class="nc" id="L148">                    e.printStackTrace();</span>
+<span class="fc" id="L149">                }</span>
+<span class="fc" id="L150">            }</span>
+        };
+    }
+
+    public static Observable&lt;String&gt; join(Observable&lt;String&gt; source) {
+<span class="fc" id="L155">        return join(source, &quot;&quot;);</span>
+    }
+
+    public static Observable&lt;String&gt; decode(Observable&lt;byte[]&gt; source, CharsetDecoder decoder) {
+<span class="fc" id="L159">        return source.compose(Transformers.decode(decoder));</span>
+    }
+
+    public static Observable&lt;String&gt; decode(Observable&lt;byte[]&gt; source, Charset charset) {
+<span class="fc" id="L163">        return decode(source, charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)</span>
+<span class="fc" id="L164">                .onUnmappableCharacter(CodingErrorAction.REPLACE));</span>
+    }
+
+    public static Observable&lt;String&gt; decode(Observable&lt;byte[]&gt; source, String charset) {
+<span class="fc" id="L168">        return decode(source, Charset.forName(charset));</span>
+    }
+
+    public static Observable&lt;String&gt; join(final Observable&lt;String&gt; source, final String delimiter) {
+
+<span class="fc" id="L173">        return Observable.defer(new Func0&lt;Observable&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L174">            final AtomicBoolean afterFirst = new AtomicBoolean(false);</span>
+<span class="fc" id="L175">            final AtomicBoolean isEmpty = new AtomicBoolean(true);</span>
+
+            @Override
+            public Observable&lt;String&gt; call() {
+<span class="fc" id="L179">                return source.collect(new Func0&lt;StringBuilder&gt;() {</span>
+                    @Override
+                    public StringBuilder call() {
+<span class="fc" id="L182">                        return new StringBuilder();</span>
+                    }
+<span class="fc" id="L184">                }, new Action2&lt;StringBuilder, String&gt;() {</span>
+
+                    @Override
+                    public void call(StringBuilder b, String s) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                        if (!afterFirst.compareAndSet(false, true)) {</span>
+<span class="fc" id="L189">                            b.append(delimiter);</span>
+                        }
+<span class="fc" id="L191">                        b.append(s);</span>
+<span class="fc" id="L192">                        isEmpty.set(false);</span>
+<span class="fc" id="L193">                    }</span>
+<span class="fc" id="L194">                }).flatMap(new Func1&lt;StringBuilder, Observable&lt;String&gt;&gt;() {</span>
+
+                    @Override
+                    public Observable&lt;String&gt; call(StringBuilder b) {
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                        if (isEmpty.get())</span>
+<span class="fc" id="L199">                            return Observable.empty();</span>
+                        else
+<span class="fc" id="L201">                            return Observable.just(b.toString());</span>
+                    }
+                });
+
+            }
+        });
+    }
+
+    public static Observable&lt;List&lt;String&gt;&gt; splitLines(InputStream is, Charset charset,
+            final String delimiter, final String commentPrefix) {
+<span class="nc" id="L211">        return from(is, charset).compose(Transformers.split(&quot;\n&quot;)) //</span>
+<span class="nc" id="L212">                .filter(new Func1&lt;String, Boolean&gt;() {</span>
+                    @Override
+                    public Boolean call(String line) {
+<span class="nc bnc" id="L215" title="All 2 branches missed.">                        return !line.startsWith(commentPrefix);</span>
+                    }
+                }) //
+<span class="nc" id="L218">                .map(SplitLinesHolder.trim) //</span>
+<span class="nc" id="L219">                .filter(SplitLinesHolder.notEmpty) //</span>
+<span class="nc" id="L220">                .map(new Func1&lt;String, List&lt;String&gt;&gt;() {</span>
+                    @Override
+                    public List&lt;String&gt; call(String line) {
+<span class="nc" id="L223">                        return Arrays.asList(line.split(delimiter));</span>
+                    }
+                });
+    }
+    
+    public static Observable&lt;List&lt;String&gt;&gt; splitLines(InputStream is, String delimiter) {
+<span class="nc" id="L229">        return splitLines(is, DEFAULT_CHARSET, delimiter, &quot;#&quot;);</span>
+    }
+
+<span class="nc" id="L232">    private static class SplitLinesHolder {</span>
+<span class="nc" id="L233">        static final Func1&lt;String, String&gt; trim = new Func1&lt;String, String&gt;() {</span>
+            @Override
+            public String call(String line) {
+<span class="nc" id="L236">                return line.trim();</span>
+            }
+        };
+<span class="nc" id="L239">        static final Func1&lt;String, Boolean&gt; notEmpty = new Func1&lt;String, Boolean&gt;() {</span>
+            @Override
+            public Boolean call(String line) {
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                return !line.isEmpty();</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

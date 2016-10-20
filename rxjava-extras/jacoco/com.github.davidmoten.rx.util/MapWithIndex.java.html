@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>MapWithIndex.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.util</a> &gt; <span class="el_source">MapWithIndex.java</span></div><h1>MapWithIndex.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.util;
+
+import java.util.Iterator;
+
+import rx.Observable;
+import rx.Observable.Transformer;
+import rx.functions.Func2;
+
+import com.github.davidmoten.rx.util.MapWithIndex.Indexed;
+
+<span class="fc" id="L11">public final class MapWithIndex&lt;T&gt; implements Transformer&lt;T, Indexed&lt;T&gt;&gt; {</span>
+
+<span class="nc" id="L13">    private static class Holder {</span>
+<span class="fc" id="L14">        static final MapWithIndex&lt;?&gt; INSTANCE = new MapWithIndex&lt;Object&gt;();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; MapWithIndex&lt;T&gt; instance() {
+<span class="fc" id="L19">        return (MapWithIndex&lt;T&gt;) Holder.INSTANCE;</span>
+    }
+
+    @Override
+    public Observable&lt;Indexed&lt;T&gt;&gt; call(Observable&lt;T&gt; source) {
+
+<span class="fc" id="L25">        return source.zipWith(NaturalNumbers.instance(), new Func2&lt;T, Long, Indexed&lt;T&gt;&gt;() {</span>
+
+            @Override
+            public Indexed&lt;T&gt; call(T t, Long n) {
+<span class="fc" id="L29">                return new Indexed&lt;T&gt;(t, n);</span>
+            }
+        });
+    }
+
+    public static final class Indexed&lt;T&gt; {
+        private final long index;
+        private final T value;
+
+<span class="fc" id="L38">        public Indexed(T value, long index) {</span>
+<span class="fc" id="L39">            this.index = index;</span>
+<span class="fc" id="L40">            this.value = value;</span>
+<span class="fc" id="L41">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L45">            return index + &quot;-&gt;&quot; + value;</span>
+        }
+
+        public long index() {
+<span class="fc" id="L49">            return index;</span>
+        }
+
+        public T value() {
+<span class="fc" id="L53">            return value;</span>
+        }
+
+    }
+
+<span class="fc" id="L58">    private static final class NaturalNumbers implements Iterable&lt;Long&gt; {</span>
+
+<span class="nc" id="L60">        private static class Holder {</span>
+<span class="fc" id="L61">            static final NaturalNumbers INSTANCE = new NaturalNumbers();</span>
+        }
+
+        static NaturalNumbers instance() {
+<span class="fc" id="L65">            return Holder.INSTANCE;</span>
+        }
+
+        @Override
+        public Iterator&lt;Long&gt; iterator() {
+<span class="fc" id="L70">            return new Iterator&lt;Long&gt;() {</span>
+
+<span class="fc" id="L72">                private long n = 0;</span>
+
+                @Override
+                public boolean hasNext() {
+<span class="fc" id="L76">                    return true;</span>
+                }
+
+                @Override
+                public Long next() {
+<span class="fc" id="L81">                    return n++;</span>
+                }
+
+                @Override
+                public void remove() {
+<span class="nc" id="L86">                    throw new RuntimeException(&quot;not supported&quot;);</span>
+                }
+            };
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

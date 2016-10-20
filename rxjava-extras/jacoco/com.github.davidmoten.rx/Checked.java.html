@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Checked.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">Checked.java</span></div><h1>Checked.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import com.github.davidmoten.rx.Checked.A1;
+
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+
+/**
+ * Utility functions that are useful for brevity when using checked exceptions
+ * in lambdas with RxJava.
+ * 
+ * &lt;p&gt;
+ * Instead of
+ * &lt;/p&gt;
+ * 
+ * &lt;pre&gt;
+ * OutputStream os =  ...;
+ * Observable&amp;lt;String&amp;gt; source = ...;
+ * source.doOnNext(s -&amp;gt; {
+ *         try {
+ *             os.write(s.getBytes());
+ *         } catch (IOException e) {
+ *             throw new RuntimeException(e);
+ *         }
+ *     })
+ *     .subscribe();
+ * &lt;/pre&gt;
+ * 
+ * &lt;p&gt;
+ * you can write:
+ * &lt;/p&gt;
+ * 
+ * &lt;pre&gt;
+ * source.doOnNext(Checked.a1(s -&amp;gt; os.write(s.getBytes()))).subscribe();
+ * &lt;/pre&gt;
+ */
+<span class="nc" id="L41">public final class Checked {</span>
+
+    public static interface F0&lt;T&gt; {
+        T call() throws Exception;
+    }
+
+    public static interface F1&lt;T, R&gt; {
+        R call(T t) throws Exception;
+    }
+
+    public static interface F2&lt;T, R, S&gt; {
+        S call(T t, R r) throws Exception;
+    }
+
+    public static interface A0 {
+        void call() throws Exception;
+    }
+
+    public static interface A1&lt;T&gt; {
+        void call(T t) throws Exception;
+    }
+    
+    public static interface A2&lt;T,R&gt; {
+        void call(T t, R r) throws Exception;
+    }
+
+    /**
+     * Returns a {@link Func0} that reports any exception thrown by f wrapped by
+     * a {@link RuntimeException}.
+     * 
+     * @param f
+     *            has same signature as Func0 but can throw an exception
+     * @param &lt;T&gt;
+     *            type parameter
+     * @return a {@link Func0} that reports any exception thrown by f wrapped by
+     *         a {@link RuntimeException}.
+     * 
+     */
+    public static &lt;T&gt; Func0&lt;T&gt; f0(final F0&lt;T&gt; f) {
+<span class="fc" id="L80">        return new Func0&lt;T&gt;() {</span>
+            @Override
+            public T call() {
+                try {
+<span class="fc" id="L84">                    return f.call();</span>
+<span class="fc" id="L85">                } catch (Exception e) {</span>
+<span class="fc" id="L86">                    throw new RuntimeException(e);</span>
+                }
+            }
+
+        };
+    }
+
+    public static &lt;T, R&gt; Func1&lt;T, R&gt; f1(final F1&lt;T, R&gt; f) {
+<span class="nc" id="L94">        return new Func1&lt;T, R&gt;() {</span>
+            @Override
+            public R call(T t) {
+                try {
+<span class="nc" id="L98">                    return f.call(t);</span>
+<span class="nc" id="L99">                } catch (Exception e) {</span>
+<span class="nc" id="L100">                    throw new RuntimeException(e);</span>
+                }
+            }
+
+        };
+    }
+
+    public static &lt;T, R, S&gt; Func2&lt;T, R, S&gt; f2(final F2&lt;T, R, S&gt; f) {
+<span class="nc" id="L108">        return new Func2&lt;T, R, S&gt;() {</span>
+            @Override
+            public S call(T t, R r) {
+                try {
+<span class="nc" id="L112">                    return f.call(t, r);</span>
+<span class="nc" id="L113">                } catch (Exception e) {</span>
+<span class="nc" id="L114">                    throw new RuntimeException(e);</span>
+                }
+            }
+
+        };
+    }
+
+    public static Action0 a0(final A0 a) {
+<span class="nc" id="L122">        return new Action0() {</span>
+            @Override
+            public void call() {
+                try {
+<span class="nc" id="L126">                    a.call();</span>
+<span class="nc" id="L127">                } catch (Exception e) {</span>
+<span class="nc" id="L128">                    throw new RuntimeException(e);</span>
+<span class="nc" id="L129">                }</span>
+<span class="nc" id="L130">            }</span>
+        };
+    }
+
+    public static &lt;T&gt; Action1&lt;T&gt; a1(final A1&lt;T&gt; a) {
+<span class="nc" id="L135">        return new Action1&lt;T&gt;() {</span>
+            @Override
+            public void call(T t) {
+                try {
+<span class="nc" id="L139">                    a.call(t);</span>
+<span class="nc" id="L140">                } catch (Exception e) {</span>
+<span class="nc" id="L141">                    throw new RuntimeException(e);</span>
+<span class="nc" id="L142">                }</span>
+<span class="nc" id="L143">            }</span>
+        };
+    }
+    
+    public static &lt;T,R&gt; Action2&lt;T, R&gt; a2(final A2&lt;T, R&gt; a) {
+<span class="nc" id="L148">        return new Action2&lt;T, R&gt;() {</span>
+            @Override
+            public void call(T t, R r) {
+                try {
+<span class="nc" id="L152">                    a.call(t, r);</span>
+<span class="nc" id="L153">                } catch (Exception e) {</span>
+<span class="nc" id="L154">                    throw new RuntimeException(e);</span>
+<span class="nc" id="L155">                }</span>
+<span class="nc" id="L156">            }</span>
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

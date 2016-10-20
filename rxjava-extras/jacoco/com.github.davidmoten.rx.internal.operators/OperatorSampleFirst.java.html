@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>OperatorSampleFirst.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">OperatorSampleFirst.java</span></div><h1>OperatorSampleFirst.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.concurrent.TimeUnit;
+
+import rx.Observable.Operator;
+import rx.Scheduler;
+import rx.Subscriber;
+
+/**
+ * Throttle by windowing a stream and returning the first value in each window.
+ * @param &lt;T&gt; the value type
+ */
+public final class OperatorSampleFirst&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+    private final long windowDurationMs;
+    private final Scheduler scheduler;
+
+<span class="fc" id="L18">    private static long UNSET = Long.MIN_VALUE;</span>
+
+<span class="fc" id="L20">    public OperatorSampleFirst(long windowDurationMs, TimeUnit unit, Scheduler scheduler) {</span>
+<span class="fc" id="L21">        this.windowDurationMs = unit.toMillis(windowDurationMs);</span>
+<span class="fc" id="L22">        this.scheduler = scheduler;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(final Subscriber&lt;? super T&gt; subscriber) {
+<span class="fc" id="L27">        return new Subscriber&lt;T&gt;(subscriber) {</span>
+
+<span class="fc" id="L29">            private long nextWindowStartTime = UNSET;</span>
+
+            @Override
+            public void onStart() {
+<span class="fc" id="L33">                request(Long.MAX_VALUE);</span>
+<span class="fc" id="L34">            }</span>
+
+            @Override
+            public void onNext(T t) {
+<span class="fc" id="L38">                long now = scheduler.now();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">                if (nextWindowStartTime == UNSET) {</span>
+<span class="fc" id="L40">                    nextWindowStartTime = now + windowDurationMs;</span>
+<span class="fc" id="L41">                    subscriber.onNext(t);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                } else if (now &gt;= nextWindowStartTime) {</span>
+                    // ensure that we advance the next window start time to just
+                    // beyond now
+<span class="fc" id="L45">                    long n = (now - nextWindowStartTime) / windowDurationMs + 1;</span>
+<span class="fc" id="L46">                    nextWindowStartTime += n * windowDurationMs;</span>
+<span class="fc" id="L47">                    subscriber.onNext(t);</span>
+                }
+<span class="fc" id="L49">            }</span>
+
+            @Override
+            public void onCompleted() {
+<span class="fc" id="L53">                subscriber.onCompleted();</span>
+<span class="fc" id="L54">            }</span>
+
+            @Override
+            public void onError(Throwable e) {
+<span class="fc" id="L58">                subscriber.onError(e);</span>
+<span class="fc" id="L59">            }</span>
+
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

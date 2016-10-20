@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>IO.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx</a> &gt; <span class="el_source">IO.java</span></div><h1>IO.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import com.github.davidmoten.rx.exceptions.IORuntimeException;
+import com.github.davidmoten.rx.internal.operators.ObservableServerSocket;
+
+import rx.Observable;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Func0;
+import rx.functions.Func1;
+
+public final class IO {
+
+<span class="fc" id="L18">	private IO() {</span>
+		// prevent instantiation
+<span class="fc" id="L20">	}</span>
+
+	public static ServerSocketBuilder serverSocket(final int port) {
+<span class="fc" id="L23">		return new ServerSocketBuilder(new Func0&lt;ServerSocket&gt;() {</span>
+
+			@Override
+			public ServerSocket call() {
+				try {
+<span class="nc" id="L28">					return new ServerSocket(port);</span>
+<span class="fc" id="L29">				} catch (IOException e) {</span>
+<span class="fc" id="L30">					throw new IORuntimeException(e);</span>
+				}
+			}
+		});
+	}
+
+	public static ServerSocketBuilder serverSocketAutoAllocatePort(final Action1&lt;Integer&gt; onAllocated) {
+<span class="fc" id="L37">		return serverSocket(new Func0&lt;ServerSocket&gt;() {</span>
+
+			@Override
+			public ServerSocket call() {
+				try {
+<span class="fc" id="L42">					ServerSocket ss = new ServerSocket(0);</span>
+<span class="fc" id="L43">					onAllocated.call(ss.getLocalPort());</span>
+<span class="fc" id="L44">					return ss;</span>
+<span class="nc" id="L45">				} catch (IOException e) {</span>
+<span class="nc" id="L46">					throw new IORuntimeException(e);</span>
+				}
+			}
+		});
+	}
+
+	public static ServerSocketBuilder serverSocket(Func0&lt;? extends ServerSocket&gt; serverSocketFactory) {
+<span class="fc" id="L53">		return new ServerSocketBuilder(serverSocketFactory);</span>
+	}
+
+	public static final class ServerSocketBuilder {
+
+		private final Func0&lt;? extends ServerSocket&gt; serverSocketFactory;
+<span class="fc" id="L59">		private int readTimeoutMs = Integer.MAX_VALUE;</span>
+<span class="fc" id="L60">		private int bufferSize = 8192;</span>
+<span class="fc" id="L61">		private Action0 preAcceptAction = Actions.doNothing0();</span>
+<span class="fc" id="L62">		private int acceptTimeoutMs = Integer.MAX_VALUE;</span>
+<span class="fc" id="L63">		private Func1&lt;? super Socket, Boolean&gt; acceptSocket = Functions.alwaysTrue();</span>
+
+<span class="fc" id="L65">		public ServerSocketBuilder(final Func0&lt;? extends ServerSocket&gt; serverSocketFactory) {</span>
+<span class="fc" id="L66">			this.serverSocketFactory = serverSocketFactory;</span>
+<span class="fc" id="L67">		}</span>
+
+		public ServerSocketBuilder readTimeoutMs(int readTimeoutMs) {
+<span class="fc" id="L70">			this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L71">			return this;</span>
+		}
+
+		public ServerSocketBuilder bufferSize(int bufferSize) {
+<span class="fc" id="L75">			this.bufferSize = bufferSize;</span>
+<span class="fc" id="L76">			return this;</span>
+		}
+
+		public ServerSocketBuilder preAcceptAction(Action0 action) {
+<span class="nc" id="L80">			this.preAcceptAction = action;</span>
+<span class="nc" id="L81">			return this;</span>
+		}
+
+		public ServerSocketBuilder acceptTimeoutMs(int acceptTimeoutMs) {
+<span class="fc" id="L85">			this.acceptTimeoutMs = acceptTimeoutMs;</span>
+<span class="fc" id="L86">			return this;</span>
+		}
+		
+		public ServerSocketBuilder acceptSocketIf(Func1&lt;? super Socket, Boolean&gt; acceptSocket) {
+<span class="fc" id="L90">		    this.acceptSocket = acceptSocket;</span>
+<span class="fc" id="L91">		    return this;</span>
+		}
+
+		public Observable&lt;Observable&lt;byte[]&gt;&gt; create() {
+<span class="fc" id="L95">			return ObservableServerSocket.create(serverSocketFactory, readTimeoutMs, bufferSize, preAcceptAction,</span>
+					acceptTimeoutMs, acceptSocket);
+		}
+
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

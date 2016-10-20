@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerDelayFinalUnsubscribe.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">TransformerDelayFinalUnsubscribe.java</span></div><h1>TransformerDelayFinalUnsubscribe.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import rx.Observable;
+import rx.Observable.Operator;
+import rx.Observable.Transformer;
+import rx.Scheduler;
+import rx.Scheduler.Worker;
+import rx.Subscriber;
+import rx.functions.Action0;
+import rx.observers.Subscribers;
+import rx.subscriptions.Subscriptions;
+
+public final class TransformerDelayFinalUnsubscribe&lt;T&gt; implements Transformer&lt;T, T&gt; {
+
+	private final long delayMs;
+	private final Scheduler scheduler;
+
+<span class="fc" id="L22">	public TransformerDelayFinalUnsubscribe(long delayMs, Scheduler scheduler) {</span>
+<span class="fc" id="L23">		this.delayMs = delayMs;</span>
+<span class="fc" id="L24">		this.scheduler = scheduler;</span>
+<span class="fc" id="L25">	}</span>
+
+	@Override
+	public Observable&lt;T&gt; call(final Observable&lt;T&gt; o) {
+<span class="fc" id="L29">		final AtomicInteger count = new AtomicInteger();</span>
+<span class="fc" id="L30">		final AtomicReference&lt;Subscriber&lt;T&gt;&gt; extra = new AtomicReference&lt;Subscriber&lt;T&gt;&gt;();</span>
+<span class="fc" id="L31">		final AtomicReference&lt;Worker&gt; worker = new AtomicReference&lt;Worker&gt;();</span>
+<span class="fc" id="L32">		final Object lock = new Object();</span>
+<span class="fc" id="L33">		return o //</span>
+<span class="fc" id="L34">				.doOnSubscribe(new Action0() {</span>
+					@Override
+					public void call() {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">						if (count.incrementAndGet() == 1) {</span>
+							final Worker w;
+							final Subscriber&lt;T&gt; sub;
+<span class="fc" id="L40">							synchronized (lock) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">								if (extra.get() == null) {</span>
+<span class="fc" id="L42">									sub = doNothing();</span>
+<span class="fc" id="L43">									extra.set(sub);</span>
+								} else {
+<span class="fc" id="L45">									sub = null;</span>
+								}
+<span class="fc" id="L47">								w = worker.get();</span>
+<span class="fc" id="L48">								worker.set(null);</span>
+<span class="pc" id="L49">							}</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">							if (w != null) {</span>
+<span class="fc" id="L51">								w.unsubscribe();</span>
+							}
+<span class="fc bfc" id="L53" title="All 2 branches covered.">							if (sub != null) {</span>
+<span class="fc" id="L54">								o.subscribe(sub);</span>
+							}
+<span class="fc" id="L56">						} else {</span>
+							final Worker w;
+<span class="nc" id="L58">							synchronized (lock) {</span>
+<span class="nc" id="L59">								w = worker.get();</span>
+<span class="nc" id="L60">								worker.set(null);</span>
+<span class="nc" id="L61">							}</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">							if (w != null) {</span>
+<span class="nc" id="L63">								w.unsubscribe();</span>
+							}
+						}
+<span class="fc" id="L66">					}</span>
+				}) //
+<span class="fc" id="L68">				.lift(new OperatorAddToSubscription&lt;T&gt;(new Action0() {</span>
+
+					@Override
+					public void call() {
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">						if (count.decrementAndGet() == 0) {</span>
+							final Worker newW;
+							final Worker w;
+<span class="fc" id="L75">							synchronized (lock) {</span>
+<span class="fc" id="L76">								w = worker.get();</span>
+<span class="fc" id="L77">								newW = scheduler.createWorker();</span>
+<span class="fc" id="L78">								worker.set(newW);</span>
+<span class="pc" id="L79">							}</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">							if (w != null) {</span>
+<span class="nc" id="L81">								w.unsubscribe();</span>
+							}
+							// scheduler unsubscribe
+<span class="fc" id="L84">							newW.schedule(new Action0() {</span>
+								@Override
+								public void call() {
+									Subscriber&lt;T&gt; sub;
+<span class="fc" id="L88">									synchronized (lock) {</span>
+<span class="fc" id="L89">										sub = extra.get();</span>
+<span class="fc" id="L90">										extra.set(null);</span>
+<span class="pc" id="L91">									}</span>
+<span class="fc" id="L92">									sub.unsubscribe();</span>
+<span class="fc" id="L93">									newW.unsubscribe();</span>
+<span class="fc" id="L94">									worker.compareAndSet(newW, null);</span>
+<span class="fc" id="L95">								}</span>
+<span class="fc" id="L96">							}, delayMs, TimeUnit.MILLISECONDS);</span>
+						}
+<span class="fc" id="L98">					}</span>
+				}));
+	}
+
+	private static &lt;T&gt; Subscriber&lt;T&gt; doNothing() {
+<span class="fc" id="L103">		return new Subscriber&lt;T&gt;() {</span>
+
+			@Override
+			public void onCompleted() {
+<span class="nc" id="L107">			}</span>
+
+			@Override
+			public void onError(Throwable e) {
+<span class="nc" id="L111">			}</span>
+
+			@Override
+			public void onNext(T t) {
+<span class="fc" id="L115">			}</span>
+		};
+	}
+
+	private static final class OperatorAddToSubscription&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+		private final Action0 action;
+
+<span class="fc" id="L123">		OperatorAddToSubscription(Action0 action) {</span>
+<span class="fc" id="L124">			this.action = action;</span>
+<span class="fc" id="L125">		}</span>
+
+		@Override
+		public Subscriber&lt;? super T&gt; call(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L129">			Subscriber&lt;T&gt; parent = Subscribers.wrap(child);</span>
+<span class="fc" id="L130">			child.add(Subscriptions.create(action));</span>
+<span class="fc" id="L131">			return parent;</span>
+		}
+
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

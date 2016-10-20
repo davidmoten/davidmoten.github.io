@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ObservableServerSocket.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx.internal.operators</a> &gt; <span class="el_source">ObservableServerSocket.java</span></div><h1>ObservableServerSocket.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx.internal.operators;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+
+import com.github.davidmoten.rx.Actions;
+import com.github.davidmoten.rx.Bytes;
+import com.github.davidmoten.rx.Checked;
+import com.github.davidmoten.rx.Checked.F0;
+import com.github.davidmoten.rx.Functions;
+
+import rx.Observable;
+import rx.Observer;
+import rx.functions.Action0;
+import rx.functions.Action1;
+import rx.functions.Action2;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.observables.SyncOnSubscribe;
+
+public final class ObservableServerSocket {
+
+<span class="fc" id="L27">    private ObservableServerSocket() {</span>
+        // prevent instantiation
+<span class="fc" id="L29">    }</span>
+
+    public static Observable&lt;Observable&lt;byte[]&gt;&gt; create(
+            final Func0&lt;? extends ServerSocket&gt; serverSocketFactory, final int timeoutMs,
+            final int bufferSize, Action0 preAcceptAction, int acceptTimeoutMs,
+            Func1&lt;? super Socket, Boolean&gt; acceptSocket) {
+<span class="fc" id="L35">        Func1&lt;ServerSocket, Observable&lt;Observable&lt;byte[]&gt;&gt;&gt; observableFactory = createObservableFactory(</span>
+                timeoutMs, bufferSize, preAcceptAction, acceptSocket);
+<span class="fc" id="L37">        return Observable.&lt;Observable&lt;byte[]&gt;, ServerSocket&gt; using( //</span>
+<span class="fc" id="L38">                createServerSocketFactory(serverSocketFactory, acceptTimeoutMs), //</span>
+                observableFactory, //
+<span class="fc" id="L40">                new Action1&lt;ServerSocket&gt;() {</span>
+
+                    @Override
+                    public void call(ServerSocket ss) {
+                        try {
+<span class="fc" id="L45">                            ss.close();</span>
+<span class="nc" id="L46">                        } catch (IOException e) {</span>
+<span class="nc" id="L47">                            throw new RuntimeException(e);</span>
+<span class="fc" id="L48">                        }</span>
+<span class="fc" id="L49">                    }</span>
+
+                }, true);
+    }
+
+    private static Func0&lt;ServerSocket&gt; createServerSocketFactory(
+            final Func0&lt;? extends ServerSocket&gt; serverSocketFactory, final int acceptTimeoutMs) {
+<span class="fc" id="L56">        return Checked.f0(new F0&lt;ServerSocket&gt;() {</span>
+            @Override
+            public ServerSocket call() throws Exception {
+<span class="fc" id="L59">                return createServerSocket(serverSocketFactory, acceptTimeoutMs);</span>
+            }
+        });
+    }
+
+    private static ServerSocket createServerSocket(
+            Func0&lt;? extends ServerSocket&gt; serverSocketCreator, long timeoutMs) throws IOException {
+<span class="fc" id="L66">        ServerSocket s = serverSocketCreator.call();</span>
+<span class="fc" id="L67">        s.setSoTimeout((int) timeoutMs);</span>
+<span class="fc" id="L68">        return s;</span>
+    }
+
+    private static Func1&lt;ServerSocket, Observable&lt;Observable&lt;byte[]&gt;&gt;&gt; createObservableFactory(
+            final int timeoutMs, final int bufferSize, final Action0 preAcceptAction,
+            final Func1&lt;? super Socket, Boolean&gt; acceptSocket) {
+<span class="fc" id="L74">        return new Func1&lt;ServerSocket, Observable&lt;Observable&lt;byte[]&gt;&gt;&gt;() {</span>
+            @Override
+            public Observable&lt;Observable&lt;byte[]&gt;&gt; call(ServerSocket serverSocket) {
+<span class="fc" id="L77">                return createServerSocketObservable(serverSocket, timeoutMs, bufferSize,</span>
+                        preAcceptAction, acceptSocket);
+            }
+        };
+    }
+
+    private static Observable&lt;Observable&lt;byte[]&gt;&gt; createServerSocketObservable(
+            ServerSocket serverSocket, final long timeoutMs, final int bufferSize,
+            final Action0 preAcceptAction, final Func1&lt;? super Socket, Boolean&gt; acceptSocket) {
+<span class="fc" id="L86">        return Observable.create( //</span>
+<span class="fc" id="L87">                SyncOnSubscribe.&lt;ServerSocket, Observable&lt;byte[]&gt;&gt; createSingleState( //</span>
+<span class="fc" id="L88">                        Functions.constant0(serverSocket), //</span>
+<span class="fc" id="L89">                        new Action2&lt;ServerSocket, Observer&lt;? super Observable&lt;byte[]&gt;&gt;&gt;() {</span>
+
+                            @Override
+                            public void call(ServerSocket ss,
+                                    Observer&lt;? super Observable&lt;byte[]&gt;&gt; observer) {
+<span class="fc" id="L94">                                acceptConnection(timeoutMs, bufferSize, ss, observer,</span>
+                                        preAcceptAction, acceptSocket);
+<span class="fc" id="L96">                            }</span>
+                        }));
+    }
+
+    private static void acceptConnection(long timeoutMs, int bufferSize, ServerSocket ss,
+            Observer&lt;? super Observable&lt;byte[]&gt;&gt; observer, Action0 preAcceptAction,
+            Func1&lt;? super Socket, Boolean&gt; acceptSocket) {
+        Socket socket;
+        while (true) {
+            try {
+<span class="fc" id="L106">                preAcceptAction.call();</span>
+<span class="fc" id="L107">                socket = ss.accept();</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                if (!acceptSocket.call(socket)) {</span>
+<span class="fc" id="L109">                    closeQuietly(socket);</span>
+                } else {
+<span class="fc" id="L111">                    observer.onNext(createSocketObservable(socket, timeoutMs, bufferSize));</span>
+<span class="fc" id="L112">                    break;</span>
+                }
+<span class="fc" id="L114">            } catch (SocketTimeoutException e) {</span>
+                // timed out so will loop around again
+<span class="fc" id="L116">            } catch (IOException e) {</span>
+                // unknown problem
+<span class="fc" id="L118">                observer.onError(e);</span>
+<span class="fc" id="L119">                break;</span>
+<span class="fc" id="L120">            }</span>
+        }
+<span class="fc" id="L122">    }</span>
+
+    private static void closeQuietly(Socket socket) {
+        try {
+<span class="fc" id="L126">            socket.close();</span>
+<span class="nc" id="L127">        } catch (IOException e) {</span>
+            // ignore exception
+<span class="fc" id="L129">        }</span>
+<span class="fc" id="L130">    }</span>
+
+    private static Observable&lt;byte[]&gt; createSocketObservable(final Socket socket, long timeoutMs,
+            final int bufferSize) {
+<span class="fc" id="L134">        setTimeout(socket, timeoutMs);</span>
+<span class="fc" id="L135">        return Observable.using( //</span>
+<span class="fc" id="L136">                Checked.f0(new F0&lt;InputStream&gt;() {</span>
+                    @Override
+                    public InputStream call() throws Exception {
+<span class="fc" id="L139">                        return socket.getInputStream();</span>
+                    }
+                }), //
+<span class="fc" id="L142">                new Func1&lt;InputStream, Observable&lt;byte[]&gt;&gt;() {</span>
+                    @Override
+                    public Observable&lt;byte[]&gt; call(InputStream is) {
+<span class="fc" id="L145">                        return Bytes.from(is, bufferSize);</span>
+                    }
+                }, //
+<span class="fc" id="L148">                Actions.close(), //</span>
+                true);
+    }
+
+    private static void setTimeout(Socket socket, long timeoutMs) {
+        try {
+<span class="fc" id="L154">            socket.setSoTimeout((int) timeoutMs);</span>
+<span class="nc" id="L155">        } catch (SocketException e) {</span>
+<span class="nc" id="L156">            throw new RuntimeException(e);</span>
+<span class="fc" id="L157">        }</span>
+<span class="fc" id="L158">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
