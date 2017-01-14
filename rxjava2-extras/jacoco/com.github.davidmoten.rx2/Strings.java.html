@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Strings.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Strings.java</span></div><h1>Strings.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
+
+import org.reactivestreams.Publisher;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rx2.internal.flowable.FlowableStringSplitSimple;
+import com.github.davidmoten.rx2.internal.flowable.TransformerDecode;
+import com.github.davidmoten.rx2.internal.flowable.TransformerStringSplit;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableTransformer;
+import io.reactivex.Maybe;
+import io.reactivex.annotations.Beta;
+import io.reactivex.annotations.Experimental;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+
+public final class Strings {
+
+<span class="fc" id="L40">    private Strings() {</span>
+        // prevent instantiation
+<span class="fc" id="L42">    }</span>
+
+<span class="fc" id="L44">    public static final Charset UTF_8 = Charset.forName(&quot;UTF-8&quot;);</span>
+
+    private static final int DEFAULT_REQUEST_SIZE = 1;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    /**
+     * Returns null if input is null otherwise returns input.toString().trim().
+     */
+    // visible for testing
+<span class="fc" id="L53">    static Function&lt;Object, String&gt; TRIM = new Function&lt;Object, String&gt;() {</span>
+
+        @Override
+        public String apply(Object input) throws Exception {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (input == null)</span>
+<span class="fc" id="L58">                return null;</span>
+            else
+<span class="fc" id="L60">                return input.toString().trim();</span>
+        }
+    };
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Function&lt;T, String&gt; trim() {
+<span class="fc" id="L66">        return (Function&lt;T, String&gt;) TRIM;</span>
+    }
+
+    public static Flowable&lt;String&gt; from(final Reader reader, final int bufferSize) {
+<span class="fc" id="L70">        return Flowable.generate(new Consumer&lt;Emitter&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L71">            final char[] buffer = new char[bufferSize];</span>
+
+            @Override
+            public void accept(Emitter&lt;String&gt; emitter) throws Exception {
+<span class="fc" id="L75">                int count = reader.read(buffer);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">                if (count == -1) {</span>
+<span class="fc" id="L77">                    emitter.onComplete();</span>
+                } else {
+<span class="fc" id="L79">                    emitter.onNext(String.valueOf(buffer, 0, count));</span>
+                }
+<span class="fc" id="L81">            }</span>
+        });
+    }
+
+    public static Flowable&lt;String&gt; from(Reader reader) {
+<span class="fc" id="L86">        return from(reader, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Flowable&lt;String&gt; from(InputStream is) {
+<span class="fc" id="L90">        return from(is, UTF_8);</span>
+    }
+
+    public static Flowable&lt;String&gt; from(InputStream is, Charset charset) {
+<span class="fc" id="L94">        return from(is, charset, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Flowable&lt;String&gt; from(InputStream is, Charset charset, int bufferSize) {
+<span class="fc" id="L98">        return from(new InputStreamReader(is, charset), bufferSize);</span>
+    }
+
+    public static Flowable&lt;String&gt; split(Flowable&lt;String&gt; source, String pattern) {
+<span class="fc" id="L102">        return source.compose(Strings.split(pattern, BackpressureStrategy.BUFFER, 1));</span>
+    }
+
+    public static Maybe&lt;String&gt; concat(Flowable&lt;String&gt; source) {
+<span class="fc" id="L106">        return concat(source, &quot;&quot;);</span>
+    }
+
+    public static Maybe&lt;String&gt; concat(Flowable&lt;String&gt; source, final String delimiter) {
+<span class="fc" id="L110">        return join(source, delimiter);</span>
+    }
+
+    public static Flowable&lt;String&gt; strings(Flowable&lt;?&gt; source) {
+<span class="fc" id="L114">        return source.map(new Function&lt;Object, String&gt;() {</span>
+            @Override
+            public String apply(Object t) throws Exception {
+<span class="fc" id="L117">                return String.valueOf(t);</span>
+            }
+        });
+    }
+
+    public static Flowable&lt;String&gt; from(File file) {
+<span class="fc" id="L123">        return from(file, UTF_8);</span>
+    }
+
+    public static Flowable&lt;String&gt; from(final File file, final Charset charset) {
+<span class="fc" id="L127">        Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L128">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L129">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
+            @Override
+            public Reader call() throws FileNotFoundException {
+<span class="fc" id="L132">                return new InputStreamReader(new FileInputStream(file), charset);</span>
+            }
+        };
+<span class="fc" id="L135">        return from(resourceFactory);</span>
+    }
+
+    public static Flowable&lt;String&gt; fromClasspath(final Class&lt;?&gt; cls, final String resource,
+            final Charset charset) {
+<span class="fc" id="L140">        Preconditions.checkNotNull(resource);</span>
+<span class="fc" id="L141">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L142">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
+            @Override
+            public Reader call() {
+<span class="fc" id="L145">                return new InputStreamReader(cls.getResourceAsStream(resource), charset);</span>
+            }
+        };
+<span class="fc" id="L148">        return from(resourceFactory);</span>
+    }
+
+    public static Flowable&lt;String&gt; fromClasspath(final String resource, final Charset charset) {
+<span class="fc" id="L152">        return fromClasspath(Strings.class, resource, charset);</span>
+    }
+
+    public static Flowable&lt;String&gt; fromClasspath(final String resource) {
+<span class="fc" id="L156">        return fromClasspath(resource, Utf8Holder.INSTANCE);</span>
+    }
+
+    public static Flowable&lt;String&gt; from(final Callable&lt;Reader&gt; readerFactory) {
+<span class="fc" id="L160">        Function&lt;Reader, Flowable&lt;String&gt;&gt; flowableFactory = new Function&lt;Reader, Flowable&lt;String&gt;&gt;() {</span>
+            @Override
+            public Flowable&lt;String&gt; apply(Reader reader) {
+<span class="fc" id="L163">                return from(reader);</span>
+            }
+        };
+<span class="fc" id="L166">        return Flowable.using(readerFactory, flowableFactory, DisposeActionHolder.INSTANCE, true);</span>
+    }
+
+    public static Maybe&lt;String&gt; join(Flowable&lt;String&gt; source) {
+<span class="fc" id="L170">        return join(source, &quot;&quot;);</span>
+    }
+
+    public static FlowableTransformer&lt;byte[], String&gt; decode(CharsetDecoder decoder) {
+<span class="fc" id="L174">        return decode(decoder, BackpressureStrategy.BUFFER, DEFAULT_REQUEST_SIZE);</span>
+    }
+
+    public static FlowableTransformer&lt;byte[], String&gt; decode(CharsetDecoder decoder,
+            BackpressureStrategy backpressureStrategy, int requestBatchSize) {
+<span class="fc" id="L179">        return TransformerDecode.decode(decoder, BackpressureStrategy.BUFFER, requestBatchSize);</span>
+    }
+
+    public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, CharsetDecoder decoder) {
+<span class="fc" id="L183">        return source.compose(Strings.decode(decoder));</span>
+    }
+
+    public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, Charset charset) {
+<span class="fc" id="L187">        return decode(source, charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)</span>
+<span class="fc" id="L188">                .onUnmappableCharacter(CodingErrorAction.REPLACE));</span>
+    }
+
+    public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, String charset) {
+<span class="fc" id="L192">        return decode(source, Charset.forName(charset));</span>
+    }
+
+    public static Maybe&lt;String&gt; join(final Flowable&lt;String&gt; source, final String delimiter) {
+
+<span class="fc" id="L197">        return Maybe.defer(new Callable&lt;Maybe&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L198">            final AtomicBoolean afterFirst = new AtomicBoolean(false);</span>
+<span class="fc" id="L199">            final AtomicBoolean isEmpty = new AtomicBoolean(true);</span>
+
+            @Override
+            public Maybe&lt;String&gt; call() {
+<span class="fc" id="L203">                return source.collect(new Callable&lt;StringBuilder&gt;() {</span>
+                    @Override
+                    public StringBuilder call() {
+<span class="fc" id="L206">                        return new StringBuilder();</span>
+                    }
+<span class="fc" id="L208">                }, new BiConsumer&lt;StringBuilder, String&gt;() {</span>
+
+                    @Override
+                    public void accept(StringBuilder b, String s) throws Exception {
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                        if (!afterFirst.compareAndSet(false, true)) {</span>
+<span class="fc" id="L213">                            b.append(delimiter);</span>
+                        }
+<span class="fc" id="L215">                        b.append(s);</span>
+<span class="fc" id="L216">                        isEmpty.set(false);</span>
+
+<span class="fc" id="L218">                    }</span>
+<span class="fc" id="L219">                }).flatMapMaybe(new Function&lt;StringBuilder, Maybe&lt;String&gt;&gt;() {</span>
+
+                    @Override
+                    public Maybe&lt;String&gt; apply(StringBuilder b) {
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                        if (isEmpty.get())</span>
+<span class="nc" id="L224">                            return Maybe.empty();</span>
+                        else
+<span class="fc" id="L226">                            return Maybe.just(b.toString());</span>
+                    }
+                });
+
+            }
+        });
+    }
+
+    public static Flowable&lt;List&lt;String&gt;&gt; splitLinesSkipComments(InputStream is, Charset charset,
+            final String delimiter, final String commentPrefix) {
+<span class="fc" id="L236">        return from(is, charset) //</span>
+<span class="fc" id="L237">                .compose(Strings.split(&quot;\n&quot;, BackpressureStrategy.BUFFER, 1)) //</span>
+<span class="fc" id="L238">                .filter(new Predicate&lt;String&gt;() {</span>
+                    @Override
+                    public boolean test(String line) {
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                        return !line.startsWith(commentPrefix);</span>
+                    }
+                }) //
+<span class="fc" id="L244">                .map(SplitLinesHolder.trim) //</span>
+<span class="fc" id="L245">                .filter(SplitLinesHolder.notEmpty) //</span>
+<span class="fc" id="L246">                .map(new Function&lt;String, List&lt;String&gt;&gt;() {</span>
+                    @Override
+                    public List&lt;String&gt; apply(String line) {
+<span class="fc" id="L249">                        return Arrays.asList(line.split(delimiter));</span>
+                    }
+                });
+    }
+
+<span class="nc" id="L254">    private static class Utf8Holder {</span>
+<span class="fc" id="L255">        static final Charset INSTANCE = Charset.forName(&quot;UTF-8&quot;);</span>
+    }
+
+<span class="nc" id="L258">    private static class DisposeActionHolder {</span>
+<span class="fc" id="L259">        static final Consumer&lt;Reader&gt; INSTANCE = new Consumer&lt;Reader&gt;() {</span>
+            @Override
+            public void accept(Reader reader) throws IOException {
+<span class="fc" id="L262">                reader.close();</span>
+<span class="fc" id="L263">            }</span>
+        };
+    }
+
+<span class="nc" id="L267">    private static class SplitLinesHolder {</span>
+<span class="fc" id="L268">        static final Function&lt;String, String&gt; trim = new Function&lt;String, String&gt;() {</span>
+            @Override
+            public String apply(String line) {
+<span class="fc" id="L271">                return line.trim();</span>
+            }
+        };
+<span class="fc" id="L274">        static final Predicate&lt;String&gt; notEmpty = new Predicate&lt;String&gt;() {</span>
+            @Override
+            public boolean test(String line) {
+<span class="fc bfc" id="L277" title="All 2 branches covered.">                return !line.isEmpty();</span>
+            }
+        };
+    }
+
+    public static FlowableTransformer&lt;String, String&gt; split(String pattern) {
+<span class="fc" id="L283">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
+    }
+
+    public static FlowableTransformer&lt;String, String&gt; split(Pattern pattern) {
+<span class="fc" id="L287">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
+    }
+
+    public static FlowableTransformer&lt;String, String&gt; split(String pattern,
+            BackpressureStrategy backpressureStrategy, int requestBatchSize) {
+<span class="fc" id="L292">        return TransformerStringSplit.split(pattern, null, backpressureStrategy, requestBatchSize);</span>
+    }
+
+    public static FlowableTransformer&lt;String, String&gt; split(Pattern pattern,
+            BackpressureStrategy backpressureStrategy, int batchSize) {
+<span class="fc" id="L297">        return TransformerStringSplit.split(null, pattern, backpressureStrategy, batchSize);</span>
+    }
+
+    public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; join(final String delimiter) {
+<span class="fc" id="L301">        return new Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt;() {</span>
+
+            @Override
+            public Maybe&lt;String&gt; apply(Flowable&lt;String&gt; source) throws Exception {
+<span class="fc" id="L305">                return Strings.join(source, delimiter);</span>
+            }
+
+        };
+    }
+
+    public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; join() {
+<span class="fc" id="L312">        return join(&quot;&quot;);</span>
+    }
+
+    public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; concat(final String delimiter) {
+<span class="fc" id="L316">        return join(delimiter);</span>
+    }
+
+    public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; concat() {
+<span class="fc" id="L320">        return concat(&quot;&quot;);</span>
+    }
+
+    public static &lt;T&gt; FlowableTransformer&lt;T, String&gt; strings() {
+<span class="fc" id="L324">        return new FlowableTransformer&lt;T, String&gt;() {</span>
+
+            @Override
+            public Publisher&lt;String&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L328">                return Strings.strings(source);</span>
+            }
+
+        };
+    }
+
+    /**
+     * Splits on a string delimiter, not a pattern. Is slower than
+     * RxJavaString 1.1.1 implementation on benchmarks below but requests
+     * minimally from upstream and is potentially much faster when the stream is
+     * significantly truncated (for example by downstream
+     * {@code .take(), .takeUntil(), elementAt()}.
+     * 
+     * &lt;pre&gt;
+     * Benchmark                                  Mode  Cnt       Score       Error  Units
+     * Benchmarks.splitRxJavaString              thrpt   10     983.128 ±    23.833  ops/s
+     * Benchmarks.splitRxJavaStringTake5         thrpt   10    1033.090 ±    33.083  ops/s
+     * Benchmarks.splitSimple                    thrpt   10     113.727 ±     2.122  ops/s
+     * Benchmarks.splitSimpleTake5               thrpt   10  867527.265 ± 27168.498  ops/s
+     * Benchmarks.splitStandard                  thrpt   10     108.880 ±     4.428  ops/s
+     * Benchmarks.splitStandardTake5             thrpt   10    1217.798 ±    44.237  ops/s
+     * Benchmarks.splitStandardWithPattern       thrpt   10     102.882 ±     5.083  ops/s
+     * Benchmarks.splitStandardWithPatternTake5  thrpt   10    1054.024 ±    27.906  ops/s
+     * &lt;/pre&gt;
+     * 
+     * @param delimiter
+     *            string delimiter
+     * @param &lt;T&gt; type being streamed
+     * @return stream split by delimiter
+     */
+    @Experimental
+    @Beta
+    public static &lt;T&gt; FlowableTransformer&lt;String, String&gt; splitSimple(final String delimiter) {
+<span class="fc" id="L361">        return new FlowableTransformer&lt;String, String&gt;() {</span>
+
+            @Override
+            public Publisher&lt;String&gt; apply(Flowable&lt;String&gt; source) {
+<span class="fc" id="L365">                return new FlowableStringSplitSimple(source, delimiter);</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

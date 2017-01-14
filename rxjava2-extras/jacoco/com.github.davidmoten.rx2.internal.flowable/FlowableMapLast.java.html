@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableMapLast.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMapLast.java</span></div><h1>FlowableMapLast.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.reactivex.Flowable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+
+public final class FlowableMapLast&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final Flowable&lt;T&gt; source;
+    private final Function&lt;? super T, ? extends T&gt; function;
+
+<span class="fc" id="L18">    public FlowableMapLast(Flowable&lt;T&gt; source, Function&lt;? super T, ? extends T&gt; function) {</span>
+<span class="fc" id="L19">        this.source = source;</span>
+<span class="fc" id="L20">        this.function = function;</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; s) {
+<span class="fc" id="L25">        source.subscribe(new MapLastSubscriber&lt;T&gt;(s, function));</span>
+<span class="fc" id="L26">    }</span>
+
+    private final static class MapLastSubscriber&lt;T&gt; implements Subscriber&lt;T&gt;, Subscription {
+
+<span class="fc" id="L30">        private static final Object EMPTY = new Object();</span>
+
+        private final Subscriber&lt;? super T&gt; actual;
+        private final Function&lt;? super T, ? extends T&gt; function;
+<span class="fc" id="L34">        private final AtomicBoolean firstRequest = new AtomicBoolean(true);</span>
+
+        // mutable state
+<span class="fc" id="L37">        @SuppressWarnings(&quot;unchecked&quot;)</span>
+        private T value = (T) EMPTY;
+        private Subscription subscription;
+        private boolean done;
+
+        public MapLastSubscriber(Subscriber&lt;? super T&gt; actual,
+<span class="fc" id="L43">                Function&lt;? super T, ? extends T&gt; function) {</span>
+<span class="fc" id="L44">            this.actual = actual;</span>
+<span class="fc" id="L45">            this.function = function;</span>
+<span class="fc" id="L46">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+<span class="fc" id="L50">            this.subscription = subscription;</span>
+<span class="fc" id="L51">            actual.onSubscribe(this);</span>
+<span class="fc" id="L52">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L57">                return;</span>
+            }
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (value == EMPTY) {</span>
+<span class="fc" id="L60">                value = t;</span>
+            } else {
+<span class="fc" id="L62">                actual.onNext(value);</span>
+<span class="fc" id="L63">                value = t;</span>
+            }
+<span class="fc" id="L65">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L70">                return;</span>
+            }
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">            if (value != EMPTY) {</span>
+                T value2;
+                try {
+<span class="fc" id="L75">                    value2 = function.apply(value);</span>
+<span class="fc" id="L76">                } catch (Throwable e) {</span>
+<span class="fc" id="L77">                    Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L78">                    subscription.cancel();</span>
+<span class="fc" id="L79">                    onError(e);</span>
+<span class="fc" id="L80">                    return;</span>
+<span class="fc" id="L81">                }</span>
+<span class="fc" id="L82">                actual.onNext(value2);</span>
+            }
+<span class="fc" id="L84">            done = true;</span>
+<span class="fc" id="L85">            actual.onComplete();</span>
+<span class="fc" id="L86">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L91">                return;</span>
+            }
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (value != EMPTY) {</span>
+<span class="fc" id="L94">                actual.onNext(value);</span>
+            }
+<span class="fc" id="L96">            done = true;</span>
+<span class="fc" id="L97">            actual.onError(e);</span>
+<span class="fc" id="L98">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="nc" id="L102">            subscription.cancel();</span>
+<span class="nc" id="L103">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                if (firstRequest.compareAndSet(true, false)) {</span>
+<span class="fc" id="L109">                    long m = n + 1;</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                    if (m &lt; 0) {</span>
+<span class="fc" id="L111">                        m = Long.MAX_VALUE;</span>
+                    }
+<span class="fc" id="L113">                    subscription.request(m);</span>
+<span class="fc" id="L114">                } else {</span>
+<span class="fc" id="L115">                    subscription.request(n);</span>
+                }
+            }
+<span class="fc" id="L118">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

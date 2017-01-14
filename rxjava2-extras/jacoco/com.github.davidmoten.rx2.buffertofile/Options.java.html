@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Options.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.buffertofile</a> &gt; <span class="el_source">Options.java</span></div><h1>Options.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.buffertofile;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.concurrent.Callable;
+
+import org.reactivestreams.Publisher;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rx2.internal.flowable.buffertofile.FlowableOnBackpressureBufferToFile;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableTransformer;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+
+public final class Options {
+
+    public static final String DEFAULT_FILE_PREFIX = &quot;bufferToFile_&quot;;
+
+    private final Callable&lt;File&gt; fileFactory;
+    private final int pageSizeBytes;
+    private final Scheduler scheduler;
+
+<span class="fc" id="L28">    private Options(Callable&lt;File&gt; filefactory, int pageSizeBytes, Scheduler scheduler) {</span>
+<span class="fc" id="L29">        Preconditions.checkNotNull(filefactory);</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageSizeBytes &gt; 0, &quot;bufferSizeBytes must be greater than 0&quot;);</span>
+<span class="fc" id="L31">        Preconditions.checkNotNull(scheduler);</span>
+<span class="fc" id="L32">        this.fileFactory = filefactory;</span>
+<span class="fc" id="L33">        this.pageSizeBytes = pageSizeBytes;</span>
+<span class="fc" id="L34">        this.scheduler = scheduler;</span>
+<span class="fc" id="L35">    }</span>
+
+    public Callable&lt;File&gt; fileFactory() {
+<span class="fc" id="L38">        return fileFactory;</span>
+    }
+
+    public int pageSizeBytes() {
+<span class="fc" id="L42">        return pageSizeBytes;</span>
+    }
+
+    public Scheduler scheduler() {
+<span class="fc" id="L46">        return scheduler;</span>
+    }
+
+    public static BuilderFlowable builderFlowable() {
+<span class="fc" id="L50">        return new BuilderFlowable();</span>
+    }
+
+    public static BuilderObservable builderObservable() {
+<span class="fc" id="L54">        return new BuilderObservable();</span>
+    }
+
+    public static final class BuilderFlowable {
+
+<span class="fc" id="L59">        private Callable&lt;File&gt; fileFactory = FileFactoryHolder.INSTANCE;</span>
+<span class="fc" id="L60">        private int pageSizeBytes = 1024 * 1024;</span>
+<span class="fc" id="L61">        private Scheduler scheduler = Schedulers.io();</span>
+
+<span class="fc" id="L63">        BuilderFlowable() {</span>
+<span class="fc" id="L64">        }</span>
+
+        /**
+         * Sets the page size in bytes. A page corresponds to a single memory
+         * mapped file. If this method is not called the default value is 1MB
+         * (1024*1024 bytes).
+         * 
+         * @param pageSizeBytes
+         *            the page size in bytes.
+         * @return this
+         */
+        public BuilderFlowable pageSizeBytes(int pageSizeBytes) {
+<span class="fc" id="L76">            this.pageSizeBytes = pageSizeBytes;</span>
+<span class="fc" id="L77">            return this;</span>
+        }
+
+        /**
+         * Sets the scheduler to use for reading items from files and emitting
+         * them.
+         * 
+         * @param scheduler
+         *            for emitting items
+         * @return this
+         */
+        public BuilderFlowable scheduler(Scheduler scheduler) {
+<span class="fc" id="L89">            this.scheduler = scheduler;</span>
+<span class="fc" id="L90">            return this;</span>
+        }
+
+        /**
+         * Sets the file factory to be used by the queue storage mechanism.
+         * Defaults to using {@code File.createTempFile(&quot;bufferToFileDb&quot;,&quot;&quot;)} if
+         * this method is not called.
+         * 
+         * @param fileFactory
+         *            the factory
+         * @return the current builder
+         */
+        public BuilderFlowable fileFactory(Callable&lt;File&gt; fileFactory) {
+<span class="fc" id="L103">            this.fileFactory = fileFactory;</span>
+<span class="fc" id="L104">            return this;</span>
+        }
+
+        /**
+         * Returns a Flowable Transformer to buffer stream items to disk
+         * (files). The serialization method uses
+         * {@code java.io.ObjectOutputStream} for writing values to disk and
+         * {@code java.io.ObjectInputStream} for reading values from disk and
+         * emitting them. Note that this is a pretty verbose serialization
+         * method for small items in that a 4 byte Integer is serialized to an
+         * 81 byte array!
+         * 
+         * @param &lt;T&gt;
+         *            stream item type
+         * @return FlowableTransformer using the java io serializer
+         */
+        public &lt;T extends Serializable&gt; FlowableTransformer&lt;T, T&gt; serializerJavaIO() {
+<span class="fc" id="L121">            return serializer(Serializers.&lt;T&gt;javaIO());</span>
+        }
+
+        /**
+         * Returns a Flowable Transformer that buffers items to disk (files).
+         * The serialization method passes through byte arrays directly for both
+         * writing and reading.
+         * 
+         * @return FlowableTransformer using the bytes serializer
+         */
+        public FlowableTransformer&lt;byte[], byte[]&gt; serializerBytes() {
+<span class="fc" id="L132">            return serializer(Serializers.bytes());</span>
+        }
+
+        public FlowableTransformer&lt;String, String&gt; serializerUtf8() {
+<span class="fc" id="L136">            return serializer(Serializers.utf8());</span>
+        }
+
+        public &lt;T&gt; FlowableTransformer&lt;T, T&gt; serializer(final Serializer&lt;T&gt; serializer) {
+<span class="fc" id="L140">            final Options options = new Options(fileFactory, pageSizeBytes, scheduler);</span>
+<span class="fc" id="L141">            return new FlowableTransformer&lt;T, T&gt;() {</span>
+
+                @Override
+                public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L145">                    return new FlowableOnBackpressureBufferToFile&lt;T&gt;(source, null, options,</span>
+                            serializer);
+                }
+            };
+        }
+
+        public &lt;T&gt; FlowableTransformer&lt;T, T&gt; serializer(DataSerializer&lt;T&gt; ds) {
+<span class="fc" id="L152">            return serializer(Serializers.from(ds));</span>
+        }
+    }
+
+    public static final class BuilderObservable {
+
+<span class="fc" id="L158">        private Callable&lt;File&gt; fileFactory = FileFactoryHolder.INSTANCE;</span>
+<span class="fc" id="L159">        private int pageSizeBytes = 1024 * 1024;</span>
+<span class="fc" id="L160">        private Scheduler scheduler = Schedulers.io();</span>
+
+<span class="fc" id="L162">        BuilderObservable() {</span>
+<span class="fc" id="L163">        }</span>
+
+        /**
+         * Sets the page size in bytes. A page corresponds to a single memory
+         * mapped file. If this method is not called the default value is 1MB
+         * (1024*1024 bytes).
+         * 
+         * @param pageSizeBytes
+         *            the page size in bytes.
+         * @return this
+         */
+        public BuilderObservable pageSizeBytes(int pageSizeBytes) {
+<span class="fc" id="L175">            this.pageSizeBytes = pageSizeBytes;</span>
+<span class="fc" id="L176">            return this;</span>
+        }
+
+        /**
+         * Sets the scheduler to use for reading items from files and emitting
+         * them.
+         * 
+         * @param scheduler
+         *            for emitting items
+         * @return this
+         */
+        public BuilderObservable scheduler(Scheduler scheduler) {
+<span class="nc" id="L188">            this.scheduler = scheduler;</span>
+<span class="nc" id="L189">            return this;</span>
+        }
+
+        /**
+         * Sets the file factory to be used by the queue storage mechanism.
+         * Defaults to using {@code File.createTempFile(&quot;bufferToFileDb&quot;,&quot;&quot;)} if
+         * this method is not called.
+         * 
+         * @param fileFactory
+         *            the factory
+         * @return the current builder
+         */
+        public BuilderObservable fileFactory(Callable&lt;File&gt; fileFactory) {
+<span class="fc" id="L202">            this.fileFactory = fileFactory;</span>
+<span class="fc" id="L203">            return this;</span>
+        }
+
+        /**
+         * Returns a Flowable Transformer to buffer stream items to disk
+         * (files). The serialization method uses
+         * {@code java.io.ObjectOutputStream} for writing values to disk and
+         * {@code java.io.ObjectInputStream} for reading values from disk and
+         * emitting them. Note that this is a pretty verbose serialization
+         * method for small items in that a 4 byte Integer is serialized to an
+         * 81 byte array!
+         * 
+         * @param &lt;T&gt;
+         *            stream item type
+         * @return FlowableTransformer using the java io serializer
+         */
+        public &lt;T extends Serializable&gt; Function&lt;Observable&lt;T&gt;, Flowable&lt;T&gt;&gt; serializerJavaIO() {
+<span class="fc" id="L220">            return serializer(Serializers.&lt;T&gt;javaIO());</span>
+        }
+
+        /**
+         * Returns a Flowable Transformer that buffers items to disk (files).
+         * The serialization method passes through byte arrays directly for both
+         * writing and reading.
+         * 
+         * @return FlowableTransformer using the bytes serializer
+         */
+        public Function&lt;Observable&lt;byte[]&gt;, Flowable&lt;byte[]&gt;&gt; serializerBytes() {
+<span class="fc" id="L231">            return serializer(Serializers.bytes());</span>
+        }
+
+        public Function&lt;Observable&lt;String&gt;, Flowable&lt;String&gt;&gt; serializerUtf8() {
+<span class="nc" id="L235">            return serializer(Serializers.utf8());</span>
+        }
+
+        public &lt;T&gt; Function&lt;Observable&lt;T&gt;, Flowable&lt;T&gt;&gt; serializer(final Serializer&lt;T&gt; serializer) {
+<span class="fc" id="L239">            final Options options = new Options(fileFactory, pageSizeBytes, scheduler);</span>
+<span class="fc" id="L240">            return new Function&lt;Observable&lt;T&gt;, Flowable&lt;T&gt;&gt;() {</span>
+
+                @Override
+                public Flowable&lt;T&gt; apply(Observable&lt;T&gt; source) {
+<span class="fc" id="L244">                    return new FlowableOnBackpressureBufferToFile&lt;T&gt;(null, source, options,</span>
+                            serializer);
+                }
+            };
+        }
+
+        public &lt;T&gt; Function&lt;Observable&lt;T&gt;, Flowable&lt;T&gt;&gt; serializer(DataSerializer&lt;T&gt; ds) {
+<span class="nc" id="L251">            return serializer(Serializers.from(ds));</span>
+        }
+    }
+
+<span class="nc" id="L255">    private static final class FileFactoryHolder {</span>
+<span class="fc" id="L256">        private static final Callable&lt;File&gt; INSTANCE = new Callable&lt;File&gt;() {</span>
+            @Override
+            public File call() {
+                try {
+<span class="fc" id="L260">                    return File.createTempFile(DEFAULT_FILE_PREFIX, &quot;.obj&quot;);</span>
+<span class="nc" id="L261">                } catch (IOException e) {</span>
+<span class="nc" id="L262">                    throw new RuntimeException(e);</span>
+                }
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

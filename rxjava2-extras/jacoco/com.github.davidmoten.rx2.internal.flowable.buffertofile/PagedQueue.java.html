@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PagedQueue.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable.buffertofile</a> &gt; <span class="el_source">PagedQueue.java</span></div><h1>PagedQueue.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable.buffertofile;
+
+import java.io.File;
+import java.nio.ByteOrder;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+@SuppressWarnings(&quot;serial&quot;)
+public final class PagedQueue extends AtomicInteger {
+
+<span class="fc" id="L13">    private static final boolean isLittleEndian = ByteOrder</span>
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">            .nativeOrder() == ByteOrder.LITTLE_ENDIAN;</span>
+
+    private static final int EXTRA_PADDING_LIMIT = 64;
+    private static final int SIZE_MESSAGE_SIZE_FIELD = 4;
+    private static final int SIZE_PADDING_SIZE_FIELD = 1;
+    private static final int SIZE_MESSAGE_TYPE_FIELD = 1;
+    private static final int ALIGN_BYTES = 4;
+    private static final int MAX_PADDING_PER_FULL_MESSAGE = 32;
+    private static final int SIZE_HEADER_PRIMARY_PART = SIZE_MESSAGE_SIZE_FIELD
+            + SIZE_MESSAGE_TYPE_FIELD + SIZE_PADDING_SIZE_FIELD;
+
+    private final Pages pages;
+
+    private boolean readingFragments;
+    private byte[] messageBytesAccumulated;
+    private int indexBytesAccumulated;
+
+<span class="fc" id="L31">    public PagedQueue(Callable&lt;File&gt; fileFactory, int pageSize) {</span>
+<span class="fc" id="L32">        this.pages = new Pages(fileFactory, pageSize);</span>
+<span class="fc" id="L33">    }</span>
+
+    public void offer(byte[] bytes) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (getAndIncrement() != 0) {</span>
+<span class="nc" id="L37">            return;</span>
+        }
+        try {
+<span class="fc" id="L40">            int padding = padding(bytes.length);</span>
+<span class="fc" id="L41">            int avail = pages.avail();</span>
+<span class="fc" id="L42">            int fullMessageSize = fullMessageSize(bytes.length, padding);</span>
+            // header plus 4 bytes
+<span class="fc" id="L44">            int availAfter = avail - fullMessageSize;</span>
+
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (availAfter &gt;= 0) {</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">                if (availAfter &lt;= MAX_PADDING_PER_FULL_MESSAGE) {</span>
+<span class="fc" id="L48">                    padding += availAfter;</span>
+                }
+<span class="fc" id="L50">                writeFullMessage(bytes, padding);</span>
+            } else {
+<span class="fc" id="L52">                writeFragments(bytes, avail);</span>
+            }
+        } finally {
+<span class="fc" id="L55">            decrementAndGet();</span>
+<span class="fc" id="L56">        }</span>
+<span class="fc" id="L57">    }</span>
+
+    private void writeFullMessage(byte[] bytes, int padding) {
+<span class="fc" id="L60">        write(bytes, 0, bytes.length, padding, MessageType.FULL_MESSAGE, bytes.length);</span>
+<span class="fc" id="L61">    }</span>
+
+    private void writeFragments(byte[] bytes, int avail) {
+<span class="fc" id="L64">        int start = 0;</span>
+<span class="fc" id="L65">        int length = bytes.length;</span>
+        do {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            int extraHeaderBytes = start == 0 ? 4 : 0;</span>
+<span class="fc" id="L68">            int count = Math.min(avail - 8 - extraHeaderBytes, length);</span>
+<span class="fc" id="L69">            int padding = padding(count);</span>
+<span class="fc" id="L70">            int remaining = Math.max(0, avail - count - 6 - padding - extraHeaderBytes);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (remaining &lt;= EXTRA_PADDING_LIMIT)</span>
+<span class="fc" id="L72">                padding += remaining;</span>
+            // System.out.println(String.format(
+            // &quot;length=%s,start=%s,count=%s,padding=%s,remaining=%s,extraHeaderBytes=%s&quot;,
+            // length, start, count, padding, remaining, extraHeaderBytes));
+<span class="fc" id="L76">            write(bytes, start, count, padding, MessageType.FRAGMENT, bytes.length);</span>
+<span class="fc" id="L77">            start += count;</span>
+<span class="fc" id="L78">            length -= count;</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (length &gt; 0) {</span>
+<span class="fc" id="L80">                avail = pages.avail();</span>
+            }
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        } while (length &gt; 0);</span>
+<span class="fc" id="L83">    }</span>
+
+    private int fullMessageSize(int payloadLength, int padding) {
+<span class="fc" id="L86">        return SIZE_HEADER_PRIMARY_PART + padding + payloadLength;</span>
+    }
+
+    private static int padding(int payloadLength) {
+<span class="fc" id="L90">        int rem = (payloadLength + SIZE_PADDING_SIZE_FIELD + SIZE_MESSAGE_TYPE_FIELD) % ALIGN_BYTES;</span>
+        int padding;
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (rem == 0) {</span>
+<span class="fc" id="L93">            padding = 0;</span>
+        } else {
+<span class="fc" id="L95">            padding = ALIGN_BYTES - rem;</span>
+        }
+<span class="fc" id="L97">        return padding;</span>
+    }
+
+    private void write(byte[] bytes, int offset, int length, int padding,
+            final MessageType messageType, int totalLength) {
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        Preconditions.checkArgument(length != 0);</span>
+<span class="fc" id="L103">        pages.markForRewriteAndAdvance4Bytes();// messageSize left as 0</span>
+        // storeFence not required at this point like Aeron uses.
+        // UnsafeAccess.unsafe().storeFence();
+        // TODO optimize for BigEndian as well
+<span class="pc bpc" id="L107" title="1 of 4 branches missed.">        if (padding == 2 &amp;&amp; isLittleEndian) {</span>
+<span class="fc" id="L108">            pages.putInt(((messageType.value() &amp; 0xFF) &lt;&lt; 0) | (((byte) padding)) &lt;&lt; 8);</span>
+        } else {
+<span class="fc" id="L110">            pages.putByte(messageType.value()); // message type</span>
+<span class="fc" id="L111">            pages.putByte((byte) padding);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (padding &gt; 0) {</span>
+<span class="fc" id="L113">                pages.moveWritePosition(padding);</span>
+            }
+        }
+<span class="fc bfc" id="L116" title="All 4 branches covered.">        if (messageType == MessageType.FRAGMENT &amp;&amp; offset == 0) {</span>
+            // first fragment only of a sequence of fragments
+<span class="fc" id="L118">            pages.putInt(totalLength);</span>
+        }
+<span class="fc" id="L120">        pages.put(bytes, offset, length);</span>
+        // now that the message bytes are written we can set the length field in
+        // the header to indicate that the message is ready to be read
+<span class="fc" id="L123">        pages.putIntOrderedAtRewriteMark(length);</span>
+<span class="fc" id="L124">    }</span>
+
+    public byte[] poll() {
+        // loop here accumulating fragments if necessary
+        while (true) {
+<span class="fc" id="L129">            int length = pages.getIntVolatile();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (length == 0) {</span>
+                // not ready for read
+<span class="fc" id="L132">                pages.moveReadPosition(-4);</span>
+<span class="fc" id="L133">                return null;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            } else if (length == -1) {</span>
+                // at end of read queue
+                // System.out.println(&quot;at end of read queue&quot;);
+<span class="fc" id="L137">                return null;</span>
+            } else {
+                MessageType messageType;
+                byte padding;
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">                if (length % 4 == 0 &amp;&amp; isLittleEndian) {</span>
+                    // read message type and padding in one int read
+<span class="fc" id="L143">                    int i = pages.getInt();</span>
+<span class="fc" id="L144">                    messageType = MessageType.from((byte) i);</span>
+<span class="fc" id="L145">                    padding = (byte) ((i &gt;&gt; 8) &amp; 0xFF);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                    if (padding &gt; 2) {</span>
+<span class="fc" id="L147">                        pages.moveReadPosition(padding - 2);</span>
+                    }
+<span class="fc" id="L149">                } else {</span>
+                    // read message type and padding separately
+<span class="fc" id="L151">                    messageType = MessageType.from(pages.getByte());</span>
+<span class="fc" id="L152">                    padding = pages.getByte();</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">                    if (padding &gt; 0) {</span>
+<span class="fc" id="L154">                        pages.moveReadPosition(padding);</span>
+                    }
+                }
+<span class="fc bfc" id="L157" title="All 4 branches covered.">                if (!readingFragments &amp;&amp; messageType == MessageType.FRAGMENT) {</span>
+                    // is first fragment
+<span class="fc" id="L159">                    int lengthRemaining = pages.getInt();</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">                    if (messageBytesAccumulated == null) {</span>
+<span class="fc" id="L161">                        messageBytesAccumulated = new byte[lengthRemaining];</span>
+<span class="fc" id="L162">                        indexBytesAccumulated = 0;</span>
+                    }
+<span class="fc" id="L164">                    readingFragments = true;</span>
+                }
+<span class="fc" id="L166">                byte[] result = pages.get(length);</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                if (result.length == 0) {</span>
+<span class="nc" id="L168">                    return null;</span>
+                } else {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                    if (readingFragments) {</span>
+<span class="fc" id="L171">                        System.arraycopy(result, 0, messageBytesAccumulated, indexBytesAccumulated,</span>
+                                result.length);
+<span class="fc" id="L173">                        indexBytesAccumulated += result.length;</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                        if (indexBytesAccumulated == messageBytesAccumulated.length) {</span>
+<span class="fc" id="L175">                            readingFragments = false;</span>
+<span class="fc" id="L176">                            byte[] b = messageBytesAccumulated;</span>
+<span class="fc" id="L177">                            messageBytesAccumulated = null;</span>
+<span class="fc" id="L178">                            return b;</span>
+                        }
+                    } else {
+<span class="fc" id="L181">                        return result;</span>
+                    }
+                }
+            }
+<span class="fc" id="L185">        }</span>
+    }
+
+    private void closeWrite() {
+<span class="fc" id="L189">        incrementAndGet();</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        while (!compareAndSet(1, 2))</span>
+<span class="fc" id="L191">            ;</span>
+<span class="fc" id="L192">    }</span>
+
+    public void close() {
+        // to get to here no more reads will happen because close is called from
+        // the drain loop
+<span class="fc" id="L197">        closeWrite();</span>
+<span class="fc" id="L198">        pages.close();</span>
+<span class="fc" id="L199">        messageBytesAccumulated = null;</span>
+<span class="fc" id="L200">    }</span>
+
+<span class="pc" id="L202">    private static enum MessageType {</span>
+
+<span class="fc" id="L204">        FULL_MESSAGE(0), FRAGMENT(1);</span>
+
+        private final byte value;
+
+<span class="fc" id="L208">        private MessageType(int value) {</span>
+<span class="fc" id="L209">            this.value = (byte) value;</span>
+<span class="fc" id="L210">        }</span>
+
+        byte value() {
+<span class="fc" id="L213">            return value;</span>
+        }
+
+        static MessageType from(byte b) {
+<span class="fc bfc" id="L217" title="All 2 branches covered.">            if (b == 0)</span>
+<span class="fc" id="L218">                return MessageType.FULL_MESSAGE;</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">            else if (b == 1)</span>
+<span class="fc" id="L220">                return MessageType.FRAGMENT;</span>
+            else
+<span class="nc" id="L222">                throw new RuntimeException(&quot;unexpected&quot;);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

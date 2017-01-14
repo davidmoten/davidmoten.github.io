@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerStateMachine.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">TransformerStateMachine.java</span></div><h1>TransformerStateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.Callable;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
+import io.reactivex.FlowableTransformer;
+import io.reactivex.Notification;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiPredicate;
+import io.reactivex.functions.Cancellable;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Function3;
+import io.reactivex.functions.Predicate;
+
+public final class TransformerStateMachine&lt;State, In, Out&gt; implements FlowableTransformer&lt;In, Out&gt; {
+
+    private final Callable&lt;? extends State&gt; initialState;
+    private final Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition;
+    private final BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion;
+    private final BackpressureStrategy backpressureStrategy;
+    private final int requestBatchSize;
+
+    private TransformerStateMachine(Callable&lt;? extends State&gt; initialState,
+            Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition,
+            BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
+<span class="fc" id="L31">            BackpressureStrategy backpressureStrategy, int requestBatchSize) {</span>
+<span class="fc" id="L32">        Preconditions.checkNotNull(initialState);</span>
+<span class="fc" id="L33">        Preconditions.checkNotNull(transition);</span>
+<span class="fc" id="L34">        Preconditions.checkNotNull(completion);</span>
+<span class="fc" id="L35">        Preconditions.checkNotNull(backpressureStrategy);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        Preconditions.checkArgument(requestBatchSize &gt; 0,</span>
+                &quot;initialRequest must be greater than zero&quot;);
+<span class="fc" id="L38">        this.initialState = initialState;</span>
+<span class="fc" id="L39">        this.transition = transition;</span>
+<span class="fc" id="L40">        this.completion = completion;</span>
+<span class="fc" id="L41">        this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L42">        this.requestBatchSize = requestBatchSize;</span>
+<span class="fc" id="L43">    }</span>
+
+    public static &lt;State, In, Out&gt; FlowableTransformer&lt;In, Out&gt; create(
+            Callable&lt;? extends State&gt; initialState,
+            Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition,
+            BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
+            BackpressureStrategy backpressureStrategy, int requestBatchSize) {
+<span class="fc" id="L50">        return new TransformerStateMachine&lt;State, In, Out&gt;(initialState, transition, completion,</span>
+                backpressureStrategy, requestBatchSize);
+    }
+
+    @Override
+    public Flowable&lt;Out&gt; apply(final Flowable&lt;In&gt; source) {
+        // use defer so we can have a single state reference for each
+        // subscription
+<span class="fc" id="L58">        return Flowable.defer(new Callable&lt;Flowable&lt;Out&gt;&gt;() {</span>
+            @Override
+            public Flowable&lt;Out&gt; call() throws Exception {
+<span class="fc" id="L61">                Mutable&lt;State&gt; state = new Mutable&lt;State&gt;(initialState.call());</span>
+<span class="fc" id="L62">                return source.materialize()</span>
+                        // do state transitions and emit notifications
+                        // use flatMap to emit notification values
+<span class="fc" id="L65">                        .flatMap(execute(transition, completion, state, backpressureStrategy),</span>
+<span class="fc" id="L66">                                requestBatchSize)</span>
+                        // complete if we encounter an unsubscribed sentinel
+<span class="fc" id="L68">                        .takeWhile(NOT_UNSUBSCRIBED)</span>
+                        // flatten notifications to a stream which will enable
+                        // early termination from the state machine if desired
+<span class="fc" id="L71">                        .dematerialize();</span>
+            }
+        });
+    }
+
+    private static &lt;State, Out, In&gt; Function&lt;Notification&lt;In&gt;, Flowable&lt;Notification&lt;Out&gt;&gt;&gt; execute(
+            final Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition,
+            final BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
+            final Mutable&lt;State&gt; state, final BackpressureStrategy backpressureStrategy) {
+
+<span class="fc" id="L81">        return new Function&lt;Notification&lt;In&gt;, Flowable&lt;Notification&lt;Out&gt;&gt;&gt;() {</span>
+
+            @Override
+            public Flowable&lt;Notification&lt;Out&gt;&gt; apply(final Notification&lt;In&gt; in) {
+
+<span class="fc" id="L86">                return Flowable.create(new FlowableOnSubscribe&lt;Notification&lt;Out&gt;&gt;() {</span>
+
+                    @Override
+                    public void subscribe(FlowableEmitter&lt;Notification&lt;Out&gt;&gt; emitter)
+                            throws Exception {
+<span class="fc" id="L91">                        FlowableEmitter&lt;Out&gt; w = wrap(emitter);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                        if (in.isOnNext()) {</span>
+<span class="fc" id="L93">                            state.value = transition.apply(state.value, in.getValue(), w);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                            if (!emitter.isCancelled())</span>
+<span class="fc" id="L95">                                emitter.onComplete();</span>
+                            else {
+                                // this is a special emission to indicate that
+                                // the transition called unsubscribe. It will be
+                                // filtered later.
+<span class="fc" id="L100">                                emitter.onNext(UnsubscribedNotificationHolder</span>
+<span class="fc" id="L101">                                        .&lt;Out&gt; unsubscribedNotification());</span>
+                            }
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                        } else if (in.isOnComplete()) {</span>
+<span class="fc bfc" id="L104" title="All 4 branches covered.">                            if (completion.test(state.value, w) &amp;&amp; !emitter.isCancelled()) {</span>
+<span class="fc" id="L105">                                w.onComplete();</span>
+                            }
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                        } else if (!emitter.isCancelled()) {</span>
+<span class="fc" id="L108">                            w.onError(in.getError());</span>
+                        }
+<span class="fc" id="L110">                    }</span>
+
+                }, backpressureStrategy);
+            }
+        };
+    }
+
+<span class="nc" id="L117">    private static final class UnsubscribedNotificationHolder {</span>
+<span class="fc" id="L118">        private static final Notification&lt;Object&gt; INSTANCE = Notification</span>
+<span class="fc" id="L119">                .createOnNext(new Object());</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; Notification&lt;T&gt; unsubscribedNotification() {
+<span class="fc" id="L123">            return (Notification&lt;T&gt;) INSTANCE;</span>
+        }
+    }
+
+<span class="fc" id="L127">    private static final Predicate&lt;Notification&lt;?&gt;&gt; NOT_UNSUBSCRIBED = new Predicate&lt;Notification&lt;?&gt;&gt;() {</span>
+
+        @Override
+        public boolean test(Notification&lt;?&gt; t) {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            return t != UnsubscribedNotificationHolder.unsubscribedNotification();</span>
+        }
+
+    };
+
+    private static final class Mutable&lt;T&gt; {
+        T value;
+
+<span class="fc" id="L139">        Mutable(T value) {</span>
+<span class="fc" id="L140">            this.value = value;</span>
+<span class="fc" id="L141">        }</span>
+    }
+
+    private static &lt;Out&gt; NotificationEmitter&lt;Out&gt; wrap(
+            FlowableEmitter&lt;? super Notification&lt;Out&gt;&gt; emitter) {
+<span class="fc" id="L146">        return new NotificationEmitter&lt;Out&gt;(emitter);</span>
+    }
+
+    private static final class NotificationEmitter&lt;Out&gt; implements FlowableEmitter&lt;Out&gt; {
+
+        private final FlowableEmitter&lt;? super Notification&lt;Out&gt;&gt; emitter;
+
+<span class="fc" id="L153">        NotificationEmitter(FlowableEmitter&lt;? super Notification&lt;Out&gt;&gt; emitter) {</span>
+<span class="fc" id="L154">            this.emitter = emitter;</span>
+<span class="fc" id="L155">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L159">            emitter.onNext(Notification.&lt;Out&gt; createOnComplete());</span>
+<span class="fc" id="L160">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L164">            emitter.onNext(Notification.&lt;Out&gt; createOnError(e));</span>
+<span class="fc" id="L165">        }</span>
+
+        @Override
+        public void onNext(Out t) {
+<span class="fc" id="L169">            emitter.onNext(Notification.createOnNext(t));</span>
+<span class="fc" id="L170">        }</span>
+
+        @Override
+        public void setDisposable(Disposable s) {
+<span class="nc" id="L174">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public void setCancellable(Cancellable c) {
+<span class="nc" id="L179">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public long requested() {
+<span class="nc" id="L184">            return emitter.requested();</span>
+        }
+
+        @Override
+        public boolean isCancelled() {
+<span class="fc" id="L189">            return emitter.isCancelled();</span>
+
+        }
+
+        @Override
+        public FlowableEmitter&lt;Out&gt; serialize() {
+<span class="nc" id="L195">            throw new UnsupportedOperationException();</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SchedulerWithId.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal</a> &gt; <span class="el_source">SchedulerWithId.java</span></div><h1>SchedulerWithId.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal;
+
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import io.reactivex.Scheduler;
+import io.reactivex.disposables.Disposable;
+
+public final class SchedulerWithId extends Scheduler {
+
+    private final Scheduler scheduler;
+    private final String id;
+<span class="fc" id="L14">    private final static Pattern pattern = Pattern.compile(&quot;\\bschedId=\\[[^\\]]+\\]+\\b&quot;);</span>
+
+<span class="fc" id="L16">    public SchedulerWithId(Scheduler scheduler, String id) {</span>
+<span class="fc" id="L17">        this.scheduler = scheduler;</span>
+<span class="fc" id="L18">        this.id = &quot;[&quot; + id + &quot;]&quot;;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public Worker createWorker() {
+
+<span class="fc" id="L24">        final Worker worker = scheduler.createWorker();</span>
+<span class="fc" id="L25">        Worker w = new Worker() {</span>
+
+            @Override
+            public Disposable schedule(final Runnable action, long delayTime, TimeUnit unit) {
+<span class="fc" id="L29">                Runnable a = new Runnable() {</span>
+                    @Override
+                    public void run() {
+<span class="fc" id="L32">                        String name = null;</span>
+                        try {
+<span class="fc" id="L34">                            name = setThreadName();</span>
+<span class="fc" id="L35">                            action.run();</span>
+                        } finally {
+<span class="pc bpc" id="L37" title="3 of 4 branches missed.">                            if (name != null) {</span>
+<span class="pc" id="L38">                                Thread.currentThread().setName(name);</span>
+                            }
+                        }
+<span class="fc" id="L41">                    }</span>
+                };
+<span class="fc" id="L43">                return worker.schedule(a, delayTime, unit);</span>
+            }
+
+            @Override
+            public void dispose() {
+<span class="fc" id="L48">                worker.dispose();</span>
+<span class="fc" id="L49">            }</span>
+
+            @Override
+            public boolean isDisposed() {
+<span class="fc" id="L53">                return worker.isDisposed();</span>
+            }
+
+        };
+<span class="fc" id="L57">        return w;</span>
+
+    }
+
+    private String setThreadName() {
+<span class="fc" id="L62">        String name = Thread.currentThread().getName();</span>
+<span class="fc" id="L63">        String newName = updateNameWithId(name, id);</span>
+<span class="fc" id="L64">        Thread.currentThread().setName(newName);</span>
+<span class="fc" id="L65">        return name;</span>
+    }
+
+    private static String updateNameWithId(String name, String id) {
+        final String newName;
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (name == null) {</span>
+<span class="nc" id="L71">            newName = id;</span>
+        } else {
+<span class="fc" id="L73">            Matcher matcher = pattern.matcher(name);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (matcher.find()) {</span>
+<span class="nc" id="L75">                newName = name.replace(matcher.group(), &quot;schedId=&quot; + id);</span>
+            } else {
+<span class="fc" id="L77">                newName = name + &quot;|schedId=&quot; + id;</span>
+            }
+        }
+<span class="fc" id="L80">        return newName;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

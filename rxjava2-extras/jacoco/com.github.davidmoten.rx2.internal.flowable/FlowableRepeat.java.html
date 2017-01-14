@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableRepeat.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableRepeat.java</span></div><h1>FlowableRepeat.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.reactivex.Flowable;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+
+public final class FlowableRepeat&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final T value;
+    private final long count;
+
+<span class="fc" id="L17">    public FlowableRepeat(T value, long count) {</span>
+<span class="fc" id="L18">        this.value = value;</span>
+<span class="fc" id="L19">        this.count = count;</span>
+<span class="fc" id="L20">    }</span>
+
+    @Override
+    protected void subscribeActual(org.reactivestreams.Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L24">        RepeatSubscription&lt;T&gt; sub = new RepeatSubscription&lt;T&gt;(child, value, count);</span>
+<span class="fc" id="L25">        child.onSubscribe(sub);</span>
+<span class="fc" id="L26">    }</span>
+
+    @SuppressWarnings(&quot;serial&quot;)
+    private static class RepeatSubscription&lt;T&gt; extends AtomicLong implements Subscription {
+
+        private final Subscriber&lt;? super T&gt; child;
+        private final T value;
+        private final long count;
+
+        private volatile boolean cancelled;
+        private long counter;
+
+<span class="fc" id="L38">        public RepeatSubscription(Subscriber&lt;? super T&gt; child, T value, long count) {</span>
+<span class="fc" id="L39">            this.child = child;</span>
+<span class="fc" id="L40">            this.value = value;</span>
+<span class="fc" id="L41">            this.count = count;</span>
+<span class="fc" id="L42">            this.counter = count;</span>
+<span class="fc" id="L43">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                if (BackpressureHelper.add(this, n) == 0) {</span>
+<span class="fc" id="L49">                    long requested = n;</span>
+<span class="fc" id="L50">                    long emitted = 0;</span>
+                    do {
+<span class="fc" id="L52">                        emitted = requested;</span>
+<span class="fc bfc" id="L53" title="All 8 branches covered.">                        while (requested-- &gt; 0 &amp;&amp; !cancelled &amp;&amp; (count == -1 || counter-- &gt; 0)) {</span>
+<span class="fc" id="L54">                            child.onNext(value);</span>
+                        }
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                    } while ((requested = this.addAndGet(-emitted)) &gt; 0);</span>
+<span class="fc bfc" id="L57" title="All 4 branches covered.">                    if (count &gt;= 0 &amp;&amp; !cancelled) {</span>
+<span class="fc" id="L58">                        child.onComplete();</span>
+                    }
+                }
+            }
+<span class="fc" id="L62">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L66">            this.cancelled = true;</span>
+<span class="fc" id="L67">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableServerSocket.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableServerSocket.java</span></div><h1>FlowableServerSocket.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.Callable;
+
+import com.github.davidmoten.rx2.Bytes;
+import com.github.davidmoten.rx2.Consumers;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+
+public final class FlowableServerSocket {
+
+<span class="fc" id="L23">    private FlowableServerSocket() {</span>
+        // prevent instantiation
+<span class="fc" id="L25">    }</span>
+
+    public static Flowable&lt;Flowable&lt;byte[]&gt;&gt; create(
+            final Callable&lt;? extends ServerSocket&gt; serverSocketFactory, final int timeoutMs,
+            final int bufferSize, Action preAcceptAction, int acceptTimeoutMs,
+            Predicate&lt;? super Socket&gt; acceptSocket) {
+<span class="fc" id="L31">        Function&lt;ServerSocket, Flowable&lt;Flowable&lt;byte[]&gt;&gt;&gt; FlowableFactory = createFlowableFactory(</span>
+                timeoutMs, bufferSize, preAcceptAction, acceptSocket);
+<span class="fc" id="L33">        return Flowable.&lt;Flowable&lt;byte[]&gt;, ServerSocket&gt; using( //</span>
+<span class="fc" id="L34">                createServerSocketFactory(serverSocketFactory, acceptTimeoutMs), //</span>
+                FlowableFactory, //
+<span class="fc" id="L36">                new Consumer&lt;ServerSocket&gt;() {</span>
+                    // Note that in java 1.6, ServerSocket does not implement
+                    // Closeable
+                    @Override
+                    public void accept(ServerSocket ss) throws Exception {
+<span class="fc" id="L41">                        ss.close();</span>
+<span class="fc" id="L42">                    }</span>
+                }, //
+                true);
+    }
+
+    private static Callable&lt;ServerSocket&gt; createServerSocketFactory(
+            final Callable&lt;? extends ServerSocket&gt; serverSocketFactory, final int acceptTimeoutMs) {
+<span class="fc" id="L49">        return new Callable&lt;ServerSocket&gt;() {</span>
+            @Override
+            public ServerSocket call() throws Exception {
+<span class="fc" id="L52">                return createServerSocket(serverSocketFactory, acceptTimeoutMs);</span>
+            }
+        };
+    }
+
+    private static ServerSocket createServerSocket(
+            Callable&lt;? extends ServerSocket&gt; serverSocketCreator, long timeoutMs) throws Exception {
+<span class="fc" id="L59">        ServerSocket s = serverSocketCreator.call();</span>
+<span class="fc" id="L60">        s.setSoTimeout((int) timeoutMs);</span>
+<span class="fc" id="L61">        return s;</span>
+    }
+
+    private static Function&lt;ServerSocket, Flowable&lt;Flowable&lt;byte[]&gt;&gt;&gt; createFlowableFactory(
+            final int timeoutMs, final int bufferSize, final Action preAcceptAction,
+            final Predicate&lt;? super Socket&gt; acceptSocket) {
+<span class="fc" id="L67">        return new Function&lt;ServerSocket, Flowable&lt;Flowable&lt;byte[]&gt;&gt;&gt;() {</span>
+            @Override
+            public Flowable&lt;Flowable&lt;byte[]&gt;&gt; apply(ServerSocket serverSocket) {
+<span class="fc" id="L70">                return createServerSocketFlowable(serverSocket, timeoutMs, bufferSize,</span>
+                        preAcceptAction, acceptSocket);
+            }
+        };
+    }
+
+    private static Flowable&lt;Flowable&lt;byte[]&gt;&gt; createServerSocketFlowable(
+            final ServerSocket serverSocket, final long timeoutMs, final int bufferSize,
+            final Action preAcceptAction, final Predicate&lt;? super Socket&gt; acceptSocket) {
+<span class="fc" id="L79">        return Flowable.generate( //</span>
+<span class="fc" id="L80">                new Consumer&lt;Emitter&lt;Flowable&lt;byte[]&gt;&gt;&gt;() {</span>
+                    @Override
+                    public void accept(Emitter&lt;Flowable&lt;byte[]&gt;&gt; emitter) throws Exception {
+<span class="fc" id="L83">                        acceptConnection(timeoutMs, bufferSize, serverSocket, emitter,</span>
+                                preAcceptAction, acceptSocket);
+<span class="fc" id="L85">                    }</span>
+                });
+    }
+
+    private static void acceptConnection(long timeoutMs, int bufferSize, ServerSocket ss,
+            Emitter&lt;Flowable&lt;byte[]&gt;&gt; emitter, Action preAcceptAction,
+            Predicate&lt;? super Socket&gt; acceptSocket) {
+        Socket socket;
+        while (true) {
+            try {
+<span class="fc" id="L95">                preAcceptAction.run();</span>
+<span class="fc" id="L96">                socket = ss.accept();</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                if (!acceptSocket.test(socket)) {</span>
+<span class="fc" id="L98">                    closeQuietly(socket);</span>
+                } else {
+<span class="fc" id="L100">                    emitter.onNext(createSocketFlowable(socket, timeoutMs, bufferSize));</span>
+<span class="fc" id="L101">                    break;</span>
+                }
+<span class="fc" id="L103">            } catch (SocketTimeoutException e) {</span>
+                // timed out so will loop around again
+<span class="fc" id="L105">            } catch (Throwable e) {</span>
+                // if the server socket has been closed then this is most likely
+                // an unsubscribe so we don't try to report an error which would
+                // just end up in RxJavaPlugins.onError as a stack trace in the
+                // console.
+<span class="pc bpc" id="L110" title="2 of 4 branches missed.">                if (e instanceof SocketException &amp;&amp; (&quot;Socket closed&quot;.equals(e.getMessage())</span>
+                        || &quot;Socket operation on nonsocket: configureBlocking&quot;
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                                .equals(e.getMessage()))) {</span>
+<span class="fc" id="L113">                    break;</span>
+                } else {
+                    // unknown problem
+<span class="nc" id="L116">                    emitter.onError(e);</span>
+<span class="nc" id="L117">                    break;</span>
+                }
+<span class="fc" id="L119">            }</span>
+        }
+<span class="fc" id="L121">    }</span>
+
+    // visible for testing
+    static void closeQuietly(Socket socket) {
+        try {
+<span class="fc" id="L126">            socket.close();</span>
+<span class="nc" id="L127">        } catch (IOException e) {</span>
+            // ignore exception
+<span class="fc" id="L129">        }</span>
+<span class="fc" id="L130">    }</span>
+
+    private static Flowable&lt;byte[]&gt; createSocketFlowable(final Socket socket, long timeoutMs,
+            final int bufferSize) {
+<span class="fc" id="L134">        setTimeout(socket, timeoutMs);</span>
+<span class="fc" id="L135">        return Flowable.using( //</span>
+<span class="fc" id="L136">                new Callable&lt;InputStream&gt;() {</span>
+                    @Override
+                    public InputStream call() throws Exception {
+<span class="fc" id="L139">                        return socket.getInputStream();</span>
+                    }
+                }, //
+<span class="fc" id="L142">                new Function&lt;InputStream, Flowable&lt;byte[]&gt;&gt;() {</span>
+                    @Override
+                    public Flowable&lt;byte[]&gt; apply(InputStream is) {
+<span class="fc" id="L145">                        return Bytes.from(is, bufferSize);</span>
+                    }
+                }, //
+<span class="fc" id="L148">                Consumers.close(), //</span>
+                true);
+    }
+
+    private static void setTimeout(Socket socket, long timeoutMs) {
+        try {
+<span class="fc" id="L154">            socket.setSoTimeout((int) timeoutMs);</span>
+<span class="nc" id="L155">        } catch (SocketException e) {</span>
+<span class="nc" id="L156">            throw new RuntimeException(e);</span>
+<span class="fc" id="L157">        }</span>
+<span class="fc" id="L158">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableStringSplitSimple.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableStringSplitSimple.java</span></div><h1>FlowableStringSplitSimple.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.internal.fuseable.SimpleQueue;
+import io.reactivex.internal.queue.SpscArrayQueue;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+import io.reactivex.internal.util.NotificationLite;
+
+public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
+
+    private final Flowable&lt;String&gt; source;
+    private final String delimiter;
+
+<span class="fc" id="L24">    public FlowableStringSplitSimple(Flowable&lt;String&gt; source, String delimiter) {</span>
+<span class="fc" id="L25">        Preconditions.checkNotNull(source);</span>
+<span class="fc" id="L26">        Preconditions.checkNotNull(delimiter);</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        Preconditions.checkArgument(delimiter.length() &gt; 0);</span>
+<span class="fc" id="L28">        this.source = source;</span>
+<span class="fc" id="L29">        this.delimiter = delimiter;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super String&gt; s) {
+<span class="fc" id="L34">        source.subscribe(new StringSplitSubscriber(s, delimiter));</span>
+<span class="fc" id="L35">    }</span>
+
+    @SuppressWarnings(&quot;serial&quot;)
+    private static final class StringSplitSubscriber extends AtomicLong
+            implements Subscriber&lt;String&gt;, Subscription {
+
+        private final Subscriber&lt;? super String&gt; actual;
+        // queue of notifications
+<span class="fc" id="L43">        private final transient SimpleQueue&lt;Object&gt; queue = new SpscArrayQueue&lt;Object&gt;(16);</span>
+<span class="fc" id="L44">        private final AtomicInteger wip = new AtomicInteger();</span>
+<span class="fc" id="L45">        private final AtomicBoolean once = new AtomicBoolean();</span>
+
+        private final DelimitedStringLinkedList ss;
+        private volatile boolean cancelled;
+        private Subscription parent;
+        private boolean unbounded;
+
+<span class="fc" id="L52">        StringSplitSubscriber(Subscriber&lt;? super String&gt; actual, String delimiter) {</span>
+<span class="fc" id="L53">            this.actual = actual;</span>
+<span class="fc" id="L54">            this.ss = new DelimitedStringLinkedList(delimiter);</span>
+<span class="fc" id="L55">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription subscription) {
+<span class="fc" id="L59">            this.parent = subscription;</span>
+<span class="fc" id="L60">            actual.onSubscribe(this);</span>
+<span class="fc" id="L61">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L65">            cancelled = true;</span>
+<span class="fc" id="L66">            parent.cancel();</span>
+<span class="fc" id="L67">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L72">                BackpressureHelper.add(this, n);</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                if (once.compareAndSet(false, true)) {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">                    if (n == Long.MAX_VALUE) {</span>
+<span class="fc" id="L75">                        parent.request(Long.MAX_VALUE);</span>
+<span class="fc" id="L76">                        unbounded = true;</span>
+                    } else {
+<span class="fc" id="L78">                        parent.request(1);</span>
+                    }
+                }
+<span class="fc" id="L81">                drain();</span>
+            }
+<span class="fc" id="L83">        }</span>
+
+        @Override
+        public void onNext(String t) {
+<span class="fc" id="L87">            queue.offer(NotificationLite.next(t));</span>
+<span class="fc" id="L88">            drain();</span>
+<span class="fc" id="L89">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L93">            queue.offer(NotificationLite.complete());</span>
+<span class="fc" id="L94">            drain();</span>
+<span class="fc" id="L95">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L99">            queue.offer(NotificationLite.error(e));</span>
+<span class="fc" id="L100">            drain();</span>
+<span class="fc" id="L101">        }</span>
+
+        private void drain() {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (wip.getAndIncrement() != 0) {</span>
+<span class="fc" id="L105">                return;</span>
+            }
+<span class="fc" id="L107">            int missed = 1;</span>
+            while (true) {
+<span class="fc" id="L109">                long r = get(); // requested</span>
+<span class="fc" id="L110">                long e = 0; // emitted</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                while (e != r) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                    if (cancelled) {</span>
+<span class="fc" id="L113">                        return;</span>
+                    }
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                    if (find()) {</span>
+<span class="fc" id="L116">                        e++;</span>
+                    } else {
+<span class="fc" id="L118">                        Object o = null;</span>
+                        try {
+<span class="fc" id="L120">                            o = queue.poll();</span>
+<span class="nc" id="L121">                        } catch (Exception e1) {</span>
+<span class="nc" id="L122">                            o = NotificationLite.error(e1);</span>
+<span class="fc" id="L123">                        }</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                        if (o == null) {</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                            if (!unbounded) {</span>
+<span class="fc" id="L126">                                parent.request(1);</span>
+                            }
+                            break;
+<span class="fc bfc" id="L129" title="All 2 branches covered.">                        } else if (NotificationLite.isComplete(o)) {</span>
+<span class="fc" id="L130">                            String remaining = ss.remaining();</span>
+                            final boolean checkCancelled;
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                            if (remaining != null) {</span>
+<span class="fc" id="L133">                                ss.clear();</span>
+<span class="fc" id="L134">                                queue.clear();</span>
+<span class="fc" id="L135">                                actual.onNext(remaining);</span>
+<span class="fc" id="L136">                                e++;</span>
+<span class="fc" id="L137">                                checkCancelled = true;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                            } else if (ss.addCalled()) {</span>
+<span class="fc" id="L139">                                ss.clear();</span>
+<span class="fc" id="L140">                                queue.clear();</span>
+<span class="fc" id="L141">                                actual.onNext(&quot;&quot;);</span>
+<span class="fc" id="L142">                                e++;</span>
+<span class="fc" id="L143">                                checkCancelled = true;</span>
+                            } else {
+<span class="fc" id="L145">                                checkCancelled = false;</span>
+                            }
+<span class="pc bpc" id="L147" title="1 of 4 branches missed.">                            if (!checkCancelled || !cancelled) {</span>
+<span class="fc" id="L148">                                actual.onComplete();</span>
+                            }
+<span class="fc" id="L150">                            return;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">                        } else if (NotificationLite.isError(o)) {</span>
+<span class="fc" id="L152">                            ss.clear();</span>
+<span class="fc" id="L153">                            queue.clear();</span>
+<span class="fc" id="L154">                            actual.onError(NotificationLite.getError(o));</span>
+<span class="fc" id="L155">                            return;</span>
+                        } else {
+<span class="fc" id="L157">                            ss.add((String) o);</span>
+                        }
+<span class="fc" id="L159">                    }</span>
+                }
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                if (e &gt; 0) {</span>
+<span class="fc" id="L162">                    BackpressureHelper.produced(this, e);</span>
+                }
+<span class="fc" id="L164">                missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L166">                    return;</span>
+                }
+<span class="fc" id="L168">            }</span>
+        }
+
+        /**
+         * Returns true if and only if a value emitted.
+         * 
+         * @return true if and only if a value emitted
+         */
+        private boolean find() {
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">            if (ss == null) {</span>
+<span class="nc" id="L178">                return false;</span>
+            }
+<span class="fc" id="L180">            String s = ss.next();</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            if (s != null) {</span>
+<span class="fc" id="L182">                actual.onNext(s);</span>
+<span class="fc" id="L183">                return true;</span>
+            } else {
+<span class="fc" id="L185">                return false;</span>
+            }
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

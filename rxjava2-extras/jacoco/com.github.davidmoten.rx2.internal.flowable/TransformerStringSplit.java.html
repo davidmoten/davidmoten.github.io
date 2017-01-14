@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>TransformerStringSplit.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">TransformerStringSplit.java</span></div><h1>TransformerStringSplit.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
+
+import com.github.davidmoten.rx2.Callables;
+import com.github.davidmoten.rx2.FlowableTransformers;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableTransformer;
+import io.reactivex.functions.BiPredicate;
+import io.reactivex.functions.Function3;
+
+public final class TransformerStringSplit {
+
+<span class="fc" id="L17">    private TransformerStringSplit() {</span>
+        // prevent instantiation
+<span class="fc" id="L19">    }</span>
+
+    public static &lt;T&gt; FlowableTransformer&lt;String, String&gt; split(final String pattern,
+            final Pattern compiledPattern, final BackpressureStrategy backpressureStrategy,
+            int batchSize) {
+<span class="fc" id="L24">        Callable&lt;String&gt; initialState = Callables.constant(null);</span>
+<span class="fc" id="L25">        Function3&lt;String, String, FlowableEmitter&lt;String&gt;, String&gt; transition = new Function3&lt;String, String, FlowableEmitter&lt;String&gt;, String&gt;() {</span>
+
+            @Override
+            public String apply(String leftOver, String s, FlowableEmitter&lt;String&gt; emitter) {
+                // prepend leftover to the string before splitting
+<span class="fc bfc" id="L30" title="All 2 branches covered.">                if (leftOver != null) {</span>
+<span class="fc" id="L31">                    s = leftOver + s;</span>
+                }
+
+                String[] parts;
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                if (compiledPattern != null) {</span>
+<span class="fc" id="L36">                    parts = compiledPattern.split(s, -1);</span>
+                } else {
+<span class="fc" id="L38">                    parts = s.split(pattern, -1);</span>
+                }
+
+                // can emit all parts except the last part because it hasn't
+                // been terminated by the pattern/end-of-stream yet
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                for (int i = 0; i &lt; parts.length - 1; i++) {</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">                    if (emitter.isCancelled()) {</span>
+                        // won't be used so can return null
+<span class="nc" id="L46">                        return null;</span>
+                    }
+<span class="fc" id="L48">                    emitter.onNext(parts[i]);</span>
+                }
+
+                // we have to assign the last part as leftOver because we
+                // don't know if it has been terminated yet
+<span class="fc" id="L53">                return parts[parts.length - 1];</span>
+            }
+        };
+
+<span class="fc" id="L57">        BiPredicate&lt;String, FlowableEmitter&lt;String&gt;&gt; completion = new BiPredicate&lt;String, FlowableEmitter&lt;String&gt;&gt;() {</span>
+
+            @Override
+            public boolean test(String leftOver, FlowableEmitter&lt;String&gt; emitter) {
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">                if (leftOver != null &amp;&amp; !emitter.isCancelled())</span>
+<span class="fc" id="L62">                    emitter.onNext(leftOver);</span>
+                // TODO is this check needed?
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                if (!emitter.isCancelled())</span>
+<span class="fc" id="L65">                    emitter.onComplete();</span>
+<span class="fc" id="L66">                return true;</span>
+            }
+        };
+<span class="fc" id="L69">        return FlowableTransformers.stateMachine(initialState, transition, completion, backpressureStrategy,</span>
+                batchSize);
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

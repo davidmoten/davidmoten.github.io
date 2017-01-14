@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SchedulerHelper.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">SchedulerHelper.java</span></div><h1>SchedulerHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import com.github.davidmoten.rx2.internal.SchedulerWithId;
+
+import io.reactivex.Scheduler;
+import io.reactivex.Scheduler.Worker;
+
+public final class SchedulerHelper {
+
+<span class="fc" id="L13">    private SchedulerHelper() {</span>
+        // prevent instantiation
+<span class="fc" id="L15">    }</span>
+
+    public static Scheduler withThreadIdFromCallSite(Scheduler scheduler) {
+<span class="fc" id="L18">        return new SchedulerWithId(scheduler, describeCallSite());</span>
+    }
+
+    public static Scheduler withThreadId(Scheduler scheduler, String id) {
+<span class="fc" id="L22">        return new SchedulerWithId(scheduler, id);</span>
+    }
+
+    private static String describeCallSite() {
+<span class="fc" id="L26">        StackTraceElement[] elements = Thread.currentThread().getStackTrace();</span>
+<span class="fc" id="L27">        StackTraceElement e = elements[3];</span>
+<span class="fc" id="L28">        return e.getClassName() + &quot;:&quot; + e.getMethodName() + &quot;:&quot; + e.getLineNumber();</span>
+    }
+
+    public static void blockUntilWorkFinished(Scheduler scheduler, int numThreads, long timeout,
+            TimeUnit unit) {
+<span class="fc" id="L33">        final CountDownLatch latch = new CountDownLatch(numThreads);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        for (int i = 1; i &lt;= numThreads; i++) {</span>
+<span class="fc" id="L35">            final Worker worker = scheduler.createWorker();</span>
+<span class="fc" id="L36">            worker.schedule(new Runnable() {</span>
+                @Override
+                public void run() {
+<span class="fc" id="L39">                    worker.dispose();</span>
+<span class="fc" id="L40">                    latch.countDown();</span>
+<span class="fc" id="L41">                }</span>
+            });
+        }
+        try {
+<span class="fc" id="L45">            boolean finished = latch.await(timeout, unit);</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            if (!finished) {</span>
+<span class="nc" id="L47">                throw new RuntimeException(&quot;timeout occured waiting for work to finish&quot;);</span>
+            }
+<span class="nc" id="L49">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L50">            throw new RuntimeException(e);</span>
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">    }</span>
+
+    public static void blockUntilWorkFinished(Scheduler scheduler, int numThreads) {
+<span class="fc" id="L55">        blockUntilWorkFinished(scheduler, numThreads, 1, TimeUnit.MINUTES);</span>
+<span class="fc" id="L56">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

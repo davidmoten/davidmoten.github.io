@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>StateMachine.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">StateMachine.java</span></div><h1>StateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+
+import java.util.concurrent.Callable;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableTransformer;
+import io.reactivex.functions.BiPredicate;
+import io.reactivex.functions.Function3;
+
+public final class StateMachine {
+
+<span class="fc" id="L13">    private StateMachine() {</span>
+        // prevent instantiation
+<span class="fc" id="L15">    }</span>
+
+    public interface Transition&lt;State, In, Out&gt;
+            extends Function3&lt;State, In, FlowableEmitter&lt;Out&gt;, State&gt; {
+
+        // override so IDEs have better suggestions for parameters
+        @Override
+        State apply(State state, In value, FlowableEmitter&lt;Out&gt; FlowableEmitter);
+
+    }
+
+    public interface Completion&lt;State, Out&gt; extends BiPredicate&lt;State, FlowableEmitter&lt;Out&gt;&gt; {
+
+        // override so IDEs have better suggestions for parameters
+        @Override
+        boolean test(State state, FlowableEmitter&lt;Out&gt; FlowableEmitter);
+
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L35">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="fc" id="L40">        private Builder() {</span>
+            // prevent instantiation from other packages
+<span class="fc" id="L42">        }</span>
+
+        public &lt;State&gt; Builder2&lt;State&gt; initialStateFactory(Callable&lt;State&gt; initialState) {
+<span class="fc" id="L45">            return new Builder2&lt;State&gt;(initialState);</span>
+        }
+
+        public &lt;State&gt; Builder2&lt;State&gt; initialState(final State initialState) {
+<span class="fc" id="L49">            return initialStateFactory(Callables.constant(initialState));</span>
+        }
+
+    }
+
+    public static final class Builder2&lt;State&gt; {
+
+        private final Callable&lt;State&gt; initialState;
+
+<span class="fc" id="L58">        private Builder2(Callable&lt;State&gt; initialState) {</span>
+<span class="fc" id="L59">            this.initialState = initialState;</span>
+<span class="fc" id="L60">        }</span>
+
+        public &lt;In, Out&gt; Builder3&lt;State, In, Out&gt; transition(
+                Transition&lt;State, In, Out&gt; transition) {
+<span class="fc" id="L64">            return new Builder3&lt;State, In, Out&gt;(initialState, transition);</span>
+        }
+
+    }
+
+    public static final class Builder3&lt;State, In, Out&gt; {
+
+        private static final int DEFAULT_REQUEST_SIZE = 1;
+
+        private final Callable&lt;State&gt; initialState;
+        private final Transition&lt;State, In, Out&gt; transition;
+<span class="fc" id="L75">        private Completion&lt;State, Out&gt; completion = CompletionAlwaysTrueHolder.instance();</span>
+<span class="fc" id="L76">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+<span class="fc" id="L77">        private int requestBatchSize = DEFAULT_REQUEST_SIZE;</span>
+
+<span class="fc" id="L79">        private Builder3(Callable&lt;State&gt; initialState, Transition&lt;State, In, Out&gt; transition) {</span>
+<span class="fc" id="L80">            this.initialState = initialState;</span>
+<span class="fc" id="L81">            this.transition = transition;</span>
+<span class="fc" id="L82">        }</span>
+
+        public Builder3&lt;State, In, Out&gt; completion(Completion&lt;State, Out&gt; completion) {
+<span class="fc" id="L85">            this.completion = completion;</span>
+<span class="fc" id="L86">            return this;</span>
+        }
+
+        public Builder3&lt;State, In, Out&gt; backpressureStrategy(
+                BackpressureStrategy backpressureStrategy) {
+<span class="fc" id="L91">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L92">            return this;</span>
+        }
+
+        public Builder3&lt;State, In, Out&gt; requestBatchSize(int value) {
+<span class="fc" id="L96">            this.requestBatchSize = value;</span>
+<span class="fc" id="L97">            return this;</span>
+        }
+
+        public FlowableTransformer&lt;In, Out&gt; build() {
+<span class="fc" id="L101">            return FlowableTransformers.stateMachine(initialState, transition, completion,</span>
+                    backpressureStrategy, requestBatchSize);
+        }
+
+    }
+
+    // visible for testing
+    static final class CompletionAlwaysTrueHolder {
+
+<span class="fc" id="L110">        private CompletionAlwaysTrueHolder() {</span>
+            // prevent instantiation
+<span class="fc" id="L112">        }</span>
+
+<span class="fc" id="L114">        private static final Completion&lt;Object, Object&gt; INSTANCE = new Completion&lt;Object, Object&gt;() {</span>
+            @Override
+            public boolean test(Object t1, FlowableEmitter&lt;Object&gt; t2) {
+<span class="nc" id="L117">                return true;</span>
+            }
+        };
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;State, Out&gt; Completion&lt;State, Out&gt; instance() {
+<span class="fc" id="L123">            return (Completion&lt;State, Out&gt;) INSTANCE;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
