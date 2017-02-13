@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Serialized.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.flowable</a> &gt; <span class="el_source">Serialized.java</span></div><h1>Serialized.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.flowable;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.concurrent.Callable;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.github.davidmoten.rx2.Consumers;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+
+/**
+ * Utility class for writing {@link Flowable} streams to
+ * {@link ObjectOutputStream}s and reading {@link Flowable} streams of
+ * indeterminate size from {@link ObjectInputStream}s.
+ */
+public final class Serialized {
+
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
+<span class="fc" id="L36">    private Serialized() {</span>
+        // prevent instantiation
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Returns the deserialized objects from the given {@link InputStream} as a
+     * {@link Flowable} stream.
+     * 
+     * @param ois
+     *            the {@link ObjectInputStream}
+     * @param &lt;T&gt;
+     *            the generic type of the returned stream
+     * @return the stream of deserialized objects from the {@link InputStream}
+     *         as an {@link Flowable}.
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; read(final ObjectInputStream ois) {
+<span class="fc" id="L52">        return Flowable.generate(new Consumer&lt;Emitter&lt;T&gt;&gt;() {</span>
+            @Override
+            public void accept(Emitter&lt;T&gt; emitter) throws Exception {
+                try {
+                    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L57">                    T t = (T) ois.readObject();</span>
+<span class="fc" id="L58">                    emitter.onNext(t);</span>
+<span class="fc" id="L59">                } catch (EOFException e) {</span>
+<span class="fc" id="L60">                    emitter.onComplete();</span>
+<span class="nc" id="L61">                } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L62">                    emitter.onError(e);</span>
+<span class="nc" id="L63">                } catch (IOException e) {</span>
+<span class="nc" id="L64">                    emitter.onError(e);</span>
+<span class="pc" id="L65">                }</span>
+<span class="fc" id="L66">            }</span>
+        });
+    }
+
+    /**
+     * Returns the deserialized objects from the given {@link File} as a
+     * {@link Flowable} stream. Uses buffer of size &lt;code&gt;bufferSize&lt;/code&gt;
+     * buffer reads from the File.
+     * 
+     * @param file
+     *            the input file
+     * @param bufferSize
+     *            the buffer size for reading bytes from the file.
+     * @param &lt;T&gt;
+     *            the generic type of the deserialized objects returned in the
+     *            stream
+     * @return the stream of deserialized objects from the {@link InputStream}
+     *         as a {@link Flowable}.
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; read(final File file, final int bufferSize) {
+<span class="fc" id="L86">        Callable&lt;ObjectInputStream&gt; resourceFactory = new Callable&lt;ObjectInputStream&gt;() {</span>
+            @Override
+            public ObjectInputStream call() throws IOException {
+<span class="fc" id="L89">                return new ObjectInputStream(new BufferedInputStream(new FileInputStream(file), bufferSize));</span>
+            }
+        };
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L93">        Function&lt;ObjectInputStream, Flowable&lt;T&gt;&gt; flowableFactory = (Function&lt;ObjectInputStream, Flowable&lt;T&gt;&gt;) (Function&lt;?, ?&gt;) ObjectInputStreamFlowableFactoryHolder.INSTANCE;</span>
+<span class="fc" id="L94">        Consumer&lt;ObjectInputStream&gt; disposeAction = Consumers.close();</span>
+<span class="fc" id="L95">        return Flowable.using(resourceFactory, flowableFactory, disposeAction, true);</span>
+    }
+
+    // singleton instance using Holder pattern
+<span class="nc" id="L99">    private static final class ObjectInputStreamFlowableFactoryHolder {</span>
+<span class="fc" id="L100">        static final Function&lt;ObjectInputStream, Flowable&lt;Serializable&gt;&gt; INSTANCE = new Function&lt;ObjectInputStream, Flowable&lt;Serializable&gt;&gt;() {</span>
+
+            @Override
+            public Flowable&lt;Serializable&gt; apply(ObjectInputStream is) throws Exception {
+<span class="fc" id="L104">                return read(is);</span>
+            }
+
+        };
+    }
+
+    /**
+     * Returns the deserialized objects from the given {@link File} as a
+     * {@link Flowable} stream. A buffer size of 8192 bytes is used by default.
+     * 
+     * @param file
+     *            the input file containing serialized java objects
+     * @param &lt;T&gt;
+     *            the generic type of the deserialized objects returned in the
+     *            stream
+     * @return the stream of deserialized objects from the {@link InputStream}
+     *         as an {@link Flowable}.
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; read(final File file) {
+<span class="fc" id="L123">        return read(file, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    /**
+     * Returns a duplicate of the input stream but with the side effect that
+     * emissions from the source are written to the {@link ObjectOutputStream}.
+     * 
+     * @param source
+     *            the source of objects to write
+     * @param oos
+     *            the output stream to write to
+     * @param &lt;T&gt;
+     *            the generic type of the objects being serialized
+     * @return re-emits the input stream
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; write(Flowable&lt;T&gt; source, final ObjectOutputStream oos) {
+<span class="fc" id="L139">        return source.doOnNext(new Consumer&lt;T&gt;() {</span>
+
+            @Override
+            public void accept(T t) throws IOException {
+<span class="fc" id="L143">                oos.writeObject(t);</span>
+<span class="fc" id="L144">            }</span>
+        });
+    }
+
+    /**
+     * Writes the source stream to the given file in given append mode and using
+     * the given buffer size.
+     * 
+     * @param source
+     *            flowable stream to write
+     * @param file
+     *            file to write to
+     * @param append
+     *            if true writes are appended to file otherwise overwrite the
+     *            file
+     * @param bufferSize
+     *            the buffer size in bytes to use.
+     * @param &lt;T&gt;
+     *            the generic type of the input stream
+     * @return re-emits the input stream
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file,
+            final boolean append, final int bufferSize) {
+<span class="fc" id="L167">        Callable&lt;ObjectOutputStream&gt; resourceFactory = new Callable&lt;ObjectOutputStream&gt;() {</span>
+            @Override
+            public ObjectOutputStream call() throws IOException {
+<span class="fc" id="L170">                return new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file, append), bufferSize));</span>
+            }
+        };
+<span class="fc" id="L173">        Function&lt;ObjectOutputStream, Flowable&lt;T&gt;&gt; flowableFactory = new Function&lt;ObjectOutputStream, Flowable&lt;T&gt;&gt;() {</span>
+
+            @Override
+            public Flowable&lt;T&gt; apply(ObjectOutputStream oos) {
+<span class="fc" id="L177">                return write(source, oos);</span>
+            }
+        };
+<span class="fc" id="L180">        Consumer&lt;ObjectOutputStream&gt; disposeAction = Consumers.close();</span>
+<span class="fc" id="L181">        return Flowable.using(resourceFactory, flowableFactory, disposeAction, true);</span>
+    }
+
+    /**
+     * Writes the source stream to the given file in given append mode and using
+     * the a buffer size of 8192 bytes.
+     * 
+     * @param source
+     *            flowable stream to write
+     * @param file
+     *            file to write to
+     * @param append
+     *            if true writes are appended to file otherwise overwrite the
+     *            file
+     * @param &lt;T&gt;
+     *            the generic type of the input stream
+     * @return re-emits the input stream
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file,
+            final boolean append) {
+<span class="nc" id="L201">        return write(source, file, append, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    /**
+     * Writes the source stream to the given file in given append mode and using
+     * the a buffer size of 8192 bytes.
+     * 
+     * @param source
+     *            flowable stream to write
+     * @param file
+     *            file to write to
+     * @param &lt;T&gt;
+     *            the generic type of the input stream
+     * @return re-emits the input stream
+     */
+    public static &lt;T extends Serializable&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file) {
+<span class="fc" id="L217">        return write(source, file, false, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static KryoBuilder kryo() {
+<span class="fc" id="L221">        return kryo(new Kryo());</span>
+    }
+
+    public static KryoBuilder kryo(Kryo kryo) {
+<span class="fc" id="L225">        return new KryoBuilder(kryo);</span>
+    }
+
+    public static class KryoBuilder {
+
+        private static final int DEFAULT_BUFFER_SIZE = 4096;
+
+        private final Kryo kryo;
+
+<span class="fc" id="L234">        private KryoBuilder(Kryo kryo) {</span>
+<span class="fc" id="L235">            this.kryo = kryo;</span>
+<span class="fc" id="L236">        }</span>
+
+        public &lt;T&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file) {
+<span class="fc" id="L239">            return write(source, file, false, DEFAULT_BUFFER_SIZE);</span>
+        }
+
+        public &lt;T&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file, boolean append) {
+<span class="nc" id="L243">            return write(source, file, append, DEFAULT_BUFFER_SIZE);</span>
+        }
+
+        public &lt;T&gt; Flowable&lt;T&gt; write(final Flowable&lt;T&gt; source, final File file, final boolean append,
+                final int bufferSize) {
+<span class="fc" id="L248">            Callable&lt;Output&gt; resourceFactory = new Callable&lt;Output&gt;() {</span>
+                @Override
+                public Output call() throws FileNotFoundException {
+<span class="fc" id="L251">                    return new Output(new FileOutputStream(file, append), bufferSize);</span>
+                }
+            };
+<span class="fc" id="L254">            Function&lt;Output, Flowable&lt;T&gt;&gt; flowableFactory = new Function&lt;Output, Flowable&lt;T&gt;&gt;() {</span>
+
+                @Override
+                public Flowable&lt;T&gt; apply(final Output output) {
+<span class="fc" id="L258">                    return source.doOnNext(new Consumer&lt;T&gt;() {</span>
+                        @Override
+                        public void accept(T t) {
+<span class="fc" id="L261">                            kryo.writeObject(output, t);</span>
+<span class="fc" id="L262">                        }</span>
+                    });
+                }
+            };
+<span class="fc" id="L266">            Consumer&lt;Output&gt; disposeAction = Consumers.close();</span>
+<span class="fc" id="L267">            return Flowable.using(resourceFactory, flowableFactory, disposeAction, true);</span>
+        }
+
+        public &lt;T&gt; Flowable&lt;T&gt; read(Class&lt;T&gt; cls, final File file) {
+<span class="fc" id="L271">            return read(cls, file, DEFAULT_BUFFER_SIZE);</span>
+        }
+
+        public &lt;T&gt; Flowable&lt;T&gt; read(final Class&lt;T&gt; cls, final File file, final int bufferSize) {
+<span class="fc" id="L275">            Callable&lt;Input&gt; resourceFactory = new Callable&lt;Input&gt;() {</span>
+                @Override
+                public Input call() throws FileNotFoundException {
+<span class="fc" id="L278">                    return new Input(new FileInputStream(file), bufferSize);</span>
+                }
+            };
+<span class="fc" id="L281">            Function&lt;Input, Flowable&lt;T&gt;&gt; flowableFactory = new Function&lt;Input, Flowable&lt;T&gt;&gt;() {</span>
+
+                @Override
+                public Flowable&lt;T&gt; apply(final Input input) {
+<span class="fc" id="L285">                    return read(cls, input);</span>
+                }
+            };
+<span class="fc" id="L288">            Consumer&lt;Input&gt; disposeAction = Consumers.close();</span>
+<span class="fc" id="L289">            return Flowable.using(resourceFactory, flowableFactory, disposeAction, true);</span>
+        }
+
+        public &lt;T&gt; Flowable&lt;T&gt; read(final Class&lt;T&gt; cls, final Input input) {
+
+<span class="fc" id="L294">            return Flowable.generate(new Consumer&lt;Emitter&lt;T&gt;&gt;() {</span>
+
+                @Override
+                public void accept(Emitter&lt;T&gt; emitter) throws Exception {
+<span class="fc bfc" id="L298" title="All 2 branches covered.">                    if (input.eof()) {</span>
+<span class="fc" id="L299">                        emitter.onComplete();</span>
+                    } else {
+<span class="fc" id="L301">                        T t = kryo.readObject(input, cls);</span>
+<span class="fc" id="L302">                        emitter.onNext(t);</span>
+                    }
+<span class="fc" id="L304">                }</span>
+
+            });
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

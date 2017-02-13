@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Burst.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.flowable</a> &gt; <span class="el_source">Burst.java</span></div><h1>Burst.java</h1><pre class="source lang-java linenums">/**
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+package com.github.davidmoten.rx2.flowable;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.reactivex.Flowable;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+
+/**
+ * Creates {@link Flowable} of a number of items followed by either an error or
+ * completion. Cancellation has no effect on preventing emissions until the
+ * currently outstanding requests have been met. The primary purpose for the
+ * existence of this class is testing that an operator that calls `onError` when
+ * processing `onNext` for instance does not emit multiple terminal events.
+ * 
+ * @param &lt;T&gt;
+ *            the value type
+ */
+public final class Burst&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final List&lt;T&gt; items;
+    private final Throwable error;
+
+<span class="fc" id="L43">    private Burst(Throwable error, List&lt;T&gt; items) {</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (items.isEmpty()) {</span>
+<span class="nc" id="L45">            throw new IllegalArgumentException(&quot;items cannot be empty&quot;);</span>
+        }
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        for (T item : items) {</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">            if (item == null) {</span>
+<span class="nc" id="L49">                throw new IllegalArgumentException(&quot;items cannot include null&quot;);</span>
+            }
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">        this.error = error;</span>
+<span class="fc" id="L53">        this.items = items;</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    protected void subscribeActual(final Subscriber&lt;? super T&gt; subscriber) {
+<span class="fc" id="L58">        subscriber.onSubscribe(new Subscription() {</span>
+
+<span class="fc" id="L60">            final Queue&lt;T&gt; q = new ConcurrentLinkedQueue&lt;T&gt;(items);</span>
+<span class="fc" id="L61">            final AtomicLong requested = new AtomicLong();</span>
+            volatile boolean cancelled;
+
+            @Override
+            public void request(long n) {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                if (cancelled) {</span>
+                    // required by reactive-streams-jvm 3.6
+<span class="nc" id="L68">                    return;</span>
+                }
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                if (SubscriptionHelper.validate(n)) {</span>
+                    // just for testing, don't care about perf
+                    // so no attempt made to reduce volatile reads
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                    if (BackpressureHelper.add(requested, n) == 0) {</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                        if (q.isEmpty()) {</span>
+<span class="nc" id="L75">                            return;</span>
+                        }
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">                        while (!q.isEmpty() &amp;&amp; requested.get() &gt; 0) {</span>
+<span class="fc" id="L78">                            T item = q.poll();</span>
+<span class="fc" id="L79">                            requested.decrementAndGet();</span>
+<span class="fc" id="L80">                            subscriber.onNext(item);</span>
+<span class="fc" id="L81">                        }</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                        if (q.isEmpty()) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                            if (error != null) {</span>
+<span class="fc" id="L84">                                subscriber.onError(error);</span>
+                            } else {
+<span class="fc" id="L86">                                subscriber.onComplete();</span>
+                            }
+                        }
+                    }
+                }
+<span class="fc" id="L91">            }</span>
+
+            @Override
+            public void cancel() {
+<span class="fc" id="L95">                cancelled = true;</span>
+<span class="fc" id="L96">            }</span>
+        });
+
+<span class="fc" id="L99">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Builder&lt;T&gt; item(T item) {
+<span class="fc" id="L103">        return items(item);</span>
+    }
+
+    public static &lt;T&gt; Builder&lt;T&gt; items(T... items) {
+<span class="fc" id="L107">        return new Builder&lt;T&gt;(Arrays.asList(items));</span>
+    }
+
+    public static final class Builder&lt;T&gt; {
+
+        private final List&lt;T&gt; items;
+        private Throwable error;
+
+<span class="fc" id="L115">        private Builder(List&lt;T&gt; items) {</span>
+<span class="fc" id="L116">            this.items = items;</span>
+<span class="fc" id="L117">        }</span>
+
+        public Flowable&lt;T&gt; error(Throwable e) {
+<span class="fc" id="L120">            this.error = e;</span>
+<span class="fc" id="L121">            return create();</span>
+        }
+
+        public Flowable&lt;T&gt; create() {
+<span class="fc" id="L125">            return new Burst&lt;T&gt;(error, items);</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

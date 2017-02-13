@@ -8,24 +8,30 @@ public final class Predicates {
         // prevent instantiation
 <span class="fc" id="L9">    }</span>
 
+    @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; Predicate&lt;T&gt; alwaysFalse() {
-        // TODO make holder
-<span class="fc" id="L13">        return new Predicate&lt;T&gt;() {</span>
+<span class="fc" id="L13">        return (Predicate&lt;T&gt;) FalseHolder.INSTANCE;</span>
+    }
 
+<span class="nc" id="L16">    private static final class FalseHolder {</span>
+<span class="fc" id="L17">        static final Predicate&lt;Object&gt; INSTANCE = new Predicate&lt;Object&gt;() {</span>
             @Override
-            public boolean test(T t) throws Exception {
-<span class="fc" id="L17">                return false;</span>
+            public boolean test(Object t) throws Exception {
+<span class="fc" id="L20">                return false;</span>
             }
         };
     }
 
+    @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; Predicate&lt;T&gt; alwaysTrue() {
-        // TODO make holder
-<span class="fc" id="L24">        return new Predicate&lt;T&gt;() {</span>
+<span class="fc" id="L27">        return (Predicate&lt;T&gt;) TrueHolder.INSTANCE;</span>
+    }
 
+<span class="nc" id="L30">    private static final class TrueHolder {</span>
+<span class="fc" id="L31">        static final Predicate&lt;Object&gt; INSTANCE = new Predicate&lt;Object&gt;() {</span>
             @Override
-            public boolean test(T t) throws Exception {
-<span class="fc" id="L28">                return true;</span>
+            public boolean test(Object t) throws Exception {
+<span class="fc" id="L34">                return true;</span>
             }
         };
     }

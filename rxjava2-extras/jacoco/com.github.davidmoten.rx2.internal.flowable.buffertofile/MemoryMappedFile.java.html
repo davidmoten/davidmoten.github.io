@@ -6,6 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
 import sun.misc.Unsafe;
 import sun.nio.ch.FileChannelImpl;
 
@@ -22,51 +24,51 @@ public final class MemoryMappedFile {
     private long addr;
 
     static {
-<span class="fc" id="L25">        unsafe = UnsafeAccess.unsafe();</span>
-<span class="fc" id="L26">        mmap = getMethod(FileChannelImpl.class, &quot;map0&quot;, int.class, long.class, long.class);</span>
-<span class="fc" id="L27">        unmmap = getMethod(FileChannelImpl.class, &quot;unmap0&quot;, long.class, long.class);</span>
-<span class="fc" id="L28">        BYTE_ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);</span>
-<span class="fc" id="L29">    }</span>
+<span class="fc" id="L27">        unsafe = UnsafeAccess.unsafe();</span>
+<span class="fc" id="L28">        mmap = getMethod(FileChannelImpl.class, &quot;map0&quot;, int.class, long.class, long.class);</span>
+<span class="fc" id="L29">        unmmap = getMethod(FileChannelImpl.class, &quot;unmap0&quot;, long.class, long.class);</span>
+<span class="fc" id="L30">        BYTE_ARRAY_OFFSET = unsafe.arrayBaseOffset(byte[].class);</span>
+<span class="fc" id="L31">    }</span>
 
-<span class="fc" id="L31">    public MemoryMappedFile(File file, long len) {</span>
-<span class="fc" id="L32">        this.file = file;</span>
-<span class="fc" id="L33">        this.size = roundTo4096(len);</span>
-<span class="fc" id="L34">        mapAndSetOffset();</span>
-<span class="fc" id="L35">    }</span>
+<span class="fc" id="L33">    public MemoryMappedFile(File file, long len) {</span>
+<span class="fc" id="L34">        this.file = file;</span>
+<span class="fc" id="L35">        this.size = roundTo4096(len);</span>
+<span class="fc" id="L36">        mapAndSetOffset();</span>
+<span class="fc" id="L37">    }</span>
 
-    // visible for testing
     // Bundle reflection calls to get access to the given method
+    @VisibleForTesting
     static Method getMethod(Class&lt;?&gt; cls, String name, Class&lt;?&gt;... params) {
         Method m;
         try {
-<span class="fc" id="L42">            m = cls.getDeclaredMethod(name, params);</span>
-<span class="fc" id="L43">        } catch (Exception e) {</span>
-<span class="fc" id="L44">            throw new RuntimeException(e);</span>
-<span class="fc" id="L45">        }</span>
-<span class="fc" id="L46">        m.setAccessible(true);</span>
-<span class="fc" id="L47">        return m;</span>
+<span class="fc" id="L44">            m = cls.getDeclaredMethod(name, params);</span>
+<span class="fc" id="L45">        } catch (Exception e) {</span>
+<span class="fc" id="L46">            throw new RuntimeException(e);</span>
+<span class="fc" id="L47">        }</span>
+<span class="fc" id="L48">        m.setAccessible(true);</span>
+<span class="fc" id="L49">        return m;</span>
     }
 
     // Round to next 4096 bytes
     private static long roundTo4096(long i) {
-<span class="fc" id="L52">        return (i + 0xfffL) &amp; ~0xfffL;</span>
+<span class="fc" id="L54">        return (i + 0xfffL) &amp; ~0xfffL;</span>
     }
 
     // Given that the location and size have been set, map that location
     // for the given length and set this.addr to the returned offset
     private void mapAndSetOffset() {
         try {
-<span class="fc" id="L59">            final RandomAccessFile backingFile = new RandomAccessFile(this.file, &quot;rw&quot;);</span>
-<span class="fc" id="L60">            backingFile.setLength(this.size);</span>
-<span class="fc" id="L61">            final FileChannel ch = backingFile.getChannel();</span>
-<span class="fc" id="L62">            this.addr = (Long) mmap.invoke(ch, 1, 0L, this.size);</span>
+<span class="fc" id="L61">            final RandomAccessFile backingFile = new RandomAccessFile(this.file, &quot;rw&quot;);</span>
+<span class="fc" id="L62">            backingFile.setLength(this.size);</span>
+<span class="fc" id="L63">            final FileChannel ch = backingFile.getChannel();</span>
+<span class="fc" id="L64">            this.addr = (Long) mmap.invoke(ch, 1, 0L, this.size);</span>
 
-<span class="fc" id="L64">            ch.close();</span>
-<span class="fc" id="L65">            backingFile.close();</span>
-<span class="nc" id="L66">        } catch (Exception e) {</span>
-<span class="nc" id="L67">            throw new RuntimeException(e);</span>
-<span class="fc" id="L68">        }</span>
-<span class="fc" id="L69">    }</span>
+<span class="fc" id="L66">            ch.close();</span>
+<span class="fc" id="L67">            backingFile.close();</span>
+<span class="nc" id="L68">        } catch (Exception e) {</span>
+<span class="nc" id="L69">            throw new RuntimeException(e);</span>
+<span class="fc" id="L70">        }</span>
+<span class="fc" id="L71">    }</span>
 
     // // Callers should synchronize to avoid calls in the middle of this, but
     // // it is undesirable to synchronize w/ all access methods.
@@ -78,50 +80,50 @@ public final class MemoryMappedFile {
 
     public void close() {
         try {
-<span class="fc" id="L81">            unmmap.invoke(null, addr, this.size);</span>
-<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (!file.delete()) {</span>
-<span class="nc" id="L83">                throw new RuntimeException(&quot;could not delete &quot; + file);</span>
+<span class="fc" id="L83">            unmmap.invoke(null, addr, this.size);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (!file.delete()) {</span>
+<span class="nc" id="L85">                throw new RuntimeException(&quot;could not delete &quot; + file);</span>
             }
-<span class="nc" id="L85">        } catch (IllegalAccessException e) {</span>
-<span class="nc" id="L86">            throw new RuntimeException(e);</span>
-<span class="nc" id="L87">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L87">        } catch (IllegalAccessException e) {</span>
 <span class="nc" id="L88">            throw new RuntimeException(e);</span>
-<span class="nc" id="L89">        } catch (InvocationTargetException e) {</span>
+<span class="nc" id="L89">        } catch (IllegalArgumentException e) {</span>
 <span class="nc" id="L90">            throw new RuntimeException(e);</span>
-<span class="fc" id="L91">        }</span>
-<span class="fc" id="L92">    }</span>
+<span class="nc" id="L91">        } catch (InvocationTargetException e) {</span>
+<span class="nc" id="L92">            throw new RuntimeException(e);</span>
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">    }</span>
 
     public int getInt(long pos) {
-<span class="fc" id="L95">        return unsafe.getInt(pos + addr);</span>
+<span class="fc" id="L97">        return unsafe.getInt(pos + addr);</span>
     }
 
     public void putByte(long pos, byte val) {
-<span class="fc" id="L99">        unsafe.putByte(pos + addr, val);</span>
-<span class="fc" id="L100">    }</span>
-    
+<span class="fc" id="L101">        unsafe.putByte(pos + addr, val);</span>
+<span class="fc" id="L102">    }</span>
+
     public void putInt(long pos, int val) {
-<span class="fc" id="L103">        unsafe.putInt(pos + addr, val);</span>
-<span class="fc" id="L104">    }</span>
+<span class="fc" id="L105">        unsafe.putInt(pos + addr, val);</span>
+<span class="fc" id="L106">    }</span>
 
     public void putOrderedInt(long pos, int val) {
-<span class="fc" id="L107">        unsafe.putOrderedInt(null, pos + addr, val);</span>
-<span class="fc" id="L108">    }</span>
+<span class="fc" id="L109">        unsafe.putOrderedInt(null, pos + addr, val);</span>
+<span class="fc" id="L110">    }</span>
 
     public int getIntVolatile(long pos) {
-<span class="fc" id="L111">        return unsafe.getIntVolatile(null, pos + addr);</span>
+<span class="fc" id="L113">        return unsafe.getIntVolatile(null, pos + addr);</span>
     }
 
     // May want to have offset &amp; length within data as well, for both of these
     public void getBytes(long pos, byte[] data, long offset, long length) {
-<span class="fc" id="L116">        unsafe.copyMemory(null, pos + addr, data, BYTE_ARRAY_OFFSET + offset, length);</span>
-<span class="fc" id="L117">    }</span>
+<span class="fc" id="L118">        unsafe.copyMemory(null, pos + addr, data, BYTE_ARRAY_OFFSET + offset, length);</span>
+<span class="fc" id="L119">    }</span>
 
     public void putBytes(long pos, byte[] data, long offset, long length) {
-<span class="fc" id="L120">        unsafe.copyMemory(data, BYTE_ARRAY_OFFSET + offset, null, pos + addr, length);</span>
-<span class="fc" id="L121">    }</span>
+<span class="fc" id="L122">        unsafe.copyMemory(data, BYTE_ARRAY_OFFSET + offset, null, pos + addr, length);</span>
+<span class="fc" id="L123">    }</span>
 
     public byte getByte(long pos) {
-<span class="fc" id="L124">        return unsafe.getByte(pos + addr);</span>
+<span class="fc" id="L126">        return unsafe.getByte(pos + addr);</span>
     }
 
 }

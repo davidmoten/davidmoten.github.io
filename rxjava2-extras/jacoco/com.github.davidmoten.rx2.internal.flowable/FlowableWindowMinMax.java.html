@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableWindowMinMax.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableWindowMinMax.java</span></div><h1>FlowableWindowMinMax.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+
+/**
+ * Uses a double-ended queue and collapses entries when they are redundant
+ * (whenever a value is added to the queue all values at the end of the queue
+ * that are greater or equal to that value are removed).
+ * 
+ * @param &lt;T&gt;
+ *            generic type of stream emissions
+ */
+public final class FlowableWindowMinMax&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final Flowable&lt;T&gt; source;
+    private final int windowSize;
+    private final Comparator&lt;? super T&gt; comparator;
+    private final Metric metric;
+
+<span class="fc" id="L32">    public FlowableWindowMinMax(Flowable&lt;T&gt; source, int windowSize, Comparator&lt;? super T&gt; comparator, Metric metric) {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        Preconditions.checkArgument(windowSize &gt; 0, &quot;windowSize must be greater than zero&quot;);</span>
+<span class="fc" id="L34">        Preconditions.checkNotNull(comparator, &quot;comparator cannot be null&quot;);</span>
+<span class="fc" id="L35">        Preconditions.checkNotNull(metric, &quot;metric cannot be null&quot;);</span>
+<span class="fc" id="L36">        this.source = source;</span>
+<span class="fc" id="L37">        this.windowSize = windowSize;</span>
+<span class="fc" id="L38">        this.comparator = comparator;</span>
+<span class="fc" id="L39">        this.metric = metric;</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    protected void subscribeActual(org.reactivestreams.Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L44">        source.subscribe(new WindowMinMaxSubscriber&lt;T&gt;(windowSize, comparator, metric, child));</span>
+<span class="fc" id="L45">    }</span>
+
+    private static final class WindowMinMaxSubscriber&lt;T&gt; implements Subscriber&lt;T&gt;, Subscription {
+
+        private final int windowSize;
+        private final Comparator&lt;? super T&gt; comparator;
+        private final Metric metric;
+        private final Subscriber&lt;? super T&gt; child;
+
+        // map index to value
+        private final Map&lt;Long, T&gt; values;
+
+        // queue of indices
+        private final Deque&lt;Long&gt; indices;
+
+<span class="fc" id="L60">        private long count = 0;</span>
+        private Subscription parent;
+
+        WindowMinMaxSubscriber(int windowSize, Comparator&lt;? super T&gt; comparator, Metric metric,
+<span class="fc" id="L64">                Subscriber&lt;? super T&gt; child) {</span>
+<span class="fc" id="L65">            this.windowSize = windowSize;</span>
+<span class="fc" id="L66">            this.comparator = comparator;</span>
+<span class="fc" id="L67">            this.metric = metric;</span>
+<span class="fc" id="L68">            this.child = child;</span>
+<span class="fc" id="L69">            this.values = new HashMap&lt;Long, T&gt;(windowSize);</span>
+<span class="fc" id="L70">            this.indices = new ArrayDeque&lt;Long&gt;(windowSize);</span>
+<span class="fc" id="L71">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription parent) {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
+<span class="fc" id="L76">                this.parent = parent;</span>
+<span class="fc" id="L77">                child.onSubscribe(this);</span>
+<span class="fc" id="L78">                parent.request(windowSize - 1);</span>
+            }
+<span class="fc" id="L80">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L85">                parent.request(n);</span>
+            }
+<span class="fc" id="L87">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L91">            parent.cancel();</span>
+            // would be nice to clear the window here but would have performance
+            // impact because would need to worry about allowing concurrent
+            // changes to `indices` and `map`
+<span class="fc" id="L95">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L99">            child.onComplete();</span>
+<span class="fc" id="L100">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L104">            child.onError(e);</span>
+<span class="fc" id="L105">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L109">            count++;</span>
+            // add to queue
+<span class="fc" id="L111">            addToQueue(t);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (count &gt;= windowSize) {</span>
+                // emit max
+
+                // head of queue is max
+<span class="fc" id="L116">                Long head = indices.peekFirst();</span>
+                final T value;
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (head == count - windowSize) {</span>
+                    // if window past that index then remove from map
+<span class="fc" id="L120">                    values.remove(indices.pollFirst());</span>
+<span class="fc" id="L121">                    value = values.get(indices.peekFirst());</span>
+                } else {
+<span class="fc" id="L123">                    value = values.get(head);</span>
+                }
+<span class="fc" id="L125">                child.onNext(value);</span>
+            }
+<span class="fc" id="L127">        }</span>
+
+        private void addToQueue(T t) {
+            Long v;
+<span class="fc bfc" id="L131" title="All 4 branches covered.">            while ((v = indices.peekLast()) != null &amp;&amp; compare(t, values.get(v)) &lt;= 0) {</span>
+<span class="fc" id="L132">                values.remove(indices.pollLast());</span>
+            }
+<span class="fc" id="L134">            values.put(count, t);</span>
+<span class="fc" id="L135">            indices.offerLast(count);</span>
+<span class="fc" id="L136">        }</span>
+
+        private int compare(T a, T b) {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">            if (metric == Metric.MIN) {</span>
+<span class="fc" id="L140">                return comparator.compare(a, b);</span>
+            } else {
+<span class="fc" id="L142">                return comparator.compare(b, a);</span>
+            }
+        }
+    }
+
+<span class="pc" id="L147">    public enum Metric {</span>
+<span class="fc" id="L148">        MIN, MAX;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

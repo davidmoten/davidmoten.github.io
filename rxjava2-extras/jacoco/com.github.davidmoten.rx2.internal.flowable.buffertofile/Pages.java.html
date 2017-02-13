@@ -19,8 +19,7 @@ public final class Pages {
     private final int pageSize;
 
     // read queue must be SPSC because is added to from the write thread
-<span class="fc" id="L22">    private final SimplePlainQueue&lt;Page&gt; queue = new SpscLinkedArrayQueue&lt;Page&gt;(</span>
-            QUEUE_INITIAL_CAPACITY);
+<span class="fc" id="L22">    private final SimplePlainQueue&lt;Page&gt; queue = new SpscLinkedArrayQueue&lt;Page&gt;(QUEUE_INITIAL_CAPACITY);</span>
 
     Page writePage;
     int writePosition;
@@ -31,27 +30,27 @@ public final class Pages {
     Page markPage;
     int markPosition;
 
-<span class="fc" id="L34">    public Pages(Callable&lt;File&gt; fileFactory, int pageSize) {</span>
-<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageSize &gt;= 4);</span>
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageSize % 4 == 0);</span>
-<span class="fc" id="L37">        this.fileFactory = fileFactory;</span>
-<span class="fc" id="L38">        this.pageSize = pageSize;</span>
-<span class="fc" id="L39">    }</span>
+<span class="fc" id="L33">    public Pages(Callable&lt;File&gt; fileFactory, int pageSize) {</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageSize &gt;= 4);</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        Preconditions.checkArgument(pageSize % 4 == 0);</span>
+<span class="fc" id="L36">        this.fileFactory = fileFactory;</span>
+<span class="fc" id="L37">        this.pageSize = pageSize;</span>
+<span class="fc" id="L38">    }</span>
 
     public int avail() {
-<span class="fc" id="L42">        return writePage().avail(writePosition);</span>
+<span class="fc" id="L41">        return writePage().avail(writePosition);</span>
     }
 
     public void markForRewriteAndAdvance4Bytes() {
-<span class="fc" id="L46">        markPage = writePage();</span>
-<span class="fc" id="L47">        markPosition = writePosition;</span>
-<span class="fc" id="L48">        writePosition += 4;</span>
+<span class="fc" id="L45">        markPage = writePage();</span>
+<span class="fc" id="L46">        markPosition = writePosition;</span>
+<span class="fc" id="L47">        writePosition += 4;</span>
         // putInt(markPage, 0);
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L49">    }</span>
 
     public void putInt(int value) {
-<span class="fc" id="L53">        putInt(writePage(), value);</span>
-<span class="fc" id="L54">    }</span>
+<span class="fc" id="L52">        putInt(writePage(), value);</span>
+<span class="fc" id="L53">    }</span>
 
     private void putInt(Page page, int value) {
         if (CHECK) {
@@ -59,12 +58,12 @@ public final class Pages {
             if (avail &lt; 0)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L62">        page.putInt(writePosition, value);</span>
-<span class="fc" id="L63">        writePosition += 4;</span>
-<span class="fc" id="L64">    }</span>
+<span class="fc" id="L61">        page.putInt(writePosition, value);</span>
+<span class="fc" id="L62">        writePosition += 4;</span>
+<span class="fc" id="L63">    }</span>
 
     public void put(byte[] bytes, int offset, int length) {
-<span class="fc" id="L67">        Page page = writePage();</span>
+<span class="fc" id="L66">        Page page = writePage();</span>
         if (CHECK) {
             if (length == 0)
                 throw new IllegalArgumentException();
@@ -72,131 +71,131 @@ public final class Pages {
             if (avail &lt; 0)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L75">        page.put(writePosition, bytes, offset, length);</span>
-<span class="fc" id="L76">        writePosition += length;</span>
-<span class="fc" id="L77">    }</span>
+<span class="fc" id="L74">        page.put(writePosition, bytes, offset, length);</span>
+<span class="fc" id="L75">        writePosition += length;</span>
+<span class="fc" id="L76">    }</span>
 
     public void putIntOrderedAtRewriteMark(int value) {
         // if there is any space at all in current page then it will be enough
         // for 4 bytes because we pad all offerings to the queue
-<span class="fc" id="L82">        markPage.putIntOrdered(markPosition, value);</span>
-<span class="fc" id="L83">        markPage = null;</span>
-<span class="fc" id="L84">    }</span>
+<span class="fc" id="L81">        markPage.putIntOrdered(markPosition, value);</span>
+<span class="fc" id="L82">        markPage = null;</span>
+<span class="fc" id="L83">    }</span>
 
     private Page writePage() {
-<span class="fc bfc" id="L87" title="All 4 branches covered.">        if (writePage == null || writePosition == pageSize) {</span>
-<span class="fc" id="L88">            createNewPage();</span>
+<span class="fc bfc" id="L86" title="All 4 branches covered.">        if (writePage == null || writePosition == pageSize) {</span>
+<span class="fc" id="L87">            createNewPage();</span>
         }
-<span class="fc" id="L90">        return writePage;</span>
+<span class="fc" id="L89">        return writePage;</span>
     }
 
     private void createNewPage() {
         File file;
         try {
-<span class="fc" id="L96">            file = fileFactory.call();</span>
-<span class="nc" id="L97">        } catch (Exception e) {</span>
-<span class="nc" id="L98">            throw new RuntimeException(e);</span>
-<span class="fc" id="L99">        }</span>
-<span class="fc" id="L100">        writePage = new Page(file, pageSize);</span>
-<span class="fc" id="L101">        writePosition = 0;</span>
-<span class="fc" id="L102">        queue.offer(writePage);</span>
+<span class="fc" id="L95">            file = fileFactory.call();</span>
+<span class="nc" id="L96">        } catch (Exception e) {</span>
+<span class="nc" id="L97">            throw new RuntimeException(e);</span>
+<span class="fc" id="L98">        }</span>
+<span class="fc" id="L99">        writePage = new Page(file, pageSize);</span>
+<span class="fc" id="L100">        writePosition = 0;</span>
+<span class="fc" id="L101">        queue.offer(writePage);</span>
         // System.out.println(Thread.currentThread().getName() + &quot;: created
         // page &quot;
         // + currentWritePage.hashCode());
-<span class="fc" id="L106">    }</span>
+<span class="fc" id="L105">    }</span>
 
     public int getInt() {
-<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (readPage() == null) {</span>
-<span class="nc" id="L110">            return -1;</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (readPage() == null) {</span>
+<span class="nc" id="L109">            return -1;</span>
         }
-<span class="fc" id="L112">        int rp = readPosition;</span>
+<span class="fc" id="L111">        int rp = readPosition;</span>
         if (CHECK) {
             int avail = readPage.length() - rp;
             if (avail &lt; 4)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L118">        readPosition = rp + 4;</span>
-<span class="fc" id="L119">        return readPage.getInt(rp);</span>
+<span class="fc" id="L117">        readPosition = rp + 4;</span>
+<span class="fc" id="L118">        return readPage.getInt(rp);</span>
     }
 
     public byte[] get(int length) {
-<span class="fc" id="L123">        byte[] result = new byte[length];</span>
-<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (readPage() == null) {</span>
-<span class="nc" id="L125">            return EMPTY;</span>
+<span class="fc" id="L122">        byte[] result = new byte[length];</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        if (readPage() == null) {</span>
+<span class="nc" id="L124">            return EMPTY;</span>
         }
         if (CHECK) {
             int avail = readPage.length() - readPosition;
             if (avail &lt; length)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L132">        readPage.get(result, 0, readPosition, length);</span>
-<span class="fc" id="L133">        readPosition += length;</span>
-<span class="fc" id="L134">        return result;</span>
+<span class="fc" id="L131">        readPage.get(result, 0, readPosition, length);</span>
+<span class="fc" id="L132">        readPosition += length;</span>
+<span class="fc" id="L133">        return result;</span>
     }
 
     private Page readPage() {
-<span class="fc bfc" id="L138" title="All 4 branches covered.">        if (readPage == null || readPosition &gt;= pageSize) {</span>
-<span class="fc bfc" id="L139" title="All 2 branches covered.">            if (readPage != null) {</span>
-<span class="fc" id="L140">                readPage.close();</span>
+<span class="fc bfc" id="L137" title="All 4 branches covered.">        if (readPage == null || readPosition &gt;= pageSize) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (readPage != null) {</span>
+<span class="fc" id="L139">                readPage.close();</span>
             }
-<span class="fc" id="L142">            readPage = queue.poll();</span>
-<span class="fc" id="L143">            readPosition = readPosition % pageSize;</span>
+<span class="fc" id="L141">            readPage = queue.poll();</span>
+<span class="fc" id="L142">            readPosition = readPosition % pageSize;</span>
         }
-<span class="fc" id="L145">        return readPage;</span>
+<span class="fc" id="L144">        return readPage;</span>
     }
 
     public void putByte(byte b) {
-<span class="fc" id="L149">        Page page = writePage();</span>
+<span class="fc" id="L148">        Page page = writePage();</span>
         if (CHECK) {
             int avail = page.length() - writePosition;
             if (avail &lt; 0)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L155">        page.putByte(writePosition, b);</span>
-<span class="fc" id="L156">        writePosition += 1;</span>
-<span class="fc" id="L157">    }</span>
+<span class="fc" id="L154">        page.putByte(writePosition, b);</span>
+<span class="fc" id="L155">        writePosition += 1;</span>
+<span class="fc" id="L156">    }</span>
 
     public byte getByte() {
-<span class="fc" id="L160">        Page page = readPage();</span>
+<span class="fc" id="L159">        Page page = readPage();</span>
         if (CHECK) {
             int avail = page.length() - readPosition;
             if (avail &lt; 1)
                 throw new RuntimeException(&quot;unexpected&quot;);
         }
-<span class="fc" id="L166">        byte result = page.getByte(readPosition);</span>
-<span class="fc" id="L167">        readPosition += 1;</span>
-<span class="fc" id="L168">        return result;</span>
+<span class="fc" id="L165">        byte result = page.getByte(readPosition);</span>
+<span class="fc" id="L166">        readPosition += 1;</span>
+<span class="fc" id="L167">        return result;</span>
     }
 
     public void moveReadPosition(int forward) {
-<span class="fc" id="L172">        readPosition += forward;</span>
-<span class="fc" id="L173">    }</span>
+<span class="fc" id="L171">        readPosition += forward;</span>
+<span class="fc" id="L172">    }</span>
 
     public int getIntVolatile() {
-<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (readPage() == null) {</span>
-<span class="fc" id="L177">            return -1;</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (readPage() == null) {</span>
+<span class="fc" id="L176">            return -1;</span>
         } else {
-<span class="fc" id="L179">            int result = readPage.getIntVolatile(readPosition);</span>
-<span class="fc" id="L180">            readPosition += 4;</span>
-<span class="fc" id="L181">            return result;</span>
+<span class="fc" id="L178">            int result = readPage.getIntVolatile(readPosition);</span>
+<span class="fc" id="L179">            readPosition += 4;</span>
+<span class="fc" id="L180">            return result;</span>
         }
     }
 
     public void moveWritePosition(int forward) {
-<span class="fc" id="L186">        writePosition += forward;</span>
-<span class="fc" id="L187">    }</span>
+<span class="fc" id="L185">        writePosition += forward;</span>
+<span class="fc" id="L186">    }</span>
 
     public void close() {
         // called from read thread
-<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (readPage != null) {</span>
-<span class="fc" id="L192">            readPage.close();</span>
-<span class="fc" id="L193">            readPage = null;</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (readPage != null) {</span>
+<span class="fc" id="L191">            readPage.close();</span>
+<span class="fc" id="L192">            readPage = null;</span>
         }
         Page page;
-<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        while ((page = queue.poll()) != null) {</span>
-<span class="nc" id="L197">            page.close();</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        while ((page = queue.poll()) != null) {</span>
+<span class="nc" id="L196">            page.close();</span>
         }
-<span class="fc" id="L199">    }</span>
+<span class="fc" id="L198">    }</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

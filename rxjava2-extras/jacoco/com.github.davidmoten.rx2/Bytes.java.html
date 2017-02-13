@@ -23,180 +23,176 @@ import io.reactivex.functions.Function;
 
 public final class Bytes {
 
-	private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-<span class="fc" id="L28">	private Bytes() {</span>
-		// prevent instantiation
-<span class="fc" id="L30">	}</span>
+<span class="fc" id="L28">    private Bytes() {</span>
+        // prevent instantiation
+<span class="fc" id="L30">    }</span>
 
-	/**
-	 * Returns an Flowable stream of byte arrays from the given
-	 * {@link InputStream} between 1 and {@code bufferSize} bytes.
-	 * 
-	 * @param is
-	 *            input stream of bytes
-	 * @param bufferSize
-	 *            max emitted byte array size
-	 * @return a stream of byte arrays
-	 */
-	public static Flowable&lt;byte[]&gt; from(final InputStream is, final int bufferSize) {
-<span class="fc" id="L43">		return Flowable.generate(new Consumer&lt;Emitter&lt;byte[]&gt;&gt;() {</span>
-			@Override
-			public void accept(Emitter&lt;byte[]&gt; emitter) throws Exception {
-<span class="fc" id="L46">				byte[] buffer = new byte[bufferSize];</span>
-<span class="fc" id="L47">				int count = is.read(buffer);</span>
-<span class="fc bfc" id="L48" title="All 2 branches covered.">				if (count == -1) {</span>
-<span class="fc" id="L49">					emitter.onComplete();</span>
-<span class="fc bfc" id="L50" title="All 2 branches covered.">				} else if (count &lt; bufferSize) {</span>
-<span class="fc" id="L51">					emitter.onNext(Arrays.copyOf(buffer, count));</span>
-				} else {
-<span class="fc" id="L53">					emitter.onNext(buffer);</span>
-				}
-<span class="fc" id="L55">			}</span>
-		});
-	}
+    /**
+     * Returns a Flowable stream of byte arrays from the given
+     * {@link InputStream} between 1 and {@code bufferSize} bytes.
+     * 
+     * @param is
+     *            input stream of bytes
+     * @param bufferSize
+     *            max emitted byte array size
+     * @return a stream of byte arrays
+     */
+    public static Flowable&lt;byte[]&gt; from(final InputStream is, final int bufferSize) {
+<span class="fc" id="L43">        return Flowable.generate(new Consumer&lt;Emitter&lt;byte[]&gt;&gt;() {</span>
+            @Override
+            public void accept(Emitter&lt;byte[]&gt; emitter) throws Exception {
+<span class="fc" id="L46">                byte[] buffer = new byte[bufferSize];</span>
+<span class="fc" id="L47">                int count = is.read(buffer);</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                if (count == -1) {</span>
+<span class="fc" id="L49">                    emitter.onComplete();</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                } else if (count &lt; bufferSize) {</span>
+<span class="fc" id="L51">                    emitter.onNext(Arrays.copyOf(buffer, count));</span>
+                } else {
+<span class="fc" id="L53">                    emitter.onNext(buffer);</span>
+                }
+<span class="fc" id="L55">            }</span>
+        });
+    }
 
-	public static Flowable&lt;byte[]&gt; from(File file) {
-<span class="fc" id="L60">		return from(file, 8192);</span>
-	}
+    public static Flowable&lt;byte[]&gt; from(File file) {
+<span class="fc" id="L60">        return from(file, 8192);</span>
+    }
 
-	public static Flowable&lt;byte[]&gt; from(final File file, final int size) {
-<span class="fc" id="L64">		Callable&lt;InputStream&gt; resourceFactory = new Callable&lt;InputStream&gt;() {</span>
+    public static Flowable&lt;byte[]&gt; from(final File file, final int size) {
+<span class="fc" id="L64">        Callable&lt;InputStream&gt; resourceFactory = new Callable&lt;InputStream&gt;() {</span>
 
-			@Override
-			public InputStream call() throws FileNotFoundException {
-<span class="fc" id="L68">				return new BufferedInputStream(new FileInputStream(file), size);</span>
-			}
-		};
-<span class="fc" id="L71">		Function&lt;InputStream, Flowable&lt;byte[]&gt;&gt; observableFactory = new Function&lt;InputStream, Flowable&lt;byte[]&gt;&gt;() {</span>
+            @Override
+            public InputStream call() throws FileNotFoundException {
+<span class="fc" id="L68">                return new BufferedInputStream(new FileInputStream(file), size);</span>
+            }
+        };
+<span class="fc" id="L71">        Function&lt;InputStream, Flowable&lt;byte[]&gt;&gt; observableFactory = new Function&lt;InputStream, Flowable&lt;byte[]&gt;&gt;() {</span>
 
-			@Override
-			public Flowable&lt;byte[]&gt; apply(InputStream is) {
-<span class="fc" id="L75">				return from(is, size);</span>
-			}
-		};
-<span class="fc" id="L78">		return Flowable.using(resourceFactory, observableFactory, InputStreamCloseHolder.INSTANCE, true);</span>
-	}
+            @Override
+            public Flowable&lt;byte[]&gt; apply(InputStream is) {
+<span class="fc" id="L75">                return from(is, size);</span>
+            }
+        };
+<span class="fc" id="L78">        return Flowable.using(resourceFactory, observableFactory, InputStreamCloseHolder.INSTANCE, true);</span>
+    }
 
-<span class="nc" id="L81">	private static final class InputStreamCloseHolder {</span>
-<span class="fc" id="L82">		static final Consumer&lt;InputStream&gt; INSTANCE = new Consumer&lt;InputStream&gt;() {</span>
+<span class="nc" id="L81">    private static final class InputStreamCloseHolder {</span>
+<span class="fc" id="L82">        static final Consumer&lt;InputStream&gt; INSTANCE = new Consumer&lt;InputStream&gt;() {</span>
 
-			@Override
-			public void accept(InputStream is) throws IOException {
-<span class="fc" id="L86">				is.close();</span>
-<span class="fc" id="L87">			}</span>
-		};
-	}
+            @Override
+            public void accept(InputStream is) throws IOException {
+<span class="fc" id="L86">                is.close();</span>
+<span class="fc" id="L87">            }</span>
+        };
+    }
 
-	/**
-	 * Returns an Flowable stream of byte arrays from the given
-	 * {@link InputStream} of {@code 8192} bytes. The final byte array may be
-	 * less than {@code 8192} bytes.
-	 * 
-	 * @param is
-	 *            input stream of bytes
-	 * @return a stream of byte arrays
-	 */
-	public static Flowable&lt;byte[]&gt; from(InputStream is) {
-<span class="fc" id="L101">		return from(is, DEFAULT_BUFFER_SIZE);</span>
-	}
+    /**
+     * Returns a Flowable stream of byte arrays from the given
+     * {@link InputStream} of {@code 8192} bytes. The final byte array may be
+     * less than {@code 8192} bytes.
+     * 
+     * @param is
+     *            input stream of bytes
+     * @return a stream of byte arrays
+     */
+    public static Flowable&lt;byte[]&gt; from(InputStream is) {
+<span class="fc" id="L101">        return from(is, DEFAULT_BUFFER_SIZE);</span>
+    }
 
-	public static Flowable&lt;ZippedEntry&gt; unzip(final File file) {
-<span class="fc" id="L105">		Callable&lt;ZipInputStream&gt; resourceFactory = new Callable&lt;ZipInputStream&gt;() {</span>
-			@Override
-			public ZipInputStream call() throws FileNotFoundException {
-<span class="fc" id="L108">				return new ZipInputStream(new FileInputStream(file));</span>
-			}
-		};
-<span class="fc" id="L111">		Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt; observableFactory = ZipHolder.OBSERVABLE_FACTORY;</span>
-<span class="fc" id="L112">		Consumer&lt;ZipInputStream&gt; disposeAction = ZipHolder.DISPOSER;</span>
-<span class="fc" id="L113">		return Flowable.using(resourceFactory, observableFactory, disposeAction);</span>
-	}
+    public static Flowable&lt;ZippedEntry&gt; unzip(final File file) {
+<span class="fc" id="L105">        Callable&lt;ZipInputStream&gt; resourceFactory = new Callable&lt;ZipInputStream&gt;() {</span>
+            @Override
+            public ZipInputStream call() throws FileNotFoundException {
+<span class="fc" id="L108">                return new ZipInputStream(new FileInputStream(file));</span>
+            }
+        };
+<span class="fc" id="L111">        Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt; observableFactory = ZipHolder.OBSERVABLE_FACTORY;</span>
+<span class="fc" id="L112">        Consumer&lt;ZipInputStream&gt; disposeAction = ZipHolder.DISPOSER;</span>
+<span class="fc" id="L113">        return Flowable.using(resourceFactory, observableFactory, disposeAction);</span>
+    }
 
-	public static Flowable&lt;ZippedEntry&gt; unzip(final InputStream is) {
-<span class="fc" id="L117">		return unzip(new ZipInputStream(is));</span>
-	}
+    public static Flowable&lt;ZippedEntry&gt; unzip(final InputStream is) {
+<span class="fc" id="L117">        return unzip(new ZipInputStream(is));</span>
+    }
 
-	public static Flowable&lt;ZippedEntry&gt; unzip(final ZipInputStream zis) {
+    public static Flowable&lt;ZippedEntry&gt; unzip(final ZipInputStream zis) {
 
-<span class="fc" id="L122">		return Flowable.generate(new Consumer&lt;Emitter&lt;ZippedEntry&gt;&gt;() {</span>
-			@Override
-			public void accept(Emitter&lt;ZippedEntry&gt; emitter) throws IOException {
-<span class="fc" id="L125">				ZipEntry zipEntry = zis.getNextEntry();</span>
-<span class="fc bfc" id="L126" title="All 2 branches covered.">				if (zipEntry != null) {</span>
-<span class="fc" id="L127">					emitter.onNext(new ZippedEntry(zipEntry, zis));</span>
-				} else {
-					// end of stream so eagerly close the stream (might not be a
-					// good idea since this method did not create the zis
-<span class="fc" id="L131">					zis.close();</span>
-<span class="fc" id="L132">					emitter.onComplete();</span>
-				}
-<span class="fc" id="L134">			}</span>
-		});
+<span class="fc" id="L122">        return Flowable.generate(new Consumer&lt;Emitter&lt;ZippedEntry&gt;&gt;() {</span>
+            @Override
+            public void accept(Emitter&lt;ZippedEntry&gt; emitter) throws IOException {
+<span class="fc" id="L125">                ZipEntry zipEntry = zis.getNextEntry();</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                if (zipEntry != null) {</span>
+<span class="fc" id="L127">                    emitter.onNext(new ZippedEntry(zipEntry, zis));</span>
+                } else {
+                    // end of stream so eagerly close the stream (might not be a
+                    // good idea since this method did not create the zis
+<span class="fc" id="L131">                    zis.close();</span>
+<span class="fc" id="L132">                    emitter.onComplete();</span>
+                }
+<span class="fc" id="L134">            }</span>
+        });
 
-	}
+    }
 
-	public static Single&lt;byte[]&gt; collect(Flowable&lt;byte[]&gt; source) {
-<span class="fc" id="L140">		return source.collect(BosCreatorHolder.INSTANCE, BosCollectorHolder.INSTANCE).map(BosToArrayHolder.INSTANCE);</span>
-	}
+    public static Single&lt;byte[]&gt; collect(Flowable&lt;byte[]&gt; source) {
+<span class="fc" id="L140">        return source.collect(BosCreatorHolder.INSTANCE, BosCollectorHolder.INSTANCE).map(BosToArrayHolder.INSTANCE);</span>
+    }
 
-	public static Function&lt;Flowable&lt;byte[]&gt;, Single&lt;byte[]&gt;&gt; collect() {
-<span class="fc" id="L144">		return new Function&lt;Flowable&lt;byte[]&gt;, Single&lt;byte[]&gt;&gt;() {</span>
-			@Override
-			public Single&lt;byte[]&gt; apply(Flowable&lt;byte[]&gt; source) throws Exception {
-<span class="fc" id="L147">				return collect(source);</span>
-			}
-		};
-	}
+    public static Function&lt;Flowable&lt;byte[]&gt;, Single&lt;byte[]&gt;&gt; collect() {
+<span class="fc" id="L144">        return new Function&lt;Flowable&lt;byte[]&gt;, Single&lt;byte[]&gt;&gt;() {</span>
+            @Override
+            public Single&lt;byte[]&gt; apply(Flowable&lt;byte[]&gt; source) throws Exception {
+<span class="fc" id="L147">                return collect(source);</span>
+            }
+        };
+    }
 
-<span class="nc" id="L152">	private static final class BosCreatorHolder {</span>
-		;
-<span class="fc" id="L154">		static final Callable&lt;ByteArrayOutputStream&gt; INSTANCE = new Callable&lt;ByteArrayOutputStream&gt;() {</span>
+<span class="nc" id="L152">    private static final class BosCreatorHolder {</span>
+<span class="fc" id="L153">        static final Callable&lt;ByteArrayOutputStream&gt; INSTANCE = new Callable&lt;ByteArrayOutputStream&gt;() {</span>
 
-			@Override
-			public ByteArrayOutputStream call() {
-<span class="fc" id="L158">				return new ByteArrayOutputStream();</span>
-			}
-		};
-	}
+            @Override
+            public ByteArrayOutputStream call() {
+<span class="fc" id="L157">                return new ByteArrayOutputStream();</span>
+            }
+        };
+    }
 
-<span class="nc" id="L163">	private static final class BosCollectorHolder {</span>
-		;
-<span class="fc" id="L165">		static final BiConsumer&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new BiConsumer&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
+<span class="nc" id="L162">    private static final class BosCollectorHolder {</span>
+<span class="fc" id="L163">        static final BiConsumer&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new BiConsumer&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
 
-			@Override
-			public void accept(ByteArrayOutputStream bos, byte[] bytes) throws IOException {
-<span class="fc" id="L169">				bos.write(bytes);</span>
-<span class="fc" id="L170">			}</span>
-		};
-	}
+            @Override
+            public void accept(ByteArrayOutputStream bos, byte[] bytes) throws IOException {
+<span class="fc" id="L167">                bos.write(bytes);</span>
+<span class="fc" id="L168">            }</span>
+        };
+    }
 
-<span class="nc" id="L174">	private static final class BosToArrayHolder {</span>
-		;
-<span class="fc" id="L176">		static final Function&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new Function&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
-			@Override
-			public byte[] apply(ByteArrayOutputStream bos) {
-<span class="fc" id="L179">				return bos.toByteArray();</span>
-			}
-		};
-	}
+<span class="nc" id="L172">    private static final class BosToArrayHolder {</span>
+<span class="fc" id="L173">        static final Function&lt;ByteArrayOutputStream, byte[]&gt; INSTANCE = new Function&lt;ByteArrayOutputStream, byte[]&gt;() {</span>
+            @Override
+            public byte[] apply(ByteArrayOutputStream bos) {
+<span class="fc" id="L176">                return bos.toByteArray();</span>
+            }
+        };
+    }
 
-<span class="nc" id="L184">	private static final class ZipHolder {</span>
-		;
-<span class="fc" id="L186">		static final Consumer&lt;ZipInputStream&gt; DISPOSER = new Consumer&lt;ZipInputStream&gt;() {</span>
+<span class="nc" id="L181">    private static final class ZipHolder {</span>
+<span class="fc" id="L182">        static final Consumer&lt;ZipInputStream&gt; DISPOSER = new Consumer&lt;ZipInputStream&gt;() {</span>
 
-			@Override
-			public void accept(ZipInputStream zis) throws IOException {
-<span class="fc" id="L190">				zis.close();</span>
-<span class="fc" id="L191">			}</span>
-		};
-<span class="fc" id="L193">		final static Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt; OBSERVABLE_FACTORY = new Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt;() {</span>
-			@Override
-			public Flowable&lt;ZippedEntry&gt; apply(ZipInputStream zis) {
-<span class="fc" id="L196">				return unzip(zis);</span>
-			}
-		};
-	}
+            @Override
+            public void accept(ZipInputStream zis) throws IOException {
+<span class="fc" id="L186">                zis.close();</span>
+<span class="fc" id="L187">            }</span>
+        };
+<span class="fc" id="L189">        final static Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt; OBSERVABLE_FACTORY = new Function&lt;ZipInputStream, Flowable&lt;ZippedEntry&gt;&gt;() {</span>
+            @Override
+            public Flowable&lt;ZippedEntry&gt; apply(ZipInputStream zis) {
+<span class="fc" id="L192">                return unzip(zis);</span>
+            }
+        };
+    }
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

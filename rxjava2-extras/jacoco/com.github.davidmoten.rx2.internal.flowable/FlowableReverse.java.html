@@ -15,13 +15,13 @@ public final class FlowableReverse {
     @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; Flowable&lt;T&gt; reverse(Flowable&lt;T&gt; source) {
 <span class="fc" id="L17">        return source.toList().toFlowable()</span>
-<span class="fc" id="L18">                .flatMap((Function&lt;List&lt;T&gt;, Flowable&lt;T&gt;&gt;) (Function&lt;?, ?&gt;) REVERSE_LIST);</span>
+<span class="fc" id="L18">                .flatMapIterable((Function&lt;List&lt;T&gt;, Iterable&lt;T&gt;&gt;) (Function&lt;?, ?&gt;) REVERSE_LIST);</span>
     }
 
-<span class="fc" id="L21">    private static final Function&lt;List&lt;Object&gt;, Flowable&lt;Object&gt;&gt; REVERSE_LIST = new Function&lt;List&lt;Object&gt;, Flowable&lt;Object&gt;&gt;() {</span>
+<span class="fc" id="L21">    private static final Function&lt;List&lt;Object&gt;, Iterable&lt;Object&gt;&gt; REVERSE_LIST = new Function&lt;List&lt;Object&gt;, Iterable&lt;Object&gt;&gt;() {</span>
         @Override
-        public Flowable&lt;Object&gt; apply(List&lt;Object&gt; list) {
-<span class="fc" id="L24">            return Flowable.fromIterable(reverse(list));</span>
+        public Iterable&lt;Object&gt; apply(List&lt;Object&gt; list) {
+<span class="fc" id="L24">            return reverse(list);</span>
         }
     };
 

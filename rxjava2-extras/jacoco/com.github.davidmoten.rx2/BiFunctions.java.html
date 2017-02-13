@@ -14,26 +14,48 @@ public final class BiFunctions {
     public static &lt;A, B, C&gt; BiFunction&lt;A, B, C&gt; throwing() {
 <span class="fc" id="L15">        return (BiFunction&lt;A, B, C&gt;) ThrowingHolder.INSTANCE;</span>
     }
-    
+
 <span class="nc" id="L18">    private static final class ThrowingHolder {</span>
-        ;
-<span class="fc" id="L20">        static BiFunction&lt;Object,Object,Object&gt; INSTANCE = new BiFunction&lt;Object, Object, Object&gt;() {</span>
+<span class="fc" id="L19">        static BiFunction&lt;Object, Object, Object&gt; INSTANCE = new BiFunction&lt;Object, Object, Object&gt;() {</span>
 
             @Override
             public Object apply(Object t1, Object t2) throws Exception {
-<span class="fc" id="L24">                throw new ThrowingException();</span>
+<span class="fc" id="L23">                throw new ThrowingException();</span>
             }
         };
     }
-    
+
     public static &lt;T extends Number&gt; BiFunction&lt;Statistics, T, Statistics&gt; collectStats() {
-<span class="fc" id="L30">        return new BiFunction&lt;Statistics, T, Statistics&gt;() {</span>
+<span class="fc" id="L29">        return new BiFunction&lt;Statistics, T, Statistics&gt;() {</span>
 
             @Override
             public Statistics apply(Statistics s, T t) {
-<span class="fc" id="L34">                return s.add(t);</span>
+<span class="fc" id="L33">                return s.add(t);</span>
             }
         };
+    }
+
+    public static &lt;T, R, S&gt; BiFunction&lt;T, R, S&gt; constant(final S value) {
+        // TODO make holder
+<span class="fc" id="L40">        return new BiFunction&lt;T, R, S&gt;() {</span>
+
+            @Override
+            public S apply(T t1, R t2) throws Exception {
+<span class="fc" id="L44">                return value;</span>
+            }
+        };
+    }
+
+    public static &lt;T, R, S&gt; BiFunction&lt;T, R, S&gt; toNull() {
+        // TODO make holder
+<span class="fc" id="L51">        return new BiFunction&lt;T, R, S&gt;() {</span>
+
+            @Override
+            public S apply(T t1, R t2) throws Exception {
+<span class="fc" id="L55">                return null;</span>
+            }
+        };
+
     }
 
 }

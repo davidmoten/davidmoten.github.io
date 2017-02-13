@@ -38,27 +38,25 @@ public final class RetryWhen {
 <span class="fc" id="L38">    private RetryWhen() {</span>
         // prevent instantiation
 <span class="fc" id="L40">    }</span>
-    
+
     private static final long NO_MORE_DELAYS = -1;
 
     private static Function&lt;Flowable&lt;? extends Throwable&gt;, Flowable&lt;Object&gt;&gt; notificationHandler(
-            final Flowable&lt;Long&gt; delays, final Scheduler scheduler,
-            final Consumer&lt;? super ErrorAndDuration&gt; action,
+            final Flowable&lt;Long&gt; delays, final Scheduler scheduler, final Consumer&lt;? super ErrorAndDuration&gt; action,
             final List&lt;Class&lt;? extends Throwable&gt;&gt; retryExceptions,
             final List&lt;Class&lt;? extends Throwable&gt;&gt; failExceptions,
             final Predicate&lt;? super Throwable&gt; exceptionPredicate) {
 
-<span class="fc" id="L51">        final Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt; checkExceptions = createExceptionChecker(</span>
+<span class="fc" id="L50">        final Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt; checkExceptions = createExceptionChecker(</span>
                 retryExceptions, failExceptions, exceptionPredicate);
 
-<span class="fc" id="L54">        return createNotificationHandler(delays, scheduler, action, checkExceptions);</span>
+<span class="fc" id="L53">        return createNotificationHandler(delays, scheduler, action, checkExceptions);</span>
     }
 
     private static Function&lt;Flowable&lt;? extends Throwable&gt;, Flowable&lt;Object&gt;&gt; createNotificationHandler(
-            final Flowable&lt;Long&gt; delays, final Scheduler scheduler,
-            final Consumer&lt;? super ErrorAndDuration&gt; action,
+            final Flowable&lt;Long&gt; delays, final Scheduler scheduler, final Consumer&lt;? super ErrorAndDuration&gt; action,
             final Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt; checkExceptions) {
-<span class="fc" id="L61">        return new Function&lt;Flowable&lt;? extends Throwable&gt;, Flowable&lt;Object&gt;&gt;() {</span>
+<span class="fc" id="L59">        return new Function&lt;Flowable&lt;? extends Throwable&gt;, Flowable&lt;Object&gt;&gt;() {</span>
 
             @SuppressWarnings(&quot;unchecked&quot;)
             @Override
@@ -66,30 +64,28 @@ public final class RetryWhen {
                 // TODO remove this cast when rxjava 2.0.3 released because
                 // signature of retryWhen
                 // will be fixed
-<span class="fc" id="L69">                return (Flowable&lt;Object&gt;) (Flowable&lt;?&gt;) errors</span>
+<span class="fc" id="L67">                return (Flowable&lt;Object&gt;) (Flowable&lt;?&gt;) errors</span>
                         // zip with delays, use -1 to signal completion
-<span class="fc" id="L71">                        .zipWith(delays.concatWith(Flowable.just(NO_MORE_DELAYS)),</span>
-<span class="fc" id="L72">                                TO_ERROR_AND_DURATION)</span>
+<span class="fc" id="L69">                        .zipWith(delays.concatWith(Flowable.just(NO_MORE_DELAYS)), TO_ERROR_AND_DURATION)</span>
                         // check retry and non-retry exceptions
-<span class="fc" id="L74">                        .flatMap(checkExceptions)</span>
+<span class="fc" id="L71">                        .flatMap(checkExceptions)</span>
                         // perform user action (for example log that a
                         // delay is happening)
-<span class="fc" id="L77">                        .doOnNext(callActionExceptForLast(action))</span>
+<span class="fc" id="L74">                        .doOnNext(callActionExceptForLast(action))</span>
                         // delay the time in ErrorAndDuration
-<span class="fc" id="L79">                        .flatMap(delay(scheduler));</span>
+<span class="fc" id="L76">                        .flatMap(delay(scheduler));</span>
             }
         };
     }
 
-    private static Consumer&lt;ErrorAndDuration&gt; callActionExceptForLast(
-            final Consumer&lt;? super ErrorAndDuration&gt; action) {
-<span class="fc" id="L86">        return new Consumer&lt;ErrorAndDuration&gt;() {</span>
+    private static Consumer&lt;ErrorAndDuration&gt; callActionExceptForLast(final Consumer&lt;? super ErrorAndDuration&gt; action) {
+<span class="fc" id="L82">        return new Consumer&lt;ErrorAndDuration&gt;() {</span>
             @Override
             public void accept(ErrorAndDuration e) throws Exception {
-<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (e.durationMs() != NO_MORE_DELAYS) {</span>
-<span class="fc" id="L90">                    action.accept(e);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                if (e.durationMs() != NO_MORE_DELAYS) {</span>
+<span class="fc" id="L86">                    action.accept(e);</span>
                 }
-<span class="fc" id="L92">            }</span>
+<span class="fc" id="L88">            }</span>
         };
     }
 
@@ -98,46 +94,45 @@ public final class RetryWhen {
             final List&lt;Class&lt;? extends Throwable&gt;&gt; retryExceptions,
             final List&lt;Class&lt;? extends Throwable&gt;&gt; failExceptions,
             final Predicate&lt;? super Throwable&gt; exceptionPredicate) {
-<span class="fc" id="L101">        return new Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt;() {</span>
+<span class="fc" id="L97">        return new Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt;() {</span>
 
             @Override
             public Flowable&lt;ErrorAndDuration&gt; apply(ErrorAndDuration e) throws Exception {
-<span class="fc bfc" id="L105" title="All 2 branches covered.">                if (!exceptionPredicate.test(e.throwable()))</span>
-<span class="fc" id="L106">                    return Flowable.error(e.throwable());</span>
-<span class="fc bfc" id="L107" title="All 2 branches covered.">                for (Class&lt;? extends Throwable&gt; cls : failExceptions) {</span>
-<span class="pc bpc" id="L108" title="1 of 2 branches missed.">                    if (e.throwable().getClass().isAssignableFrom(cls))</span>
-<span class="fc" id="L109">                        return Flowable.error(e.throwable());</span>
-<span class="nc" id="L110">                }</span>
-<span class="fc bfc" id="L111" title="All 2 branches covered.">                if (retryExceptions.size() &gt; 0) {</span>
-<span class="fc bfc" id="L112" title="All 2 branches covered.">                    for (Class&lt;? extends Throwable&gt; cls : retryExceptions) {</span>
-<span class="fc bfc" id="L113" title="All 2 branches covered.">                        if (e.throwable().getClass().isAssignableFrom(cls))</span>
-<span class="fc" id="L114">                            return Flowable.just(e);</span>
-<span class="fc" id="L115">                    }</span>
-<span class="fc" id="L116">                    return Flowable.error(e.throwable());</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (!exceptionPredicate.test(e.throwable()))</span>
+<span class="fc" id="L102">                    return Flowable.error(e.throwable());</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                for (Class&lt;? extends Throwable&gt; cls : failExceptions) {</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                    if (e.throwable().getClass().isAssignableFrom(cls))</span>
+<span class="fc" id="L105">                        return Flowable.error(e.throwable());</span>
+<span class="nc" id="L106">                }</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                if (retryExceptions.size() &gt; 0) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                    for (Class&lt;? extends Throwable&gt; cls : retryExceptions) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                        if (e.throwable().getClass().isAssignableFrom(cls))</span>
+<span class="fc" id="L110">                            return Flowable.just(e);</span>
+<span class="fc" id="L111">                    }</span>
+<span class="fc" id="L112">                    return Flowable.error(e.throwable());</span>
                 } else {
-<span class="fc" id="L118">                    return Flowable.just(e);</span>
+<span class="fc" id="L114">                    return Flowable.just(e);</span>
                 }
             }
         };
     }
 
-<span class="fc" id="L124">    private static BiFunction&lt;Throwable, Long, ErrorAndDuration&gt; TO_ERROR_AND_DURATION = new BiFunction&lt;Throwable, Long, ErrorAndDuration&gt;() {</span>
+<span class="fc" id="L120">    private static BiFunction&lt;Throwable, Long, ErrorAndDuration&gt; TO_ERROR_AND_DURATION = new BiFunction&lt;Throwable, Long, ErrorAndDuration&gt;() {</span>
         @Override
         public ErrorAndDuration apply(Throwable throwable, Long durationMs) {
-<span class="fc" id="L127">            return new ErrorAndDuration(throwable, durationMs);</span>
+<span class="fc" id="L123">            return new ErrorAndDuration(throwable, durationMs);</span>
         }
     };
 
-    private static Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt; delay(
-            final Scheduler scheduler) {
-<span class="fc" id="L133">        return new Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt;() {</span>
+    private static Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt; delay(final Scheduler scheduler) {
+<span class="fc" id="L128">        return new Function&lt;ErrorAndDuration, Flowable&lt;ErrorAndDuration&gt;&gt;() {</span>
             @Override
             public Flowable&lt;ErrorAndDuration&gt; apply(ErrorAndDuration e) {
-<span class="fc bfc" id="L136" title="All 2 branches covered.">                if (e.durationMs() == NO_MORE_DELAYS)</span>
-<span class="fc" id="L137">                    return Flowable.error(e.throwable());</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                if (e.durationMs() == NO_MORE_DELAYS)</span>
+<span class="fc" id="L132">                    return Flowable.error(e.throwable());</span>
                 else
-<span class="fc" id="L139">                    return Flowable.timer(e.durationMs(), TimeUnit.MILLISECONDS, scheduler)</span>
-<span class="fc" id="L140">                            .map(com.github.davidmoten.rx2.Functions.constant(e));</span>
+<span class="fc" id="L134">                    return Flowable.timer(e.durationMs(), TimeUnit.MILLISECONDS, scheduler)</span>
+<span class="fc" id="L135">                            .map(com.github.davidmoten.rx2.Functions.constant(e));</span>
             }
         };
     }
@@ -145,156 +140,166 @@ public final class RetryWhen {
     // Builder factory methods
 
     public static Builder retryWhenInstanceOf(Class&lt;? extends Throwable&gt;... classes) {
-<span class="nc" id="L148">        return new Builder().retryWhenInstanceOf(classes);</span>
+<span class="nc" id="L143">        return new Builder().retryWhenInstanceOf(classes);</span>
     }
 
     public static Builder failWhenInstanceOf(Class&lt;? extends Throwable&gt;... classes) {
-<span class="nc" id="L152">        return new Builder().failWhenInstanceOf(classes);</span>
+<span class="nc" id="L147">        return new Builder().failWhenInstanceOf(classes);</span>
     }
 
     public static Builder retryIf(Predicate&lt;Throwable&gt; predicate) {
-<span class="nc" id="L156">        return new Builder().retryIf(predicate);</span>
+<span class="nc" id="L151">        return new Builder().retryIf(predicate);</span>
     }
 
     public static Builder delays(Flowable&lt;Long&gt; delays, TimeUnit unit) {
-<span class="nc" id="L160">        return new Builder().delays(delays, unit);</span>
+<span class="nc" id="L155">        return new Builder().delays(delays, unit);</span>
     }
 
     public static Builder delaysInt(Flowable&lt;Integer&gt; delays, TimeUnit unit) {
-<span class="nc" id="L164">        return new Builder().delaysInt(delays, unit);</span>
+<span class="nc" id="L159">        return new Builder().delaysInt(delays, unit);</span>
     }
 
     public static Builder delay(long delay, final TimeUnit unit) {
-<span class="fc" id="L168">        return new Builder().delay(delay, unit);</span>
+<span class="fc" id="L163">        return new Builder().delay(delay, unit);</span>
     }
 
     public static Builder maxRetries(int maxRetries) {
-<span class="fc" id="L172">        return new Builder().maxRetries(maxRetries);</span>
+<span class="fc" id="L167">        return new Builder().maxRetries(maxRetries);</span>
     }
 
     public static Builder scheduler(Scheduler scheduler) {
-<span class="nc" id="L176">        return new Builder().scheduler(scheduler);</span>
+<span class="nc" id="L171">        return new Builder().scheduler(scheduler);</span>
     }
 
     public static Builder action(Consumer&lt;? super ErrorAndDuration&gt; action) {
-<span class="nc" id="L180">        return new Builder().action(action);</span>
+<span class="nc" id="L175">        return new Builder().action(action);</span>
     }
 
-    public static Builder exponentialBackoff(final long firstDelay, final TimeUnit unit,
-            final double factor) {
-<span class="nc" id="L185">        return new Builder().exponentialBackoff(firstDelay, unit, factor);</span>
+    public static Builder exponentialBackoff(final long firstDelay, final TimeUnit unit, final double factor) {
+<span class="nc" id="L179">        return new Builder().exponentialBackoff(firstDelay, unit, factor);</span>
     }
 
     public static Builder exponentialBackoff(long firstDelay, TimeUnit unit) {
-<span class="nc" id="L189">        return new Builder().exponentialBackoff(firstDelay, unit);</span>
+<span class="nc" id="L183">        return new Builder().exponentialBackoff(firstDelay, unit);</span>
     }
 
     public static final class Builder {
 
-<span class="fc" id="L194">        private final List&lt;Class&lt;? extends Throwable&gt;&gt; retryExceptions = new ArrayList&lt;Class&lt;? extends Throwable&gt;&gt;();</span>
-<span class="fc" id="L195">        private final List&lt;Class&lt;? extends Throwable&gt;&gt; failExceptions = new ArrayList&lt;Class&lt;? extends Throwable&gt;&gt;();</span>
-<span class="fc" id="L196">        private Predicate&lt;? super Throwable&gt; exceptionPredicate = Functions.alwaysTrue();</span>
+<span class="fc" id="L188">        private final List&lt;Class&lt;? extends Throwable&gt;&gt; retryExceptions = new ArrayList&lt;Class&lt;? extends Throwable&gt;&gt;();</span>
+<span class="fc" id="L189">        private final List&lt;Class&lt;? extends Throwable&gt;&gt; failExceptions = new ArrayList&lt;Class&lt;? extends Throwable&gt;&gt;();</span>
+<span class="fc" id="L190">        private Predicate&lt;? super Throwable&gt; exceptionPredicate = Functions.alwaysTrue();</span>
 
-<span class="fc" id="L198">        private Flowable&lt;Long&gt; delays = Flowable.just(0L).repeat();</span>
-<span class="fc" id="L199">        private Optional&lt;Integer&gt; maxRetries = Optional.absent();</span>
-<span class="fc" id="L200">        private Optional&lt;Scheduler&gt; scheduler = Optional.of(Schedulers.computation());</span>
-<span class="fc" id="L201">        private Consumer&lt;? super ErrorAndDuration&gt; action = Consumers.doNothing();</span>
+<span class="fc" id="L192">        private Flowable&lt;Long&gt; delays = Flowable.just(0L).repeat();</span>
+<span class="fc" id="L193">        private Optional&lt;Integer&gt; maxRetries = Optional.absent();</span>
+<span class="fc" id="L194">        private Optional&lt;Scheduler&gt; scheduler = Optional.of(Schedulers.computation());</span>
+<span class="fc" id="L195">        private Consumer&lt;? super ErrorAndDuration&gt; action = Consumers.doNothing();</span>
 
-<span class="fc" id="L203">        private Builder() {</span>
+<span class="fc" id="L197">        private Builder() {</span>
             // must use static factory method to instantiate
-<span class="fc" id="L205">        }</span>
+<span class="fc" id="L199">        }</span>
 
         public Builder retryWhenInstanceOf(Class&lt;? extends Throwable&gt;... classes) {
-<span class="fc" id="L208">            retryExceptions.addAll(Arrays.asList(classes));</span>
-<span class="fc" id="L209">            return this;</span>
+<span class="fc" id="L202">            retryExceptions.addAll(Arrays.asList(classes));</span>
+<span class="fc" id="L203">            return this;</span>
         }
 
         public Builder failWhenInstanceOf(Class&lt;? extends Throwable&gt;... classes) {
-<span class="fc" id="L213">            failExceptions.addAll(Arrays.asList(classes));</span>
-<span class="fc" id="L214">            return this;</span>
+<span class="fc" id="L207">            failExceptions.addAll(Arrays.asList(classes));</span>
+<span class="fc" id="L208">            return this;</span>
         }
 
         public Builder retryIf(Predicate&lt;Throwable&gt; predicate) {
-<span class="fc" id="L218">            this.exceptionPredicate = predicate;</span>
-<span class="fc" id="L219">            return this;</span>
+<span class="fc" id="L212">            this.exceptionPredicate = predicate;</span>
+<span class="fc" id="L213">            return this;</span>
         }
 
         public Builder delays(Flowable&lt;Long&gt; delays, TimeUnit unit) {
-<span class="nc" id="L223">            this.delays = delays.map(toMillis(unit));</span>
-<span class="nc" id="L224">            return this;</span>
+<span class="nc" id="L217">            this.delays = delays.map(toMillis(unit));</span>
+<span class="nc" id="L218">            return this;</span>
         }
 
-<span class="nc" id="L227">        private static class ToLongHolder {</span>
-<span class="nc" id="L228">            static final Function&lt;Integer, Long&gt; INSTANCE = new Function&lt;Integer, Long&gt;() {</span>
+<span class="nc" id="L221">        private static class ToLongHolder {</span>
+<span class="nc" id="L222">            static final Function&lt;Integer, Long&gt; INSTANCE = new Function&lt;Integer, Long&gt;() {</span>
                 @Override
                 public Long apply(Integer n) {
-<span class="nc bnc" id="L231" title="All 2 branches missed.">                    if (n == null) {</span>
-<span class="nc" id="L232">                        return null;</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">                    if (n == null) {</span>
+<span class="nc" id="L226">                        return null;</span>
                     } else {
-<span class="nc" id="L234">                        return n.longValue();</span>
+<span class="nc" id="L228">                        return n.longValue();</span>
                     }
                 }
             };
         }
 
         public Builder delaysInt(Flowable&lt;Integer&gt; delays, TimeUnit unit) {
-<span class="nc" id="L241">            return delays(delays.map(ToLongHolder.INSTANCE), unit);</span>
+<span class="nc" id="L235">            return delays(delays.map(ToLongHolder.INSTANCE), unit);</span>
         }
 
         public Builder delay(Long delay, final TimeUnit unit) {
-<span class="fc" id="L245">            this.delays = Flowable.just(delay).map(toMillis(unit)).repeat();</span>
-<span class="fc" id="L246">            return this;</span>
+<span class="fc" id="L239">            this.delays = Flowable.just(delay).map(toMillis(unit)).repeat();</span>
+<span class="fc" id="L240">            return this;</span>
         }
 
         private static Function&lt;Long, Long&gt; toMillis(final TimeUnit unit) {
-<span class="fc" id="L250">            return new Function&lt;Long, Long&gt;() {</span>
+<span class="fc" id="L244">            return new Function&lt;Long, Long&gt;() {</span>
 
                 @Override
                 public Long apply(Long t) {
-<span class="fc" id="L254">                    return unit.toMillis(t);</span>
+<span class="fc" id="L248">                    return unit.toMillis(t);</span>
                 }
             };
         }
 
         public Builder maxRetries(int maxRetries) {
-<span class="fc" id="L260">            this.maxRetries = Optional.of(maxRetries);</span>
-<span class="fc" id="L261">            return this;</span>
+<span class="fc" id="L254">            this.maxRetries = Optional.of(maxRetries);</span>
+<span class="fc" id="L255">            return this;</span>
         }
 
         public Builder scheduler(Scheduler scheduler) {
-<span class="fc" id="L265">            this.scheduler = Optional.of(scheduler);</span>
-<span class="fc" id="L266">            return this;</span>
+<span class="fc" id="L259">            this.scheduler = Optional.of(scheduler);</span>
+<span class="fc" id="L260">            return this;</span>
         }
 
         public Builder action(Consumer&lt;? super ErrorAndDuration&gt; action) {
-<span class="fc" id="L270">            this.action = action;</span>
-<span class="fc" id="L271">            return this;</span>
+<span class="fc" id="L264">            this.action = action;</span>
+<span class="fc" id="L265">            return this;</span>
         }
 
-        public Builder exponentialBackoff(final long firstDelay, final TimeUnit unit,
+        public Builder exponentialBackoff(final long firstDelay, final long maxDelay, final TimeUnit unit,
                 final double factor) {
-<span class="fc" id="L276">            delays = Flowable.range(1, Integer.MAX_VALUE)</span>
+
+<span class="fc" id="L271">            delays = Flowable.range(1, Integer.MAX_VALUE)</span>
                     // make exponential
-<span class="fc" id="L278">                    .map(new Function&lt;Integer, Long&gt;() {</span>
+<span class="fc" id="L273">                    .map(new Function&lt;Integer, Long&gt;() {</span>
                         @Override
                         public Long apply(Integer n) {
-<span class="fc" id="L281">                            return Math.round(Math.pow(factor, n - 1) * unit.toMillis(firstDelay));</span>
+<span class="fc" id="L276">                            long delayMs = Math.round(Math.pow(factor, n - 1) * unit.toMillis(firstDelay));</span>
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">                            if (maxDelay == -1) {</span>
+<span class="fc" id="L278">                                return delayMs;</span>
+                            } else {
+<span class="nc" id="L280">                                long maxDelayMs = unit.toMillis(maxDelay);</span>
+<span class="nc" id="L281">                                return Math.min(maxDelayMs, delayMs);</span>
+                            }
                         }
                     });
-<span class="fc" id="L284">            return this;</span>
+<span class="fc" id="L285">            return this;</span>
+        }
+
+        public Builder exponentialBackoff(final long firstDelay, final TimeUnit unit, final double factor) {
+<span class="fc" id="L289">            return exponentialBackoff(firstDelay, -1, unit, factor);</span>
         }
 
         public Builder exponentialBackoff(long firstDelay, TimeUnit unit) {
-<span class="fc" id="L288">            return exponentialBackoff(firstDelay, unit, 2);</span>
+<span class="fc" id="L293">            return exponentialBackoff(firstDelay, unit, 2);</span>
         }
 
         public Function&lt;Flowable&lt;? extends Throwable&gt;, Flowable&lt;Object&gt;&gt; build() {
-<span class="fc" id="L292">            Preconditions.checkNotNull(delays);</span>
-<span class="fc bfc" id="L293" title="All 2 branches covered.">            if (maxRetries.isPresent()) {</span>
-<span class="fc" id="L294">                delays = delays.take(maxRetries.get());</span>
+<span class="fc" id="L297">            Preconditions.checkNotNull(delays);</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            if (maxRetries.isPresent()) {</span>
+<span class="fc" id="L299">                delays = delays.take(maxRetries.get());</span>
             }
-<span class="fc" id="L296">            return notificationHandler(delays, scheduler.get(), action, retryExceptions,</span>
-                    failExceptions, exceptionPredicate);
+<span class="fc" id="L301">            return notificationHandler(delays, scheduler.get(), action, retryExceptions, failExceptions,</span>
+                    exceptionPredicate);
         }
 
     }
@@ -304,17 +309,17 @@ public final class RetryWhen {
         private final Throwable throwable;
         private final long durationMs;
 
-<span class="fc" id="L307">        public ErrorAndDuration(Throwable throwable, long durationMs) {</span>
-<span class="fc" id="L308">            this.throwable = throwable;</span>
-<span class="fc" id="L309">            this.durationMs = durationMs;</span>
-<span class="fc" id="L310">        }</span>
+<span class="fc" id="L312">        public ErrorAndDuration(Throwable throwable, long durationMs) {</span>
+<span class="fc" id="L313">            this.throwable = throwable;</span>
+<span class="fc" id="L314">            this.durationMs = durationMs;</span>
+<span class="fc" id="L315">        }</span>
 
         public Throwable throwable() {
-<span class="fc" id="L313">            return throwable;</span>
+<span class="fc" id="L318">            return throwable;</span>
         }
 
         public long durationMs() {
-<span class="fc" id="L317">            return durationMs;</span>
+<span class="fc" id="L322">            return durationMs;</span>
         }
 
     }

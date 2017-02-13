@@ -8,10 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.github.davidmoten.guavamini.Preconditions;
 
 @SuppressWarnings(&quot;serial&quot;)
-public final class PagedQueue extends AtomicInteger {
+// non-final class for unit testing
+public class PagedQueue extends AtomicInteger {
 
-<span class="fc" id="L13">    private static final boolean isLittleEndian = ByteOrder</span>
-<span class="pc bpc" id="L14" title="1 of 2 branches missed.">            .nativeOrder() == ByteOrder.LITTLE_ENDIAN;</span>
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">    private static final boolean isLittleEndian = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;</span>
 
     private static final int EXTRA_PADDING_LIMIT = 64;
     private static final int SIZE_MESSAGE_SIZE_FIELD = 4;
@@ -19,8 +19,8 @@ public final class PagedQueue extends AtomicInteger {
     private static final int SIZE_MESSAGE_TYPE_FIELD = 1;
     private static final int ALIGN_BYTES = 4;
     private static final int MAX_PADDING_PER_FULL_MESSAGE = 32;
-    private static final int SIZE_HEADER_PRIMARY_PART = SIZE_MESSAGE_SIZE_FIELD
-            + SIZE_MESSAGE_TYPE_FIELD + SIZE_PADDING_SIZE_FIELD;
+    private static final int SIZE_HEADER_PRIMARY_PART = SIZE_MESSAGE_SIZE_FIELD + SIZE_MESSAGE_TYPE_FIELD
+            + SIZE_PADDING_SIZE_FIELD;
 
     private final Pages pages;
 
@@ -97,8 +97,8 @@ public final class PagedQueue extends AtomicInteger {
 <span class="fc" id="L97">        return padding;</span>
     }
 
-    private void write(byte[] bytes, int offset, int length, int padding,
-            final MessageType messageType, int totalLength) {
+    private void write(byte[] bytes, int offset, int length, int padding, final MessageType messageType,
+            int totalLength) {
 <span class="pc bpc" id="L102" title="1 of 2 branches missed.">        Preconditions.checkArgument(length != 0);</span>
 <span class="fc" id="L103">        pages.markForRewriteAndAdvance4Bytes();// messageSize left as 0</span>
         // storeFence not required at this point like Aeron uses.
@@ -168,58 +168,57 @@ public final class PagedQueue extends AtomicInteger {
 <span class="nc" id="L168">                    return null;</span>
                 } else {
 <span class="fc bfc" id="L170" title="All 2 branches covered.">                    if (readingFragments) {</span>
-<span class="fc" id="L171">                        System.arraycopy(result, 0, messageBytesAccumulated, indexBytesAccumulated,</span>
-                                result.length);
-<span class="fc" id="L173">                        indexBytesAccumulated += result.length;</span>
-<span class="fc bfc" id="L174" title="All 2 branches covered.">                        if (indexBytesAccumulated == messageBytesAccumulated.length) {</span>
-<span class="fc" id="L175">                            readingFragments = false;</span>
-<span class="fc" id="L176">                            byte[] b = messageBytesAccumulated;</span>
-<span class="fc" id="L177">                            messageBytesAccumulated = null;</span>
-<span class="fc" id="L178">                            return b;</span>
+<span class="fc" id="L171">                        System.arraycopy(result, 0, messageBytesAccumulated, indexBytesAccumulated, result.length);</span>
+<span class="fc" id="L172">                        indexBytesAccumulated += result.length;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                        if (indexBytesAccumulated == messageBytesAccumulated.length) {</span>
+<span class="fc" id="L174">                            readingFragments = false;</span>
+<span class="fc" id="L175">                            byte[] b = messageBytesAccumulated;</span>
+<span class="fc" id="L176">                            messageBytesAccumulated = null;</span>
+<span class="fc" id="L177">                            return b;</span>
                         }
                     } else {
-<span class="fc" id="L181">                        return result;</span>
+<span class="fc" id="L180">                        return result;</span>
                     }
                 }
             }
-<span class="fc" id="L185">        }</span>
+<span class="fc" id="L184">        }</span>
     }
 
     private void closeWrite() {
-<span class="fc" id="L189">        incrementAndGet();</span>
-<span class="fc bfc" id="L190" title="All 2 branches covered.">        while (!compareAndSet(1, 2))</span>
-<span class="fc" id="L191">            ;</span>
-<span class="fc" id="L192">    }</span>
+<span class="fc" id="L188">        incrementAndGet();</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        while (!compareAndSet(1, 2))</span>
+<span class="fc" id="L190">            ;</span>
+<span class="fc" id="L191">    }</span>
 
     public void close() {
         // to get to here no more reads will happen because close is called from
         // the drain loop
-<span class="fc" id="L197">        closeWrite();</span>
-<span class="fc" id="L198">        pages.close();</span>
-<span class="fc" id="L199">        messageBytesAccumulated = null;</span>
-<span class="fc" id="L200">    }</span>
+<span class="fc" id="L196">        closeWrite();</span>
+<span class="fc" id="L197">        pages.close();</span>
+<span class="fc" id="L198">        messageBytesAccumulated = null;</span>
+<span class="fc" id="L199">    }</span>
 
-<span class="pc" id="L202">    private static enum MessageType {</span>
+<span class="pc" id="L201">    private static enum MessageType {</span>
 
-<span class="fc" id="L204">        FULL_MESSAGE(0), FRAGMENT(1);</span>
+<span class="fc" id="L203">        FULL_MESSAGE(0), FRAGMENT(1);</span>
 
         private final byte value;
 
-<span class="fc" id="L208">        private MessageType(int value) {</span>
-<span class="fc" id="L209">            this.value = (byte) value;</span>
-<span class="fc" id="L210">        }</span>
+<span class="fc" id="L207">        private MessageType(int value) {</span>
+<span class="fc" id="L208">            this.value = (byte) value;</span>
+<span class="fc" id="L209">        }</span>
 
         byte value() {
-<span class="fc" id="L213">            return value;</span>
+<span class="fc" id="L212">            return value;</span>
         }
 
         static MessageType from(byte b) {
-<span class="fc bfc" id="L217" title="All 2 branches covered.">            if (b == 0)</span>
-<span class="fc" id="L218">                return MessageType.FULL_MESSAGE;</span>
-<span class="pc bpc" id="L219" title="1 of 2 branches missed.">            else if (b == 1)</span>
-<span class="fc" id="L220">                return MessageType.FRAGMENT;</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            if (b == 0)</span>
+<span class="fc" id="L217">                return MessageType.FULL_MESSAGE;</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            else if (b == 1)</span>
+<span class="fc" id="L219">                return MessageType.FRAGMENT;</span>
             else
-<span class="nc" id="L222">                throw new RuntimeException(&quot;unexpected&quot;);</span>
+<span class="nc" id="L221">                throw new RuntimeException(&quot;unexpected&quot;);</span>
         }
     }
 

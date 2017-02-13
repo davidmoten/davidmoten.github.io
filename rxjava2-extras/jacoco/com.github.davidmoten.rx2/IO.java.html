@@ -28,65 +28,63 @@ public final class IO {
         });
     }
 
-    public static ServerSocketBuilder serverSocketAutoAllocatePort(
-            final Consumer&lt;Integer&gt; onAllocated) {
-<span class="fc" id="L33">        return serverSocket(new Callable&lt;ServerSocket&gt;() {</span>
+    public static ServerSocketBuilder serverSocketAutoAllocatePort(final Consumer&lt;Integer&gt; onAllocated) {
+<span class="fc" id="L32">        return serverSocket(new Callable&lt;ServerSocket&gt;() {</span>
 
             @Override
             public ServerSocket call() throws Exception {
-<span class="fc" id="L37">                    ServerSocket ss = new ServerSocket(0);</span>
-<span class="fc" id="L38">                    onAllocated.accept(ss.getLocalPort());</span>
-<span class="fc" id="L39">                    return ss;</span>
+<span class="fc" id="L36">                ServerSocket ss = new ServerSocket(0);</span>
+<span class="fc" id="L37">                onAllocated.accept(ss.getLocalPort());</span>
+<span class="fc" id="L38">                return ss;</span>
             }
         });
     }
 
-    public static ServerSocketBuilder serverSocket(
-            Callable&lt;? extends ServerSocket&gt; serverSocketFactory) {
-<span class="fc" id="L46">        return new ServerSocketBuilder(serverSocketFactory);</span>
+    public static ServerSocketBuilder serverSocket(Callable&lt;? extends ServerSocket&gt; serverSocketFactory) {
+<span class="fc" id="L44">        return new ServerSocketBuilder(serverSocketFactory);</span>
     }
 
     public static final class ServerSocketBuilder {
 
         private final Callable&lt;? extends ServerSocket&gt; serverSocketFactory;
-<span class="fc" id="L52">        private int readTimeoutMs = Integer.MAX_VALUE;</span>
-<span class="fc" id="L53">        private int bufferSize = 8192;</span>
-<span class="fc" id="L54">        private Action preAcceptAction = Actions.doNothing();</span>
-<span class="fc" id="L55">        private int acceptTimeoutMs = Integer.MAX_VALUE;</span>
-<span class="fc" id="L56">        private Predicate&lt;? super Socket&gt; acceptSocket = Functions.&lt;Socket&gt;alwaysTrue();</span>
+<span class="fc" id="L50">        private int readTimeoutMs = Integer.MAX_VALUE;</span>
+<span class="fc" id="L51">        private int bufferSize = 8192;</span>
+<span class="fc" id="L52">        private Action preAcceptAction = Actions.doNothing();</span>
+<span class="fc" id="L53">        private int acceptTimeoutMs = Integer.MAX_VALUE;</span>
+<span class="fc" id="L54">        private Predicate&lt;? super Socket&gt; acceptSocket = Functions.&lt;Socket&gt;alwaysTrue();</span>
 
-<span class="fc" id="L58">        public ServerSocketBuilder(final Callable&lt;? extends ServerSocket&gt; serverSocketFactory) {</span>
-<span class="fc" id="L59">            this.serverSocketFactory = serverSocketFactory;</span>
-<span class="fc" id="L60">        }</span>
+<span class="fc" id="L56">        public ServerSocketBuilder(final Callable&lt;? extends ServerSocket&gt; serverSocketFactory) {</span>
+<span class="fc" id="L57">            this.serverSocketFactory = serverSocketFactory;</span>
+<span class="fc" id="L58">        }</span>
 
         public ServerSocketBuilder readTimeoutMs(int readTimeoutMs) {
-<span class="fc" id="L63">            this.readTimeoutMs = readTimeoutMs;</span>
-<span class="fc" id="L64">            return this;</span>
+<span class="fc" id="L61">            this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L62">            return this;</span>
         }
 
         public ServerSocketBuilder bufferSize(int bufferSize) {
-<span class="fc" id="L68">            this.bufferSize = bufferSize;</span>
-<span class="fc" id="L69">            return this;</span>
+<span class="fc" id="L66">            this.bufferSize = bufferSize;</span>
+<span class="fc" id="L67">            return this;</span>
         }
 
         public ServerSocketBuilder preAcceptAction(Action action) {
-<span class="nc" id="L73">            this.preAcceptAction = action;</span>
-<span class="nc" id="L74">            return this;</span>
+<span class="nc" id="L71">            this.preAcceptAction = action;</span>
+<span class="nc" id="L72">            return this;</span>
         }
 
         public ServerSocketBuilder acceptTimeoutMs(int acceptTimeoutMs) {
-<span class="fc" id="L78">            this.acceptTimeoutMs = acceptTimeoutMs;</span>
-<span class="fc" id="L79">            return this;</span>
+<span class="fc" id="L76">            this.acceptTimeoutMs = acceptTimeoutMs;</span>
+<span class="fc" id="L77">            return this;</span>
         }
 
         public ServerSocketBuilder acceptSocketIf(Predicate&lt;? super Socket&gt; acceptSocket) {
-<span class="fc" id="L83">            this.acceptSocket = acceptSocket;</span>
-<span class="fc" id="L84">            return this;</span>
+<span class="fc" id="L81">            this.acceptSocket = acceptSocket;</span>
+<span class="fc" id="L82">            return this;</span>
         }
 
         public Flowable&lt;Flowable&lt;byte[]&gt;&gt; create() {
-<span class="fc" id="L88">            return FlowableServerSocket.create(serverSocketFactory, readTimeoutMs, bufferSize,</span>
-                    preAcceptAction, acceptTimeoutMs, acceptSocket);
+<span class="fc" id="L86">            return FlowableServerSocket.create(serverSocketFactory, readTimeoutMs, bufferSize, preAcceptAction,</span>
+                    acceptTimeoutMs, acceptSocket);
         }
 
     }

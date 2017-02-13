@@ -108,33 +108,33 @@ public final class Consumers {
         };
     }
 
-    public static Consumer&lt;Object&gt; setToTrue(final AtomicBoolean value) {
-<span class="fc" id="L112">        return new Consumer&lt;Object&gt;() {</span>
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Consumer&lt;T&gt; setToTrue(final AtomicBoolean value) {
+<span class="fc" id="L113">        return (Consumer&lt;T&gt;) new Consumer&lt;Object&gt;() {</span>
 
             @Override
             public void accept(Object t) throws Exception {
-<span class="fc" id="L116">                value.set(true);</span>
-<span class="fc" id="L117">            }</span>
+<span class="fc" id="L117">                value.set(true);</span>
+<span class="fc" id="L118">            }</span>
         };
     }
 
     public static &lt;T&gt; Consumer&lt;T&gt; addTo(final List&lt;T&gt; list) {
-<span class="fc" id="L122">        return new Consumer&lt;T&gt;() {</span>
+<span class="fc" id="L123">        return new Consumer&lt;T&gt;() {</span>
 
             @Override
             public void accept(T t) throws Exception {
-<span class="fc" id="L126">                list.add(t);</span>
-<span class="fc" id="L127">            }</span>
+<span class="fc" id="L127">                list.add(t);</span>
+<span class="fc" id="L128">            }</span>
         };
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; Consumer&lt;T&gt; println() {
-<span class="fc" id="L133">        return (Consumer&lt;T&gt;) PrintlnHolder.INSTANCE;</span>
+<span class="fc" id="L134">        return (Consumer&lt;T&gt;) PrintlnHolder.INSTANCE;</span>
     }
 
-<span class="pc" id="L136">    private static enum PrintlnHolder {</span>
-        ;
+<span class="nc" id="L137">    private static final class PrintlnHolder {</span>
 <span class="fc" id="L138">        static final Consumer&lt;Object&gt; INSTANCE = new Consumer&lt;Object&gt;() {</span>
             @Override
             public void accept(Object t) throws Exception {
@@ -156,6 +156,15 @@ public final class Consumers {
                 }
 <span class="fc" id="L157">            }</span>
 
+        };
+    }
+
+    public static LongConsumer printLong(final String prefix) {
+<span class="nc" id="L163">        return new LongConsumer() {</span>
+            @Override
+            public void accept(long t) throws Exception {
+<span class="nc" id="L166">                System.out.println(prefix + t);</span>
+<span class="nc" id="L167">            }</span>
         };
     }
 }
