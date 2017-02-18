@@ -3,6 +3,7 @@
 import java.util.concurrent.Callable;
 
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rx2.flowable.Transformers;
 import com.github.davidmoten.rx2.functions.Consumer3;
 
 import io.reactivex.BackpressureStrategy;
@@ -14,9 +15,9 @@ import io.reactivex.functions.Function3;
 
 public final class StateMachine {
 
-<span class="fc" id="L17">    private StateMachine() {</span>
+<span class="fc" id="L18">    private StateMachine() {</span>
         // prevent instantiation
-<span class="fc" id="L19">    }</span>
+<span class="fc" id="L20">    }</span>
 
     public interface Transition&lt;State, In, Out&gt; extends Function3&lt;State, In, FlowableEmitter&lt;Out&gt;, State&gt; {
 
@@ -60,21 +61,21 @@ public final class StateMachine {
     }
 
     public static Builder builder() {
-<span class="fc" id="L63">        return new Builder();</span>
+<span class="fc" id="L64">        return new Builder();</span>
     }
 
     public static final class Builder {
 
-<span class="fc" id="L68">        private Builder() {</span>
+<span class="fc" id="L69">        private Builder() {</span>
             // prevent instantiation from other packages
-<span class="fc" id="L70">        }</span>
+<span class="fc" id="L71">        }</span>
 
         public &lt;State&gt; Builder2&lt;State&gt; initialStateFactory(Callable&lt;State&gt; initialState) {
-<span class="fc" id="L73">            return new Builder2&lt;State&gt;(initialState);</span>
+<span class="fc" id="L74">            return new Builder2&lt;State&gt;(initialState);</span>
         }
 
         public &lt;State&gt; Builder2&lt;State&gt; initialState(final State initialState) {
-<span class="fc" id="L77">            return initialStateFactory(Callables.constant(initialState));</span>
+<span class="fc" id="L78">            return initialStateFactory(Callables.constant(initialState));</span>
         }
 
     }
@@ -83,12 +84,12 @@ public final class StateMachine {
 
         private final Callable&lt;State&gt; initialState;
 
-<span class="fc" id="L86">        private Builder2(Callable&lt;State&gt; initialState) {</span>
-<span class="fc" id="L87">            this.initialState = initialState;</span>
-<span class="fc" id="L88">        }</span>
+<span class="fc" id="L87">        private Builder2(Callable&lt;State&gt; initialState) {</span>
+<span class="fc" id="L88">            this.initialState = initialState;</span>
+<span class="fc" id="L89">        }</span>
 
         public &lt;In, Out&gt; Builder3&lt;State, In, Out&gt; transition(Transition&lt;State, In, Out&gt; transition) {
-<span class="fc" id="L91">            return new Builder3&lt;State, In, Out&gt;(initialState, transition);</span>
+<span class="fc" id="L92">            return new Builder3&lt;State, In, Out&gt;(initialState, transition);</span>
         }
 
     }
@@ -99,32 +100,32 @@ public final class StateMachine {
 
         private final Callable&lt;State&gt; initialState;
         private final Transition&lt;State, In, Out&gt; transition;
-<span class="fc" id="L102">        private Completion&lt;State, Out&gt; completion = CompletionAlwaysTrueHolder.instance();</span>
-<span class="fc" id="L103">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
-<span class="fc" id="L104">        private int requestBatchSize = DEFAULT_REQUEST_SIZE;</span>
+<span class="fc" id="L103">        private Completion&lt;State, Out&gt; completion = CompletionAlwaysTrueHolder.instance();</span>
+<span class="fc" id="L104">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+<span class="fc" id="L105">        private int requestBatchSize = DEFAULT_REQUEST_SIZE;</span>
 
-<span class="fc" id="L106">        private Builder3(Callable&lt;State&gt; initialState, Transition&lt;State, In, Out&gt; transition) {</span>
-<span class="fc" id="L107">            this.initialState = initialState;</span>
-<span class="fc" id="L108">            this.transition = transition;</span>
-<span class="fc" id="L109">        }</span>
+<span class="fc" id="L107">        private Builder3(Callable&lt;State&gt; initialState, Transition&lt;State, In, Out&gt; transition) {</span>
+<span class="fc" id="L108">            this.initialState = initialState;</span>
+<span class="fc" id="L109">            this.transition = transition;</span>
+<span class="fc" id="L110">        }</span>
 
         public Builder3&lt;State, In, Out&gt; completion(Completion&lt;State, Out&gt; completion) {
-<span class="fc" id="L112">            this.completion = completion;</span>
-<span class="fc" id="L113">            return this;</span>
+<span class="fc" id="L113">            this.completion = completion;</span>
+<span class="fc" id="L114">            return this;</span>
         }
 
         public Builder3&lt;State, In, Out&gt; backpressureStrategy(BackpressureStrategy backpressureStrategy) {
-<span class="fc" id="L117">            this.backpressureStrategy = backpressureStrategy;</span>
-<span class="fc" id="L118">            return this;</span>
+<span class="fc" id="L118">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L119">            return this;</span>
         }
 
         public Builder3&lt;State, In, Out&gt; requestBatchSize(int value) {
-<span class="fc" id="L122">            this.requestBatchSize = value;</span>
-<span class="fc" id="L123">            return this;</span>
+<span class="fc" id="L123">            this.requestBatchSize = value;</span>
+<span class="fc" id="L124">            return this;</span>
         }
 
         public FlowableTransformer&lt;In, Out&gt; build() {
-<span class="fc" id="L127">            return FlowableTransformers.stateMachine(initialState, transition, completion, backpressureStrategy,</span>
+<span class="fc" id="L128">            return Transformers.stateMachine(initialState, transition, completion, backpressureStrategy,</span>
                     requestBatchSize);
         }
 
@@ -133,20 +134,20 @@ public final class StateMachine {
     @VisibleForTesting
     static final class CompletionAlwaysTrueHolder {
 
-<span class="fc" id="L136">        private CompletionAlwaysTrueHolder() {</span>
+<span class="fc" id="L137">        private CompletionAlwaysTrueHolder() {</span>
             // prevent instantiation
-<span class="fc" id="L138">        }</span>
+<span class="fc" id="L139">        }</span>
 
-<span class="fc" id="L140">        private static final Completion&lt;Object, Object&gt; INSTANCE = new Completion&lt;Object, Object&gt;() {</span>
+<span class="fc" id="L141">        private static final Completion&lt;Object, Object&gt; INSTANCE = new Completion&lt;Object, Object&gt;() {</span>
             @Override
             public boolean test(Object t1, FlowableEmitter&lt;Object&gt; t2) {
-<span class="nc" id="L143">                return true;</span>
+<span class="nc" id="L144">                return true;</span>
             }
         };
 
         @SuppressWarnings(&quot;unchecked&quot;)
         static &lt;State, Out&gt; Completion&lt;State, Out&gt; instance() {
-<span class="fc" id="L149">            return (Completion&lt;State, Out&gt;) INSTANCE;</span>
+<span class="fc" id="L150">            return (Completion&lt;State, Out&gt;) INSTANCE;</span>
         }
     }
 

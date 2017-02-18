@@ -25,38 +25,39 @@ public final class FlowableFetchPagesByRequest {
 <span class="fc" id="L25">        return Flowable.defer(new Callable&lt;Flowable&lt;T&gt;&gt;() {</span>
             @Override
             public Flowable&lt;T&gt; call() throws Exception {
-                // need a ReplaySubject because requests can come through before
-                // concatEager has established subscriptions to the subject
-<span class="fc" id="L30">                final ReplaySubject&lt;Flowable&lt;T&gt;&gt; subject = ReplaySubject.create();</span>
-<span class="fc" id="L31">                final AtomicLong position = new AtomicLong(start);</span>
-<span class="fc" id="L32">                LongConsumer request = new LongConsumer() {</span>
+                // need a ReplaySubject because multiple requests can come
+                // through before concatEager has established subscriptions to
+                // the subject
+<span class="fc" id="L31">                final ReplaySubject&lt;Flowable&lt;T&gt;&gt; subject = ReplaySubject.create();</span>
+<span class="fc" id="L32">                final AtomicLong position = new AtomicLong(start);</span>
+<span class="fc" id="L33">                LongConsumer request = new LongConsumer() {</span>
                     @Override
                     public void accept(final long n) throws Exception {
-<span class="fc" id="L35">                        final long pos = position.getAndAdd(n);</span>
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">                        if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L36">                        final long pos = position.getAndAdd(n);</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">                        if (SubscriptionHelper.validate(n)) {</span>
                             Flowable&lt;T&gt; flowable;
                             try {
-<span class="fc" id="L39">                                flowable = fetch.apply(pos, n);</span>
-<span class="fc" id="L40">                            } catch (Throwable e) {</span>
-<span class="fc" id="L41">                                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L42">                                subject.onError(e);</span>
-<span class="fc" id="L43">                                return;</span>
-<span class="fc" id="L44">                            }</span>
+<span class="fc" id="L40">                                flowable = fetch.apply(pos, n);</span>
+<span class="fc" id="L41">                            } catch (Throwable e) {</span>
+<span class="fc" id="L42">                                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L43">                                subject.onError(e);</span>
+<span class="fc" id="L44">                                return;</span>
+<span class="fc" id="L45">                            }</span>
                             // reduce allocations by incorporating the onNext
                             // and onComplete actions into the mutable count
                             // object
-<span class="fc" id="L48">                            final Count count = new Count(subject, n);</span>
-<span class="fc" id="L49">                            flowable = flowable //</span>
-<span class="fc" id="L50">                                    .doOnNext(count) //</span>
-<span class="fc" id="L51">                                    .doOnComplete(count);</span>
-<span class="fc" id="L52">                            subject.onNext(flowable);</span>
+<span class="fc" id="L49">                            final Count count = new Count(subject, n);</span>
+<span class="fc" id="L50">                            flowable = flowable //</span>
+<span class="fc" id="L51">                                    .doOnNext(count) //</span>
+<span class="fc" id="L52">                                    .doOnComplete(count);</span>
+<span class="fc" id="L53">                            subject.onNext(flowable);</span>
                         }
-<span class="fc" id="L54">                    }</span>
+<span class="fc" id="L55">                    }</span>
                 };
-<span class="fc" id="L56">                return Flowable //</span>
-<span class="fc" id="L57">                        .concatEager(subject.serialize() //</span>
-<span class="fc" id="L58">                                .toFlowable(BackpressureStrategy.BUFFER), maxConcurrency, 128) //</span>
-<span class="fc" id="L59">                        .doOnRequest(request);</span>
+<span class="fc" id="L57">                return Flowable //</span>
+<span class="fc" id="L58">                        .concatEager(subject.serialize() //</span>
+<span class="fc" id="L59">                                .toFlowable(BackpressureStrategy.BUFFER), maxConcurrency, 128) //</span>
+<span class="fc" id="L60">                        .doOnRequest(request);</span>
             }
         });
     }
@@ -68,22 +69,22 @@ public final class FlowableFetchPagesByRequest {
         // mutable
         private long count;
 
-<span class="fc" id="L71">        Count(Subject&lt;?&gt; subject, long n) {</span>
-<span class="fc" id="L72">            this.subject = subject;</span>
-<span class="fc" id="L73">            this.n = n;</span>
-<span class="fc" id="L74">        }</span>
+<span class="fc" id="L72">        Count(Subject&lt;?&gt; subject, long n) {</span>
+<span class="fc" id="L73">            this.subject = subject;</span>
+<span class="fc" id="L74">            this.n = n;</span>
+<span class="fc" id="L75">        }</span>
 
         @Override
         public void accept(Object t) throws Exception {
-<span class="fc" id="L78">            count++;</span>
-<span class="fc" id="L79">        }</span>
+<span class="fc" id="L79">            count++;</span>
+<span class="fc" id="L80">        }</span>
 
         @Override
         public void run() throws Exception {
-<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            if (count &lt; n) {</span>
-<span class="fc" id="L84">                subject.onComplete();</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (count &lt; n) {</span>
+<span class="fc" id="L85">                subject.onComplete();</span>
             }
-<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        }</span>
     }
 
 }

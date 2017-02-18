@@ -24,9 +24,9 @@
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.BiPredicates;
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.Callables;
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.Consumers;
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.FlowableTransformers;
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.exceptions.ThrowingException;
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.flowable.Burst;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.exceptions.ThrowingException;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.flowable.Burst;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rx2.flowable.Transformers;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> io.reactivex.Flowable;
@@ -48,7 +48,7 @@
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>      @Test
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testEmpty() {
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>          Flowable.&lt;Integer&gt;empty() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>                          toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>                  .test() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>                  .assertNoValues() <em class="jxr_comment">//</em>
@@ -58,7 +58,7 @@
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>      @Test
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testOne() {
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>          Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>                          toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>                  .test() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>                  .assertValue(Lists.newArrayList(3)) <em class="jxr_comment">//</em>
@@ -68,7 +68,7 @@
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>      @Test
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTwo() {
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>          Flowable.just(3, 4) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>                          toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>                  .test() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>                  .assertValue(Lists.newArrayList(3, 4)) <em class="jxr_comment">//</em>
@@ -79,7 +79,7 @@
 <a class="jxr_linenumber" name="L71" href="#L71">71</a>      @Test
 <a class="jxr_linenumber" name="L72" href="#L72">72</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testThree() {
 <a class="jxr_linenumber" name="L73" href="#L73">73</a>          Flowable.just(3, 4, 5) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>                          toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>                  .test() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L77" href="#L77">77</a>                  .assertValues(Lists.newArrayList(3, 4), Lists.newArrayList(5)) <em class="jxr_comment">//</em>
@@ -89,7 +89,7 @@
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>      @Test
 <a class="jxr_linenumber" name="L82" href="#L82">82</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testFactoryReturnsNullShouldEmitNPE() {
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>          Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>                          collectWhile(Callables.&lt;List&lt;Integer&gt;&gt;toNull(), BiFunctions.constant(<strong class="jxr_keyword">new</strong> ArrayList&lt;Integer&gt;()),
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>                                  BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L87" href="#L87">87</a>                  .test() <em class="jxr_comment">//</em>
@@ -100,7 +100,7 @@
 <a class="jxr_linenumber" name="L92" href="#L92">92</a>      @Test
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAddReturnsNullShouldEmitNPE() {
 <a class="jxr_linenumber" name="L94" href="#L94">94</a>          Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L95" href="#L95">95</a>                  .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>                  .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L96" href="#L96">96</a>                          collectWhile(Callables.&lt;List&lt;Integer&gt;&gt;toNull(),
 <a class="jxr_linenumber" name="L97" href="#L97">97</a>                                  BiFunctions.&lt;List&lt;Integer&gt;, Integer, List&lt;Integer&gt;&gt;toNull(), BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L98" href="#L98">98</a>                  .test() <em class="jxr_comment">//</em>
@@ -111,7 +111,7 @@
 <a class="jxr_linenumber" name="L103" href="#L103">103</a>     @Test
 <a class="jxr_linenumber" name="L104" href="#L104">104</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAddReturnsNull() {
 <a class="jxr_linenumber" name="L105" href="#L105">105</a>         Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L106" href="#L106">106</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L107" href="#L107">107</a>                         collectWhile( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L108" href="#L108">108</a>                                 Callables.&lt;List&lt;Integer&gt;&gt;constant(Lists.&lt;Integer&gt;newArrayList()),
 <a class="jxr_linenumber" name="L109" href="#L109">109</a>                                 BiFunctions.&lt;List&lt;Integer&gt;, Integer, List&lt;Integer&gt;&gt;toNull(), <em class="jxr_comment">//</em>
@@ -124,7 +124,7 @@
 <a class="jxr_linenumber" name="L116" href="#L116">116</a>     @Test
 <a class="jxr_linenumber" name="L117" href="#L117">117</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAddThrows() {
 <a class="jxr_linenumber" name="L118" href="#L118">118</a>         Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L119" href="#L119">119</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L120" href="#L120">120</a>                         collectWhile( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L121" href="#L121">121</a>                                 Callables.&lt;List&lt;Integer&gt;&gt;constant(Lists.&lt;Integer&gt;newArrayList()),
 <a class="jxr_linenumber" name="L122" href="#L122">122</a>                                 BiFunctions.&lt;List&lt;Integer&gt;, Integer, List&lt;Integer&gt;&gt;throwing(), <em class="jxr_comment">//</em>
@@ -137,7 +137,7 @@
 <a class="jxr_linenumber" name="L129" href="#L129">129</a>     @Test
 <a class="jxr_linenumber" name="L130" href="#L130">130</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testConditionThrows() {
 <a class="jxr_linenumber" name="L131" href="#L131">131</a>         Flowable.just(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L132" href="#L132">132</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L133" href="#L133">133</a>                         collectWhile( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L134" href="#L134">134</a>                                 Callables.&lt;List&lt;Integer&gt;&gt;constant(Lists.&lt;Integer&gt;newArrayList()), ADD, <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L135" href="#L135">135</a>                                 BiPredicates.throwing())) <em class="jxr_comment">//</em>
@@ -149,7 +149,7 @@
 <a class="jxr_linenumber" name="L141" href="#L141">141</a>     @Test
 <a class="jxr_linenumber" name="L142" href="#L142">142</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDoesNotEmitAfterErrorInOnNextIfUpstreamDoesNotHonourCancellationImmediately() {
 <a class="jxr_linenumber" name="L143" href="#L143">143</a>         Burst.items(1, 2).create() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L144" href="#L144">144</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L145" href="#L145">145</a>                         collectWhile( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L146" href="#L146">146</a>                                 Callables.&lt;List&lt;Integer&gt;&gt;constant(Lists.&lt;Integer&gt;newArrayList()), ADD, <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L147" href="#L147">147</a>                                 BiPredicates.throwing())) <em class="jxr_comment">//</em>
@@ -164,7 +164,7 @@
 <a class="jxr_linenumber" name="L156" href="#L156">156</a>             List&lt;Throwable&gt; list = <strong class="jxr_keyword">new</strong> CopyOnWriteArrayList&lt;Throwable&gt;();
 <a class="jxr_linenumber" name="L157" href="#L157">157</a>             RxJavaPlugins.setErrorHandler(Consumers.addTo(list));
 <a class="jxr_linenumber" name="L158" href="#L158">158</a>             Burst.items(1).error(<strong class="jxr_keyword">new</strong> ThrowingException())<em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L160" href="#L160">160</a>                             collectWhile( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L161" href="#L161">161</a>                                     Callables.&lt;List&lt;Integer&gt;&gt;constant(Lists.&lt;Integer&gt;newArrayList()), ADD, <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L162" href="#L162">162</a>                                     BiPredicates.throwing())) <em class="jxr_comment">//</em>
@@ -182,7 +182,7 @@
 <a class="jxr_linenumber" name="L174" href="#L174">174</a>     @Test
 <a class="jxr_linenumber" name="L175" href="#L175">175</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBackpressure() {
 <a class="jxr_linenumber" name="L176" href="#L176">176</a>         Flowable.just(3, 4, 5, 6, 7, 8) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L177" href="#L177">177</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L178" href="#L178">178</a>                         toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L179" href="#L179">179</a>                 .test(1) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L180" href="#L180">180</a>                 .assertValue(list(3, 4)) <em class="jxr_comment">//</em>
@@ -199,7 +199,7 @@
 <a class="jxr_linenumber" name="L191" href="#L191">191</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBackpressureAndCancel() {
 <a class="jxr_linenumber" name="L192" href="#L192">192</a> 
 <a class="jxr_linenumber" name="L193" href="#L193">193</a>         TestSubscriber&lt;List&lt;Integer&gt;&gt; ts = Flowable.just(3, 4, 5, 6, 7, 8) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L194" href="#L194">194</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L195" href="#L195">195</a>                         toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L196" href="#L196">196</a>                 .test(1) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L197" href="#L197">197</a>                 .assertValue(list(3, 4)) <em class="jxr_comment">//</em>
@@ -240,7 +240,7 @@
 <a class="jxr_linenumber" name="L232" href="#L232">232</a>             }
 <a class="jxr_linenumber" name="L233" href="#L233">233</a>         };
 <a class="jxr_linenumber" name="L234" href="#L234">234</a>         Flowable.just(3, 4, 5, 6) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L235" href="#L235">235</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L236" href="#L236">236</a>                         toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L237" href="#L237">237</a>                 .subscribe(subscriber);
 <a class="jxr_linenumber" name="L238" href="#L238">238</a>         assertEquals(list, Arrays.asList(list(3, 4), list(5, 6)));
@@ -276,7 +276,7 @@
 <a class="jxr_linenumber" name="L268" href="#L268">268</a>             }
 <a class="jxr_linenumber" name="L269" href="#L269">269</a>         };
 <a class="jxr_linenumber" name="L270" href="#L270">270</a>         Flowable.just(3, 4, 5, 6) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L271" href="#L271">271</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L272" href="#L272">272</a>                         toListWhile(BUFFER_TWO)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L273" href="#L273">273</a>                 .subscribe(subscriber);
 <a class="jxr_linenumber" name="L274" href="#L274">274</a>         assertEquals(Arrays.asList(list(3, 4)), list);
@@ -286,7 +286,7 @@
 <a class="jxr_linenumber" name="L278" href="#L278">278</a>     @Test
 <a class="jxr_linenumber" name="L279" href="#L279">279</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testWhenEmitRemainderFalse() {
 <a class="jxr_linenumber" name="L280" href="#L280">280</a>         Flowable.just(3, 4, 5) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L281" href="#L281">281</a>                 .compose(FlowableTransformers. <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>                 .compose(Transformers. <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L282" href="#L282">282</a>                         toListWhile(BUFFER_TWO, false)) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L283" href="#L283">283</a>                 .test() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L284" href="#L284">284</a>                 .assertValues(Lists.newArrayList(3, 4)) <em class="jxr_comment">//</em>
