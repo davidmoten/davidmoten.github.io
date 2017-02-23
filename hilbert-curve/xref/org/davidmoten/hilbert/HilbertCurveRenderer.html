@@ -21,9 +21,9 @@
 <a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> org.davidmoten.hilbert.exceptions.IORuntimeException;
 <a class="jxr_linenumber" name="L14" href="#L14">14</a>  
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/davidmoten/hilbert/HilbertCurveRenderer.html">HilbertCurveRenderer</a> {
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>      
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">private</strong> <a href="../../../org/davidmoten/hilbert/HilbertCurveRenderer.html">HilbertCurveRenderer</a>() {
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>          <em class="jxr_comment">//prevent instantiation</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>          <em class="jxr_comment">// prevent instantiation</em>
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>      }
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> renderToFile(<strong class="jxr_keyword">int</strong> bits, <strong class="jxr_keyword">int</strong> width, String filename) {
@@ -47,19 +47,22 @@
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>          g.setPaint(Color.black);
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>          g.setStroke(<strong class="jxr_keyword">new</strong> BasicStroke(0.5f));
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>          <strong class="jxr_keyword">int</strong> margin = 10;
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">int</strong> x = margin;
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">int</strong> y = margin;
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">long</strong> i = 0; i &lt; n * n; i++) {
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>              <strong class="jxr_keyword">long</strong>[] point = c.point(BigInteger.valueOf(i));
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">int</strong> x2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[0] / (n - 1) * (width - 2 * margin) + margin);
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>              <strong class="jxr_keyword">int</strong> y2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[1] / (n - 1) * (height - 2 * margin) + margin);
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>              g.drawLine(x, y, x2, y2);
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>              x = x2;
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>              y = y2;
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>          }
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <strong class="jxr_keyword">return</strong> b;
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
-<a class="jxr_linenumber" name="L54" href="#L54">54</a>  }
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">int</strong> cellSize = (width - 2 * margin) / (n);
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">int</strong> x = margin + cellSize / 2;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">int</strong> y = margin + cellSize / 2;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">long</strong> i = 0; i &lt; n * n; i++) {
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">long</strong>[] point = c.point(BigInteger.valueOf(i));
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>              <strong class="jxr_keyword">int</strong> x2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[0] / (n - 1) * (width - 2 * margin - cellSize) + margin)
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>                      + cellSize / 2;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>              <strong class="jxr_keyword">int</strong> y2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[1] / (n - 1) * (height - 2 * margin - cellSize) + margin)
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>                      + cellSize / 2;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>              g.drawLine(x, y, x2, y2);
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>              x = x2;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>              y = y2;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>          }
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">return</strong> b;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      }
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2017. All rights reserved.</div>
