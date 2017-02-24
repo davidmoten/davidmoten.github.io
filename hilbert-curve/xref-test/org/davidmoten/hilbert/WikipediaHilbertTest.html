@@ -8,100 +8,102 @@
 <div id="overview"><a href="../../../../testapidocs/org/davidmoten/hilbert/WikipediaHilbertTest.html">View Javadoc</a></div><pre>
 <a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> org.davidmoten.hilbert;
 <a class="jxr_linenumber" name="L2" href="#L2">2</a>   
-<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.awt.BasicStroke;
-<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.awt.Color;
-<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.awt.Graphics2D;
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.awt.image.BufferedImage;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> java.io.File;
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> java.io.IOException;
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> java.util.Arrays;
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> javax.imageio.ImageIO;
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>  
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>  
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/davidmoten/hilbert/WikipediaHilbertTest.html">WikipediaHilbertTest</a> {
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>      @Test
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> createImageUsingWikpediaHilbertCurveCode() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>          <strong class="jxr_keyword">int</strong> bits = 5;
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>          <strong class="jxr_keyword">int</strong> n = 1 &lt;&lt; bits;
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; n * n; i++) {
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>              <strong class="jxr_keyword">long</strong>[] point = { 0, 0 };
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>              d2xy(n, i, point);
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>          }
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>          <strong class="jxr_keyword">int</strong> width = 800;
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>          <strong class="jxr_keyword">int</strong> height = width;
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>          BufferedImage b = <strong class="jxr_keyword">new</strong> BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>          Graphics2D g = b.createGraphics();
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>          g.setPaint(Color.black);
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>          g.setStroke(<strong class="jxr_keyword">new</strong> BasicStroke(0.5f));
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">int</strong> margin = 10;
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">int</strong> x = margin;
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">int</strong> y = margin;
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">long</strong> i = 0; i &lt; n * n; i++) {
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>              <strong class="jxr_keyword">long</strong>[] point = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">long</strong>[2];
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>              d2xy(n, i, point);
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>              <strong class="jxr_keyword">int</strong> x2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[0] / (n - 1) * (width - 2 * margin) + margin);
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>              <strong class="jxr_keyword">int</strong> y2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[1] / (n - 1) * (height - 2 * margin) + margin);
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>              g.drawLine(x, y, x2, y2);
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>              x = x2;
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>              y = y2;
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>          }
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          ImageIO.write(b, <span class="jxr_string">"PNG"</span>, <strong class="jxr_keyword">new</strong> File(<span class="jxr_string">"target/imageWiki.png"</span>));
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>      }
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>      
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>      
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.assertEquals;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.awt.BasicStroke;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.awt.Color;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> java.awt.Graphics2D;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> java.awt.image.BufferedImage;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> java.io.File;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> javax.imageio.ImageIO;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/davidmoten/hilbert/WikipediaHilbertTest.html">WikipediaHilbertTest</a> {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      @Test
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> createImageUsingWikpediaHilbertCurveCode() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>          <strong class="jxr_keyword">int</strong> bits = 5;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>          <strong class="jxr_keyword">int</strong> n = 1 &lt;&lt; bits;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; n * n; i++) {
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>              <strong class="jxr_keyword">long</strong>[] point = { 0, 0 };
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>              d2xy(n, i, point);
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>          }
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>          <strong class="jxr_keyword">int</strong> width = 800;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>          <strong class="jxr_keyword">int</strong> height = width;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>          BufferedImage b = <strong class="jxr_keyword">new</strong> BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>          Graphics2D g = b.createGraphics();
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          g.setPaint(Color.black);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          g.setStroke(<strong class="jxr_keyword">new</strong> BasicStroke(0.5f));
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">int</strong> margin = 10;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">int</strong> x = margin;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">int</strong> y = margin;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">long</strong> i = 0; i &lt; n * n; i++) {
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>              <strong class="jxr_keyword">long</strong>[] point = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">long</strong>[2];
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>              d2xy(n, i, point);
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>              <strong class="jxr_keyword">int</strong> x2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[0] / (n - 1) * (width - 2 * margin) + margin);
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>              <strong class="jxr_keyword">int</strong> y2 = (<strong class="jxr_keyword">int</strong>) Math.round((<strong class="jxr_keyword">double</strong>) point[1] / (n - 1) * (height - 2 * margin) + margin);
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>              g.drawLine(x, y, x2, y2);
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>              x = x2;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>              y = y2;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          }
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>          ImageIO.write(b, <span class="jxr_string">"PNG"</span>, <strong class="jxr_keyword">new</strong> File(<span class="jxr_string">"target/imageWiki.png"</span>));
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      }
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>      @Test
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> roundTrip() {
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>          <em class="jxr_comment">//TODO </em>
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>      }
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>  
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">long</strong> xy2d(<strong class="jxr_keyword">long</strong> n, <strong class="jxr_keyword">long</strong>[] point) {
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>          <strong class="jxr_keyword">long</strong> rx, ry, s, d = 0;
-<a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">for</strong> (s = n / 2; s &gt; 0; s /= 2) {
-<a class="jxr_linenumber" name="L55" href="#L55">55</a>              rx = (point[0] &amp; s) &gt; 0 ? 1 : 0;
-<a class="jxr_linenumber" name="L56" href="#L56">56</a>              ry = (point[1] &amp; s) &gt; 0 ? 1 : 0;
-<a class="jxr_linenumber" name="L57" href="#L57">57</a>              d += s * s * ((3 * rx) ^ ry);
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>              rot(s, point, rx, ry);
-<a class="jxr_linenumber" name="L59" href="#L59">59</a>          }
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>          <strong class="jxr_keyword">return</strong> d;
-<a class="jxr_linenumber" name="L61" href="#L61">61</a>      }
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>  
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>      <em class="jxr_comment">// convert d to (x,y)</em>
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>      <em class="jxr_comment">// n is pow(2, bits)</em>
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">long</strong>[] d2xy(<strong class="jxr_keyword">int</strong> n, <strong class="jxr_keyword">long</strong> d, <strong class="jxr_keyword">long</strong>[] point) {
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>          <strong class="jxr_keyword">long</strong> rx, ry;
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">long</strong> s, t = d;
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>          point[0] = 0;
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>          point[1] = 0;
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>          <strong class="jxr_keyword">for</strong> (s = 1; s &lt; n; s *= 2) {
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>              rx = 1 &amp; (t / 2);
-<a class="jxr_linenumber" name="L72" href="#L72">72</a>              ry = 1 &amp; (t ^ rx);
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>              rot(s, point, rx, ry);
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>              point[0] += s * rx;
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>              point[1] += s * ry;
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>              t /= 4;
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>          }
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>          <strong class="jxr_keyword">return</strong> point;
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>      }
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>  
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>      <em class="jxr_comment">// rotate/flip a quadrant appropriately</em>
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> rot(<strong class="jxr_keyword">long</strong> n, <strong class="jxr_keyword">long</strong>[] point, <strong class="jxr_keyword">long</strong> rx, <strong class="jxr_keyword">long</strong> ry) {
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>          <strong class="jxr_keyword">if</strong> (ry == 0) {
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>              <strong class="jxr_keyword">if</strong> (rx == 1) {
-<a class="jxr_linenumber" name="L85" href="#L85">85</a>                  point[0] = n - 1 - point[0];
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>                  point[1] = n - 1 - point[1];
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>              }
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>  
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>              <em class="jxr_comment">// Swap x and y</em>
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>              <strong class="jxr_keyword">long</strong> t = point[0];
-<a class="jxr_linenumber" name="L91" href="#L91">91</a>              point[0] = point[1];
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>              point[1] = t;
-<a class="jxr_linenumber" name="L93" href="#L93">93</a>          }
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>      }
-<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
-<a class="jxr_linenumber" name="L96" href="#L96">96</a>  }
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          <strong class="jxr_keyword">long</strong>[] point = <strong class="jxr_keyword">new</strong> <strong class="jxr_keyword">long</strong>[2];
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          d2xy(32, 3, point);
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          assertEquals(3, xy2d(32, point));
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      }
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">long</strong> xy2d(<strong class="jxr_keyword">long</strong> n, <strong class="jxr_keyword">long</strong>[] point) {
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">long</strong> rx, ry, s, d = 0;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>          <strong class="jxr_keyword">for</strong> (s = n / 2; s &gt; 0; s /= 2) {
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>              rx = (point[0] &amp; s) &gt; 0 ? 1 : 0;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>              ry = (point[1] &amp; s) &gt; 0 ? 1 : 0;
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>              d += s * s * ((3 * rx) ^ ry);
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>              rot(s, point, rx, ry);
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          }
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          <strong class="jxr_keyword">return</strong> d;
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>      }
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <em class="jxr_comment">// convert d to (x,y)</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <em class="jxr_comment">// n is pow(2, bits)</em>
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">long</strong>[] d2xy(<strong class="jxr_keyword">int</strong> n, <strong class="jxr_keyword">long</strong> d, <strong class="jxr_keyword">long</strong>[] point) {
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>          <strong class="jxr_keyword">long</strong> rx, ry;
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          <strong class="jxr_keyword">long</strong> s, t = d;
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          point[0] = 0;
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          point[1] = 0;
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          <strong class="jxr_keyword">for</strong> (s = 1; s &lt; n; s *= 2) {
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>              rx = 1 &amp; (t / 2);
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>              ry = 1 &amp; (t ^ rx);
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>              rot(s, point, rx, ry);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>              point[0] += s * rx;
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>              point[1] += s * ry;
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>              t /= 4;
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>          }
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          <strong class="jxr_keyword">return</strong> point;
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>      }
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>      <em class="jxr_comment">// rotate/flip a quadrant appropriately</em>
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> rot(<strong class="jxr_keyword">long</strong> n, <strong class="jxr_keyword">long</strong>[] point, <strong class="jxr_keyword">long</strong> rx, <strong class="jxr_keyword">long</strong> ry) {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">if</strong> (ry == 0) {
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>              <strong class="jxr_keyword">if</strong> (rx == 1) {
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>                  point[0] = n - 1 - point[0];
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  point[1] = n - 1 - point[1];
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>              }
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>              <em class="jxr_comment">// Swap x and y</em>
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>              <strong class="jxr_keyword">long</strong> t = point[0];
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>              point[0] = point[1];
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>              point[1] = t;
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          }
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>      }
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2013&#x2013;2017. All rights reserved.</div>
