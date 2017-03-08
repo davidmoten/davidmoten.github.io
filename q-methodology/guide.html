@@ -1,0 +1,217 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<title>Q Methodology Computational Primer</title>
+</head>
+<body>
+<h1>Factor Analysis using Q Methodology - A Computational Primer</h1>
+<p>I encountered Factor Analysis for the first time early 2007 and
+was quite curious to gain some understanding of the Q Method approach in
+particular. I had a look through lots of texts and then slowly pieced it
+together and this primer summarizes what I learnt.</p>
+
+<h2>What is the analysis for?</h2>
+<p>As an example, I'll take an issue like climate change and
+interview say 20 people and ask them to what level they agree with a
+whole range of climate change related statements, say 40 statements, all
+with strongly disagree to strongly agree answers. I'll also ask them
+questions about their preferences on issues like say Government Control,
+Caring for the Environment, Financial Security, Happiness. With a bit of
+luck and good management the participants will have been chosen to
+represent the prevalence and spread of opinions of the population we
+wish to study.</p>
+
+<p>This is what I hope to learn from my factor analysis:
+<p>
+<ul>
+	<li>
+	<p>What standpoints are the underlying drivers of peoples opinion?</p>
+	</li>
+</ul>
+
+<h2>What do you need to know to understand this document?</h2>
+<p>You will need to understand the basics of <a
+	href="http://en.wikipedia.org/wiki/Matrix_%28mathematics%29">Matrix
+Algebra</a>:</p>
+<ul>
+	<li><a
+		href="http://en.wikipedia.org/wiki/Matrix_%28mathematics%29#Adding_and_multiplying_matrices">adding
+	and multiplying matrices</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Transpose">matrix
+	transpose</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Diagonal_matrix">diagonal
+	matrix</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Matrix_inverse">matrix
+	inverse</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Identity_matrix">identity
+	matrix</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Column_vector">vector</a></li>
+	<li><a href="http://en.wikipedia.org/wiki/Dot_product">vector
+	dot product</a></li>
+	<li><a
+		href="http://en.wikipedia.org/wiki/Orthogonality#In_Euclidean_vector_spaces">vector
+	orthogonality</a></li>
+</ul>
+
+<h2>What information is being analyzed?</h2>
+<p>Righto let's get into detail.</p>
+<p><a id="M"><i>M</i></a> is the matrix of answers to the questions by
+participant. Each row contains the answers of a participant.</p>
+<p><i>P</i> is the matrix of answers to the preference questions by
+participant. Each row contains the answers of a participant.</p>
+
+<h2>Why the letter Q?</h2>
+<p>Q Methodology is so called because a process called Q-sorting is
+used on each participant's answers.</p>
+<p>Q Methodology compares people. R Methodology compares test values
+and is the more common statistical paradigm.</p>
+
+<h2>How are people compared?</h2>
+<p>To compare one participant against another we use a <a
+	href="http://en.wikipedia.org/wiki/Pearson_correlation">Pearsons
+correlation</a>.</p>
+<p class="maths">C = the Pearson correlation matrix of M.</p>
+<p>In the matrix C for every participant we have a measure between
+-1 and 1 (perfect negative correlation (-1) to no correlation (0) to
+perfect correlation (1)) of how closely their answers match another
+participant's.</p>
+
+<h2>Data Reduction</h2>
+<p>The first stage in this process is data reduction.</p>
+<p>If n is the number of participants then C is an n x n matrix.
+Let's try and <i>generate</i> the matrix M using a matrix L of n x m
+entries (where m &lt;n).</p>
+
+<p>The most obvious way I can think of to obtain an n x n matrix
+from an n x m matrix is to multiply the n x m matrix by its transpose
+(an m x n matrix). i.e. our data reduction problem could be expressed as</p>
+
+<p class="maths"><i>Find an n x m matrix (m&lt;n) L where LL<sup>T</sup>
+&#8776; M</i></p>
+
+<p>As it turns out techniques like Principal Components Analysis
+(PCA) or Thurstone's Centroid Method provide exactly such a matrix. The
+matrix L is called the <i>loadings</i> matrix.</p>
+
+<h2>Principal Components Analysis</h2>
+<p><a
+	href="http://en.wikipedia.org/wiki/Principal_components_analysis">Principal
+Components Analysis</a> is an eigenvalue decomposition technique.</p>
+
+<p>The correlation matrix C is a symmetric matrix (C = C<sup>T</sup>)
+and in this case PCA eigenvalue decomposition provides us with matrices
+V and D where</p>
+
+<p class="maths"><i>C = VDV<sup>T</sup></i></p>
+
+<p>Moreover, the eigenvector matrix V is orthogonal and the matrix D
+is diagonal with non-negative entries (why?).</p>
+
+<p>The words <a href="http://en.wikipedia.org/wiki/Eigenvalue"><i>eigenvalue</i></a>
+and <a href="http://en.wikipedia.org/wiki/Eigenvalue"><i>eigenvector</i></a>
+are pretty irrelevant here. The only thing you need to know about them
+is that the eigenvectors are orthogonal vectors and for each eigenvector
+there is an eigenvalue.</p>
+
+<p>Where is L?</p>
+<p>&radic;D is the diagonal matrix with entries being the square
+root of the corresponding entry of D.</p>
+<p class="maths">L = V&radic;D</p>
+
+<p>Using this definition of L,</p>
+<p class="maths">LL<sup>T</sup> = V&radic;D(V&radic;D)<sup>T</sup> =
+V&radic;D&radic;D<sup>T</sup>V<sup>T</sup> = V&radic;D&radic;D</sup>V<sup>T</sup>
+= VDV<sup>T</sup> = C</p>
+
+<h2>Centroid Method</h2>
+<p>Here's the algorithm in pseudocode:</p>
+<p>
+<div class="code">
+<div class="smallindent">C' = correlation matrix C<br>
+for i=1 to the number of rows of C'<br>
+<div class="smallindent">get the reflections of C' required to
+obtain positive manifold<br>
+H = apply the reflections to C'<br>
+zero the diagonal of H<br>
+for 10 iterations<br>
+<div class="smallindent">K = (the vector of the sum of the rows of
+H) * 1/&radic;(sum of entries in H)<br>
+set the diagonal of H to be the square of the entries in K</div>
+loop<br>
+the ith eigenvalue = the sum of the square of the entries in K<br>
+the ith eigenvector = K with each entry divided by the sqrt of the ith
+eigenvalue<br>
+residual = (reflections applied to C') - KK<sup>T</sup><br>
+zero the diagonal of the residual<br>
+residual = apply the reflections to the residual<br>
+set C' to be the residual</div>
+loop</div>
+</div>
+</p>
+
+<p>To get the reflections required for positive manifold:</p>
+<p>
+<div class="code">
+<div class="smallindent">
+L' = L<br>
+set the diagonal of L' to zero<br>
+while the smallest column total in L' is negative<br>
+<div class="smallindent">
+	i = the column with the least total<br>
+	multiply column i of L' by -1<br>
+	multiply row i of L' by -1<br>
+	multiply entry in the ith row, ith column of L' by -1<br>
+	add i to the list of reflections<br>
+</div>
+loop<br>
+</div>
+</div>
+</p>
+
+<h2>Factors</h2>
+<p>The <i>factors</i> are the columns of the loadings matrix L.</p>
+
+<p>The <i>eigenvalue</i> of a factor is the sum of the squares of
+the entries in the column of L corresponding to the factor.</p>
+
+<h2>Factor Interpretation</h2>
+<p>Having obtained some factors, we would like to know what the
+factors represent. To help us interpret the factors we calculate <i>factor
+scores.</i></p>
+
+<h2>Factor Scores</h2>
+<p>The algorithm for calculating factor scores from loadings matrix L is:</p>
+<div class="code">
+<div class="smallindent">
+t = t-test score for n=number of rows in L, required confidence level (say 90%)<br>
+threshold = t / &radic;n<br>
+L' = L where entries with absolute value &lt; threshold set to zero<br>
+zero those rows of L' which have more than one non-zero entry<br>
+replace each entry x of L' with x/(1-x<sup>2</sup>)<br>
+divide each entry of L' with the largest absolute value of the entries in the entry column<br> 
+S = <a href="#M">M</a>L'<br> 
+get the distribution of values in the first column of M<br>
+apply that distribution to each column of S<br>
+S is now the factor scores matrix<br>
+</div>
+</div>
+
+<h2>Rotation</h2>
+<p>Bear in mind that if you can find one L then you have an infinity
+of possible Ls to choose from.</p>
+<p>If R is a matrix that satisfies RR<sup>T</sup> = I (the identity
+matrix) then LR is an alternative loadings matrix.</p>
+
+<p>To check</p>
+<p class="maths">LR (LR)<sup>T</sup> = LR(R<sup>T</sup>L<sup>T</sup>)
+= L(RR<sup>T</sup>)L<sup>T</sup>) = LIL<sup>T</sup> = LL<sup>T</sup></p>
+<p>As it happens a <a
+	href="http://en.wikipedia.org/wiki/Rotation_matrix">rotation matrix</a>
+is just such a matrix. Other examples are:</p>
+
+<ul>
+<li><a href="http://en.wikipedia.org/wiki/Elementary_matrix#Row-switching_transformations">elementary row switching matrix</a></li>
+<li><a href="http://en.wikipedia.org/wiki/Elementary_matrix#Row-switching_transformations">elementary row negation matrix</a></li>
+</ul>
+</body>
+</html>
