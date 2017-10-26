@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactedUpdateBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">TransactedUpdateBuilder.java</span></div><h1>TransactedUpdateBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.Nonnull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+
+public final class TransactedUpdateBuilder implements DependsOn&lt;TransactedUpdateBuilder&gt; {
+
+<span class="fc" id="L18">    private static final Logger log = LoggerFactory.getLogger(TransactedUpdateBuilder.class);</span>
+
+    final UpdateBuilder updateBuilder;
+    private final Database db;
+    private boolean valuesOnly;
+
+<span class="fc" id="L24">    TransactedUpdateBuilder(UpdateBuilder b, Database db) {</span>
+<span class="fc" id="L25">        this.updateBuilder = b;</span>
+<span class="fc" id="L26">        this.db = db;</span>
+<span class="fc" id="L27">    }</span>
+
+    public TransactedUpdateBuilder parameterStream(@Nonnull Flowable&lt;?&gt; values) {
+<span class="nc" id="L30">        updateBuilder.parameterStream(values);</span>
+<span class="nc" id="L31">        return this;</span>
+    }
+
+    public TransactedUpdateBuilder parameterListStream(@Nonnull Flowable&lt;List&lt;?&gt;&gt; valueLists) {
+<span class="nc" id="L35">        updateBuilder.parameterListStream(valueLists);</span>
+<span class="nc" id="L36">        return this;</span>
+    }
+
+    public TransactedUpdateBuilder parameters(@Nonnull List&lt;?&gt; values) {
+<span class="nc" id="L40">        updateBuilder.parameters(values);</span>
+<span class="nc" id="L41">        return this;</span>
+    }
+
+    public TransactedUpdateBuilder parameter(@Nonnull String name, Object value) {
+<span class="fc" id="L45">        updateBuilder.parameter(name, value);</span>
+<span class="fc" id="L46">        return this;</span>
+    }
+
+    public TransactedUpdateBuilder parameter(Object value) {
+<span class="fc" id="L50">        return parameters(value);</span>
+    }
+
+    public TransactedUpdateBuilder parameters(@Nonnull Object... values) {
+<span class="fc" id="L54">        updateBuilder.parameters(values);</span>
+<span class="fc" id="L55">        return this;</span>
+    }
+
+    @Override
+    public TransactedUpdateBuilder dependsOn(@Nonnull Flowable&lt;?&gt; dependency) {
+<span class="nc" id="L60">        updateBuilder.dependsOn(dependency);</span>
+<span class="nc" id="L61">        return this;</span>
+    }
+
+    public TransactedUpdateBuilder batchSize(int batchSize) {
+<span class="fc" id="L65">        updateBuilder.batchSize(batchSize);</span>
+<span class="fc" id="L66">        return this;</span>
+    }
+
+    /**
+     * Returns a builder used to specify how to process the generated keys
+     * {@link ResultSet}. Not all jdbc drivers support this functionality and
+     * some have limitations in their support (h2 for instance only returns the
+     * last generated key when multiple inserts happen in the one statement).
+     * 
+     * @return a builder used to specify how to process the generated keys
+     *         ResultSet
+     */
+    public TransactedReturnGeneratedKeysBuilder returnGeneratedKeys() {
+<span class="fc" id="L79">        return new TransactedReturnGeneratedKeysBuilder(this, db);</span>
+    }
+
+    public TransactedUpdateBuilder transactedValuesOnly() {
+<span class="nc" id="L83">        this.valuesOnly = true;</span>
+<span class="nc" id="L84">        return this;</span>
+    }
+
+    public TransactedUpdateBuilderValuesOnly valuesOnly() {
+<span class="fc" id="L88">        return new TransactedUpdateBuilderValuesOnly(this, db);</span>
+    }
+
+    public static final class TransactedUpdateBuilderValuesOnly {
+        private final TransactedUpdateBuilder b;
+        private final Database db;
+
+<span class="fc" id="L95">        TransactedUpdateBuilderValuesOnly(TransactedUpdateBuilder b, Database db) {</span>
+<span class="fc" id="L96">            this.b = b;</span>
+<span class="fc" id="L97">            this.db = db;</span>
+<span class="fc" id="L98">        }</span>
+
+        // TODO add other methods e.g. parameter setting methods? Lots of
+        // copy-and-paste not attractive here so may accept restricting
+        // functionality once valuesOnly() called
+
+        public Flowable&lt;Integer&gt; counts() {
+<span class="fc" id="L105">            return createFlowable(b.updateBuilder, db) //</span>
+<span class="fc" id="L106">                    .flatMap(Tx.flattenToValuesOnly());</span>
+        }
+    }
+
+    public Flowable&lt;Tx&lt;Integer&gt;&gt; counts() {
+<span class="fc" id="L111">        Flowable&lt;Tx&lt;Integer&gt;&gt; o = createFlowable(updateBuilder, db);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (valuesOnly) {</span>
+<span class="nc" id="L113">            return o.filter(tx -&gt; tx.isValue());</span>
+        } else {
+<span class="fc" id="L115">            return o;</span>
+        }
+    }
+
+    public Flowable&lt;Integer&gt; countsOnly() {
+<span class="fc" id="L120">        return valuesOnly().counts();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Single&lt;Tx&lt;?&gt;&gt; tx() {
+<span class="fc" id="L125">        return (Single&lt;Tx&lt;?&gt;&gt;) (Single&lt;?&gt;) createFlowable(updateBuilder, db) //</span>
+<span class="fc" id="L126">                .lastOrError();</span>
+    }
+
+    private static Flowable&lt;Tx&lt;Integer&gt;&gt; createFlowable(UpdateBuilder ub, Database db) {
+<span class="fc" id="L130">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L131">            log.debug(&quot;creating deferred flowable&quot;);</span>
+<span class="fc" id="L132">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
+<span class="fc" id="L133">            AtomicReference&lt;Tx&lt;Integer&gt;&gt; t = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L134">            return ub.startWithDependency( //</span>
+<span class="fc" id="L135">                    Update.create(</span>
+                            ub.connections //
+<span class="fc" id="L137">                                    .map(c -&gt; Util.toTransactedConnection(connection, c)), //</span>
+<span class="fc" id="L138">                            ub.parameterGroupsToFlowable(), //</span>
+                            ub.sql, //
+                            ub.batchSize, //
+                            false) //
+<span class="fc" id="L142">                            .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L143">                            .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">                                if (tx.isComplete()) {</span>
+<span class="fc" id="L145">                                    t.set(tx);</span>
+                                }
+<span class="fc" id="L147">                            }) //</span>
+            );
+        });
+    }
+
+    public Flowable&lt;List&lt;Object&gt;&gt; parameterGroupsToFlowable() {
+<span class="fc" id="L153">        return updateBuilder.parameterGroupsToFlowable();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

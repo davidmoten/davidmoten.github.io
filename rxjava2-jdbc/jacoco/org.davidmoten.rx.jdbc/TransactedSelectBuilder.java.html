@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactedSelectBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">TransactedSelectBuilder.java</span></div><h1>TransactedSelectBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.Nonnull;
+
+import io.reactivex.Flowable;
+
+public final class TransactedSelectBuilder implements DependsOn&lt;TransactedSelectBuilder&gt;, GetterTx {
+
+    private final SelectBuilder selectBuilder;
+
+<span class="fc" id="L15">    private boolean valuesOnly = false;</span>
+
+    private final Database db;
+
+<span class="fc" id="L19">    TransactedSelectBuilder(SelectBuilder selectBuilder, Database db) {</span>
+<span class="fc" id="L20">        this.selectBuilder = selectBuilder;</span>
+<span class="fc" id="L21">        this.db = db;</span>
+<span class="fc" id="L22">    }</span>
+
+    public TransactedSelectBuilder parameters(@Nonnull Flowable&lt;List&lt;Object&gt;&gt; parameters) {
+<span class="nc" id="L25">        selectBuilder.parameters(parameters);</span>
+<span class="nc" id="L26">        return this;</span>
+    }
+
+    public TransactedSelectBuilder parameters(@Nonnull List&lt;?&gt; values) {
+<span class="nc" id="L30">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L31">        return this;</span>
+    }
+
+    public TransactedSelectBuilder parameter(@Nonnull String name, Object value) {
+<span class="nc" id="L35">        selectBuilder.parameter(name, value);</span>
+<span class="nc" id="L36">        return this;</span>
+    }
+
+    public TransactedSelectBuilder parameters(@Nonnull Object... values) {
+<span class="fc" id="L40">        selectBuilder.parameters(values);</span>
+<span class="fc" id="L41">        return this;</span>
+    }
+
+    public TransactedSelectBuilder parameter(Object value) {
+<span class="fc" id="L45">        return parameters(value);</span>
+    }
+
+    public TransactedSelectBuilder fetchSize(int size) {
+<span class="nc" id="L49">        selectBuilder.fetchSize(size);</span>
+<span class="nc" id="L50">        return this;</span>
+    }
+
+    public TransactedSelectBuilder transactedValuesOnly() {
+<span class="fc" id="L54">        this.valuesOnly = true;</span>
+<span class="fc" id="L55">        return this;</span>
+    }
+
+    @Override
+    public TransactedSelectBuilder dependsOn(@Nonnull Flowable&lt;?&gt; flowable) {
+<span class="nc" id="L60">        selectBuilder.dependsOn(flowable);</span>
+<span class="nc" id="L61">        return this;</span>
+    }
+
+    public TransactedSelectBuilderValuesOnly valuesOnly() {
+<span class="fc" id="L65">        return new TransactedSelectBuilderValuesOnly(this, db);</span>
+    }
+
+    public static final class TransactedSelectBuilderValuesOnly implements Getter {
+        private final TransactedSelectBuilder b;
+        private final Database db;
+
+<span class="fc" id="L72">        TransactedSelectBuilderValuesOnly(TransactedSelectBuilder b, Database db) {</span>
+<span class="fc" id="L73">            this.b = b;</span>
+<span class="fc" id="L74">            this.db = db;</span>
+<span class="fc" id="L75">        }</span>
+
+        public &lt;T&gt; Flowable&lt;T&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; function) {
+<span class="fc" id="L78">            return createFlowable(b.selectBuilder, function, db) //</span>
+<span class="fc" id="L79">                    .flatMap(Tx.flattenToValuesOnly());</span>
+        }
+
+    }
+
+    @Override
+    public &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; get(ResultSetMapper&lt;? extends T&gt; function) {
+<span class="fc" id="L86">        Flowable&lt;Tx&lt;T&gt;&gt; o = createFlowable(selectBuilder, function, db);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (valuesOnly) {</span>
+<span class="fc" id="L88">            return o.filter(tx -&gt; tx.isValue());</span>
+        } else {
+<span class="fc" id="L90">            return o;</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; createFlowable(SelectBuilder sb,
+            ResultSetMapper&lt;? extends T&gt; mapper, Database db) {
+<span class="fc" id="L97">        return (Flowable&lt;Tx&lt;T&gt;&gt;) (Flowable&lt;?&gt;) Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L98">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
+<span class="fc" id="L99">            return Select.create(sb.connections //</span>
+<span class="fc" id="L100">                    .map(c -&gt; Util.toTransactedConnection(connection, c)), //</span>
+<span class="fc" id="L101">                    sb.parameterGroupsToFlowable(), //</span>
+                    sb.sql, //
+                    sb.fetchSize, //
+<span class="fc" id="L104">                    rs -&gt; mapper.apply(rs), //</span>
+                    false) //
+<span class="fc" id="L106">                    .materialize() //</span>
+<span class="fc" id="L107">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L108">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L110">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                        }
+<span class="fc" id="L112">                    });</span>
+        });
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

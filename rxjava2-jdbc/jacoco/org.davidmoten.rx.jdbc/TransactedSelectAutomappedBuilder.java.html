@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactedSelectAutomappedBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">TransactedSelectAutomappedBuilder.java</span></div><h1>TransactedSelectAutomappedBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.Nonnull;
+
+import io.reactivex.Flowable;
+
+public final class TransactedSelectAutomappedBuilder&lt;T&gt; {
+
+    private final SelectAutomappedBuilder&lt;T&gt; selectBuilder;
+    private final Database db;
+
+    // mutable
+<span class="fc" id="L17">    private boolean valuesOnly = false;</span>
+
+<span class="fc" id="L19">    TransactedSelectAutomappedBuilder(SelectAutomappedBuilder&lt;T&gt; selectBuilder, Database db) {</span>
+<span class="fc" id="L20">        this.selectBuilder = selectBuilder;</span>
+<span class="fc" id="L21">        this.db = db;</span>
+<span class="fc" id="L22">    }</span>
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(
+            @Nonnull Flowable&lt;List&lt;Object&gt;&gt; parameters) {
+<span class="nc" id="L26">        selectBuilder.parameters(parameters);</span>
+<span class="nc" id="L27">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull List&lt;?&gt; values) {
+<span class="nc" id="L31">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L32">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; parameter(@Nonnull String name, Object value) {
+<span class="nc" id="L36">        selectBuilder.parameter(name, value);</span>
+<span class="nc" id="L37">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull Object... values) {
+<span class="nc" id="L41">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L42">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; parameter(Object value) {
+<span class="nc" id="L46">        selectBuilder.parameters(value);</span>
+<span class="nc" id="L47">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; transactedValuesOnly() {
+<span class="nc" id="L51">        this.valuesOnly = true;</span>
+<span class="nc" id="L52">        return this;</span>
+    }
+
+    public TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt; valuesOnly() {
+<span class="fc" id="L56">        return new TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt;(this, db);</span>
+    }
+
+    public static final class TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt; {
+        private final TransactedSelectAutomappedBuilder&lt;T&gt; b;
+        private final Database db;
+
+        TransactedSelectAutomappedBuilderValuesOnly(TransactedSelectAutomappedBuilder&lt;T&gt; b,
+<span class="fc" id="L64">                Database db) {</span>
+<span class="fc" id="L65">            this.b = b;</span>
+<span class="fc" id="L66">            this.db = db;</span>
+<span class="fc" id="L67">        }</span>
+
+        public Flowable&lt;T&gt; get() {
+<span class="fc" id="L70">            return createFlowable(b.selectBuilder, db) //</span>
+<span class="fc" id="L71">                    .flatMap(Tx.flattenToValuesOnly());</span>
+        }
+    }
+
+    public Flowable&lt;Tx&lt;T&gt;&gt; get() {
+<span class="nc" id="L76">        Flowable&lt;Tx&lt;T&gt;&gt; o = createFlowable(selectBuilder, db);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (valuesOnly) {</span>
+<span class="nc" id="L78">            return o.filter(tx -&gt; tx.isValue());</span>
+        } else {
+<span class="nc" id="L80">            return o;</span>
+        }
+    }
+
+    private static &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; createFlowable(SelectAutomappedBuilder&lt;T&gt; sb, Database db) {
+<span class="fc" id="L85">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L86">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
+<span class="fc" id="L87">            return Select.create(sb.selectBuilder.connections //</span>
+<span class="fc" id="L88">                    .map(c -&gt; Util.toTransactedConnection(connection, c)), //</span>
+<span class="fc" id="L89">                    sb.selectBuilder.parameterGroupsToFlowable(), //</span>
+                    sb.selectBuilder.sql, //
+                    sb.selectBuilder.fetchSize, //
+<span class="fc" id="L92">                    rs -&gt; Util.mapObject(rs, sb.cls, 1), //</span>
+                    false) //
+<span class="fc" id="L94">                    .materialize() //</span>
+<span class="fc" id="L95">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L96">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L98">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                        }
+<span class="fc" id="L100">                    });</span>
+        });
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

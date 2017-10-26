@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SelectAutomappedBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">SelectAutomappedBuilder.java</span></div><h1>SelectAutomappedBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import org.davidmoten.rx.jdbc.annotations.Query;
+import org.davidmoten.rx.jdbc.exceptions.QueryAnnotationMissingException;
+
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.functions.Function;
+
+public final class SelectAutomappedBuilder&lt;T&gt; {
+
+    final SelectBuilder selectBuilder;
+
+    final Class&lt;T&gt; cls;
+
+    private final Database db;
+
+<span class="fc" id="L23">    SelectAutomappedBuilder(Class&lt;T&gt; cls, Single&lt;Connection&gt; connections, Database db) {</span>
+<span class="fc" id="L24">        this.selectBuilder = new SelectBuilder(getSql(cls), connections, db);</span>
+<span class="fc" id="L25">        this.cls = cls;</span>
+<span class="fc" id="L26">        this.db = db;</span>
+<span class="fc" id="L27">    }</span>
+
+    private static String getSql(Class&lt;?&gt; cls) {
+<span class="fc" id="L30">        Query q = cls.getDeclaredAnnotation(Query.class);</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (q == null) {</span>
+<span class="fc" id="L32">            throw new QueryAnnotationMissingException(</span>
+                    &quot;the sql for the automapped interface should be specified in a Query annotation on the interface&quot;);
+        }
+<span class="fc" id="L35">        return q.value();</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; transacted() {
+<span class="fc" id="L39">        return new TransactedSelectAutomappedBuilder&lt;T&gt;(this, db);</span>
+    }
+
+    public TransactedSelectAutomappedBuilder&lt;T&gt; transactedValuesOnly() {
+<span class="nc" id="L43">        return transacted().transactedValuesOnly();</span>
+    }
+
+    public Flowable&lt;T&gt; get() {
+<span class="fc" id="L47">        return selectBuilder.autoMap(cls);</span>
+    }
+    
+    public &lt;R&gt; Flowable&lt;R&gt; get(@Nonnull Function&lt;? super T, ? extends R&gt; function) {
+<span class="nc" id="L51">        return get().map(function);</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; parameterStream(@Nonnull Flowable&lt;?&gt; values) {
+<span class="nc" id="L55">        selectBuilder.parameterStream(values);</span>
+<span class="nc" id="L56">        return this;</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; fetchSize(int size) {
+<span class="nc" id="L60">        selectBuilder.fetchSize(size);</span>
+<span class="nc" id="L61">        return this;</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; parameterListStream(@Nonnull Flowable&lt;List&lt;?&gt;&gt; valueLists) {
+<span class="nc" id="L65">        selectBuilder.parameterListStream(valueLists);</span>
+<span class="nc" id="L66">        return this;</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull List&lt;?&gt; values) {
+<span class="nc" id="L70">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L71">        return this;</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; parameter(@Nonnull String name, Object value) {
+<span class="nc" id="L75">        selectBuilder.parameter(name, value);</span>
+<span class="nc" id="L76">        return this;</span>
+    }
+    
+    public SelectAutomappedBuilder&lt;T&gt; parameter(Object value) {
+<span class="nc" id="L80">        return parameters(value);</span>
+    }
+
+    public SelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull Object... values) {
+<span class="nc" id="L84">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L85">        return this;</span>
+    }
+
+    public Single&lt;Long&gt; count() {
+<span class="nc" id="L89">        return selectBuilder.count();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

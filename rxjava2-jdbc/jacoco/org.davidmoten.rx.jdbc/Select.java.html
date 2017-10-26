@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Select.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">Select.java</span></div><h1>Select.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+
+final class Select {
+
+<span class="fc" id="L21">    private Select() {</span>
+        // prevent instantiation
+<span class="fc" id="L23">    }</span>
+
+<span class="fc" id="L25">    private static final Logger log = LoggerFactory.getLogger(Select.class);</span>
+
+    static &lt;T&gt; Flowable&lt;T&gt; create(Single&lt;Connection&gt; connections,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int fetchSize,
+            Function&lt;? super ResultSet, ? extends T&gt; mapper, boolean eagerDispose) {
+<span class="fc" id="L30">        return connections //</span>
+<span class="fc" id="L31">                .toFlowable() //</span>
+<span class="fc" id="L32">                .flatMap(con -&gt; create(con, sql, parameterGroups, fetchSize, mapper, eagerDispose));</span>
+    }
+
+    private static &lt;T&gt; Flowable&lt;T&gt; create(Connection con, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int fetchSize,
+            Function&lt;? super ResultSet, T&gt; mapper, boolean eagerDispose) {
+<span class="fc" id="L38">        log.debug(&quot;Select.create called with con={}&quot;, con);</span>
+<span class="fc" id="L39">        Callable&lt;NamedPreparedStatement&gt; initialState = () -&gt; Util.prepare(con, fetchSize, sql);</span>
+<span class="fc" id="L40">        Function&lt;NamedPreparedStatement, Flowable&lt;T&gt;&gt; observableFactory = ps -&gt; parameterGroups</span>
+<span class="fc" id="L41">                .flatMap(parameters -&gt; create(con, ps.ps, parameters, mapper, ps.names), true, 1);</span>
+<span class="fc" id="L42">        Consumer&lt;NamedPreparedStatement&gt; disposer = Util::closePreparedStatementAndConnection;</span>
+<span class="fc" id="L43">        return Flowable.using(initialState, observableFactory, disposer, eagerDispose);</span>
+    }
+
+    private static &lt;T&gt; Flowable&lt;? extends T&gt; create(Connection con, PreparedStatement ps,
+            List&lt;Object&gt; parameters, Function&lt;? super ResultSet, T&gt; mapper, List&lt;String&gt; names) {
+<span class="fc" id="L48">        log.debug(&quot;parameters={}&quot;, parameters);</span>
+<span class="fc" id="L49">        log.debug(&quot;names={}&quot;, names);</span>
+<span class="fc" id="L50">        Callable&lt;ResultSet&gt; initialState = () -&gt; Util //</span>
+<span class="fc" id="L51">                .setParameters(ps, parameters, names) //</span>
+<span class="fc" id="L52">                .executeQuery();</span>
+<span class="fc" id="L53">        BiConsumer&lt;ResultSet, Emitter&lt;T&gt;&gt; generator = (rs, emitter) -&gt; {</span>
+<span class="fc" id="L54">            log.debug(&quot;getting row from ps={}, rs={}&quot;, ps, rs);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (rs.next()) {</span>
+<span class="fc" id="L56">                T v = mapper.apply(rs);</span>
+<span class="fc" id="L57">                log.debug(&quot;emitting {}&quot;, v);</span>
+<span class="fc" id="L58">                emitter.onNext(v);</span>
+<span class="fc" id="L59">            } else {</span>
+<span class="fc" id="L60">                log.debug(&quot;completed&quot;);</span>
+<span class="fc" id="L61">                emitter.onComplete();</span>
+            }
+<span class="fc" id="L63">        };</span>
+<span class="fc" id="L64">        Consumer&lt;ResultSet&gt; disposeState = Util::closeSilently;</span>
+<span class="fc" id="L65">        return Flowable.generate(initialState, generator, disposeState);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

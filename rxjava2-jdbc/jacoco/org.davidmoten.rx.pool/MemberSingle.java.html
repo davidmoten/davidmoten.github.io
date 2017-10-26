@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MemberSingle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.pool</a> &gt; <span class="el_source">MemberSingle.java</span></div><h1>MemberSingle.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.pool;
+
+import java.io.Closeable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+
+import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+import io.reactivex.Scheduler;
+import io.reactivex.Scheduler.Worker;
+import io.reactivex.Single;
+import io.reactivex.SingleObserver;
+import io.reactivex.annotations.NonNull;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.MpscLinkedQueue;
+import io.reactivex.plugins.RxJavaPlugins;
+
+final class MemberSingle&lt;T&gt; extends Single&lt;Member&lt;T&gt;&gt; implements Subscription, Closeable, Runnable {
+
+    final AtomicReference&lt;Observers&lt;T&gt;&gt; observers;
+
+<span class="fc" id="L32">    private static final Logger log = LoggerFactory.getLogger(MemberSingle.class);</span>
+
+    @SuppressWarnings({ &quot;rawtypes&quot;, &quot;unchecked&quot; })
+<span class="fc" id="L35">    static final Observers EMPTY = new Observers(new MemberSingleObserver[0], new boolean[0], 0, 0);</span>
+
+    private final SimplePlainQueue&lt;DecoratingMember&lt;T&gt;&gt; initializedAvailable;
+    private final SimplePlainQueue&lt;DecoratingMember&lt;T&gt;&gt; notInitialized;
+    private final SimplePlainQueue&lt;DecoratingMember&lt;T&gt;&gt; toBeReleased;
+    private final SimplePlainQueue&lt;DecoratingMember&lt;T&gt;&gt; toBeChecked;
+
+<span class="fc" id="L42">    private final AtomicInteger wip = new AtomicInteger();</span>
+    private final DecoratingMember&lt;T&gt;[] members;
+    private final Scheduler scheduler;
+    private final long createRetryIntervalMs;
+
+    // synchronized by `wip`
+<span class="fc" id="L48">    private final CompositeDisposable scheduled = new CompositeDisposable();</span>
+
+    final NonBlockingPool&lt;T&gt; pool;
+
+    // represents the number of outstanding member requests.
+    // the number is decremented when a new member value is
+    // initialized (a scheduled action with a subsequent drain call)
+    // or an existing value is available from the pool (queue) (and is then
+    // emitted).
+<span class="fc" id="L57">    private final AtomicLong requested = new AtomicLong();</span>
+
+<span class="fc" id="L59">    private final AtomicLong initializeScheduled = new AtomicLong();</span>
+
+    // mutable
+    private volatile boolean cancelled;
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L65">    MemberSingle(NonBlockingPool&lt;T&gt; pool) {</span>
+<span class="fc" id="L66">        Preconditions.checkNotNull(pool);</span>
+<span class="fc" id="L67">        this.initializedAvailable = new MpscLinkedQueue&lt;DecoratingMember&lt;T&gt;&gt;();</span>
+<span class="fc" id="L68">        this.notInitialized = new MpscLinkedQueue&lt;DecoratingMember&lt;T&gt;&gt;();</span>
+<span class="fc" id="L69">        this.toBeReleased = new MpscLinkedQueue&lt;DecoratingMember&lt;T&gt;&gt;();</span>
+<span class="fc" id="L70">        this.toBeChecked = new MpscLinkedQueue&lt;DecoratingMember&lt;T&gt;&gt;();</span>
+<span class="fc" id="L71">        this.members = createMembersArray(pool.maxSize, pool.checkinDecorator);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (DecoratingMember&lt;T&gt; m : members) {</span>
+<span class="fc" id="L73">            notInitialized.offer(m);</span>
+        }
+<span class="fc" id="L75">        this.scheduler = pool.scheduler;</span>
+<span class="fc" id="L76">        this.createRetryIntervalMs = pool.createRetryIntervalMs;</span>
+<span class="fc" id="L77">        this.observers = new AtomicReference&lt;&gt;(EMPTY);</span>
+<span class="fc" id="L78">        this.pool = pool;</span>
+<span class="fc" id="L79">    }</span>
+
+    private DecoratingMember&lt;T&gt;[] createMembersArray(int poolMaxSize,
+            BiFunction&lt;? super T, ? super Checkin, ? extends T&gt; checkinDecorator) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L84">        DecoratingMember&lt;T&gt;[] m = new DecoratingMember[poolMaxSize];</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        for (int i = 0; i &lt; m.length; i++) {</span>
+<span class="fc" id="L86">            m[i] = new DecoratingMember&lt;T&gt;(null, checkinDecorator, this);</span>
+        }
+<span class="fc" id="L88">        return m;</span>
+    }
+
+    @Override
+    protected void subscribeActual(SingleObserver&lt;? super Member&lt;T&gt;&gt; observer) {
+        // the action of checking out a member from the pool is implemented as a
+        // subscription to the singleton MemberSingle
+<span class="fc" id="L95">        MemberSingleObserver&lt;T&gt; md = new MemberSingleObserver&lt;T&gt;(observer, this);</span>
+<span class="fc" id="L96">        observer.onSubscribe(md);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (pool.isClosed()) {</span>
+<span class="fc" id="L98">            observer.onError(new PoolClosedException());</span>
+<span class="fc" id="L99">            return;</span>
+        }
+<span class="fc" id="L101">        add(md);</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        if (md.isDisposed()) {</span>
+<span class="nc" id="L103">            remove(md);</span>
+        }
+<span class="fc" id="L105">        requested.incrementAndGet();</span>
+<span class="fc" id="L106">        log.debug(&quot;subscribed&quot;);</span>
+<span class="fc" id="L107">        drain();</span>
+<span class="fc" id="L108">    }</span>
+
+    public void checkin(Member&lt;T&gt; member) {
+<span class="fc" id="L111">        checkin(member, false);</span>
+<span class="fc" id="L112">    }</span>
+
+    public void checkin(Member&lt;T&gt; member, boolean decrementInitializeScheduled) {
+<span class="fc" id="L115">        log.debug(&quot;checking in {}&quot;, member);</span>
+<span class="fc" id="L116">        DecoratingMember&lt;T&gt; d = ((DecoratingMember&lt;T&gt;) member);</span>
+<span class="fc" id="L117">        d.scheduleRelease();</span>
+<span class="fc" id="L118">        d.markAsChecked();</span>
+<span class="fc" id="L119">        initializedAvailable.offer((DecoratingMember&lt;T&gt;) member);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (decrementInitializeScheduled) {</span>
+<span class="fc" id="L121">            initializeScheduled.decrementAndGet();</span>
+        }
+<span class="fc" id="L123">        drain();</span>
+<span class="fc" id="L124">    }</span>
+
+    public void addToBeReleased(DecoratingMember&lt;T&gt; member) {
+<span class="fc" id="L127">        toBeReleased.offer(member);</span>
+<span class="fc" id="L128">        drain();</span>
+<span class="fc" id="L129">    }</span>
+
+    @Override
+    public void request(long n) {
+<span class="nc" id="L133">        drain();</span>
+<span class="nc" id="L134">    }</span>
+
+    @Override
+    public void cancel() {
+<span class="fc" id="L138">        log.debug(&quot;cancel called&quot;);</span>
+<span class="fc" id="L139">        this.cancelled = true;</span>
+<span class="fc" id="L140">        disposeAll();</span>
+<span class="fc" id="L141">    }</span>
+
+    @Override
+    public void run() {
+        try {
+<span class="nc" id="L146">            drain();</span>
+<span class="nc" id="L147">        } catch (Throwable t) {</span>
+<span class="nc" id="L148">            RxJavaPlugins.onError(t);</span>
+<span class="nc" id="L149">        }</span>
+<span class="nc" id="L150">    }</span>
+
+    private void drain() {
+<span class="fc" id="L153">        log.debug(&quot;drain called&quot;);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (wip.getAndIncrement() == 0) {</span>
+<span class="fc" id="L155">            log.debug(&quot;drain loop starting&quot;);</span>
+<span class="fc" id="L156">            int missed = 1;</span>
+            while (true) {
+                // we schedule release of members even if no requests exist
+<span class="fc" id="L159">                scheduleReleases();</span>
+<span class="fc" id="L160">                scheduleChecks();</span>
+
+<span class="fc" id="L162">                long r = requested.get(); // requested</span>
+<span class="fc" id="L163">                log.debug(&quot;requested={}&quot;, r);</span>
+
+<span class="fc" id="L165">                long e = 0; // emitted</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                while (e != r) {</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                    if (cancelled) {</span>
+<span class="nc" id="L168">                        disposeAll();</span>
+<span class="nc" id="L169">                        return;</span>
+                    }
+<span class="fc" id="L171">                    Observers&lt;T&gt; obs = observers.get();</span>
+                    // the check below is required so a tryEmit that returns false doesn't bring
+                    // abouts a spin on this loop
+<span class="fc" id="L174">                    int c = obs.activeCount;</span>
+                    // if there have been some cancellations then adjust the requested amount by
+                    // increasing emitted e
+<span class="fc" id="L177">                    e += Math.max(0, r - e - c);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                    if (c == 0) {</span>
+                        // if no observers then we break the loop
+<span class="fc" id="L180">                        break;</span>
+                    }
+                    // check for an already initialized available member
+<span class="fc" id="L183">                    final DecoratingMember&lt;T&gt; m = initializedAvailable.poll();</span>
+<span class="fc" id="L184">                    log.debug(&quot;poll of available members returns {}&quot;, m);</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                    if (m == null) {</span>
+                        // no members available, check for a released member (that needs to be
+                        // reinitialized before use)
+<span class="fc" id="L188">                        final DecoratingMember&lt;T&gt; m2 = notInitialized.poll();</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                        if (m2 == null) {</span>
+<span class="fc" id="L190">                            break;</span>
+                        } else {
+                            // only schedule member initialization if there is enough demand,
+<span class="fc" id="L193">                            boolean used = trySchedulingInitialization(r, e, m2);</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                            if (!used) {</span>
+<span class="fc" id="L195">                                break;</span>
+                            }
+                        }
+<span class="pc bpc" id="L198" title="1 of 4 branches missed.">                    } else if (!m.isReleasing() &amp;&amp; !m.isChecking()) {</span>
+<span class="fc" id="L199">                        log.debug(&quot;trying to emit member&quot;);</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">                        if (shouldPerformHealthCheck(m)) {</span>
+<span class="fc" id="L201">                            log.debug(&quot;queueing member for health check {}&quot;, m);</span>
+<span class="fc" id="L202">                            toBeChecked.offer(m);</span>
+                        } else {
+<span class="fc" id="L204">                            log.debug(&quot;no health check required for {}&quot;, m);</span>
+                            // this should not block because it just schedules emissions to observers
+<span class="fc bfc" id="L206" title="All 2 branches covered.">                            if (tryEmit(obs, m)) {</span>
+<span class="fc" id="L207">                                e++;</span>
+                            } else {
+<span class="fc" id="L209">                                log.debug(&quot;no active observers&quot;);</span>
+                            }
+                        }
+                    }
+                    // schedule release immediately of any member
+                    // queued for releasing
+<span class="fc" id="L215">                    scheduleReleases();</span>
+                    // schedule check of any member queued for checking
+<span class="fc" id="L217">                    scheduleChecks();</span>
+
+<span class="fc" id="L219">                }</span>
+                // normally we don't reduce requested if it is Long.MAX_VALUE
+                // but given that the only way to increase requested is by subscribing
+                // (which increases it by one only) then requested will never be Long.MAX_VALUE
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                if (e != 0L) {</span>
+<span class="fc" id="L224">                    requested.addAndGet(-e);</span>
+                }
+<span class="fc" id="L226">                missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L228">                    return;</span>
+                }
+<span class="fc" id="L230">            }</span>
+        }
+<span class="fc" id="L232">    }</span>
+
+    private boolean trySchedulingInitialization(long r, long e, final DecoratingMember&lt;T&gt; m) {
+        // check initializeScheduled using a CAS loop
+        while (true) {
+<span class="fc" id="L237">            long cs = initializeScheduled.get();</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">            if (e + cs &lt; r) {</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">                if (initializeScheduled.compareAndSet(cs, cs + 1)) {</span>
+<span class="fc" id="L240">                    log.debug(&quot;scheduling member creation&quot;);</span>
+<span class="fc" id="L241">                    scheduled.add(scheduler.scheduleDirect(new Initializer(m)));</span>
+<span class="fc" id="L242">                    return true;</span>
+                }
+            } else {
+<span class="fc" id="L245">                log.debug(&quot;insufficient demand to initialize {}&quot;, m);</span>
+                // don't need to initialize more so put back on queue and exit the loop
+<span class="fc" id="L247">                notInitialized.offer(m);</span>
+<span class="fc" id="L248">                return false;</span>
+            }
+<span class="nc" id="L250">        }</span>
+    }
+
+    private boolean shouldPerformHealthCheck(final DecoratingMember&lt;T&gt; m) {
+<span class="fc" id="L254">        long now = scheduler.now(TimeUnit.MILLISECONDS);</span>
+<span class="fc" id="L255">        log.debug(&quot;schedule.now={}, lastCheck={}&quot;, now, m.lastCheckTime());</span>
+<span class="fc bfc" id="L256" title="All 4 branches covered.">        return pool.idleTimeBeforeHealthCheckMs &gt; 0 &amp;&amp; now - m.lastCheckTime() &gt;= pool.idleTimeBeforeHealthCheckMs;</span>
+    }
+
+    private void scheduleChecks() {
+        DecoratingMember&lt;T&gt; m;
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        while ((m = toBeChecked.poll()) != null) {</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">            if (!m.isReleasing()) {</span>
+<span class="fc" id="L263">                log.debug(&quot;scheduling check of {}&quot;, m);</span>
+                // we mark as checking so that we can ignore it if already in the
+                // initializedAvailable queue after concurrent checkin
+<span class="fc" id="L266">                m.markAsChecking();</span>
+<span class="fc" id="L267">                scheduled.add(scheduler.scheduleDirect(new Checker(m)));</span>
+            }
+        }
+<span class="fc" id="L270">    }</span>
+
+    private void scheduleReleases() {
+        DecoratingMember&lt;T&gt; m;
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        while ((m = toBeReleased.poll()) != null) {</span>
+<span class="fc" id="L275">            log.debug(&quot;scheduling release of {}&quot;, m);</span>
+            // we mark as releasing so that we can ignore it if already in the
+            // initializedAvailable queue after concurrent checkin
+<span class="fc" id="L278">            m.markAsReleasing();</span>
+<span class="fc" id="L279">            scheduled.add(scheduler.scheduleDirect(new Releaser(m)));</span>
+        }
+<span class="fc" id="L281">    }</span>
+
+    private boolean tryEmit(Observers&lt;T&gt; obs, DecoratingMember&lt;T&gt; m) {
+        // get a fresh worker each time so we jump threads to
+        // break the stack-trace (a long-enough chain of
+        // checkout-checkins could otherwise provoke stack
+        // overflow)
+
+        // advance counter so the next and choose an Observer to emit to (round robin)
+
+<span class="fc" id="L291">        int index = obs.index;</span>
+<span class="fc" id="L292">        MemberSingleObserver&lt;T&gt; o = obs.observers[index];</span>
+<span class="fc" id="L293">        MemberSingleObserver&lt;T&gt; oNext = o;</span>
+        // atomically bump up the index (if that entry has not been deleted in
+        // the meantime by disposal)
+        while (true) {
+<span class="fc" id="L297">            Observers&lt;T&gt; x = observers.get();</span>
+<span class="pc bpc" id="L298" title="1 of 4 branches missed.">            if (x.index == index &amp;&amp; x.observers[index] == o) {</span>
+<span class="fc" id="L299">                boolean[] active = new boolean[x.active.length];</span>
+<span class="fc" id="L300">                System.arraycopy(x.active, 0, active, 0, active.length);</span>
+<span class="fc" id="L301">                int nextIndex = (index + 1) % active.length;</span>
+<span class="pc bpc" id="L302" title="1 of 4 branches missed.">                while (nextIndex != index &amp;&amp; !active[nextIndex]) {</span>
+<span class="nc" id="L303">                    nextIndex = (nextIndex + 1) % active.length;</span>
+                }
+<span class="fc" id="L305">                active[nextIndex] = false;</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">                if (observers.compareAndSet(x, new Observers&lt;T&gt;(x.observers, active, x.activeCount - 1, nextIndex))) {</span>
+<span class="fc" id="L307">                    oNext = x.observers[nextIndex];</span>
+<span class="fc" id="L308">                    break;</span>
+                }
+<span class="fc" id="L310">            } else {</span>
+                // checkin because no active observers
+<span class="fc" id="L312">                m.checkin();</span>
+<span class="fc" id="L313">                return false;</span>
+            }
+<span class="fc" id="L315">        }</span>
+<span class="fc" id="L316">        Worker worker = scheduler.createWorker();</span>
+<span class="fc" id="L317">        worker.schedule(new Emitter&lt;T&gt;(worker, oNext, m));</span>
+<span class="fc" id="L318">        return true;</span>
+    }
+
+    @VisibleForTesting
+    final class Initializer implements Runnable {
+
+        private final DecoratingMember&lt;T&gt; m;
+
+<span class="fc" id="L326">        Initializer(DecoratingMember&lt;T&gt; m) {</span>
+<span class="fc" id="L327">            this.m = m;</span>
+<span class="fc" id="L328">        }</span>
+
+        @Override
+        public void run() {
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            if (!cancelled) {</span>
+                try {
+<span class="fc" id="L334">                    log.debug(&quot;creating value&quot;);</span>
+                    // this action might block so is scheduled
+<span class="fc" id="L336">                    T value = pool.factory.call();</span>
+<span class="fc" id="L337">                    m.setValueAndClearReleasingFlag(value);</span>
+<span class="fc" id="L338">                    requested.incrementAndGet();</span>
+<span class="fc" id="L339">                    checkin(m, true);</span>
+<span class="fc" id="L340">                } catch (Throwable t) {</span>
+<span class="fc" id="L341">                    RxJavaPlugins.onError(t);</span>
+                    // check cancelled again because factory.call() is user specified and could have
+                    // taken a significant time to complete
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                    if (!cancelled) {</span>
+                        // schedule a retry
+<span class="fc" id="L346">                        scheduled.add(scheduler.scheduleDirect(this, createRetryIntervalMs, TimeUnit.MILLISECONDS));</span>
+                    }
+<span class="fc" id="L348">                }</span>
+            }
+<span class="fc" id="L350">        }</span>
+    }
+
+    final class Releaser implements Runnable {
+
+        private DecoratingMember&lt;T&gt; m;
+
+<span class="fc" id="L357">        Releaser(DecoratingMember&lt;T&gt; m) {</span>
+<span class="fc" id="L358">            this.m = m;</span>
+<span class="fc" id="L359">        }</span>
+
+        @Override
+        public void run() {
+            try {
+<span class="fc" id="L364">                m.disposeValue();</span>
+<span class="fc" id="L365">                release(m);</span>
+<span class="nc" id="L366">            } catch (Throwable t) {</span>
+<span class="nc" id="L367">                RxJavaPlugins.onError(t);</span>
+<span class="fc" id="L368">            }</span>
+<span class="fc" id="L369">        }</span>
+    }
+
+    final class Checker implements Runnable {
+
+        private final DecoratingMember&lt;T&gt; m;
+
+<span class="fc" id="L376">        Checker(DecoratingMember&lt;T&gt; m) {</span>
+<span class="fc" id="L377">            this.m = m;</span>
+<span class="fc" id="L378">        }</span>
+
+        @Override
+        public void run() {
+            try {
+<span class="fc" id="L383">                log.debug(&quot;performing health check on {}&quot;, m);</span>
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">                if (!pool.healthCheck.test(m.value())) {</span>
+<span class="fc" id="L385">                    log.debug(&quot;failed health check&quot;);</span>
+<span class="fc" id="L386">                    m.disposeValue();</span>
+<span class="fc" id="L387">                    log.debug(&quot;scheduling recreation of member {}&quot;, m);</span>
+<span class="fc" id="L388">                    scheduled.add(scheduler.scheduleDirect(() -&gt; {</span>
+<span class="fc" id="L389">                        log.debug(&quot;recreating member after failed health check {}&quot;, m);</span>
+<span class="fc" id="L390">                        notInitialized.offer(m);</span>
+<span class="fc" id="L391">                        drain();</span>
+<span class="fc" id="L392">                    }, pool.createRetryIntervalMs, TimeUnit.MILLISECONDS));</span>
+                } else {
+<span class="nc" id="L394">                    m.markAsChecked();</span>
+<span class="nc" id="L395">                    initializedAvailable.offer(m);</span>
+<span class="nc" id="L396">                    drain();</span>
+                }
+<span class="nc" id="L398">            } catch (Throwable t) {</span>
+<span class="nc" id="L399">                RxJavaPlugins.onError(t);</span>
+<span class="fc" id="L400">            }</span>
+<span class="fc" id="L401">        }</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L406">        cancel();</span>
+<span class="fc" id="L407">    }</span>
+
+    private void disposeAll() {
+<span class="fc" id="L410">        initializedAvailable.clear();</span>
+<span class="fc" id="L411">        toBeReleased.clear();</span>
+<span class="fc" id="L412">        notInitialized.clear();</span>
+<span class="fc" id="L413">        disposeValues();</span>
+<span class="fc" id="L414">        removeAllObservers();</span>
+<span class="fc" id="L415">    }</span>
+
+    private void disposeValues() {
+<span class="fc" id="L418">        scheduled.dispose();</span>
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        for (DecoratingMember&lt;T&gt; member : members) {</span>
+<span class="fc" id="L420">            member.disposeValue();</span>
+        }
+<span class="fc" id="L422">    }</span>
+
+    void add(@NonNull MemberSingleObserver&lt;T&gt; inner) {
+        while (true) {
+<span class="fc" id="L426">            Observers&lt;T&gt; a = observers.get();</span>
+<span class="fc" id="L427">            int n = a.observers.length;</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L429">            MemberSingleObserver&lt;T&gt;[] b = new MemberSingleObserver[n + 1];</span>
+<span class="fc" id="L430">            System.arraycopy(a.observers, 0, b, 0, n);</span>
+<span class="fc" id="L431">            b[n] = inner;</span>
+<span class="fc" id="L432">            boolean[] active = new boolean[n + 1];</span>
+<span class="fc" id="L433">            System.arraycopy(a.active, 0, active, 0, n);</span>
+<span class="fc" id="L434">            active[n] = true;</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">            if (observers.compareAndSet(a, new Observers&lt;T&gt;(b, active, a.activeCount + 1, a.index))) {</span>
+<span class="fc" id="L436">                return;</span>
+            }
+<span class="fc" id="L438">        }</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void removeAllObservers() {
+        while (true) {
+<span class="fc" id="L444">            Observers&lt;T&gt; a = observers.get();</span>
+<span class="pc bpc" id="L445" title="1 of 2 branches missed.">            if (observers.compareAndSet(a, EMPTY)) {</span>
+<span class="fc" id="L446">                return;</span>
+            }
+<span class="nc" id="L448">        }</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    void remove(@NonNull MemberSingleObserver&lt;T&gt; inner) {
+        while (true) {
+<span class="fc" id="L454">            Observers&lt;T&gt; a = observers.get();</span>
+<span class="fc" id="L455">            int n = a.observers.length;</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">            if (n == 0) {</span>
+<span class="nc" id="L457">                return;</span>
+            }
+
+<span class="fc" id="L460">            int j = -1;</span>
+
+<span class="pc bpc" id="L462" title="1 of 2 branches missed.">            for (int i = 0; i &lt; n; i++) {</span>
+<span class="fc bfc" id="L463" title="All 2 branches covered.">                if (a.observers[i] == inner) {</span>
+<span class="fc" id="L464">                    j = i;</span>
+<span class="fc" id="L465">                    break;</span>
+                }
+            }
+
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">            if (j &lt; 0) {</span>
+<span class="nc" id="L470">                return;</span>
+            }
+            Observers&lt;T&gt; next;
+<span class="fc bfc" id="L473" title="All 2 branches covered.">            if (n == 1) {</span>
+<span class="fc" id="L474">                next = EMPTY;</span>
+            } else {
+<span class="fc" id="L476">                MemberSingleObserver&lt;T&gt;[] b = new MemberSingleObserver[n - 1];</span>
+<span class="fc" id="L477">                System.arraycopy(a.observers, 0, b, 0, j);</span>
+<span class="fc" id="L478">                System.arraycopy(a.observers, j + 1, b, j, n - j - 1);</span>
+<span class="fc" id="L479">                boolean[] active = new boolean[n - 1];</span>
+<span class="fc" id="L480">                System.arraycopy(a.active, 0, active, 0, j);</span>
+<span class="fc" id="L481">                System.arraycopy(a.active, j + 1, active, j, n - j - 1);</span>
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">                int nextActiveCount = a.active[j] ? a.activeCount - 1 : a.activeCount;</span>
+<span class="fc bfc" id="L483" title="All 4 branches covered.">                if (a.index &gt;= j &amp;&amp; a.index &gt; 0) {</span>
+<span class="fc" id="L484">                    next = new Observers&lt;T&gt;(b, active, nextActiveCount, a.index - 1);</span>
+                } else {
+<span class="fc" id="L486">                    next = new Observers&lt;T&gt;(b, active, nextActiveCount, a.index);</span>
+                }
+            }
+<span class="fc bfc" id="L489" title="All 2 branches covered.">            if (observers.compareAndSet(a, next)) {</span>
+<span class="fc" id="L490">                return;</span>
+            }
+<span class="fc" id="L492">        }</span>
+    }
+
+    private static final class Observers&lt;T&gt; {
+        final MemberSingleObserver&lt;T&gt;[] observers;
+        // an observer is active until it is emitted to
+        final boolean[] active;
+        final int activeCount;
+        final int index;
+
+<span class="fc" id="L502">        Observers(MemberSingleObserver&lt;T&gt;[] observers, boolean[] active, int activeCount, int index) {</span>
+<span class="pc bpc" id="L503" title="1 of 4 branches missed.">            Preconditions.checkArgument(observers.length &gt; 0 || index == 0, &quot;index must be -1 for zero length array&quot;);</span>
+<span class="pc bpc" id="L504" title="1 of 2 branches missed.">            Preconditions.checkArgument(observers.length == active.length);</span>
+<span class="fc" id="L505">            this.observers = observers;</span>
+<span class="fc" id="L506">            this.index = index;</span>
+<span class="fc" id="L507">            this.active = active;</span>
+<span class="fc" id="L508">            this.activeCount = activeCount;</span>
+<span class="fc" id="L509">        }</span>
+    }
+
+    private static final class Emitter&lt;T&gt; implements Runnable {
+
+        private final Worker worker;
+        private final MemberSingleObserver&lt;T&gt; observer;
+        private final Member&lt;T&gt; m;
+
+<span class="fc" id="L518">        Emitter(Worker worker, MemberSingleObserver&lt;T&gt; observer, Member&lt;T&gt; m) {</span>
+<span class="fc" id="L519">            this.worker = worker;</span>
+<span class="fc" id="L520">            this.observer = observer;</span>
+<span class="fc" id="L521">            this.m = m;</span>
+<span class="fc" id="L522">        }</span>
+
+        @Override
+        public void run() {
+<span class="fc" id="L526">            worker.dispose();</span>
+            try {
+<span class="fc" id="L528">                observer.child.onSuccess(m);</span>
+<span class="nc" id="L529">            } catch (Throwable e) {</span>
+<span class="nc" id="L530">                RxJavaPlugins.onError(e);</span>
+            } finally {
+<span class="pc" id="L532">                observer.dispose();</span>
+<span class="pc" id="L533">            }</span>
+<span class="fc" id="L534">        }</span>
+    }
+
+    public void release(DecoratingMember&lt;T&gt; m) {
+<span class="fc" id="L538">        log.debug(&quot;adding released member to notInitialized queue {}&quot;, m);</span>
+<span class="fc" id="L539">        notInitialized.offer(m);</span>
+<span class="fc" id="L540">        drain();</span>
+<span class="fc" id="L541">    }</span>
+
+    static final class MemberSingleObserver&lt;T&gt; extends AtomicReference&lt;MemberSingle&lt;T&gt;&gt; implements Disposable {
+
+        private static final long serialVersionUID = -7650903191002190468L;
+
+        final SingleObserver&lt;? super Member&lt;T&gt;&gt; child;
+
+<span class="fc" id="L549">        MemberSingleObserver(SingleObserver&lt;? super Member&lt;T&gt;&gt; child, MemberSingle&lt;T&gt; parent) {</span>
+<span class="fc" id="L550">            this.child = child;</span>
+<span class="fc" id="L551">            lazySet(parent);</span>
+<span class="fc" id="L552">        }</span>
+
+        @Override
+        public void dispose() {
+<span class="fc" id="L556">            MemberSingle&lt;T&gt; parent = getAndSet(null);</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">            if (parent != null) {</span>
+<span class="fc" id="L558">                parent.remove(this);</span>
+            }
+<span class="fc" id="L560">        }</span>
+
+        @Override
+        public boolean isDisposed() {
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">            return get() == null;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

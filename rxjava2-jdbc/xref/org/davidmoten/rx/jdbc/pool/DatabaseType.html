@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>DatabaseType xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/org/davidmoten/rx/jdbc/pool/DatabaseType.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> org.davidmoten.rx.jdbc.pool;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.sql.Connection;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.rx.jdbc.pool.internal.HealthCheckPredicate;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> io.reactivex.functions.Predicate;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> enum <a href="../../../../../org/davidmoten/rx/jdbc/pool/DatabaseType.html">DatabaseType</a> {
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>      ORACLE(<span class="jxr_string">"select 1 from dual"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>      HSQLDB(<span class="jxr_string">"SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>      H2(<span class="jxr_string">"select 1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>      SQL_SERVER(<span class="jxr_string">"select 1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>      MYSQL(<span class="jxr_string">"select 1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>      POSTGRES(<span class="jxr_string">"select 1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>      SQLITE(<span class="jxr_string">"select 1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      DB2(<span class="jxr_string">"select 1 from sysibm.sysdummy1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>      DERBY(<span class="jxr_string">"SELECT 1 FROM SYSIBM.SYSDUMMY1"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      INFORMIX(<span class="jxr_string">"select count(*) from systables"</span>), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>      OTHER(<span class="jxr_string">"select 1"</span>);
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String healthCheckSql;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../../org/davidmoten/rx/jdbc/pool/DatabaseType.html">DatabaseType</a>(String healthCheckSql) {
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>          <strong class="jxr_keyword">this</strong>.healthCheckSql = healthCheckSql;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>      }
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">public</strong> Predicate&lt;Connection &gt;healthCheck() {
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../org/davidmoten/rx/jdbc/pool/internal/HealthCheckPredicate.html">HealthCheckPredicate</a>(healthCheckSql);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>      }
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2016&#x2013;2017. All rights reserved.</div>
+</body>
+</html>

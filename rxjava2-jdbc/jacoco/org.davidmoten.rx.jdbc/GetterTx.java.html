@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetterTx.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">GetterTx.java</span></div><h1>GetterTx.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.ResultSet;
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
+import org.davidmoten.rx.jdbc.tuple.Tuple2;
+import org.davidmoten.rx.jdbc.tuple.Tuple3;
+import org.davidmoten.rx.jdbc.tuple.Tuple4;
+import org.davidmoten.rx.jdbc.tuple.Tuple5;
+import org.davidmoten.rx.jdbc.tuple.Tuple6;
+import org.davidmoten.rx.jdbc.tuple.Tuple7;
+import org.davidmoten.rx.jdbc.tuple.TupleN;
+import org.davidmoten.rx.jdbc.tuple.Tuples;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+
+public interface GetterTx {
+
+    /**
+     * Transforms the results using the given function.
+     *
+     * @param mapper
+     *            transforms ResultSet row to an object of type T
+     * @param &lt;T&gt;
+     *            the type being mapped to
+     * @return the results of the query as an Observable
+     */
+    &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; mapper);
+
+    default &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; getAs(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L36">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L37">        return get(rs -&gt; Util.mapObject(rs, cls, 1));</span>
+    }
+
+    default &lt;T&gt; Flowable&lt;Tx&lt;Optional&lt;T&gt;&gt;&gt; getAsOptional(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L41">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L42">        return get(rs -&gt; Optional.ofNullable(Util.mapObject(rs, cls, 1)));</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Transforms each row of the {@link ResultSet} into an instance of
+     * &lt;code&gt;T&lt;/code&gt; using &lt;i&gt;automapping&lt;/i&gt; of the ResultSet columns into
+     * corresponding constructor parameters that are assignable. Beyond normal
+     * assignable criteria (for example Integer 123 is assignable to a Double) other
+     * conversions exist to facilitate the automapping:
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * They are:
+     * &lt;ul&gt;
+     * &lt;li&gt;java.sql.Blob --&amp;gt; byte[]&lt;/li&gt;
+     * &lt;li&gt;java.sql.Blob --&amp;gt; java.io.InputStream&lt;/li&gt;
+     * &lt;li&gt;java.sql.Clob --&amp;gt; String&lt;/li&gt;
+     * &lt;li&gt;java.sql.Clob --&amp;gt; java.io.Reader&lt;/li&gt;
+     * &lt;li&gt;java.sql.Date --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Date --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.sql.Timestamp --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Timestamp --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.sql.Time --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Time --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.math.BigInteger --&amp;gt;
+     * Short,Integer,Long,Float,Double,BigDecimal&lt;/li&gt;
+     * &lt;li&gt;java.math.BigDecimal --&amp;gt;
+     * Short,Integer,Long,Float,Double,BigInteger&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param cls
+     *            class to automap each row of the ResultSet to
+     * @param &lt;T&gt;
+     *            generic type of returned stream emissions
+     * @return Flowable of T
+     * 
+     */
+    default &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; autoMap(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L80">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L81">        return get(Util.autoMap(cls));</span>
+    }
+
+    /**
+     * Automaps all the columns of the {@link ResultSet} into the target class
+     * &lt;code&gt;cls&lt;/code&gt;. See {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls
+     *            class of the TupleN elements
+     * @param &lt;T&gt;
+     *            generic type of returned stream emissions
+     * @return stream of transaction items
+     */
+    default &lt;T&gt; Flowable&lt;Tx&lt;TupleN&lt;T&gt;&gt;&gt; getTupleN(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L95">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L96">        return get(Tuples.tupleN(cls));</span>
+    }
+
+    /**
+     * Automaps all the columns of the {@link ResultSet} into {@link Object} . See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @return stream of transaction items
+     */
+    default Flowable&lt;Tx&lt;TupleN&lt;Object&gt;&gt;&gt; getTupleN() {
+<span class="fc" id="L106">        return get(Tuples.tupleN(Object.class));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @return stream of transaction items
+     */
+    default &lt;T1, T2&gt; Flowable&lt;Tx&lt;Tuple2&lt;T1, T2&gt;&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2) {
+<span class="fc" id="L125">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L126">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L127">        return get(Tuples.tuple(cls1, cls2));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     * @param cls2
+     * @param cls3
+     * @return stream of tuples
+     */
+    default &lt;T1, T2, T3&gt; Flowable&lt;Tx&lt;Tuple3&lt;T1, T2, T3&gt;&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3) {
+<span class="fc" id="L141">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L142">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L143">        Preconditions.checkNotNull(cls3, &quot;cls3 cannot be null&quot;);</span>
+<span class="fc" id="L144">        return get(Tuples.tuple(cls1, cls2, cls3));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     * @param cls2
+     * @param cls3
+     * @param cls4
+     * @return stream of tuples
+     */
+    default &lt;T1, T2, T3, T4&gt; Flowable&lt;Tx&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4) {
+<span class="fc" id="L159">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L160">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L161">        Preconditions.checkNotNull(cls3, &quot;cls3 cannot be null&quot;);</span>
+<span class="fc" id="L162">        Preconditions.checkNotNull(cls4, &quot;cls4 cannot be null&quot;);</span>
+<span class="fc" id="L163">        return get(Tuples.tuple(cls1, cls2, cls3, cls4));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     * @param cls2
+     * @param cls3
+     * @param cls4
+     * @param cls5
+     * @return stream of transaction items
+     */
+    default &lt;T1, T2, T3, T4, T5&gt; Flowable&lt;Tx&lt;Tuple5&lt;T1, T2, T3, T4, T5&gt;&gt;&gt; getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3,
+            @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5) {
+<span class="fc" id="L180">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L181">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L182">        Preconditions.checkNotNull(cls3, &quot;cls3 cannot be null&quot;);</span>
+<span class="fc" id="L183">        Preconditions.checkNotNull(cls4, &quot;cls4 cannot be null&quot;);</span>
+<span class="fc" id="L184">        Preconditions.checkNotNull(cls5, &quot;cls5 cannot be null&quot;);</span>
+<span class="fc" id="L185">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     * @param cls2
+     * @param cls3
+     * @param cls4
+     * @param cls5
+     * @param cls6
+     * @return stream of transaction items
+     */
+    default &lt;T1, T2, T3, T4, T5, T6&gt; Flowable&lt;Tx&lt;Tuple6&lt;T1, T2, T3, T4, T5, T6&gt;&gt;&gt; getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3,
+            @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6) {
+<span class="fc" id="L203">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L204">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L205">        Preconditions.checkNotNull(cls3, &quot;cls3 cannot be null&quot;);</span>
+<span class="fc" id="L206">        Preconditions.checkNotNull(cls4, &quot;cls4 cannot be null&quot;);</span>
+<span class="fc" id="L207">        Preconditions.checkNotNull(cls5, &quot;cls5 cannot be null&quot;);</span>
+<span class="fc" id="L208">        Preconditions.checkNotNull(cls6, &quot;cls6 cannot be null&quot;);</span>
+<span class="fc" id="L209">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     * @param cls2
+     * @param cls3
+     * @param cls4
+     * @param cls5
+     * @param cls6
+     * @param cls7
+     * @return stream of transaction items
+     */
+    default &lt;T1, T2, T3, T4, T5, T6, T7&gt; Flowable&lt;Tx&lt;Tuple7&lt;T1, T2, T3, T4, T5, T6, T7&gt;&gt;&gt; getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3,
+            @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6,
+            @Nonnull Class&lt;T7&gt; cls7) {
+<span class="fc" id="L229">        Preconditions.checkNotNull(cls1, &quot;cls1 cannot be null&quot;);</span>
+<span class="fc" id="L230">        Preconditions.checkNotNull(cls2, &quot;cls2 cannot be null&quot;);</span>
+<span class="fc" id="L231">        Preconditions.checkNotNull(cls3, &quot;cls3 cannot be null&quot;);</span>
+<span class="fc" id="L232">        Preconditions.checkNotNull(cls4, &quot;cls4 cannot be null&quot;);</span>
+<span class="fc" id="L233">        Preconditions.checkNotNull(cls5, &quot;cls5 cannot be null&quot;);</span>
+<span class="fc" id="L234">        Preconditions.checkNotNull(cls6, &quot;cls6 cannot be null&quot;);</span>
+<span class="fc" id="L235">        Preconditions.checkNotNull(cls7, &quot;cls7 cannot be null&quot;);</span>
+<span class="fc" id="L236">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6, cls7));</span>
+    }
+
+    default Single&lt;Long&gt; count() {
+<span class="fc" id="L240">        return get(rs -&gt; 1).count();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

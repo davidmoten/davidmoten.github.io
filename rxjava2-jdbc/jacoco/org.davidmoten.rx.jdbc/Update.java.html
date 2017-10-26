@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Update.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">Update.java</span></div><h1>Update.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.reactivex.Completable;
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.Notification;
+import io.reactivex.Single;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+
+final class Update {
+
+<span class="fc" id="L23">    private static final Logger log = LoggerFactory.getLogger(Update.class);</span>
+
+<span class="nc" id="L25">    private Update() {</span>
+        // prevent instantiation
+<span class="nc" id="L27">    }</span>
+
+    static Flowable&lt;Notification&lt;Integer&gt;&gt; create(Single&lt;Connection&gt; connection,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int batchSize,
+            boolean eagerDispose) {
+<span class="fc" id="L32">        return connection //</span>
+<span class="fc" id="L33">                .toFlowable() //</span>
+<span class="fc" id="L34">                .flatMap(con -&gt; create(con, sql, parameterGroups, batchSize, eagerDispose), true,</span>
+                        1);
+    }
+
+    private static Flowable&lt;Notification&lt;Integer&gt;&gt; create(Connection con, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int batchSize, boolean eagerDispose) {
+<span class="fc" id="L40">        log.debug(&quot;Update.create {}&quot;, sql);</span>
+<span class="fc" id="L41">        Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util.prepare(con, sql);</span>
+        final Function&lt;NamedPreparedStatement, Flowable&lt;Notification&lt;Integer&gt;&gt;&gt; flowableFactory;
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (batchSize == 0) {</span>
+<span class="fc" id="L44">            flowableFactory = ps -&gt; parameterGroups //</span>
+<span class="fc" id="L45">                    .flatMap(parameters -&gt; create(ps, parameters).toFlowable()) //</span>
+<span class="fc" id="L46">                    .materialize() //</span>
+<span class="fc" id="L47">                    .doOnComplete(() -&gt; Util.commit(ps.ps)) //</span>
+<span class="pc" id="L48">                    .doOnError(e -&gt; Util.rollback(ps.ps));</span>
+        } else {
+<span class="fc" id="L50">            flowableFactory = ps -&gt; {</span>
+<span class="fc" id="L51">                int[] count = new int[1];</span>
+<span class="fc" id="L52">                return parameterGroups //</span>
+<span class="fc" id="L53">                        .flatMap(parameters -&gt; {</span>
+<span class="fc" id="L54">                            incrementCounter(ps.ps.getConnection());</span>
+<span class="fc" id="L55">                            count[0] += 1;</span>
+                            Flowable&lt;Integer&gt; result;
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                            if (count[0] == batchSize) {</span>
+<span class="fc" id="L58">                                count[0] = 0;</span>
+<span class="fc" id="L59">                                result = createExecuteBatch(ps, parameters);</span>
+                            } else {
+<span class="fc" id="L61">                                result = createAddBatch(ps, parameters).toFlowable();</span>
+                            }
+<span class="fc" id="L63">                            return result;</span>
+
+                        }) //
+<span class="fc" id="L66">                        .materialize() //</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                        .flatMap(n -&gt; executeFinalBatch(ps, n, count[0] &gt; 0)) //</span>
+<span class="fc" id="L68">                        .doOnComplete(() -&gt; Util.commit(ps.ps)) //</span>
+<span class="pc" id="L69">                        .doOnError(e -&gt; Util.rollback(ps.ps));</span>
+            };
+        }
+<span class="fc" id="L72">        Consumer&lt;NamedPreparedStatement&gt; disposer = Util::closePreparedStatementAndConnection;</span>
+<span class="fc" id="L73">        return Flowable.using(resourceFactory, flowableFactory, disposer, eagerDispose);</span>
+    }
+
+    private static Flowable&lt;Notification&lt;Integer&gt;&gt; executeFinalBatch(NamedPreparedStatement ps,
+            Notification&lt;Integer&gt; n, boolean outstandingBatch) throws SQLException {
+<span class="fc bfc" id="L78" title="All 4 branches covered.">        if (n.isOnComplete() &amp;&amp; outstandingBatch) {</span>
+<span class="fc" id="L79">            log.debug(&quot;executing final batch&quot;);</span>
+<span class="fc" id="L80">            return toFlowable(ps.ps.executeBatch()) //</span>
+<span class="fc" id="L81">                    .map(x -&gt; Notification.createOnNext(x)) //</span>
+<span class="fc" id="L82">                    .concatWith(Flowable.just(n));</span>
+        } else {
+<span class="fc" id="L84">            return Flowable.just(n);</span>
+        }
+    }
+
+    private static Single&lt;Integer&gt; create(NamedPreparedStatement ps, List&lt;Object&gt; parameters) {
+<span class="fc" id="L89">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L90">            incrementCounter(ps.ps.getConnection());</span>
+<span class="fc" id="L91">            Util.setParameters(ps.ps, parameters, ps.names);</span>
+<span class="fc" id="L92">            return ps.ps.executeUpdate();</span>
+        });
+    }
+
+    private static Flowable&lt;Integer&gt; createExecuteBatch(NamedPreparedStatement ps,
+            List&lt;Object&gt; parameters) {
+<span class="fc" id="L98">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L99">            Util.setParameters(ps.ps, parameters, ps.names);</span>
+<span class="fc" id="L100">            ps.ps.addBatch();</span>
+<span class="fc" id="L101">            log.debug(&quot;batch added with {}&quot;, parameters);</span>
+<span class="fc" id="L102">            Flowable&lt;Integer&gt; o = toFlowable(ps.ps.executeBatch());</span>
+<span class="fc" id="L103">            log.debug(&quot;batch executed&quot;);</span>
+<span class="fc" id="L104">            return o;</span>
+        });
+    }
+
+    private static void incrementCounter(Connection connection) {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (connection instanceof TransactedConnection) {</span>
+<span class="fc" id="L110">            TransactedConnection c = (TransactedConnection) connection;</span>
+<span class="fc" id="L111">            c.incrementCounter();</span>
+        }
+<span class="fc" id="L113">    }</span>
+
+    private static Flowable&lt;Integer&gt; toFlowable(int[] a) {
+<span class="fc" id="L116">        return Flowable.range(0, a.length).map(i -&gt; a[i]);</span>
+    }
+
+    private static Completable createAddBatch(NamedPreparedStatement ps, List&lt;Object&gt; parameters) {
+<span class="fc" id="L120">        return Completable.fromAction(() -&gt; {</span>
+<span class="fc" id="L121">            Util.setParameters(ps.ps, parameters, ps.names);</span>
+<span class="fc" id="L122">            ps.ps.addBatch();</span>
+<span class="fc" id="L123">            log.debug(&quot;batch added with {}&quot;, parameters);</span>
+<span class="fc" id="L124">        });</span>
+    }
+
+    static &lt;T&gt; Flowable&lt;T&gt; createReturnGeneratedKeys(Single&lt;Connection&gt; connection,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql,
+            Function&lt;? super ResultSet, ? extends T&gt; mapper, boolean eagerDispose) {
+<span class="fc" id="L130">        return connection //</span>
+<span class="fc" id="L131">                .toFlowable() //</span>
+<span class="fc" id="L132">                .flatMap(con -&gt; createReturnGeneratedKeys(con, parameterGroups, sql, mapper,</span>
+                        eagerDispose), true, 1);
+    }
+
+    private static &lt;T&gt; Flowable&lt;T&gt; createReturnGeneratedKeys(Connection con,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql,
+            Function&lt;? super ResultSet, T&gt; mapper, boolean eagerDispose) {
+<span class="fc" id="L139">        Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util</span>
+<span class="fc" id="L140">                .prepareReturnGeneratedKeys(con, sql);</span>
+<span class="fc" id="L141">        Function&lt;NamedPreparedStatement, Flowable&lt;T&gt;&gt; obsFactory = ps -&gt; parameterGroups</span>
+<span class="fc" id="L142">                .flatMap(parameters -&gt; create(ps, parameters, mapper), true, 1) //</span>
+<span class="fc" id="L143">                .doOnComplete(() -&gt; Util.commit(ps.ps)) //</span>
+<span class="pc" id="L144">                .doOnError(e -&gt; Util.rollback(ps.ps));</span>
+<span class="fc" id="L145">        Consumer&lt;NamedPreparedStatement&gt; disposer = Util::closePreparedStatementAndConnection;</span>
+<span class="fc" id="L146">        return Flowable.using(resourceFactory, obsFactory, disposer, eagerDispose);</span>
+    }
+
+    private static &lt;T&gt; Flowable&lt;T&gt; create(NamedPreparedStatement ps, List&lt;Object&gt; parameters,
+            Function&lt;? super ResultSet, T&gt; mapper) {
+<span class="fc" id="L151">        Callable&lt;ResultSet&gt; initialState = () -&gt; {</span>
+<span class="fc" id="L152">            Util.setParameters(ps.ps, parameters, ps.names);</span>
+<span class="fc" id="L153">            ps.ps.execute();</span>
+<span class="fc" id="L154">            return ps.ps.getGeneratedKeys();</span>
+        };
+<span class="fc" id="L156">        BiConsumer&lt;ResultSet, Emitter&lt;T&gt;&gt; generator = (rs, emitter) -&gt; {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (rs.next()) {</span>
+<span class="fc" id="L158">                emitter.onNext(mapper.apply(rs));</span>
+            } else {
+<span class="fc" id="L160">                emitter.onComplete();</span>
+            }
+<span class="fc" id="L162">        };</span>
+<span class="fc" id="L163">        Consumer&lt;ResultSet&gt; disposer = Util::closeSilently;</span>
+<span class="fc" id="L164">        return Flowable.generate(initialState, generator, disposer);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
