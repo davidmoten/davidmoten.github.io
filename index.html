@@ -38,25 +38,28 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script>
 $(function() {
-	  
-	$.ajaxSetup ({  
-	    cache: false  
-	});
+      
+    $.ajaxSetup ({  
+        cache: false  
+    });
     function loadStars(repo) {
         $.ajax({
-  		      type: "GET",
-  		      url: "https://x19hwynm05.execute-api.ap-southeast-2.amazonaws.com/api/do?name=davidmoten%2F" + repo,
-  		      contentType: 'text/plain',
-  		      dataType: "text",
+              type: "GET",
+              url: "https://x19hwynm05.execute-api.ap-southeast-2.amazonaws.com/api/do",
+              contentType: 'text/plain',
+              data: {
+                  name: "davidmoten/" + repo
+              }, 
+              dataType: "text",
                       headers: { "x-api-key": "GMsdIKblR271Ael385HZC9E0a9Yvqiqa6ZE9RUH7" },
-  		      success: function (response) {
+              success: function (response) {
                 $("#"+ repo + "Stars").text('\u2605'+ " " + response);
-  		      },
-  		      error: function (xhr, ajaxOptions, thrownError) {
+              },
+              error: function (xhr, ajaxOptions, thrownError) {
                 $("#"+ repo + "Stars").text('\u2605'+ " ?");
-  		        console.log("could not load times due to " + xhr.status  + ","+ thrownError);
-  		      }
-  		    });
+                console.log("could not load times due to " + xhr.status  + ","+ thrownError);
+              }
+            });
     }
     loadStars("rtree");
     loadStars("geo");
