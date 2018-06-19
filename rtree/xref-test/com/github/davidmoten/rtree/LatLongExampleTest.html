@@ -14,13 +14,13 @@
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   
 <a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.junit.Test;
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> rx.Observable;
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.grumpy.core.Position;
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Geometries;
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Point;
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Rectangle;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.grumpy.core.Position;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Geometries;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Point;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.Rectangle;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> rx.Observable;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> rx.functions.Func1;
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../com/github/davidmoten/rtree/LatLongExampleTest.html">LatLongExampleTest</a> {
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  
@@ -44,7 +44,7 @@
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>          <em class="jxr_comment">// Now search for all locations within 300km of Canberra</em>
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>          <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">double</strong> distanceKm = 300;
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>          List&lt;Entry&lt;String, Point&gt;&gt; list = search(tree, canberra, distanceKm)
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <em class="jxr_comment">// get the result</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>                  <em class="jxr_comment">// get the result</em>
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>                  .toList().toBlocking().single();
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>          <em class="jxr_comment">// should have returned Sydney only</em>
@@ -60,7 +60,7 @@
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>          Rectangle bounds = createBounds(from, distanceKm);
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>  
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">return</strong> tree
-<a class="jxr_linenumber" name="L55" href="#L55">55</a>          <em class="jxr_comment">// do the first search using the bounds</em>
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>                  <em class="jxr_comment">// do the first search using the bounds</em>
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>                  .search(bounds)
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>                  <em class="jxr_comment">// refine using the exact distance</em>
 <a class="jxr_linenumber" name="L58" href="#L58">58</a>                  .filter(<strong class="jxr_keyword">new</strong> Func1&lt;Entry&lt;T, Point&gt;, Boolean&gt;() {
@@ -91,7 +91,7 @@
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>          <em class="jxr_comment">// Canberra)</em>
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>          <strong class="jxr_keyword">final</strong> Point location = bungendore;
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>          String result = tree.search(location)
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>          <em class="jxr_comment">// filter on the exact distance from the centre of the GeoCircle</em>
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>                  <em class="jxr_comment">// filter on the exact distance from the centre of the GeoCircle</em>
 <a class="jxr_linenumber" name="L87" href="#L87">87</a>                  .filter(<strong class="jxr_keyword">new</strong> Func1&lt;Entry&lt;GeoCircleValue&lt;String&gt;, Rectangle&gt;, Boolean&gt;() {
 <a class="jxr_linenumber" name="L88" href="#L88">88</a>                      Position from = Position.create(location.y(), location.x());
 <a class="jxr_linenumber" name="L89" href="#L89">89</a>  
@@ -120,32 +120,33 @@
 <a class="jxr_linenumber" name="L112" href="#L112">112</a>         <strong class="jxr_keyword">return</strong> Geometries.rectangle(west.getLon(), south.getLat(), east.getLon(), north.getLat());
 <a class="jxr_linenumber" name="L113" href="#L113">113</a>     }
 <a class="jxr_linenumber" name="L114" href="#L114">114</a> 
-<a class="jxr_linenumber" name="L115" href="#L115">115</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T&gt; GeoCircleValue&lt;T&gt; createGeoCircleValue(Point point, <strong class="jxr_keyword">double</strong> radiusKm, T value) {
-<a class="jxr_linenumber" name="L116" href="#L116">116</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> GeoCircleValue&lt;T&gt;(point.y(), point.x(), radiusKm, value);
-<a class="jxr_linenumber" name="L117" href="#L117">117</a>     }
-<a class="jxr_linenumber" name="L118" href="#L118">118</a> 
-<a class="jxr_linenumber" name="L119" href="#L119">119</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T&gt; RTree&lt;GeoCircleValue&lt;T&gt;, Rectangle&gt; add(
-<a class="jxr_linenumber" name="L120" href="#L120">120</a>             RTree&lt;GeoCircleValue&lt;T&gt;, Rectangle&gt; tree, GeoCircleValue&lt;T&gt; c) {
-<a class="jxr_linenumber" name="L121" href="#L121">121</a>         <strong class="jxr_keyword">return</strong> tree.add(c, createBounds(Position.create(c.lat, c.lon), c.radiusKm));
-<a class="jxr_linenumber" name="L122" href="#L122">122</a>     }
-<a class="jxr_linenumber" name="L123" href="#L123">123</a> 
-<a class="jxr_linenumber" name="L124" href="#L124">124</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> GeoCircleValue&lt;T&gt; {
-<a class="jxr_linenumber" name="L125" href="#L125">125</a> 
-<a class="jxr_linenumber" name="L126" href="#L126">126</a>         <a href="../../../../com/github/davidmoten/rtree/LatLongExampleTest.html">GeoCircleValue</a>(<strong class="jxr_keyword">float</strong> lat, <strong class="jxr_keyword">float</strong> lon, <strong class="jxr_keyword">double</strong> radiusKm, T value) {
-<a class="jxr_linenumber" name="L127" href="#L127">127</a>             <strong class="jxr_keyword">this</strong>.lat = lat;
-<a class="jxr_linenumber" name="L128" href="#L128">128</a>             <strong class="jxr_keyword">this</strong>.lon = lon;
-<a class="jxr_linenumber" name="L129" href="#L129">129</a>             <strong class="jxr_keyword">this</strong>.radiusKm = radiusKm;
-<a class="jxr_linenumber" name="L130" href="#L130">130</a>             <strong class="jxr_keyword">this</strong>.value = value;
-<a class="jxr_linenumber" name="L131" href="#L131">131</a>         }
-<a class="jxr_linenumber" name="L132" href="#L132">132</a> 
-<a class="jxr_linenumber" name="L133" href="#L133">133</a>         <strong class="jxr_keyword">float</strong> lat;
-<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">float</strong> lon;
-<a class="jxr_linenumber" name="L135" href="#L135">135</a>         <strong class="jxr_keyword">double</strong> radiusKm;
-<a class="jxr_linenumber" name="L136" href="#L136">136</a>         T value;
-<a class="jxr_linenumber" name="L137" href="#L137">137</a>     }
-<a class="jxr_linenumber" name="L138" href="#L138">138</a> }
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T&gt; GeoCircleValue&lt;T&gt; createGeoCircleValue(Point point, <strong class="jxr_keyword">double</strong> radiusKm,
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>             T value) {
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> GeoCircleValue&lt;T&gt;((<strong class="jxr_keyword">float</strong>) point.y(), (<strong class="jxr_keyword">float</strong>) point.x(), radiusKm, value);
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     }
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T&gt; RTree&lt;GeoCircleValue&lt;T&gt;, Rectangle&gt; add(
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>             RTree&lt;GeoCircleValue&lt;T&gt;, Rectangle&gt; tree, GeoCircleValue&lt;T&gt; c) {
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>         <strong class="jxr_keyword">return</strong> tree.add(c, createBounds(Position.create(c.lat, c.lon), c.radiusKm));
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>     }
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> GeoCircleValue&lt;T&gt; {
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>         <a href="../../../../com/github/davidmoten/rtree/LatLongExampleTest.html">GeoCircleValue</a>(<strong class="jxr_keyword">float</strong> lat, <strong class="jxr_keyword">float</strong> lon, <strong class="jxr_keyword">double</strong> radiusKm, T value) {
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>             <strong class="jxr_keyword">this</strong>.lat = lat;
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>             <strong class="jxr_keyword">this</strong>.lon = lon;
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>             <strong class="jxr_keyword">this</strong>.radiusKm = radiusKm;
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>             <strong class="jxr_keyword">this</strong>.value = value;
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         }
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">float</strong> lat;
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>         <strong class="jxr_keyword">float</strong> lon;
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         <strong class="jxr_keyword">double</strong> radiusKm;
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>         T value;
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>     }
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2013&#x2013;2016. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2013&#x2013;2018. All rights reserved.</div>
 </body>
 </html>
