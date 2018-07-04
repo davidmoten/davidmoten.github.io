@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CharSequenceReader.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">word-wrap</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.text.utils</a> &gt; <span class="el_source">CharSequenceReader.java</span></div><h1>CharSequenceReader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (C) 2013 The Guava Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package org.davidmoten.text.utils;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.CharBuffer;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+/**
+ * A {@link Reader} that reads the characters in a {@link CharSequence}. Like
+ * {@code StringReader}, but works with any {@link CharSequence}.
+ *
+ * @author Colin Decker
+ */
+// TODO(cgdecker): make this public? as a type, or a method in CharStreams?
+final class CharSequenceReader extends Reader {
+
+    private CharSequence seq;
+    private int pos;
+    private int mark;
+
+<span class="fc" id="L35">    public CharSequenceReader(CharSequence seq) {</span>
+<span class="fc" id="L36">        Preconditions.checkNotNull(seq);</span>
+<span class="fc" id="L37">        this.seq = seq;</span>
+<span class="fc" id="L38">    }</span>
+
+    private void checkOpen() throws IOException {
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (seq == null) {</span>
+<span class="nc" id="L42">            throw new IOException(&quot;reader closed&quot;);</span>
+        }
+<span class="fc" id="L44">    }</span>
+
+    private boolean hasRemaining() {
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        return remaining() &gt; 0;</span>
+    }
+
+    private int remaining() {
+<span class="fc" id="L51">        return seq.length() - pos;</span>
+    }
+
+    @Override
+    public synchronized int read(CharBuffer target) throws IOException {
+<span class="nc" id="L56">        Preconditions.checkNotNull(target);</span>
+<span class="nc" id="L57">        checkOpen();</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (!hasRemaining()) {</span>
+<span class="nc" id="L59">            return -1;</span>
+        }
+<span class="nc" id="L61">        int charsToRead = Math.min(target.remaining(), remaining());</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
+<span class="nc" id="L63">            target.put(seq.charAt(pos++));</span>
+        }
+<span class="nc" id="L65">        return charsToRead;</span>
+    }
+
+    @Override
+    public synchronized int read() throws IOException {
+<span class="fc" id="L70">        checkOpen();</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        return hasRemaining() ? seq.charAt(pos++) : -1;</span>
+    }
+
+    @Override
+    public synchronized int read(char[] cbuf, int off, int len) throws IOException {
+<span class="nc bnc" id="L76" title="All 4 branches missed.">        Preconditions.checkArgument(len &gt; 0 &amp;&amp; off + len &lt;= cbuf.length);</span>
+<span class="nc" id="L77">        checkOpen();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (!hasRemaining()) {</span>
+<span class="nc" id="L79">            return -1;</span>
+        }
+<span class="nc" id="L81">        int charsToRead = Math.min(len, remaining());</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
+<span class="nc" id="L83">            cbuf[off + i] = seq.charAt(pos++);</span>
+        }
+<span class="nc" id="L85">        return charsToRead;</span>
+    }
+
+    @Override
+    public synchronized long skip(long n) throws IOException {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        Preconditions.checkArgument(n &gt;= 0, &quot;n may not be negative&quot;);</span>
+<span class="nc" id="L91">        checkOpen();</span>
+<span class="nc" id="L92">        int charsToSkip = (int) Math.min(remaining(), n); // safe because remaining is an int</span>
+<span class="nc" id="L93">        pos += charsToSkip;</span>
+<span class="nc" id="L94">        return charsToSkip;</span>
+    }
+
+    @Override
+    public synchronized boolean ready() throws IOException {
+<span class="nc" id="L99">        checkOpen();</span>
+<span class="nc" id="L100">        return true;</span>
+    }
+
+    @Override
+    public boolean markSupported() {
+<span class="nc" id="L105">        return true;</span>
+    }
+
+    @Override
+    public synchronized void mark(int readAheadLimit) throws IOException {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        Preconditions.checkArgument(readAheadLimit &gt;= 0, &quot;readAheadLimit may not be negative&quot;);</span>
+<span class="nc" id="L111">        checkOpen();</span>
+<span class="nc" id="L112">        mark = pos;</span>
+<span class="nc" id="L113">    }</span>
+
+    @Override
+    public synchronized void reset() throws IOException {
+<span class="nc" id="L117">        checkOpen();</span>
+<span class="nc" id="L118">        pos = mark;</span>
+<span class="nc" id="L119">    }</span>
+
+    @Override
+    public synchronized void close() throws IOException {
+<span class="fc" id="L123">        seq = null;</span>
+<span class="fc" id="L124">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

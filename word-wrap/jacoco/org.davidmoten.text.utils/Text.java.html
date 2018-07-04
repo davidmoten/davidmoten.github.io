@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Text.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">word-wrap</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.text.utils</a> &gt; <span class="el_source">Text.java</span></div><h1>Text.java</h1><pre class="source lang-java linenums">package org.davidmoten.text.utils;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import com.github.davidmoten.guavamini.Sets;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+<span class="nc" id="L14">public final class Text {</span>
+
+    /**
+     * If previous character is word character then this is part of the word,
+     * otherwise can break.
+     */
+<span class="fc" id="L20">    private static final Set&lt;Character&gt; SPECIAL_WORD_CHARS = Sets.newHashSet('\'', '&quot;', '\'',</span>
+<span class="fc" id="L21">            '\u2018', '\u2019', '\u201C', '\u201D', '?', '.', '/', '!', ',', ';', ':');</span>
+
+    public static String wordWrap(String text, int maxWidth) {
+<span class="fc" id="L24">        return wordWrap(text, maxWidth, s -&gt; s.length());</span>
+    }
+
+    public static String wordWrap(CharSequence text, Number maxWidth,
+            Function&lt;? super CharSequence, ? extends Number&gt; stringWidth) {
+<span class="pc" id="L29">        try (Reader r = new CharSequenceReader(text); StringWriter w = new StringWriter()) {</span>
+<span class="fc" id="L30">            wordWrap(r, w, &quot;\n&quot;, maxWidth, stringWidth);</span>
+<span class="fc" id="L31">            return w.toString();</span>
+<span class="pc bpc" id="L32" title="12 of 16 branches missed.">        } catch (IOException e) {</span>
+<span class="nc" id="L33">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    public static void wordWrap(Reader text, Writer out, Number maxWidth) throws IOException {
+<span class="fc" id="L38">        wordWrap(text, out, &quot;\n&quot;, maxWidth, s -&gt; s.length());</span>
+<span class="fc" id="L39">    }</span>
+
+    public static void wordWrap(Reader text, Writer out, String newLine, Number maxWidth,
+            Function&lt;? super CharSequence, ? extends Number&gt; stringWidth) throws IOException {
+<span class="fc" id="L43">        StringBuilder line = new StringBuilder();</span>
+<span class="fc" id="L44">        StringBuilder word = new StringBuilder();</span>
+<span class="fc" id="L45">        double maxWidthDouble = maxWidth.doubleValue();</span>
+<span class="fc" id="L46">        boolean broken = false;</span>
+<span class="fc" id="L47">        boolean alphanumeric = false;</span>
+<span class="fc" id="L48">        boolean previousWasPunctuation = false;</span>
+        while (true) {
+<span class="fc" id="L50">            int c = text.read();</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (c == -1) {</span>
+<span class="fc" id="L52">                break;</span>
+            }
+<span class="fc" id="L54">            char ch = (char) c;</span>
+<span class="fc bfc" id="L55" title="All 4 branches covered.">            alphanumeric = Character.isAlphabetic(ch) || SPECIAL_WORD_CHARS.contains(ch);</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            if (ch == '\n') {</span>
+<span class="fc" id="L57">                line.append(word);</span>
+<span class="fc" id="L58">                out.write(line.toString());</span>
+<span class="fc" id="L59">                out.write(newLine);</span>
+<span class="fc" id="L60">                word.setLength(0);</span>
+<span class="fc" id="L61">                line.setLength(0);</span>
+<span class="fc" id="L62">                broken = false;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            } else if (ch == '\r') {</span>
+                // ignore carriage return
+            } else {
+<span class="fc bfc" id="L66" title="All 4 branches covered.">                if (alphanumeric &amp;&amp; !previousWasPunctuation) {</span>
+<span class="fc" id="L67">                    word.append(ch);</span>
+<span class="fc bfc" id="L68" title="All 4 branches covered.">                    if (broken &amp;&amp; line.length() == 0) {</span>
+<span class="fc" id="L69">                        leftTrim(word);</span>
+                    }
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                    if (tooLong(stringWidth, line.toString() + word.toString(), maxWidthDouble)) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                        if (line.length() &gt; 0) {</span>
+<span class="fc" id="L73">                            writeLine(out, line, newLine);</span>
+<span class="fc" id="L74">                            leftTrim(word);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                            if (tooLong(stringWidth, word.toString(), maxWidthDouble)) {</span>
+<span class="nc" id="L76">                                writeBrokenWord(out, word, newLine);</span>
+                            } else {
+<span class="fc" id="L78">                                broken = true;</span>
+                            }
+                        } else {
+<span class="fc" id="L81">                            writeBrokenWord(out, word, newLine);</span>
+                        }
+                    }
+                } else {
+<span class="fc bfc" id="L85" title="All 4 branches covered.">                    if (word.length() &gt; 0 &amp;&amp; !isWhitespace(word)) {</span>
+<span class="fc" id="L86">                        appendWordToLine(line, word);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                        if (broken) {</span>
+<span class="fc" id="L88">                            leftTrim(line);</span>
+                        }
+                    }
+<span class="fc" id="L91">                    word.append(ch);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                    if (tooLong(stringWidth, line.toString() + word.toString(), maxWidthDouble)) {</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                        if (line.length() &gt; 0) {</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                            if (!isWhitespace(line)) {</span>
+<span class="fc" id="L95">                                writeLine(out, line, newLine);</span>
+                            } else {
+<span class="nc" id="L97">                                line.setLength(0);</span>
+                            }
+<span class="fc" id="L99">                            broken = true;</span>
+                        } else {
+<span class="nc" id="L101">                            String w = word.substring(0, word.length() - 1);</span>
+<span class="nc" id="L102">                            word.delete(0, word.length() - 1);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                            if (broken) {</span>
+<span class="nc" id="L104">                                w = leftTrim(w);</span>
+                            }
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                            if (w.length() &gt; 0) {</span>
+<span class="nc" id="L107">                                out.write(w);</span>
+<span class="nc" id="L108">                                out.write(newLine);</span>
+<span class="nc" id="L109">                                broken = false;</span>
+                            }
+                        }
+                    }
+                }
+            }
+<span class="fc bfc" id="L115" title="All 4 branches covered.">            previousWasPunctuation = isPunctuation(ch) &amp;&amp; !SPECIAL_WORD_CHARS.contains(ch);</span>
+<span class="fc" id="L116">        }</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (line.length() &gt; 0) {</span>
+<span class="fc" id="L118">            String s = line.toString() + word.toString();</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (broken) {</span>
+<span class="fc" id="L120">                s = leftTrim(s);</span>
+            }
+<span class="fc" id="L122">            out.write(s);</span>
+<span class="fc" id="L123">        } else {</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (broken) {</span>
+<span class="fc" id="L125">                leftTrim(word);</span>
+            }
+<span class="fc" id="L127">            out.write(word.toString());</span>
+        }
+<span class="fc" id="L129">    }</span>
+
+    private static boolean isPunctuation(char ch) {
+<span class="fc" id="L132">        return Pattern.matches(&quot;\\p{Punct}&quot;, ch + &quot;&quot;);</span>
+    }
+
+    private static boolean tooLong(Function&lt;? super CharSequence, ? extends Number&gt; stringWidth,
+            String s, double maxWidthDouble) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        return stringWidth.apply(rightTrim(s)).doubleValue() &gt; maxWidthDouble;</span>
+    }
+
+    @VisibleForTesting
+    static String rightTrim(String s) {
+<span class="fc" id="L142">        int i = s.length();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        while (i &gt; 0) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            if (Character.isWhitespace(s.charAt(i - 1))) {</span>
+<span class="fc" id="L145">                i--;</span>
+            } else {
+                break;
+            }
+        }
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (i != s.length()) {</span>
+<span class="fc" id="L151">            return s.substring(0, i);</span>
+        } else {
+<span class="fc" id="L153">            return s;</span>
+        }
+    }
+
+    static boolean isWhitespace(CharSequence s) {
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (!Character.isWhitespace(s.charAt(i))) {</span>
+<span class="fc" id="L160">                return false;</span>
+            }
+        }
+<span class="fc" id="L163">        return true;</span>
+    }
+
+    @VisibleForTesting
+    static void leftTrim(StringBuilder word) {
+        // trim leading spaces on the word
+        // because we have inserted a new line
+        int i;
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        for (i = 0; i &lt; word.length(); i++) {</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            if (!Character.isWhitespace(word.charAt(i))) {</span>
+<span class="fc" id="L173">                break;</span>
+            }
+        }
+<span class="pc bpc" id="L176" title="1 of 4 branches missed.">        if (i &lt; word.length() &amp;&amp; i &gt; 0) {</span>
+<span class="fc" id="L177">            word.delete(0, i);</span>
+        }
+<span class="fc" id="L179">    }</span>
+
+    private static String leftTrim(String s) {
+<span class="fc" id="L182">        StringBuilder b = new StringBuilder(s);</span>
+<span class="fc" id="L183">        leftTrim(b);</span>
+<span class="fc" id="L184">        return b.toString();</span>
+    }
+
+    private static void appendWordToLine(StringBuilder line, StringBuilder word) {
+<span class="fc" id="L188">        line.append(word.toString());</span>
+<span class="fc" id="L189">        word.setLength(0);</span>
+<span class="fc" id="L190">    }</span>
+
+    private static void writeBrokenWord(Writer out, StringBuilder word, String newLine)
+            throws IOException {
+<span class="fc" id="L194">        out.write(word.substring(0, word.length() - 1));</span>
+<span class="fc" id="L195">        out.write(newLine);</span>
+<span class="fc" id="L196">        word.delete(0, word.length() - 1);</span>
+<span class="fc" id="L197">    }</span>
+
+    private static void writeLine(Writer out, StringBuilder line, String newLine)
+            throws IOException {
+<span class="fc" id="L201">        out.write(line.toString());</span>
+<span class="fc" id="L202">        out.write(newLine);</span>
+<span class="fc" id="L203">        line.setLength(0);</span>
+<span class="fc" id="L204">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
