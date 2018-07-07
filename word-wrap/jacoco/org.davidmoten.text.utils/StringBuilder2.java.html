@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>StringBuilder2.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">word-wrap</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.text.utils</a> &gt; <span class="el_source">StringBuilder2.java</span></div><h1>StringBuilder2.java</h1><pre class="source lang-java linenums">package org.davidmoten.text.utils;
+
+import java.util.Arrays;
+
+final class StringBuilder2 implements CharSequence {
+
+    private char[] chars;
+    private int length;
+
+    StringBuilder2(String s) {
+<span class="fc" id="L11">        this(s.toCharArray(), s.length());</span>
+<span class="fc" id="L12">    }</span>
+
+    StringBuilder2() {
+<span class="fc" id="L15">        this(new char[16], 0);</span>
+<span class="fc" id="L16">    }</span>
+
+<span class="fc" id="L18">    private StringBuilder2(char[] chars, int length) {</span>
+<span class="fc" id="L19">        this.chars = chars;</span>
+<span class="fc" id="L20">        this.length = length;</span>
+<span class="fc" id="L21">    }</span>
+
+    char[] internalArray() {
+<span class="fc" id="L24">        return chars;</span>
+    }
+
+    @Override
+    public int length() {
+<span class="fc" id="L29">        return length;</span>
+    }
+
+    @Override
+    public char charAt(int index) {
+<span class="fc" id="L34">        return chars[index];</span>
+    }
+
+    @Override
+    public CharSequence subSequence(int start, int end) {
+<span class="fc" id="L39">        char[] chars2 = new char[end - start];</span>
+<span class="fc" id="L40">        System.arraycopy(chars, start, chars2, 0, end - start);</span>
+<span class="fc" id="L41">        return new StringBuilder2(chars2, chars2.length);</span>
+    }
+
+    public void append(StringBuilder2 s) {
+<span class="fc" id="L45">        int len = s.length();</span>
+<span class="fc" id="L46">        checkSize(len);</span>
+<span class="fc" id="L47">        System.arraycopy(s.chars, 0, chars, length, len);</span>
+<span class="fc" id="L48">        length += len;</span>
+<span class="fc" id="L49">    }</span>
+
+    private void checkSize(int len) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (length + len &gt; chars.length) {</span>
+<span class="fc" id="L53">            chars = Arrays.copyOf(chars, chars.length * 2);</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    public void setLength(int length) {
+<span class="fc" id="L58">        this.length = length;</span>
+<span class="fc" id="L59">    }</span>
+
+    public void append(char ch) {
+<span class="fc" id="L62">        checkSize(1);</span>
+<span class="fc" id="L63">        chars[length] = ch;</span>
+<span class="fc" id="L64">        length++;</span>
+<span class="fc" id="L65">    }</span>
+
+    public void delete(int start, int end) {
+<span class="fc" id="L68">        System.arraycopy(chars, end, chars, start, length - end);</span>
+<span class="fc" id="L69">        length -= end - start;</span>
+<span class="fc" id="L70">    }</span>
+
+    public String substring(int start, int end) {
+<span class="fc" id="L73">        return new String(chars, start, end - start);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L78">        return new String(chars, 0, length);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
