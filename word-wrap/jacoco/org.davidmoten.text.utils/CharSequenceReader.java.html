@@ -33,94 +33,95 @@ final class CharSequenceReader extends Reader {
     private int mark;
 
 <span class="fc" id="L35">    public CharSequenceReader(CharSequence seq) {</span>
-<span class="fc" id="L36">        Preconditions.checkNotNull(seq);</span>
-<span class="fc" id="L37">        this.seq = seq;</span>
-<span class="fc" id="L38">    }</span>
+<span class="fc" id="L36">        this.seq = Preconditions.checkNotNull(seq);</span>
+<span class="fc" id="L37">    }</span>
 
     private void checkOpen() throws IOException {
-<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (seq == null) {</span>
-<span class="nc" id="L42">            throw new IOException(&quot;reader closed&quot;);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (seq == null) {</span>
+<span class="fc" id="L41">            throw new IOException(&quot;reader closed&quot;);</span>
         }
-<span class="fc" id="L44">    }</span>
+<span class="fc" id="L43">    }</span>
 
     private boolean hasRemaining() {
-<span class="fc bfc" id="L47" title="All 2 branches covered.">        return remaining() &gt; 0;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        return remaining() &gt; 0;</span>
     }
 
     private int remaining() {
-<span class="fc" id="L51">        return seq.length() - pos;</span>
+<span class="fc" id="L50">        return seq.length() - pos;</span>
     }
 
     @Override
     public synchronized int read(CharBuffer target) throws IOException {
-<span class="nc" id="L56">        Preconditions.checkNotNull(target);</span>
-<span class="nc" id="L57">        checkOpen();</span>
-<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (!hasRemaining()) {</span>
-<span class="nc" id="L59">            return -1;</span>
+<span class="fc" id="L55">        Preconditions.checkNotNull(target);</span>
+<span class="fc" id="L56">        checkOpen();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (!hasRemaining()) {</span>
+<span class="fc" id="L58">            return -1;</span>
         }
-<span class="nc" id="L61">        int charsToRead = Math.min(target.remaining(), remaining());</span>
-<span class="nc bnc" id="L62" title="All 2 branches missed.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
-<span class="nc" id="L63">            target.put(seq.charAt(pos++));</span>
+<span class="fc" id="L60">        int charsToRead = Math.min(target.remaining(), remaining());</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
+<span class="fc" id="L62">            target.put(seq.charAt(pos++));</span>
         }
-<span class="nc" id="L65">        return charsToRead;</span>
+<span class="fc" id="L64">        return charsToRead;</span>
     }
 
     @Override
     public synchronized int read() throws IOException {
-<span class="fc" id="L70">        checkOpen();</span>
-<span class="fc bfc" id="L71" title="All 2 branches covered.">        return hasRemaining() ? seq.charAt(pos++) : -1;</span>
+<span class="fc" id="L69">        checkOpen();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        return hasRemaining() ? seq.charAt(pos++) : -1;</span>
     }
 
     @Override
     public synchronized int read(char[] cbuf, int off, int len) throws IOException {
-<span class="nc bnc" id="L76" title="All 4 branches missed.">        Preconditions.checkArgument(len &gt; 0 &amp;&amp; off + len &lt;= cbuf.length);</span>
-<span class="nc" id="L77">        checkOpen();</span>
-<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (!hasRemaining()) {</span>
-<span class="nc" id="L79">            return -1;</span>
+<span class="fc bfc" id="L75" title="All 6 branches covered.">        if (len &lt;0 || off &lt;0|| off + len &gt; cbuf.length) {</span>
+<span class="fc" id="L76">            throw new IndexOutOfBoundsException();</span>
         }
-<span class="nc" id="L81">        int charsToRead = Math.min(len, remaining());</span>
-<span class="nc bnc" id="L82" title="All 2 branches missed.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
-<span class="nc" id="L83">            cbuf[off + i] = seq.charAt(pos++);</span>
+<span class="fc" id="L78">        checkOpen();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (!hasRemaining()) {</span>
+<span class="fc" id="L80">            return -1;</span>
         }
-<span class="nc" id="L85">        return charsToRead;</span>
+<span class="fc" id="L82">        int charsToRead = Math.min(len, remaining());</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (int i = 0; i &lt; charsToRead; i++) {</span>
+<span class="fc" id="L84">            cbuf[off + i] = seq.charAt(pos++);</span>
+        }
+<span class="fc" id="L86">        return charsToRead;</span>
     }
 
     @Override
     public synchronized long skip(long n) throws IOException {
-<span class="nc bnc" id="L90" title="All 2 branches missed.">        Preconditions.checkArgument(n &gt;= 0, &quot;n may not be negative&quot;);</span>
-<span class="nc" id="L91">        checkOpen();</span>
-<span class="nc" id="L92">        int charsToSkip = (int) Math.min(remaining(), n); // safe because remaining is an int</span>
-<span class="nc" id="L93">        pos += charsToSkip;</span>
-<span class="nc" id="L94">        return charsToSkip;</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        Preconditions.checkArgument(n &gt;= 0, &quot;n may not be negative&quot;);</span>
+<span class="fc" id="L92">        checkOpen();</span>
+<span class="fc" id="L93">        int charsToSkip = (int) Math.min(remaining(), n); // safe because remaining is an int</span>
+<span class="fc" id="L94">        pos += charsToSkip;</span>
+<span class="fc" id="L95">        return charsToSkip;</span>
     }
 
     @Override
     public synchronized boolean ready() throws IOException {
-<span class="nc" id="L99">        checkOpen();</span>
-<span class="nc" id="L100">        return true;</span>
+<span class="nc" id="L100">        checkOpen();</span>
+<span class="nc" id="L101">        return true;</span>
     }
 
     @Override
     public boolean markSupported() {
-<span class="nc" id="L105">        return true;</span>
+<span class="fc" id="L106">        return true;</span>
     }
 
     @Override
     public synchronized void mark(int readAheadLimit) throws IOException {
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        Preconditions.checkArgument(readAheadLimit &gt;= 0, &quot;readAheadLimit may not be negative&quot;);</span>
-<span class="nc" id="L111">        checkOpen();</span>
-<span class="nc" id="L112">        mark = pos;</span>
-<span class="nc" id="L113">    }</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        Preconditions.checkArgument(readAheadLimit &gt;= 0, &quot;readAheadLimit may not be negative&quot;);</span>
+<span class="fc" id="L112">        checkOpen();</span>
+<span class="fc" id="L113">        mark = pos;</span>
+<span class="fc" id="L114">    }</span>
 
     @Override
     public synchronized void reset() throws IOException {
-<span class="nc" id="L117">        checkOpen();</span>
-<span class="nc" id="L118">        pos = mark;</span>
-<span class="nc" id="L119">    }</span>
+<span class="fc" id="L118">        checkOpen();</span>
+<span class="fc" id="L119">        pos = mark;</span>
+<span class="fc" id="L120">    }</span>
 
     @Override
     public synchronized void close() throws IOException {
-<span class="fc" id="L123">        seq = null;</span>
-<span class="fc" id="L124">    }</span>
+<span class="fc" id="L124">        seq = null;</span>
+<span class="fc" id="L125">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
