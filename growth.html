@@ -27,6 +27,7 @@
        console.log(params);
        var a = params.a.split(',');
        var b = params.b.split(',');
+       var result = "";
        for (i = 0;i < a.length - 1;i++) {
             var a1 = parseInt(a[i]);
             var a2 = parseInt(a[i+1]);
@@ -34,12 +35,11 @@
             var b2 = parseFloat(b[i+1]);
             for (d = a1; d > a2; d--) {
                var v = b1 + (d - a1)/(a2 - a1) * (b2 - b1);
-               console.log(d + " -> " + v);
+               result += d + "\t" + v + "\n";
             }
        }
-       console.log(a[a.length - 1] + " -> " + b[a.length-1]);
-       console.log("a = " + a);
-       console.log("b = " + b);
+       result+=a[a.length - 1] + "\t" + b[a.length-1];
+       document.getElementById("tbl").innerHTML = result;
     }
 
      window.onload = processParameters;
@@ -47,6 +47,6 @@
        </script>
     </head>
     <body>
-       <div id="tbl"></div>   
+       <div id="tbl" style="white-space:pre"></div>   
     </body>
 </html>
