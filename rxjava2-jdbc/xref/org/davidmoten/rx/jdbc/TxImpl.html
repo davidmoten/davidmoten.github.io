@@ -63,35 +63,39 @@
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../org/davidmoten/rx/jdbc/TransactedSelectBuilder.html">TransactedSelectBuilder</a> select(String sql) {
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>          <strong class="jxr_keyword">return</strong> db.tx(<strong class="jxr_keyword">this</strong>).select(sql);
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>      }
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>      
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>      @Override
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../org/davidmoten/rx/jdbc/TransactedUpdateBuilder.html">TransactedUpdateBuilder</a> update(String sql) {
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>          <strong class="jxr_keyword">return</strong> db.tx(<strong class="jxr_keyword">this</strong>).update(sql);
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>      }
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>  
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>      
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>      @Override
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">public</strong> String toString() {
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>          StringBuilder builder = <strong class="jxr_keyword">new</strong> StringBuilder();
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>          builder.append(<span class="jxr_string">"TxImpl [con="</span>);
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>          builder.append(con);
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>          <strong class="jxr_keyword">if</strong> (isValue()) {
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>              builder.append(<span class="jxr_string">", value="</span>);
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>              builder.append(value);
-<a class="jxr_linenumber" name="L72" href="#L72">72</a>          } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (isError()) {
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>              builder.append(<span class="jxr_string">", e="</span>);
-<a class="jxr_linenumber" name="L74" href="#L74">74</a>              builder.append(e);
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>          } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (isComplete()) {
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>              builder.append(<span class="jxr_string">", completed="</span>);
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>              builder.append(completed);
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>          }
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>          builder.append(<span class="jxr_string">"]"</span>);
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>          <strong class="jxr_keyword">return</strong> builder.toString();
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>      }
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>  
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>  }
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../org/davidmoten/rx/jdbc/TransactedCallableBuilder.html">TransactedCallableBuilder</a> call(String sql) {
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          <strong class="jxr_keyword">return</strong> db.tx(<strong class="jxr_keyword">this</strong>).call(sql);
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      }
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>      @Override
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      <strong class="jxr_keyword">public</strong> String toString() {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          StringBuilder builder = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          builder.append(<span class="jxr_string">"TxImpl [con="</span>);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          builder.append(con);
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>          <strong class="jxr_keyword">if</strong> (isValue()) {
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>              builder.append(<span class="jxr_string">", value="</span>);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>              builder.append(value);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (isError()) {
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>              builder.append(<span class="jxr_string">", error="</span>);
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>              builder.append(e);
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>              builder.append(<span class="jxr_string">", completed="</span>);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>              builder.append(completed);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          }
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          builder.append(<span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">return</strong> builder.toString();
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>      }
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2016&#x2013;2017. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2016&#x2013;2018. All rights reserved.</div>
 </body>
 </html>
