@@ -65,14 +65,14 @@
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>              @Override
 <a class="jxr_linenumber" name="L58" href="#L58">58</a>              <strong class="jxr_keyword">public</strong> T next() {
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>                  <strong class="jxr_keyword">if</strong> (switched) {
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>                      <strong class="jxr_keyword">return</strong> it.next();
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>                      <strong class="jxr_keyword">return</strong> Preconditions.checkNotNull(it.next());
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>                  } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>                      <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>                          <strong class="jxr_keyword">return</strong> it.next();
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>                          <strong class="jxr_keyword">return</strong> Preconditions.checkNotNull(it.next());
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>                      } <strong class="jxr_keyword">catch</strong> (RuntimeException | Error e) {
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>                          switched = <strong class="jxr_keyword">true</strong>;
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>                          it.dispose();
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>                          it = (StreamIterator&lt;T&gt;) function.apply(e);
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>                          it = Preconditions.checkNotNull((StreamIterator&lt;T&gt;) function.apply(e));
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>                          <strong class="jxr_keyword">return</strong> it.next();
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>                      }
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>                  }
