@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StreamImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.util</a> &gt; <span class="el_source">StreamImpl.java</span></div><h1>StreamImpl.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.util;
+
+import java.util.Iterator;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+public final class StreamImpl&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final Iterable&lt;T&gt; source;
+
+<span class="fc" id="L12">    public StreamImpl(Iterable&lt;T&gt; source) {</span>
+<span class="fc" id="L13">        this.source = source;</span>
+<span class="fc" id="L14">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L18">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L20">            Iterator&lt;T&gt; it = source.iterator();</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L24">                return it.hasNext();</span>
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L29">                return it.next();</span>
+            }
+
+            @Override
+            public void dispose() {
+                // do nothing
+<span class="fc" id="L35">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

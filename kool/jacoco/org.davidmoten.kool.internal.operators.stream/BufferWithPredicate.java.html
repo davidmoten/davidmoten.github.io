@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BufferWithPredicate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">BufferWithPredicate.java</span></div><h1>BufferWithPredicate.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.function.BiPredicate;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+public final class BufferWithPredicate&lt;T&gt; implements Stream&lt;List&lt;T&gt;&gt; {
+
+    private final BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition;
+    private final boolean emitRemainder;
+    private final boolean until;
+    private final Stream&lt;T&gt; source;
+
+    public BufferWithPredicate(BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition,
+<span class="fc" id="L19">            boolean emitRemainder, boolean until, Stream&lt;T&gt; source) {</span>
+<span class="fc" id="L20">        this.condition = condition;</span>
+<span class="fc" id="L21">        this.emitRemainder = emitRemainder;</span>
+<span class="fc" id="L22">        this.until = until;</span>
+<span class="fc" id="L23">        this.source = source;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public StreamIterator&lt;List&lt;T&gt;&gt; iterator() {
+<span class="fc" id="L28">        return new StreamIterator&lt;List&lt;T&gt;&gt;() {</span>
+<span class="fc" id="L29">            StreamIterator&lt;T&gt; it = source.iteratorChecked();</span>
+<span class="fc" id="L30">            List&lt;T&gt; buffer = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L31">            List&lt;T&gt; nextBuffer = new ArrayList&lt;&gt;();</span>
+            boolean ready;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L36">                loadNext();</span>
+<span class="fc" id="L37">                return ready;</span>
+            }
+
+            @Override
+            public List&lt;T&gt; next() {
+<span class="fc" id="L42">                loadNext();</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">                if (!ready) {</span>
+<span class="nc" id="L44">                    throw new NoSuchElementException();</span>
+                } else {
+<span class="fc" id="L46">                    List&lt;T&gt; list = buffer;</span>
+<span class="fc" id="L47">                    buffer = nextBuffer;</span>
+<span class="fc" id="L48">                    nextBuffer = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L49">                    ready = false;</span>
+<span class="fc" id="L50">                    return list;</span>
+                }
+            }
+
+            @Override
+            public void dispose() {
+<span class="fc" id="L56">                it.dispose();</span>
+<span class="fc" id="L57">            }</span>
+
+            private void loadNext() {
+<span class="fc bfc" id="L60" title="All 4 branches covered.">                while (!ready &amp;&amp; it.hasNext()) {</span>
+<span class="fc" id="L61">                    T t = it.nextChecked();</span>
+<span class="fc" id="L62">                    boolean b = condition.test(buffer, t);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                    if (!until) {</span>
+                        // while
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                        if (b) {</span>
+<span class="fc" id="L66">                            buffer.add(t);</span>
+                        } else {
+<span class="fc" id="L68">                            ready = true;</span>
+<span class="fc" id="L69">                            nextBuffer.add(t);</span>
+                        }
+                    } else {
+                        // until
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                        if (b) {</span>
+<span class="fc" id="L74">                            ready = true;</span>
+<span class="fc" id="L75">                            nextBuffer.add(t);</span>
+                        } else {
+<span class="fc" id="L77">                            buffer.add(t);</span>
+                        }
+                    }
+<span class="fc" id="L80">                }</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                if (!ready) {</span>
+<span class="pc bpc" id="L82" title="1 of 4 branches missed.">                    if (emitRemainder &amp;&amp; !buffer.isEmpty()) {</span>
+<span class="fc" id="L83">                        ready = true;</span>
+                    }
+                } else {
+<span class="fc" id="L86">                    ready = true;</span>
+                }
+<span class="fc" id="L88">            }</span>
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

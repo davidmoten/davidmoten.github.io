@@ -1,0 +1,724 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Stream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool</a> &gt; <span class="el_source">Stream.java</span></div><h1>Stream.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool;
+
+import java.io.BufferedReader;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
+
+import org.davidmoten.kool.internal.operators.stream.All;
+import org.davidmoten.kool.internal.operators.stream.Any;
+import org.davidmoten.kool.internal.operators.stream.Buffer;
+import org.davidmoten.kool.internal.operators.stream.BufferWithPredicate;
+import org.davidmoten.kool.internal.operators.stream.Cache;
+import org.davidmoten.kool.internal.operators.stream.Collect;
+import org.davidmoten.kool.internal.operators.stream.Concat;
+import org.davidmoten.kool.internal.operators.stream.Count;
+import org.davidmoten.kool.internal.operators.stream.Defer;
+import org.davidmoten.kool.internal.operators.stream.Distinct;
+import org.davidmoten.kool.internal.operators.stream.DistinctUntilChanged;
+import org.davidmoten.kool.internal.operators.stream.DoOnComplete;
+import org.davidmoten.kool.internal.operators.stream.DoOnDispose;
+import org.davidmoten.kool.internal.operators.stream.DoOnEmpty;
+import org.davidmoten.kool.internal.operators.stream.DoOnError;
+import org.davidmoten.kool.internal.operators.stream.DoOnNext;
+import org.davidmoten.kool.internal.operators.stream.Filter;
+import org.davidmoten.kool.internal.operators.stream.First;
+import org.davidmoten.kool.internal.operators.stream.FlatMap;
+import org.davidmoten.kool.internal.operators.stream.FromArray;
+import org.davidmoten.kool.internal.operators.stream.FromArrayDouble;
+import org.davidmoten.kool.internal.operators.stream.FromArrayFloat;
+import org.davidmoten.kool.internal.operators.stream.FromArrayInt;
+import org.davidmoten.kool.internal.operators.stream.FromBufferedReader;
+import org.davidmoten.kool.internal.operators.stream.FromInputStream;
+import org.davidmoten.kool.internal.operators.stream.Generate;
+import org.davidmoten.kool.internal.operators.stream.IgnoreDisposalError;
+import org.davidmoten.kool.internal.operators.stream.IsEmpty;
+import org.davidmoten.kool.internal.operators.stream.Last;
+import org.davidmoten.kool.internal.operators.stream.Map;
+import org.davidmoten.kool.internal.operators.stream.Max;
+import org.davidmoten.kool.internal.operators.stream.MergeInterleaved;
+import org.davidmoten.kool.internal.operators.stream.PrependOne;
+import org.davidmoten.kool.internal.operators.stream.Range;
+import org.davidmoten.kool.internal.operators.stream.RangeLong;
+import org.davidmoten.kool.internal.operators.stream.ReduceNoInitialValue;
+import org.davidmoten.kool.internal.operators.stream.ReduceWithInitialValueSupplier;
+import org.davidmoten.kool.internal.operators.stream.Repeat;
+import org.davidmoten.kool.internal.operators.stream.RepeatElement;
+import org.davidmoten.kool.internal.operators.stream.Skip;
+import org.davidmoten.kool.internal.operators.stream.SkipUntil;
+import org.davidmoten.kool.internal.operators.stream.Sorted;
+import org.davidmoten.kool.internal.operators.stream.Split;
+import org.davidmoten.kool.internal.operators.stream.SwitchOnEmpty;
+import org.davidmoten.kool.internal.operators.stream.SwitchOnError;
+import org.davidmoten.kool.internal.operators.stream.Take;
+import org.davidmoten.kool.internal.operators.stream.TakeLast;
+import org.davidmoten.kool.internal.operators.stream.TakeWithPredicate;
+import org.davidmoten.kool.internal.operators.stream.ToMaybe;
+import org.davidmoten.kool.internal.operators.stream.ToSingle;
+import org.davidmoten.kool.internal.operators.stream.Transform;
+import org.davidmoten.kool.internal.operators.stream.Using;
+import org.davidmoten.kool.internal.operators.stream.Zip;
+import org.davidmoten.kool.internal.util.Exceptions;
+import org.davidmoten.kool.internal.util.Iterables;
+import org.davidmoten.kool.internal.util.StreamImpl;
+import org.davidmoten.kool.internal.util.StreamUtils;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public interface Stream&lt;T&gt; extends StreamIterable&lt;T&gt; {
+
+    public static final int DEFAULT_BUFFER_SIZE = 16;
+
+    //////////////////
+    // Factories
+    //////////////////
+
+    public static &lt;T&gt; Stream&lt;T&gt; create(Iterable&lt;T&gt; source) {
+<span class="fc" id="L101">        return new StreamImpl&lt;T&gt;(source);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t) {
+<span class="fc" id="L105">        return create(Collections.singleton(t));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2) {
+<span class="fc" id="L109">        return create(Iterables.ofNoCopy(t1, t2));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3) {
+<span class="fc" id="L113">        return create(Iterables.ofNoCopy(t1, t2, t3));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3, T t4) {
+<span class="fc" id="L117">        return create(Iterables.ofNoCopy(t1, t2, t3, t4));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3, T t4, T t5) {
+<span class="fc" id="L121">        return create(Iterables.ofNoCopy(t1, t2, t3, t4, t5));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3, T t4, T t5, T t6) {
+<span class="nc" id="L125">        return create(Iterables.ofNoCopy(t1, t2, t3, t4, t5, t6));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3, T t4, T t5, T t6, T t7) {
+<span class="nc" id="L129">        return create(Iterables.ofNoCopy(t1, t2, t3, t4, t5, t6, t7));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; of(T t1, T t2, T t3, T t4, T t5, T t6, T t7, T t8) {
+<span class="fc" id="L133">        return create(Iterables.ofNoCopy(t1, t2, t3, t4, t5, t6, t7, t8));</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; error(Throwable e) {
+<span class="fc" id="L137">        return Stream.from(new StreamIterable&lt;T&gt;() {</span>
+            @Override
+            public StreamIterator&lt;T&gt; iterator() {
+<span class="nc" id="L140">                return Exceptions.rethrow(e);</span>
+            }
+        });
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; generate(Consumer&lt;Emitter&lt;T&gt;&gt; consumer) {
+<span class="fc" id="L146">        return new Generate&lt;T&gt;(consumer);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; error(Callable&lt;? extends Throwable&gt; callable) {
+<span class="fc" id="L150">        return Stream.from(new StreamIterable&lt;T&gt;() {</span>
+            @Override
+            public StreamIterator&lt;T&gt; iterator() {
+<span class="nc" id="L153">                return Exceptions.rethrow(callable);</span>
+            }
+        });
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; from(Iterable&lt;T&gt; iterable) {
+<span class="fc" id="L159">        return create(iterable);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; fromArray(T[] array, int fromIndex, int toIndex) {
+<span class="fc" id="L163">        return new FromArray&lt;T&gt;(array, fromIndex, toIndex);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; fromArray(T[] array) {
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (array.length == 0) {</span>
+<span class="fc" id="L168">            return Stream.empty();</span>
+        } else {
+<span class="fc" id="L170">            return fromArray(array, 0, array.length - 1);</span>
+        }
+    }
+
+    public static Stream&lt;Integer&gt; fromArray(int[] array, int fromIndex, int toIndex) {
+<span class="fc" id="L175">        return new FromArrayInt(array, fromIndex, toIndex);</span>
+    }
+
+    public static Stream&lt;Integer&gt; fromArray(int[] array) {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (array.length == 0) {</span>
+<span class="fc" id="L180">            return Stream.empty();</span>
+        } else {
+<span class="fc" id="L182">            return fromArray(array, 0, array.length - 1);</span>
+        }
+    }
+
+    public static Stream&lt;Double&gt; fromArray(double[] array, int fromIndex, int toIndex) {
+<span class="fc" id="L187">        return new FromArrayDouble(array, fromIndex, toIndex);</span>
+    }
+
+    public static Stream&lt;Double&gt; fromArray(double[] array) {
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (array.length == 0) {</span>
+<span class="fc" id="L192">            return Stream.empty();</span>
+        } else {
+<span class="fc" id="L194">            return fromArray(array, 0, array.length - 1);</span>
+        }
+    }
+
+    public static Stream&lt;Float&gt; fromArray(float[] array, int fromIndex, int toIndex) {
+<span class="fc" id="L199">        return new FromArrayFloat(array, fromIndex, toIndex);</span>
+    }
+
+    public static Stream&lt;Float&gt; fromArray(float[] array) {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (array.length == 0) {</span>
+<span class="fc" id="L204">            return Stream.empty();</span>
+        } else {
+<span class="fc" id="L206">            return fromArray(array, 0, array.length - 1);</span>
+        }
+    }
+
+    public static Stream&lt;String&gt; lines(BufferedReader reader) {
+<span class="fc" id="L211">        return new FromBufferedReader(reader);</span>
+    }
+
+    public static Stream&lt;String&gt; lines(Callable&lt;BufferedReader&gt; readerFactory) {
+<span class="fc" id="L215">        return Stream.using(() -&gt; {</span>
+            try {
+<span class="fc" id="L217">                return readerFactory.call();</span>
+<span class="fc" id="L218">            } catch (Exception e) {</span>
+<span class="nc" id="L219">                return Exceptions.rethrow(e);</span>
+            }
+<span class="fc" id="L221">        }, br -&gt; lines(br));</span>
+    }
+
+    public static Stream&lt;String&gt; lines(Callable&lt;InputStream&gt; inFactory, Charset charset) {
+<span class="fc" id="L225">        return lines(() -&gt; new BufferedReader(new InputStreamReader(inFactory.call(), charset)));</span>
+    }
+
+    public static Stream&lt;String&gt; lines(File file, Charset charset) {
+<span class="fc" id="L229">        return Stream.using(() -&gt; {</span>
+            try {
+<span class="fc" id="L231">                return new FileInputStream(file);</span>
+<span class="fc" id="L232">            } catch (FileNotFoundException e) {</span>
+<span class="fc" id="L233">                throw new UncheckedIOException(e);</span>
+            }
+<span class="fc" id="L235">        }, in -&gt; lines(() -&gt; in, charset));</span>
+    }
+
+    public static Stream&lt;String&gt; lines(File file) {
+<span class="fc" id="L239">        return lines(file, StandardCharsets.UTF_8);</span>
+    }
+
+    public static Stream&lt;String&gt; linesFromResource(String resource, Charset charset) {
+<span class="fc" id="L243">        return linesFromResource(Stream.class, resource, charset);</span>
+    }
+
+    public static Stream&lt;String&gt; linesFromResource(Class&lt;?&gt; cls, String resource, Charset charset) {
+<span class="fc" id="L247">        return lines(() -&gt; cls.getResourceAsStream(resource), charset);</span>
+    }
+
+    public static Stream&lt;String&gt; linesFromResource(String resource) {
+<span class="fc" id="L251">        return linesFromResource(Stream.class, resource, StandardCharsets.UTF_8);</span>
+    }
+
+    public static Stream&lt;ByteBuffer&gt; byteBuffers(Callable&lt;? extends InputStream&gt; provider,
+            int bufferSize) {
+<span class="fc" id="L256">        return using(provider, is -&gt; byteBuffers(is));</span>
+    }
+
+    public static Stream&lt;ByteBuffer&gt; byteBuffers(Callable&lt;? extends InputStream&gt; provider) {
+<span class="fc" id="L260">        return byteBuffers(provider, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Stream&lt;ByteBuffer&gt; byteBuffers(InputStream in) {
+<span class="fc" id="L264">        return byteBuffers(in, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Stream&lt;ByteBuffer&gt; byteBuffers(InputStream in, int bufferSize) {
+<span class="fc" id="L268">        return new FromInputStream(in, bufferSize);</span>
+    }
+
+    public static Stream&lt;byte[]&gt; bytes(Callable&lt;? extends InputStream&gt; provider, int bufferSize) {
+<span class="fc" id="L272">        return byteBuffers(provider, bufferSize) //</span>
+<span class="fc" id="L273">                .map(bb -&gt; {</span>
+<span class="fc" id="L274">                    byte[] b = new byte[bb.remaining()];</span>
+<span class="fc" id="L275">                    bb.get(b);</span>
+<span class="fc" id="L276">                    return b;</span>
+                });
+    }
+
+    public static Stream&lt;byte[]&gt; bytes(Callable&lt;? extends InputStream&gt; provider) {
+<span class="nc" id="L281">        return bytes(provider, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Stream&lt;byte[]&gt; bytes(InputStream in, int bufferSize) {
+<span class="nc" id="L285">        return byteBuffers(in, bufferSize)//</span>
+<span class="nc" id="L286">                .map(bb -&gt; {</span>
+<span class="nc" id="L287">                    byte[] b = new byte[bb.remaining()];</span>
+<span class="nc" id="L288">                    bb.get(b);</span>
+<span class="nc" id="L289">                    return b;</span>
+                });
+    }
+
+    public static Stream&lt;byte[]&gt; bytes(InputStream in) {
+<span class="nc" id="L294">        return bytes(in, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static Stream&lt;Integer&gt; range(int start, int length) {
+<span class="fc" id="L298">        return new Range(start, length);</span>
+    }
+
+    public static Stream&lt;Long&gt; rangeLong(long start, long length) {
+<span class="fc" id="L302">        return new RangeLong(start, length);</span>
+    }
+
+    public static Stream&lt;Long&gt; ordinalsLong() {
+<span class="fc" id="L306">        return rangeLong(1, Long.MAX_VALUE);</span>
+    }
+
+    public static Stream&lt;Integer&gt; ordinals() {
+<span class="fc" id="L310">        return range(1, Integer.MAX_VALUE);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; defer(Callable&lt;? extends Stream&lt;? extends T&gt;&gt; provider) {
+<span class="fc" id="L314">        return new Defer&lt;T&gt;(provider);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Stream&lt;T&gt; empty() {
+<span class="fc" id="L319">        return (Stream&lt;T&gt;) StreamUtils.EmptyHolder.EMPTY;</span>
+    }
+
+    public static &lt;R, T&gt; Stream&lt;T&gt; using(Callable&lt;R&gt; resourceFactory,
+            Function&lt;? super R, ? extends Stream&lt;? extends T&gt;&gt; streamFactory,
+            Consumer&lt;? super R&gt; closer) {
+<span class="fc" id="L325">        return new Using&lt;R, T&gt;(resourceFactory, streamFactory, closer);</span>
+    }
+
+    public static &lt;R extends Closeable, T&gt; Stream&lt;T&gt; using(Callable&lt;R&gt; resourceFactory,
+            Function&lt;? super R, ? extends Stream&lt;? extends T&gt;&gt; streamFactory) {
+<span class="fc" id="L330">        return new Using&lt;R, T&gt;(resourceFactory, streamFactory, CLOSEABLE_CLOSER);</span>
+    }
+
+<span class="fc" id="L333">    static final Consumer&lt;Closeable&gt; CLOSEABLE_CLOSER = new Consumer&lt;Closeable&gt;() {</span>
+
+        @Override
+        public void accept(Closeable c) {
+            try {
+<span class="fc" id="L338">                c.close();</span>
+<span class="nc" id="L339">            } catch (IOException e) {</span>
+<span class="nc" id="L340">                Plugins.onError(e);</span>
+<span class="fc" id="L341">            }</span>
+<span class="fc" id="L342">        }</span>
+
+    };
+
+    public static &lt;T&gt; Stream&lt;T&gt; repeatElement(T t) {
+<span class="fc" id="L347">        return repeatElement(t, Long.MAX_VALUE);</span>
+    }
+
+    public static &lt;T&gt; Stream&lt;T&gt; repeatElement(T t, long count) {
+<span class="fc" id="L351">        return new RepeatElement&lt;T&gt;(t, count);</span>
+    }
+
+    @SafeVarargs
+    public static &lt;T&gt; Stream&lt;T&gt; mergeInterleaved(Stream&lt;? extends T&gt;... streams) {
+<span class="fc" id="L356">        return new MergeInterleaved&lt;T&gt;(streams);</span>
+    }
+
+    //////////////////
+    // Operators
+    //////////////////
+
+    public default Single&lt;Boolean&gt; isEmpty() {
+<span class="fc" id="L364">        return new IsEmpty(this);</span>
+    }
+
+    public default Single&lt;Boolean&gt; hasElements() {
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">        return isEmpty().map(x -&gt; !x);</span>
+    }
+
+    public default Stream&lt;T&gt; sorted(Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L372">        return new Sorted&lt;T&gt;(comparator, this);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public default Stream&lt;T&gt; sorted() {
+<span class="fc" id="L377">        return (Stream&lt;T&gt;) ((Stream&lt;Comparable&lt;Object&gt;&gt;) this).sorted(Comparator.naturalOrder());</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; map(Function&lt;? super T, ? extends R&gt; function) {
+<span class="fc" id="L381">        return new Map&lt;T, R&gt;(function, this);</span>
+    }
+
+    public default Maybe&lt;T&gt; reduce(BiFunction&lt;? super T, ? super T, ? extends T&gt; reducer) {
+<span class="fc" id="L385">        return new ReduceNoInitialValue&lt;T&gt;(reducer, this).iterator().next();</span>
+    }
+
+    public default &lt;R&gt; Maybe&lt;R&gt; reduceWithInitialValue(R initialValue,
+            BiFunction&lt;? super R, ? super T, ? extends R&gt; reducer) {
+<span class="fc" id="L390">        return reduce(() -&gt; initialValue, reducer);</span>
+    }
+
+    public default &lt;R&gt; Maybe&lt;R&gt; reduce(Supplier&lt;R&gt; initialValueFactory,
+            BiFunction&lt;? super R, ? super T, ? extends R&gt; reducer) {
+<span class="fc" id="L395">        return new ReduceWithInitialValueSupplier&lt;R, T&gt;(initialValueFactory, reducer, this);</span>
+    }
+
+    public default &lt;R&gt; Single&lt;R&gt; collect(Supplier&lt;? extends R&gt; factory,
+            BiConsumer&lt;? super R, ? super T&gt; collector) {
+<span class="fc" id="L400">        return new Collect&lt;T, R&gt;(factory, collector, this).single();</span>
+    }
+
+    public default Single&lt;T&gt; single() {
+<span class="fc" id="L404">        return new ToSingle&lt;T&gt;(this);</span>
+    }
+
+    public default List&lt;T&gt; toList() {
+<span class="fc" id="L408">        return toList(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public default Set&lt;T&gt; toSet() {
+<span class="fc" id="L412">        return toSet(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public default Set&lt;T&gt; toSet(int sizeHint) {
+<span class="fc" id="L416">        return Iterables.addAll(new HashSet&lt;T&gt;(sizeHint), this);</span>
+    }
+
+    public default List&lt;T&gt; toList(int sizeHint) {
+<span class="fc" id="L420">        return Iterables.addAll(new ArrayList&lt;T&gt;(sizeHint), this);</span>
+    }
+
+    public default Stream&lt;T&gt; filter(Predicate&lt;? super T&gt; function) {
+<span class="fc bfc" id="L424" title="All 2 branches covered.">        if (function == Predicates.alwaysTrue()) {</span>
+<span class="fc" id="L425">            return this;</span>
+        } else {
+<span class="fc" id="L427">            return new Filter&lt;T&gt;(function, this);</span>
+        }
+    }
+
+    public default void forEach() {
+<span class="fc" id="L432">        count().get();</span>
+<span class="fc" id="L433">    }</span>
+
+    @Override
+    public default void forEach(Consumer&lt;? super T&gt; consumer) {
+<span class="fc" id="L437">        doOnNext(consumer).count().get();</span>
+<span class="fc" id="L438">    }</span>
+
+    public default Stream&lt;T&gt; println() {
+<span class="fc" id="L441">        return doOnNext(System.out::println);</span>
+    }
+
+    public default Single&lt;Long&gt; count() {
+<span class="fc" id="L445">        return new Count(this);</span>
+    }
+
+    public default Stream&lt;T&gt; prepend(T value) {
+<span class="fc" id="L449">        return new PrependOne&lt;T&gt;(value, this);</span>
+    }
+
+    public default Stream&lt;T&gt; prepend(T[] values) {
+<span class="fc" id="L453">        return new Concat&lt;T&gt;(create(Iterables.fromArray(values)), this);</span>
+    }
+
+    public default Stream&lt;T&gt; prepend(StreamIterable&lt;? extends T&gt; values) {
+<span class="fc" id="L457">        return new Concat&lt;T&gt;(values, this);</span>
+    }
+
+    public default Stream&lt;T&gt; concatWith(StreamIterable&lt;? extends T&gt; values) {
+<span class="fc" id="L461">        return new Concat&lt;T&gt;(this, values);</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; flatMap(
+            Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; function) {
+<span class="fc" id="L466">        return new FlatMap&lt;T, R&gt;(function, this);</span>
+    }
+
+    public default Maybe&lt;T&gt; findFirst(Predicate&lt;? super T&gt; predicate) {
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        if (predicate == Predicates.alwaysFalse()) {</span>
+<span class="fc" id="L471">            return Maybe.empty();</span>
+        } else {
+<span class="fc" id="L473">            return filter(predicate).first();</span>
+        }
+    }
+
+    public default Maybe&lt;T&gt; first() {
+<span class="fc" id="L478">        return Iterables.first(new First&lt;T&gt;(this).iterator());</span>
+    }
+
+    public default Stream&lt;T&gt; doOnNext(Consumer&lt;? super T&gt; consumer) {
+<span class="fc" id="L482">        return new DoOnNext&lt;T&gt;(consumer, this);</span>
+    }
+
+    public default Stream&lt;T&gt; doOnError(Consumer&lt;? super Throwable&gt; consumer) {
+<span class="fc" id="L486">        return new DoOnError&lt;T&gt;(consumer, this);</span>
+    }
+
+    public default Stream&lt;T&gt; doOnComplete(Runnable action) {
+<span class="fc" id="L490">        return new DoOnComplete&lt;T&gt;(action, this);</span>
+    }
+
+    public default Stream&lt;T&gt; doOnDispose(Runnable action) {
+<span class="fc" id="L494">        return doBeforeDispose(action);</span>
+    }
+
+    public default Stream&lt;T&gt; doBeforeDispose(Runnable action) {
+<span class="fc" id="L498">        return new DoOnDispose&lt;T&gt;(action, this, true);</span>
+    }
+
+    public default Stream&lt;T&gt; doAfterDispose(Runnable action) {
+<span class="fc" id="L502">        return new DoOnDispose&lt;T&gt;(action, this, false);</span>
+    }
+
+    public default Stream&lt;T&gt; doOnEmpty(Runnable action) {
+<span class="fc" id="L506">        return new DoOnEmpty&lt;T&gt;(this, action);</span>
+    }
+
+    public default Maybe&lt;T&gt; last() {
+<span class="fc" id="L510">        return Iterables.first(new Last&lt;T&gt;(this).iterator());</span>
+    }
+
+    public default Maybe&lt;T&gt; get(int index) {
+<span class="fc" id="L514">        return take(index + 1).last();</span>
+    }
+
+    public default Stream&lt;T&gt; take(long n) {
+<span class="fc" id="L518">        return new Take&lt;T&gt;(n, this);</span>
+    }
+
+    public default Stream&lt;T&gt; takeLast(long n) {
+<span class="fc" id="L522">        return new TakeLast&lt;T&gt;(this, n);</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; transform(
+            Function&lt;? super Stream&lt;T&gt;, ? extends Stream&lt;? extends R&gt;&gt; transformer) {
+<span class="fc" id="L527">        return new Transform&lt;T, R&gt;(transformer, this);</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; compose(
+            Function&lt;? super Stream&lt;T&gt;, ? extends Stream&lt;? extends R&gt;&gt; transformer) {
+<span class="fc" id="L532">        return transform(transformer);</span>
+    }
+
+    public default Stream&lt;T&gt; switchOnError(
+            Function&lt;? super Throwable, ? extends Stream&lt;? extends T&gt;&gt; function) {
+<span class="fc" id="L537">        return new SwitchOnError&lt;T&gt;(function, this);</span>
+    }
+
+    public default Stream&lt;T&gt; switchOnEmpty(Supplier&lt;? extends Stream&lt;T&gt;&gt; factory) {
+<span class="fc" id="L541">        return new SwitchOnEmpty&lt;T&gt;(this, factory);</span>
+    }
+
+    public default &lt;R, S&gt; Stream&lt;S&gt; zipWith(Stream&lt;? extends R&gt; stream,
+            BiFunction&lt;T, R, S&gt; combiner) {
+<span class="fc" id="L546">        return new Zip&lt;R, S, T&gt;(this, stream, combiner);</span>
+    }
+
+    public default java.util.stream.Stream&lt;T&gt; toStreamJava() {
+<span class="fc" id="L550">        return StreamSupport.stream(this.spliterator(), false);</span>
+    }
+
+    public default &lt;K, V&gt; Single&lt;java.util.Map&lt;K, V&gt;&gt; toMap(
+            Function&lt;? super T, ? extends K&gt; keyFunction,
+            Function&lt;? super T, ? extends V&gt; valueFunction) {
+<span class="fc" id="L556">        return collect(HashMap::new,</span>
+<span class="fc" id="L557">                (m, item) -&gt; m.put(keyFunction.apply(item), valueFunction.apply(item)));</span>
+    }
+
+    public default Single&lt;String&gt; join(String delimiter) {
+<span class="fc" id="L561">        return collect(() -&gt; new StringBuilder(), (b, x) -&gt; {</span>
+<span class="fc bfc" id="L562" title="All 2 branches covered.">            if (b.length() &gt; 0) {</span>
+<span class="fc" id="L563">                b.append(delimiter);</span>
+            }
+<span class="fc" id="L565">            b.append(x);</span>
+<span class="fc" id="L566">        }).map(b -&gt; b.toString());</span>
+    }
+
+    public default Stream&lt;String&gt; split(String delimiter) {
+<span class="fc" id="L570">        return new Split(delimiter, this);</span>
+    }
+
+    public default Tester&lt;T&gt; test() {
+<span class="fc" id="L574">        return new Tester&lt;T&gt;(this);</span>
+    }
+
+    public default Stream&lt;List&lt;T&gt;&gt; buffer(int size) {
+<span class="fc" id="L578">        return buffer(size, size);</span>
+    }
+
+    public default Stream&lt;List&lt;T&gt;&gt; buffer(int size, int step) {
+<span class="fc" id="L582">        return new Buffer&lt;T&gt;(this, size, step);</span>
+    }
+
+    public default Stream&lt;T&gt; skip(int size) {
+<span class="fc" id="L586">        return new Skip&lt;T&gt;(size, this);</span>
+    }
+
+    public default Stream&lt;T&gt; skipUntil(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L590">        return new SkipUntil&lt;T&gt;(this, predicate, false);</span>
+    }
+
+    public default Stream&lt;T&gt; skipWhile(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L594">        return new SkipUntil&lt;T&gt;(this, predicate, true);</span>
+    }
+
+    public default Stream&lt;T&gt; repeat(long count) {
+<span class="fc" id="L598">        return new Repeat&lt;T&gt;(count, this);</span>
+    }
+
+    public default Stream&lt;T&gt; repeat() {
+<span class="fc" id="L602">        return repeat(Long.MAX_VALUE);</span>
+    }
+
+    public default Stream&lt;T&gt; takeUntil(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L606">        return new TakeWithPredicate&lt;T&gt;(predicate, this, true);</span>
+    }
+
+    public default Stream&lt;T&gt; takeWhile(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L610">        return new TakeWithPredicate&lt;T&gt;(predicate, this, false);</span>
+    }
+
+    public default Stream&lt;List&lt;T&gt;&gt; bufferWhile(BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition,
+            boolean emitRemainder) {
+<span class="fc" id="L615">        return new BufferWithPredicate&lt;T&gt;(condition, emitRemainder, false, this);</span>
+    }
+
+    public default Stream&lt;List&lt;T&gt;&gt; bufferUntil(BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition,
+            boolean emitRemainder) {
+<span class="fc" id="L620">        return new BufferWithPredicate&lt;T&gt;(condition, emitRemainder, true, this);</span>
+    }
+
+    public default Stream&lt;Indexed&lt;T&gt;&gt; mapWithIndex(int startIndex) {
+<span class="fc" id="L624">        return defer(() -&gt; {</span>
+<span class="fc" id="L625">            int[] index = new int[] { startIndex };</span>
+<span class="fc" id="L626">            return map(x -&gt; {</span>
+<span class="fc" id="L627">                int n = index[0];</span>
+<span class="fc" id="L628">                index[0] = n + 1;</span>
+<span class="fc" id="L629">                return Indexed.create(x, n);</span>
+            });
+        });
+    }
+
+    public default Stream&lt;Indexed&lt;T&gt;&gt; mapWithIndex() {
+<span class="fc" id="L635">        return mapWithIndex(0);</span>
+    }
+
+    public default Stream&lt;T&gt; cache() {
+<span class="fc" id="L639">        return new Cache&lt;T&gt;(this);</span>
+    }
+
+    public default Stream&lt;T&gt; every(long n, BiConsumer&lt;Long, T&gt; action) {
+<span class="fc" id="L643">        return defer(() -&gt; {</span>
+<span class="fc" id="L644">            long[] index = new long[1];</span>
+<span class="fc" id="L645">            return doOnNext(x -&gt; {</span>
+<span class="fc" id="L646">                index[0]++;</span>
+<span class="fc bfc" id="L647" title="All 2 branches covered.">                if (index[0] % n == 0) {</span>
+<span class="fc" id="L648">                    action.accept(index[0], x);</span>
+                }
+<span class="fc" id="L650">            });</span>
+        });
+    }
+
+    public default Stream&lt;T&gt; ignoreDisposalError(Consumer&lt;Throwable&gt; action) {
+<span class="fc" id="L655">        Preconditions.checkNotNull(action);</span>
+<span class="fc" id="L656">        return new IgnoreDisposalError&lt;T&gt;(this, action);</span>
+    }
+
+    public default Stream&lt;T&gt; ignoreDisposalError() {
+<span class="fc" id="L660">        return new IgnoreDisposalError&lt;T&gt;(this, null);</span>
+    }
+
+    public default Maybe&lt;T&gt; max(Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L664">        return new Max&lt;T&gt;(this, comparator, false);</span>
+    }
+
+    public default Maybe&lt;T&gt; min(Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L668">        return new Max&lt;T&gt;(this, comparator, true);</span>
+    }
+
+    public default Single&lt;Boolean&gt; all(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L672">        return new All&lt;T&gt;(this, predicate);</span>
+    }
+
+    public default Single&lt;Boolean&gt; any(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L676">        return new Any&lt;T&gt;(this, predicate);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public default &lt;R&gt; Stream&lt;R&gt; cast(Class&lt;R&gt; cls) {
+<span class="nc" id="L681">        Preconditions.checkNotNull(cls);</span>
+<span class="nc" id="L682">        return (Stream&lt;R&gt;) (Stream&lt;Object&gt;) this;</span>
+    }
+
+    public default Single&lt;Boolean&gt; contains(T value) {
+<span class="nc" id="L686">        Preconditions.checkNotNull(value);</span>
+<span class="nc" id="L687">        return any(x -&gt; value.equals(x));</span>
+    }
+
+    public default Stream&lt;T&gt; distinctUntilChanged() {
+<span class="fc" id="L691">        return distinctUntilChanged(Functions.identity());</span>
+    }
+
+    public default &lt;K&gt; Stream&lt;T&gt; distinct(Function&lt;? super T, K&gt; keySelector) {
+<span class="fc" id="L695">        return new Distinct&lt;T, K&gt;(this, keySelector);</span>
+    }
+
+    public default Stream&lt;T&gt; distinct() {
+<span class="fc" id="L699">        return distinct(Function.identity());</span>
+    }
+
+    public default &lt;K&gt; Stream&lt;T&gt; distinctUntilChanged(Function&lt;? super T, K&gt; keySelector) {
+<span class="fc" id="L703">        return new DistinctUntilChanged&lt;T, K&gt;(this, keySelector);</span>
+    }
+
+    public default Maybe&lt;T&gt; maybe() {
+<span class="fc" id="L707">        return new ToMaybe&lt;T&gt;(this);</span>
+    }
+
+    public default &lt;R&gt; R to(Function&lt;? super Stream&lt;T&gt;, R&gt; mapper) {
+<span class="fc" id="L711">        return mapper.apply(this);</span>
+    }
+
+    public default Stream&lt;T&gt; printStackTrace() {
+<span class="nc" id="L715">        return doOnError(x -&gt; x.printStackTrace());</span>
+    }
+
+    // TODO
+    // retryWhen,
+    // mergeInterleaveWith, materialize
+    // add Single.flatMapMaybe, Maybe.flatMapSingle, Maybe.flatMapMaybe
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

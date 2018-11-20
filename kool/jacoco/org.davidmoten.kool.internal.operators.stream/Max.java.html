@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Max.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">Max.java</span></div><h1>Max.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.Comparator;
+import java.util.Optional;
+
+import org.davidmoten.kool.Maybe;
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public class Max&lt;T&gt; implements Maybe&lt;T&gt; {
+
+    private final Stream&lt;T&gt; stream;
+    private final Comparator&lt;? super T&gt; comparator;
+    private final boolean not;
+
+<span class="fc" id="L18">    public Max(Stream&lt;T&gt; stream, Comparator&lt;? super T&gt; comparator, boolean not) {</span>
+<span class="fc" id="L19">        this.stream = stream;</span>
+<span class="fc" id="L20">        this.comparator = comparator;</span>
+<span class="fc" id="L21">        this.not = not;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public Optional&lt;T&gt; get() {
+<span class="fc" id="L26">        StreamIterator&lt;T&gt; it = Preconditions.checkNotNull(stream.iterator());</span>
+        try {
+<span class="fc" id="L28">            T max = null;</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L30">                T v = Preconditions.checkNotNull(it.next());</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">                if (max == null) {</span>
+<span class="fc" id="L32">                    max = v;</span>
+                } else {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                    boolean comp = comparator.compare(max, v) &lt; 0;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                    if (comp ^ not) {</span>
+<span class="fc" id="L36">                        max = v;</span>
+                    }
+                }
+<span class="fc" id="L39">            }</span>
+<span class="fc" id="L40">            return Optional.ofNullable(max);</span>
+        } finally {
+<span class="fc" id="L42">            it.dispose();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

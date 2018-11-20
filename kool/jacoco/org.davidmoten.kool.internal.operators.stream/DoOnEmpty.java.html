@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DoOnEmpty.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">DoOnEmpty.java</span></div><h1>DoOnEmpty.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class DoOnEmpty&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final Stream&lt;T&gt; stream;
+    private final Runnable action;
+
+<span class="fc" id="L13">    public DoOnEmpty(Stream&lt;T&gt; stream, Runnable action) {</span>
+<span class="fc" id="L14">        this.stream = stream;</span>
+<span class="fc" id="L15">        this.action = action;</span>
+<span class="fc" id="L16">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L20">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L22">            StreamIterator&lt;T&gt; it = Preconditions.checkNotNull(stream.iterator());</span>
+            boolean checkedForEmpty;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L27">                check();</span>
+<span class="fc" id="L28">                return it.hasNext();</span>
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L33">                check();</span>
+<span class="fc" id="L34">                return Preconditions.checkNotNull(it.next());</span>
+            }
+
+            @Override
+            public void dispose() {
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">                if (it != null) {</span>
+<span class="fc" id="L40">                    it.dispose();</span>
+                    // release for gc
+<span class="fc" id="L42">                    it = null;</span>
+                }
+<span class="fc" id="L44">            }</span>
+
+            private void check() {
+<span class="fc bfc" id="L47" title="All 2 branches covered.">                if (!checkedForEmpty) {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                    if (!it.hasNext()) {</span>
+<span class="fc" id="L49">                        action.run();</span>
+                    }
+<span class="fc" id="L51">                    checkedForEmpty = true;</span>
+                }
+<span class="fc" id="L53">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

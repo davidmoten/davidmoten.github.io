@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Indexed.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool</a> &gt; <span class="el_source">Indexed.java</span></div><h1>Indexed.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class Indexed&lt;T&gt; {
+
+    private final T t;
+    private final int index;
+
+<span class="fc" id="L10">    private Indexed(T t, int index) {</span>
+<span class="fc" id="L11">        Preconditions.checkNotNull(t);</span>
+<span class="fc" id="L12">        this.t = t;</span>
+<span class="fc" id="L13">        this.index = index;</span>
+<span class="fc" id="L14">    }</span>
+
+    public static &lt;T&gt; Indexed&lt;T&gt; create(T t, int index) {
+<span class="fc" id="L17">        return new Indexed&lt;T&gt;(t, index);</span>
+    }
+
+    public T value() {
+<span class="fc" id="L21">        return t;</span>
+    }
+
+    public int index() {
+<span class="fc" id="L25">        return index;</span>
+    }
+    
+    public Indexed&lt;T&gt; incrementIndex() {
+<span class="nc" id="L29">        return new Indexed&lt;T&gt;(t, index + 1);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L34">        final int prime = 31;</span>
+<span class="fc" id="L35">        int result = 1;</span>
+<span class="fc" id="L36">        result = prime * result + index;</span>
+<span class="fc" id="L37">        result = prime * result + t.hashCode();</span>
+<span class="fc" id="L38">        return result;</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (this == obj)</span>
+<span class="fc" id="L44">            return true;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (obj == null)</span>
+<span class="fc" id="L46">            return false;</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (getClass() != obj.getClass())</span>
+<span class="fc" id="L48">            return false;</span>
+<span class="fc" id="L49">        Indexed&lt;?&gt; other = (Indexed&lt;?&gt;) obj;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (index != other.index)</span>
+<span class="fc" id="L51">            return false;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (!t.equals(other.t))</span>
+<span class="fc" id="L53">            return false;</span>
+<span class="fc" id="L54">        return true;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L59">        return &quot;Indexed[index=&quot; + index + &quot;, value=&quot; + t + &quot;]&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MaybeFlatMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.maybe</a> &gt; <span class="el_source">MaybeFlatMap.java</span></div><h1>MaybeFlatMap.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.maybe;
+
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.function.Function;
+
+import org.davidmoten.kool.Maybe;
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+import org.davidmoten.kool.internal.util.EmptyStream;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class MaybeFlatMap&lt;T, R&gt; implements Stream&lt;R&gt; {
+
+    private final Maybe&lt;T&gt; maybe;
+    private final Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; mapper;
+
+<span class="fc" id="L20">    public MaybeFlatMap(Maybe&lt;T&gt; maybe, Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; mapper) {</span>
+<span class="fc" id="L21">        this.maybe = maybe;</span>
+<span class="fc" id="L22">        this.mapper = mapper;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public StreamIterator&lt;R&gt; iterator() {
+<span class="fc" id="L27">        return new StreamIterator&lt;R&gt;() {</span>
+
+            StreamIterator&lt;? extends R&gt; it;
+            boolean finished;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L34">                load();</span>
+<span class="pc bpc" id="L35" title="1 of 4 branches missed.">                return !finished &amp;&amp; Preconditions.checkNotNull(it.hasNext());</span>
+            }
+
+            @Override
+            public R next() {
+<span class="fc" id="L40">                load();</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">                if (finished) {</span>
+<span class="nc" id="L42">                    throw new NoSuchElementException();</span>
+                } else {
+<span class="fc" id="L44">                    return it.next();</span>
+                }
+            }
+
+            @Override
+            public void dispose() {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">                if (it != null) {</span>
+<span class="fc" id="L51">                    it.dispose();</span>
+<span class="fc" id="L52">                    it = null;</span>
+<span class="fc" id="L53">                    finished = true;</span>
+                }
+<span class="fc" id="L55">            }</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+            private void load() {
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">                if (!finished &amp;&amp; it == null) {</span>
+<span class="fc" id="L60">                    Optional&lt;T&gt; v = maybe.get();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                    if (v.isPresent()) {</span>
+<span class="fc" id="L62">                        it = mapper.apply(v.get()).iterator();</span>
+                    } else {
+<span class="fc" id="L64">                        it = (StreamIterator&lt;? extends R&gt;) EmptyStream.INSTANCE.iterator();</span>
+                    }
+                }
+<span class="fc" id="L67">            }</span>
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.exceptions</a> &gt; <span class="el_source">CompositeException.java</span></div><h1>CompositeException.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.exceptions;
+
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Represents an exception that is a composite of one or more other exceptions. A {@code CompositeException}
+ * does not modify the structure of any exception it wraps, but at print-time it iterates through the list of
+ * Throwables contained in the composite in order to print them all.
+ *
+ * Its invariant is to contain an immutable, ordered (by insertion order), unique list of non-composite
+ * exceptions. You can retrieve individual exceptions in this list with {@link #getExceptions()}.
+ *
+ * The {@link #printStackTrace()} implementation handles the StackTrace in a customized way instead of using
+ * {@code getCause()} so that it can avoid circular references.
+ *
+ * If you invoke {@link #getCause()}, it will lazily create the causal chain but will stop if it finds any
+ * Throwable in the chain that it has already seen.
+ */
+public final class CompositeException extends RuntimeException {
+
+    private static final long serialVersionUID = 3026362227162912146L;
+
+    private final List&lt;Throwable&gt; exceptions;
+    private final String message;
+    private Throwable cause;
+
+    /**
+     * Constructs a CompositeException with the given array of Throwables as the
+     * list of suppressed exceptions.
+     * @param exceptions the Throwables to have as initially suppressed exceptions
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;exceptions&lt;/code&gt; is empty.
+     */
+    public CompositeException(Throwable... exceptions) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        this(exceptions == null ?</span>
+<span class="nc" id="L44">                Collections.singletonList(new NullPointerException(&quot;exceptions was null&quot;)) : Arrays.asList(exceptions));</span>
+<span class="nc" id="L45">    }</span>
+
+    /**
+     * Constructs a CompositeException with the given array of Throwables as the
+     * list of suppressed exceptions.
+     * @param errors the Throwables to have as initially suppressed exceptions
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;errors&lt;/code&gt; is empty.
+     */
+<span class="fc" id="L54">    public CompositeException(Iterable&lt;? extends Throwable&gt; errors) {</span>
+<span class="fc" id="L55">        Set&lt;Throwable&gt; deDupedExceptions = new LinkedHashSet&lt;Throwable&gt;();</span>
+<span class="fc" id="L56">        List&lt;Throwable&gt; localExceptions = new ArrayList&lt;Throwable&gt;();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (errors != null) {</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            for (Throwable ex : errors) {</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                if (ex instanceof CompositeException) {</span>
+<span class="nc" id="L60">                    deDupedExceptions.addAll(((CompositeException) ex).getExceptions());</span>
+                } else
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                if (ex != null) {</span>
+<span class="fc" id="L63">                    deDupedExceptions.add(ex);</span>
+                } else {
+<span class="nc" id="L65">                    deDupedExceptions.add(new NullPointerException(&quot;Throwable was null!&quot;));</span>
+                }
+<span class="fc" id="L67">            }</span>
+        } else {
+<span class="nc" id="L69">            deDupedExceptions.add(new NullPointerException(&quot;errors was null&quot;));</span>
+        }
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (deDupedExceptions.isEmpty()) {</span>
+<span class="nc" id="L72">            throw new IllegalArgumentException(&quot;errors is empty&quot;);</span>
+        }
+<span class="fc" id="L74">        localExceptions.addAll(deDupedExceptions);</span>
+<span class="fc" id="L75">        this.exceptions = Collections.unmodifiableList(localExceptions);</span>
+<span class="fc" id="L76">        this.message = exceptions.size() + &quot; exceptions occurred. &quot;;</span>
+<span class="fc" id="L77">    }</span>
+
+    /**
+     * Retrieves the list of exceptions that make up the {@code CompositeException}.
+     *
+     * @return the exceptions that make up the {@code CompositeException}, as a {@link List} of {@link Throwable}s
+     */
+    public List&lt;Throwable&gt; getExceptions() {
+<span class="nc" id="L85">        return exceptions;</span>
+    }
+
+    @Override
+    public String getMessage() {
+<span class="nc" id="L90">        return message;</span>
+    }
+
+    @Override
+    public synchronized Throwable getCause() { // NOPMD
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (cause == null) {</span>
+            // we lazily generate this causal chain if this is called
+<span class="nc" id="L97">            CompositeExceptionCausalChain localCause = new CompositeExceptionCausalChain();</span>
+<span class="nc" id="L98">            Set&lt;Throwable&gt; seenCauses = new HashSet&lt;Throwable&gt;();</span>
+
+<span class="nc" id="L100">            Throwable chain = localCause;</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            for (Throwable e : exceptions) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                if (seenCauses.contains(e)) {</span>
+                    // already seen this outer Throwable so skip
+<span class="nc" id="L104">                    continue;</span>
+                }
+<span class="nc" id="L106">                seenCauses.add(e);</span>
+
+<span class="nc" id="L108">                List&lt;Throwable&gt; listOfCauses = getListOfCauses(e);</span>
+                // check if any of them have been seen before
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                for (Throwable child : listOfCauses) {</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                    if (seenCauses.contains(child)) {</span>
+                        // already seen this outer Throwable so skip
+<span class="nc" id="L113">                        e = new RuntimeException(&quot;Duplicate found in causal chain so cropping to prevent loop ...&quot;);</span>
+<span class="nc" id="L114">                        continue;</span>
+                    }
+<span class="nc" id="L116">                    seenCauses.add(child);</span>
+<span class="nc" id="L117">                }</span>
+
+                // we now have 'e' as the last in the chain
+                try {
+<span class="nc" id="L121">                    chain.initCause(e);</span>
+<span class="nc" id="L122">                } catch (Throwable t) { // NOPMD</span>
+                    // ignore
+                    // the JavaDocs say that some Throwables (depending on how they're made) will never
+                    // let me call initCause without blowing up even if it returns null
+<span class="nc" id="L126">                }</span>
+<span class="nc" id="L127">                chain = getRootCause(chain);</span>
+<span class="nc" id="L128">            }</span>
+<span class="nc" id="L129">            cause = localCause;</span>
+        }
+<span class="nc" id="L131">        return cause;</span>
+    }
+
+    /**
+     * All of the following {@code printStackTrace} functionality is derived from JDK {@link Throwable}
+     * {@code printStackTrace}. In particular, the {@code PrintStreamOrWriter} abstraction is copied wholesale.
+     *
+     * Changes from the official JDK implementation:&lt;ul&gt;
+     * &lt;li&gt;no infinite loop detection&lt;/li&gt;
+     * &lt;li&gt;smaller critical section holding {@link PrintStream} lock&lt;/li&gt;
+     * &lt;li&gt;explicit knowledge about the exceptions {@link List} that this loops through&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    @Override
+    public void printStackTrace() {
+<span class="nc" id="L146">        printStackTrace(System.err);</span>
+<span class="nc" id="L147">    }</span>
+
+    @Override
+    public void printStackTrace(PrintStream s) {
+<span class="nc" id="L151">        printStackTrace(new WrappedPrintStream(s));</span>
+<span class="nc" id="L152">    }</span>
+
+    @Override
+    public void printStackTrace(PrintWriter s) {
+<span class="nc" id="L156">        printStackTrace(new WrappedPrintWriter(s));</span>
+<span class="nc" id="L157">    }</span>
+
+    /**
+     * Special handling for printing out a {@code CompositeException}.
+     * Loops through all inner exceptions and prints them out.
+     *
+     * @param s
+     *            stream to print to
+     */
+    private void printStackTrace(PrintStreamOrWriter s) {
+<span class="nc" id="L167">        StringBuilder b = new StringBuilder(128);</span>
+<span class="nc" id="L168">        b.append(this).append('\n');</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        for (StackTraceElement myStackElement : getStackTrace()) {</span>
+<span class="nc" id="L170">            b.append(&quot;\tat &quot;).append(myStackElement).append('\n');</span>
+        }
+<span class="nc" id="L172">        int i = 1;</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        for (Throwable ex : exceptions) {</span>
+<span class="nc" id="L174">            b.append(&quot;  ComposedException &quot;).append(i).append(&quot; :\n&quot;);</span>
+<span class="nc" id="L175">            appendStackTrace(b, ex, &quot;\t&quot;);</span>
+<span class="nc" id="L176">            i++;</span>
+<span class="nc" id="L177">        }</span>
+<span class="nc" id="L178">        s.println(b.toString());</span>
+<span class="nc" id="L179">    }</span>
+
+    private void appendStackTrace(StringBuilder b, Throwable ex, String prefix) {
+<span class="nc" id="L182">        b.append(prefix).append(ex).append('\n');</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        for (StackTraceElement stackElement : ex.getStackTrace()) {</span>
+<span class="nc" id="L184">            b.append(&quot;\t\tat &quot;).append(stackElement).append('\n');</span>
+        }
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (ex.getCause() != null) {</span>
+<span class="nc" id="L187">            b.append(&quot;\tCaused by: &quot;);</span>
+<span class="nc" id="L188">            appendStackTrace(b, ex.getCause(), &quot;&quot;);</span>
+        }
+<span class="nc" id="L190">    }</span>
+
+<span class="nc" id="L192">    abstract static class PrintStreamOrWriter {</span>
+        /** Prints the specified string as a line on this StreamOrWriter. */
+        abstract void println(Object o);
+    }
+
+    /**
+     * Same abstraction and implementation as in JDK to allow PrintStream and PrintWriter to share implementation.
+     */
+    static final class WrappedPrintStream extends PrintStreamOrWriter {
+        private final PrintStream printStream;
+
+<span class="nc" id="L203">        WrappedPrintStream(PrintStream printStream) {</span>
+<span class="nc" id="L204">            this.printStream = printStream;</span>
+<span class="nc" id="L205">        }</span>
+
+        @Override
+        void println(Object o) {
+<span class="nc" id="L209">            printStream.println(o);</span>
+<span class="nc" id="L210">        }</span>
+    }
+
+    static final class WrappedPrintWriter extends PrintStreamOrWriter {
+        private final PrintWriter printWriter;
+
+<span class="nc" id="L216">        WrappedPrintWriter(PrintWriter printWriter) {</span>
+<span class="nc" id="L217">            this.printWriter = printWriter;</span>
+<span class="nc" id="L218">        }</span>
+
+        @Override
+        void println(Object o) {
+<span class="nc" id="L222">            printWriter.println(o);</span>
+<span class="nc" id="L223">        }</span>
+    }
+
+<span class="nc" id="L226">    static final class CompositeExceptionCausalChain extends RuntimeException {</span>
+        private static final long serialVersionUID = 3875212506787802066L;
+        /* package-private */static final String MESSAGE = &quot;Chain of Causes for CompositeException In Order Received =&gt;&quot;;
+
+        @Override
+        public String getMessage() {
+<span class="nc" id="L232">            return MESSAGE;</span>
+        }
+    }
+
+    private List&lt;Throwable&gt; getListOfCauses(Throwable ex) {
+<span class="nc" id="L237">        List&lt;Throwable&gt; list = new ArrayList&lt;Throwable&gt;();</span>
+<span class="nc" id="L238">        Throwable root = ex.getCause();</span>
+<span class="nc bnc" id="L239" title="All 4 branches missed.">        if (root == null || root == ex) {</span>
+<span class="nc" id="L240">            return list;</span>
+        } else {
+            while (true) {
+<span class="nc" id="L243">                list.add(root);</span>
+<span class="nc" id="L244">                Throwable cause = root.getCause();</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">                if (cause == null || cause == root) {</span>
+<span class="nc" id="L246">                    return list;</span>
+                } else {
+<span class="nc" id="L248">                    root = cause;</span>
+                }
+<span class="nc" id="L250">            }</span>
+        }
+    }
+
+    /**
+     * Returns the number of suppressed exceptions.
+     * @return the number of suppressed exceptions
+     */
+    public int size() {
+<span class="nc" id="L259">        return exceptions.size();</span>
+    }
+
+    /**
+     * Returns the root cause of {@code e}. If {@code e.getCause()} returns {@code null} or {@code e}, just return {@code e} itself.
+     *
+     * @param e the {@link Throwable} {@code e}.
+     * @return The root cause of {@code e}. If {@code e.getCause()} returns {@code null} or {@code e}, just return {@code e} itself.
+     */
+    /*private */Throwable getRootCause(Throwable e) {
+<span class="nc" id="L269">        Throwable root = e.getCause();</span>
+<span class="nc bnc" id="L270" title="All 4 branches missed.">        if (root == null || cause == root) {</span>
+<span class="nc" id="L271">            return e;</span>
+        }
+        while (true) {
+<span class="nc" id="L274">            Throwable cause = root.getCause();</span>
+<span class="nc bnc" id="L275" title="All 4 branches missed.">            if (cause == null || cause == root) {</span>
+<span class="nc" id="L276">                return root;</span>
+            }
+<span class="nc" id="L278">            root = cause;</span>
+<span class="nc" id="L279">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

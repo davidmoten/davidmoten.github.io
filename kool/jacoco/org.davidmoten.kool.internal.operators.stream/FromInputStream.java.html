@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FromInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">FromInputStream.java</span></div><h1>FromInputStream.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.util.NoSuchElementException;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+import org.davidmoten.kool.internal.util.Exceptions;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class FromInputStream implements Stream&lt;ByteBuffer&gt; {
+
+    private InputStream is;
+    private final int bufferSize;
+
+<span class="fc" id="L20">    public FromInputStream(InputStream is, int bufferSize) {</span>
+<span class="fc" id="L21">        Preconditions.checkNotNull(is);</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        Preconditions.checkArgument(bufferSize &gt; 0);</span>
+<span class="fc" id="L23">        this.is = is;</span>
+<span class="fc" id="L24">        this.bufferSize = bufferSize;</span>
+<span class="fc" id="L25">    }</span>
+
+    @Override
+    public StreamIterator&lt;ByteBuffer&gt; iterator() {
+        try {
+<span class="fc" id="L30">            return new StreamIterator&lt;ByteBuffer&gt;() {</span>
+
+                ByteBuffer next;
+
+                @Override
+                public boolean hasNext() {
+<span class="fc" id="L36">                    load();</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                    return next != null;</span>
+                }
+
+                @Override
+                public ByteBuffer next() {
+<span class="fc" id="L42">                    load();</span>
+<span class="fc" id="L43">                    ByteBuffer v = next;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">                    if (v == null) {</span>
+<span class="nc" id="L45">                        throw new NoSuchElementException();</span>
+                    }
+<span class="fc" id="L47">                    next = null;</span>
+<span class="fc" id="L48">                    return v;</span>
+                }
+
+                @Override
+                public void dispose() {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                    if (is != null) {</span>
+<span class="nc" id="L54">                        is = null;</span>
+<span class="nc" id="L55">                        next = null;</span>
+                    }
+<span class="fc" id="L57">                }</span>
+
+                private void load() {
+<span class="pc bpc" id="L60" title="1 of 4 branches missed.">                    if (is != null &amp;&amp; next == null) {</span>
+<span class="fc" id="L61">                        byte[] b = new byte[bufferSize];</span>
+                        int n;
+                        try {
+<span class="fc" id="L64">                            n = is.read(b);</span>
+<span class="nc" id="L65">                        } catch (IOException e) {</span>
+<span class="nc" id="L66">                            is = null;</span>
+<span class="nc" id="L67">                            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L68">                        }</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                        if (n == -1) {</span>
+<span class="fc" id="L70">                            is = null;</span>
+<span class="fc" id="L71">                            next = null;</span>
+                        } else {
+<span class="fc" id="L73">                            next = ByteBuffer.wrap(b, 0, n);</span>
+                        }
+                    }
+<span class="fc" id="L76">                }</span>
+
+            };
+<span class="nc" id="L79">        } catch (Exception e) {</span>
+<span class="nc" id="L80">            return Exceptions.rethrow(e);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

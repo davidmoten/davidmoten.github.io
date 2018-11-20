@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Single.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool</a> &gt; <span class="el_source">Single.java</span></div><h1>Single.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool;
+
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.davidmoten.kool.internal.operators.single.Map;
+import org.davidmoten.kool.internal.operators.single.SingleDoOnError;
+import org.davidmoten.kool.internal.operators.single.SingleDoOnValue;
+import org.davidmoten.kool.internal.operators.single.SingleError;
+import org.davidmoten.kool.internal.operators.single.SingleFlatMap;
+import org.davidmoten.kool.internal.operators.single.SingleFromCallable;
+import org.davidmoten.kool.internal.operators.single.SingleIterator;
+import org.davidmoten.kool.internal.operators.single.SingleOf;
+import org.davidmoten.kool.internal.operators.single.SingleToStream;
+
+public interface Single&lt;T&gt; extends StreamIterable&lt;T&gt; {
+    
+    T get();
+    
+    //////////////////
+    // Factories
+    //////////////////
+
+    public static &lt;T&gt; Single&lt;T&gt; of(T t) {
+<span class="fc" id="L26">        return new SingleOf&lt;T&gt;(t);</span>
+    }
+
+    public static &lt;T&gt; Single&lt;T&gt; fromCallable(Callable&lt;? extends T&gt; callable) {
+<span class="nc" id="L30">        return new SingleFromCallable&lt;T&gt;(callable);</span>
+    }
+    
+    public static &lt;T&gt; Single&lt;T&gt; error(Callable&lt;? extends Throwable&gt; callable) {
+<span class="nc" id="L34">        return new SingleError&lt;T&gt;(callable);</span>
+    }
+    
+    public static &lt;T&gt; Single&lt;T&gt; error(Throwable error) {
+<span class="nc" id="L38">        return error(() -&gt; error);</span>
+    }
+
+    //////////////////
+    // Operators
+    //////////////////
+    
+    public default &lt;R&gt; Single&lt;R&gt; map(Function&lt;? super T, ? extends R&gt; mapper) {
+<span class="fc" id="L46">        return new Map&lt;T, R&gt;(mapper, this);</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; flatMap(Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; mapper) {
+<span class="fc" id="L50">        return new SingleFlatMap&lt;T, R&gt;(this, mapper);</span>
+    }
+
+    public default Single&lt;T&gt; doOnValue(Consumer&lt;? super T&gt; consumer) {
+<span class="nc" id="L54">        return new SingleDoOnValue&lt;T&gt;(consumer, this);</span>
+    }
+
+    public default Single&lt;T&gt; doOnError(Consumer&lt;? super Throwable&gt; consumer) {
+<span class="nc" id="L58">        return new SingleDoOnError&lt;T&gt;(consumer, this);</span>
+    }
+
+    default SingleTester&lt;T&gt; test() {
+<span class="fc" id="L62">        return new SingleTester&lt;T&gt;(this);</span>
+    }
+
+    default Stream&lt;T&gt; toStream() {
+<span class="fc" id="L66">        return new SingleToStream&lt;T&gt;(this);</span>
+    }
+
+    default StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L70">        return new SingleIterator&lt;T&gt;(this);</span>
+    }
+    
+    public default &lt;R&gt; R to(Function&lt;? super Single&lt;T&gt;, R&gt; mapper){
+<span class="nc" id="L74">        return mapper.apply(this);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

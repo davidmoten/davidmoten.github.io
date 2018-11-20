@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Filter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">Filter.java</span></div><h1>Filter.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.NoSuchElementException;
+import java.util.function.Predicate;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class Filter&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final Predicate&lt;? super T&gt; predicate;
+    private final StreamIterable&lt;? extends T&gt; source;
+
+<span class="fc" id="L17">    public Filter(Predicate&lt;? super T&gt; predicate, StreamIterable&lt;? extends T&gt; source) {</span>
+<span class="fc" id="L18">        this.predicate = predicate;</span>
+<span class="fc" id="L19">        this.source = source;</span>
+<span class="fc" id="L20">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L24">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L26">            StreamIterator&lt;? extends T&gt; it = Preconditions.checkNotNull(source.iterator());</span>
+<span class="fc" id="L27">            T nextValue = null;</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L31">                nextValue();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">                return nextValue != null;</span>
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L37">                nextValue();</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">                if (nextValue != null) {</span>
+<span class="fc" id="L39">                    T t = nextValue;</span>
+<span class="fc" id="L40">                    nextValue = null;</span>
+<span class="fc" id="L41">                    return t;</span>
+                } else {
+<span class="nc" id="L43">                    throw new NoSuchElementException();</span>
+                }
+            }
+
+            void nextValue() {
+                while (true) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                    if (nextValue != null) {</span>
+<span class="fc" id="L50">                        break;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                    } else if (!it.hasNext()) {</span>
+<span class="fc" id="L52">                        break;</span>
+                    } else {
+<span class="fc" id="L54">                        T t = Preconditions.checkNotNull(it.next());</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                        if (predicate.test(t)) {</span>
+<span class="fc" id="L56">                            nextValue = t;</span>
+<span class="fc" id="L57">                            break;</span>
+                        }
+<span class="fc" id="L59">                    }</span>
+                }
+<span class="fc" id="L61">            }</span>
+
+            @Override
+            public void dispose() {
+<span class="fc" id="L65">                it.dispose();</span>
+<span class="fc" id="L66">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EvictingQueue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.util</a> &gt; <span class="el_source">EvictingQueue.java</span></div><h1>EvictingQueue.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.util;
+
+import java.util.Enumeration;
+import java.util.LinkedList;
+
+public final class EvictingQueue&lt;T&gt; implements Enumeration&lt;T&gt; {
+
+    private final LinkedList&lt;T&gt; list;
+    private final long maxSize;
+
+<span class="fc" id="L11">    public EvictingQueue(long maxSize) {</span>
+<span class="fc" id="L12">        list = new LinkedList&lt;T&gt;();</span>
+<span class="fc" id="L13">        this.maxSize = maxSize;</span>
+<span class="fc" id="L14">    }</span>
+
+    public void add(T value) {
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        if (list.size() == maxSize) {</span>
+<span class="fc" id="L18">            list.removeFirst();</span>
+        }
+<span class="fc" id="L20">        list.add(value);</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    public boolean hasMoreElements() {
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        return !list.isEmpty();</span>
+    }
+
+    @Override
+    public T nextElement() {
+<span class="fc" id="L30">        return list.removeFirst();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

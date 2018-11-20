@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DistinctUntilChanged.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">DistinctUntilChanged.java</span></div><h1>DistinctUntilChanged.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.NoSuchElementException;
+import java.util.function.Function;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class DistinctUntilChanged&lt;T, K&gt; implements Stream&lt;T&gt; {
+
+    private final Stream&lt;T&gt; stream;
+    private final Function&lt;? super T, K&gt; keySelector;
+
+<span class="fc" id="L16">    public DistinctUntilChanged(Stream&lt;T&gt; stream, Function&lt;? super T, K&gt; keySelector) {</span>
+<span class="fc" id="L17">        this.stream = stream;</span>
+<span class="fc" id="L18">        this.keySelector = keySelector;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L23">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L25">            StreamIterator&lt;T&gt; it = Preconditions.checkNotNull(stream.iterator());</span>
+            K key;
+            T next;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L31">                load();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">                return next != null;</span>
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L37">                load();</span>
+<span class="fc" id="L38">                T v = next;</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">                if (v != null) {</span>
+<span class="fc" id="L40">                    next = null;</span>
+<span class="fc" id="L41">                    return v;</span>
+                } else {
+<span class="nc" id="L43">                    throw new NoSuchElementException();</span>
+                }
+            }
+
+            private void load() {
+<span class="pc bpc" id="L48" title="1 of 4 branches missed.">                if (it != null &amp;&amp; next == null) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                    while (it.hasNext()) {</span>
+<span class="fc" id="L50">                        T v = Preconditions.checkNotNull(it.next());</span>
+<span class="fc" id="L51">                        K k = Preconditions.checkNotNull(keySelector.apply(v));</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                        if (!k.equals(key)) {</span>
+<span class="fc" id="L53">                            key = k;</span>
+<span class="fc" id="L54">                            next = v;</span>
+<span class="fc" id="L55">                            break;</span>
+                        }
+<span class="fc" id="L57">                    }</span>
+                }
+<span class="fc" id="L59">            }</span>
+
+            @Override
+            public void dispose() {
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                if (it != null) {</span>
+<span class="fc" id="L64">                    it.dispose();</span>
+<span class="fc" id="L65">                    next = null;</span>
+<span class="fc" id="L66">                    key = null;</span>
+<span class="fc" id="L67">                    it = null;</span>
+                }
+<span class="fc" id="L69">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

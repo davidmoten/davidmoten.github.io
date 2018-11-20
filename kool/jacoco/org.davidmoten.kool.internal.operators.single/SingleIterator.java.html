@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingleIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.single</a> &gt; <span class="el_source">SingleIterator.java</span></div><h1>SingleIterator.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.single;
+
+import org.davidmoten.kool.Single;
+import org.davidmoten.kool.StreamIterator;
+
+public final class SingleIterator&lt;T&gt; implements StreamIterator&lt;T&gt; {
+
+    private final Single&lt;T&gt; single;
+    private T value;
+    private boolean finished;
+
+<span class="fc" id="L12">    public SingleIterator(Single&lt;T&gt; single) {</span>
+<span class="fc" id="L13">        this.single = single;</span>
+<span class="fc" id="L14">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="fc" id="L18">        load();</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        return !finished;</span>
+    }
+
+    @Override
+    public T next() {
+<span class="fc" id="L24">        load();</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">        if (finished) {</span>
+<span class="nc" id="L26">            throw new RuntimeException(&quot;stream finished&quot;);</span>
+        } else {
+<span class="fc" id="L28">            T v = value;</span>
+<span class="fc" id="L29">            dispose();</span>
+<span class="fc" id="L30">            return v;</span>
+        }
+    }
+
+    @Override
+    public void dispose() {
+<span class="fc" id="L36">        value = null;</span>
+<span class="fc" id="L37">        finished = true;</span>
+<span class="fc" id="L38">    }</span>
+    
+    private void load() {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (!finished) {</span>
+<span class="fc" id="L42">            value = single.get();</span>
+        }
+<span class="fc" id="L44">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

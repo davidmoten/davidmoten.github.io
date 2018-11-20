@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Cache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">Cache.java</span></div><h1>Cache.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.List;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Lists;
+
+public final class Cache&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final Stream&lt;T&gt; stream;
+<span class="fc" id="L13">    private final List&lt;T&gt; list = Lists.newArrayList();</span>
+    private Stream&lt;T&gt; cache;
+
+<span class="fc" id="L16">    public Cache(Stream&lt;T&gt; stream) {</span>
+<span class="fc" id="L17">        this.stream = stream;</span>
+<span class="fc" id="L18">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (cache != null) {</span>
+<span class="fc" id="L23">            return cache.iterator();</span>
+        } else {
+<span class="fc" id="L25">            return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L27">                StreamIterator&lt;T&gt; it = stream.iteratorChecked();</span>
+
+                @Override
+                public boolean hasNext() {
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">                    if (it == null) {</span>
+<span class="nc" id="L32">                        return false;</span>
+                    }
+<span class="fc" id="L34">                    boolean hasNext = it.hasNext();</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                    if (!hasNext) {</span>
+<span class="fc" id="L36">                        cache = Stream.from(list);</span>
+<span class="fc" id="L37">                        dispose();</span>
+                    }
+<span class="fc" id="L39">                    return hasNext;</span>
+                }
+
+                @Override
+                public T next() {
+<span class="fc" id="L44">                    T v = it.nextChecked();</span>
+<span class="fc" id="L45">                    list.add(v);</span>
+<span class="fc" id="L46">                    return v;</span>
+                }
+
+                @Override
+                public void dispose() {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">                    if (it != null) {</span>
+<span class="fc" id="L52">                        it.dispose();</span>
+<span class="fc" id="L53">                        it = null;</span>
+                    }
+<span class="fc" id="L55">                }</span>
+            };
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

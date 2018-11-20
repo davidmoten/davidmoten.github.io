@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Predicates.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool</a> &gt; <span class="el_source">Predicates.java</span></div><h1>Predicates.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool;
+
+import java.util.function.Predicate;
+
+public final class Predicates {
+
+    private Predicates() {
+        // prevent instantiation
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Predicate&lt;T&gt; alwaysTrue() {
+<span class="fc" id="L13">        return (Predicate&lt;T&gt;) AlwaysTrueHolder.INSTANCE;</span>
+    }
+
+    private static final class AlwaysTrueHolder {
+<span class="pc" id="L17">        static final Predicate&lt;Object&gt; INSTANCE = t -&gt; true;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Predicate&lt;T&gt; alwaysFalse() {
+<span class="fc" id="L22">        return (Predicate&lt;T&gt;) AlwaysFalseHolder.INSTANCE;</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; not(Predicate&lt;T&gt; predicate) {
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        return t -&gt; !predicate.test(t);</span>
+    }
+    private static final class AlwaysFalseHolder {
+<span class="pc" id="L29">        static final Predicate&lt;Object&gt; INSTANCE = t -&gt; false;</span>
+    }
+
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

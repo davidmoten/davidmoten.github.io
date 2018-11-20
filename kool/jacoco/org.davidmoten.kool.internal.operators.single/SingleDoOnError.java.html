@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingleDoOnError.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.single</a> &gt; <span class="el_source">SingleDoOnError.java</span></div><h1>SingleDoOnError.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.single;
+
+import java.util.function.Consumer;
+
+import org.davidmoten.kool.Single;
+
+public class SingleDoOnError&lt;T&gt; implements Single&lt;T&gt; {
+
+    private Consumer&lt;? super Throwable&gt; consumer;
+    private Single&lt;T&gt; single;
+
+<span class="nc" id="L12">    public SingleDoOnError(Consumer&lt;? super Throwable&gt; consumer, Single&lt;T&gt; single) {</span>
+<span class="nc" id="L13">        this.consumer = consumer;</span>
+<span class="nc" id="L14">        this.single = single;</span>
+<span class="nc" id="L15">    }</span>
+
+    @Override
+    public T get() {
+        try {
+<span class="nc" id="L20">            return single.get();</span>
+<span class="nc" id="L21">        } catch (Throwable e) {</span>
+<span class="nc" id="L22">            consumer.accept(e);</span>
+<span class="nc" id="L23">            throw e;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

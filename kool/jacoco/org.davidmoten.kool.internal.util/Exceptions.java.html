@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Exceptions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.util</a> &gt; <span class="el_source">Exceptions.java</span></div><h1>Exceptions.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.util;
+
+import java.util.concurrent.Callable;
+
+import org.davidmoten.kool.exceptions.UncheckedException;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+<span class="nc" id="L9">public final class Exceptions {</span>
+
+    public static &lt;T&gt; T rethrow(Throwable e) {
+<span class="fc bfc" id="L12" title="All 2 branches covered.">        if (e instanceof RuntimeException) {</span>
+<span class="fc" id="L13">            throw (RuntimeException) e;</span>
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">        } else if (e instanceof Error) {</span>
+<span class="nc" id="L15">            throw (Error) e;</span>
+        } else {
+<span class="fc" id="L17">            throw new UncheckedException(e);</span>
+        }
+    }
+
+    public static &lt;T&gt; T rethrow(Callable&lt;? extends Throwable&gt; callable) {
+        Throwable error;
+        try {
+<span class="nc" id="L24">            error = Preconditions.checkNotNull(callable.call());</span>
+<span class="nc" id="L25">        } catch (Throwable e) {</span>
+<span class="nc" id="L26">            return Exceptions.rethrow(e);</span>
+<span class="nc" id="L27">        }</span>
+<span class="nc" id="L28">        return Exceptions.rethrow(error);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

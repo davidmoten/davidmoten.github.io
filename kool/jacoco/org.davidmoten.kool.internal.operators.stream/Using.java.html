@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Using.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">Using.java</span></div><h1>Using.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterator;
+import org.davidmoten.kool.internal.util.Exceptions;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class Using&lt;R, T&gt; implements Stream&lt;T&gt; {
+
+    private final Callable&lt;R&gt; resourceFactory;
+    private final Function&lt;? super R, ? extends Stream&lt;? extends T&gt;&gt; streamFactory;
+    private final Consumer&lt;? super R&gt; closer;
+
+    public Using(Callable&lt;R&gt; resourceFactory, Function&lt;? super R, ? extends Stream&lt;? extends T&gt;&gt; streamFactory,
+<span class="fc" id="L20">            Consumer&lt;? super R&gt; closer) {</span>
+<span class="fc" id="L21">        this.resourceFactory = resourceFactory;</span>
+<span class="fc" id="L22">        this.streamFactory = streamFactory;</span>
+<span class="fc" id="L23">        this.closer = closer;</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+        try {
+<span class="fc" id="L29">            return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L31">                R resource = resourceFactory.call();</span>
+<span class="fc" id="L32">                @SuppressWarnings(&quot;unchecked&quot;)</span>
+<span class="fc" id="L33">                StreamIterator&lt;T&gt; it = Preconditions.checkNotNull((StreamIterator&lt;T&gt;) streamFactory.apply(resource).iterator());</span>
+
+                @Override
+                public boolean hasNext() {
+<span class="fc" id="L37">                    return it.hasNext();</span>
+                }
+
+                @Override
+                public T next() {
+<span class="fc" id="L42">                    return Preconditions.checkNotNull(it.next());</span>
+                }
+
+                @Override
+                public void dispose() {
+<span class="fc" id="L47">                    it.dispose();</span>
+<span class="fc" id="L48">                    closer.accept(resource);</span>
+<span class="fc" id="L49">                }</span>
+            };
+<span class="fc" id="L51">        } catch (Throwable e) {</span>
+<span class="nc" id="L52">            return Exceptions.rethrow(e);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -12,7 +12,7 @@
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.concurrent.Callable;
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   
 <a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.Maybe;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.exceptions.UncheckedException;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.internal.util.Exceptions;
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   
 <a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> MaybeFromCallable&lt;T&gt; <strong class="jxr_keyword">implements</strong> Maybe&lt;T&gt; {
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>  
@@ -29,8 +29,8 @@
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>          T v = <strong class="jxr_keyword">null</strong>;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>          <strong class="jxr_keyword">try</strong> {
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>              v = callable.call();
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>          } <strong class="jxr_keyword">catch</strong> (Exception e) {
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>              <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../../org/davidmoten/kool/exceptions/UncheckedException.html">UncheckedException</a>(e);
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>          } <strong class="jxr_keyword">catch</strong> (Throwable e) {
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>              <strong class="jxr_keyword">return</strong> Exceptions.rethrow(e);
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>          }
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>          <strong class="jxr_keyword">if</strong> (nullable) {
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>              <strong class="jxr_keyword">return</strong> Optional.ofNullable(v);

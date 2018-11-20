@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrependOne.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">PrependOne.java</span></div><h1>PrependOne.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class PrependOne&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final T value;
+    private final StreamIterable&lt;T&gt; source;
+
+<span class="fc" id="L14">    public PrependOne(T value, StreamIterable&lt;T&gt; source) {</span>
+<span class="fc" id="L15">        this.value = value;</span>
+<span class="fc" id="L16">        this.source = source;</span>
+<span class="fc" id="L17">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L21">        return new StreamIterator&lt;T&gt;() {</span>
+<span class="fc" id="L22">            final StreamIterator&lt;T&gt; it = Preconditions.checkNotNull(source.iterator());</span>
+<span class="fc" id="L23">            T value = PrependOne.this.value;</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">                if (value != null) {</span>
+<span class="fc" id="L28">                    return true;</span>
+                } else {
+<span class="fc" id="L30">                    return it.hasNext();</span>
+                }
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L36">                T t = value;</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                if (t != null) {</span>
+<span class="fc" id="L38">                    value = null;</span>
+<span class="fc" id="L39">                    return t;</span>
+                } else {
+<span class="fc" id="L41">                    return Preconditions.checkNotNull(it.next());</span>
+                }
+            }
+
+            @Override
+            public void dispose() {
+<span class="fc" id="L47">                it.dispose();</span>
+<span class="fc" id="L48">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Concat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">Concat.java</span></div><h1>Concat.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.NoSuchElementException;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+
+public final class Concat&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final StreamIterable&lt;? extends T&gt; source1;
+    private final StreamIterable&lt;? extends T&gt; source2;
+
+<span class="fc" id="L14">    public Concat(StreamIterable&lt;? extends T&gt; source1, StreamIterable&lt;? extends T&gt; source2) {</span>
+<span class="fc" id="L15">        this.source1 = source1;</span>
+<span class="fc" id="L16">        this.source2 = source2;</span>
+<span class="fc" id="L17">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L21">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L23">            StreamIterator&lt;? extends T&gt; a = source1.iteratorChecked();</span>
+<span class="fc" id="L24">            StreamIterator&lt;? extends T&gt; b = null;</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">                if (a != null) {</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">                    if (a.hasNext()) {</span>
+<span class="fc" id="L30">                        return true;</span>
+                    } else {
+                        // release a for gc
+<span class="fc" id="L33">                        a.dispose();</span>
+<span class="fc" id="L34">                        a = null;</span>
+<span class="fc" id="L35">                        return b().hasNext();</span>
+                    }
+                } else {
+<span class="fc" id="L38">                    return b().hasNext();</span>
+                }
+            }
+
+            @Override
+            public T next() {
+<span class="fc bfc" id="L44" title="All 4 branches covered.">                if (a != null &amp;&amp; a.hasNext()) {</span>
+<span class="fc" id="L45">                    return a.nextChecked();</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                } else if (b().hasNext()) {</span>
+<span class="fc" id="L47">                    return b().nextChecked();</span>
+                } else {
+<span class="fc" id="L49">                    dispose();</span>
+<span class="fc" id="L50">                    throw new NoSuchElementException();</span>
+                }
+            }
+
+            private StreamIterator&lt;? extends T&gt; b() {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                if (b == null) {</span>
+<span class="fc" id="L56">                    b = source2.iteratorChecked();</span>
+                }
+<span class="fc" id="L58">                return b;</span>
+            }
+
+            @Override
+            public void dispose() {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                if (a != null) {</span>
+<span class="fc" id="L64">                    a.dispose();</span>
+                }
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                if (b != null) {</span>
+<span class="fc" id="L67">                    b.dispose();</span>
+                }
+<span class="fc" id="L69">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

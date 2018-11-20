@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlatMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">FlatMap.java</span></div><h1>FlatMap.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.NoSuchElementException;
+import java.util.function.Function;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class FlatMap&lt;T, R&gt; implements Stream&lt;R&gt; {
+
+    private final Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; function;
+    private final StreamIterable&lt;T&gt; source;
+
+    public FlatMap(Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; function,
+<span class="fc" id="L18">            StreamIterable&lt;T&gt; source) {</span>
+<span class="fc" id="L19">        this.function = function;</span>
+<span class="fc" id="L20">        this.source = source;</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    public StreamIterator&lt;R&gt; iterator() {
+<span class="fc" id="L25">        return new StreamIterator&lt;R&gt;() {</span>
+
+<span class="fc" id="L27">            final StreamIterator&lt;T&gt; a = Preconditions.checkNotNull(source.iterator());</span>
+            StreamIterator&lt;? extends R&gt; b;
+            R r;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L33">                loadNext();</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                return r != null;</span>
+            }
+
+            @Override
+            public R next() {
+<span class="fc" id="L39">                loadNext();</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">                if (r == null) {</span>
+<span class="nc" id="L41">                    throw new NoSuchElementException();</span>
+                } else {
+<span class="fc" id="L43">                    R r2 = r;</span>
+<span class="fc" id="L44">                    r = null;</span>
+<span class="fc" id="L45">                    return r2;</span>
+                }
+            }
+
+            private void loadNext() {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                if (r != null) {</span>
+<span class="fc" id="L51">                    return;</span>
+                }
+                while (true) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                    if (b == null) {</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                        if (a.hasNext()) {</span>
+<span class="fc" id="L56">                            b = Preconditions.checkNotNull(function</span>
+<span class="fc" id="L57">                                    .apply(Preconditions.checkNotNull(a.next())).iterator());</span>
+                        } else {
+<span class="fc" id="L59">                            return;</span>
+                        }
+                    }
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                    if (b.hasNext()) {</span>
+<span class="fc" id="L63">                        r = Preconditions.checkNotNull(b.next());</span>
+<span class="fc" id="L64">                        return;</span>
+                    } else {
+<span class="fc" id="L66">                        b.dispose();</span>
+<span class="fc" id="L67">                        b = null;</span>
+                    }
+                }
+            }
+
+            @Override
+            public void dispose() {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                if (a != null) {</span>
+<span class="fc" id="L75">                    a.dispose();</span>
+                }
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (b != null) {</span>
+<span class="fc" id="L78">                    b.dispose();</span>
+                }
+<span class="fc" id="L80">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

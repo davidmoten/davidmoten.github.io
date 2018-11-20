@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MaybeIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.maybe</a> &gt; <span class="el_source">MaybeIterator.java</span></div><h1>MaybeIterator.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.maybe;
+
+import java.util.Optional;
+
+import org.davidmoten.kool.Maybe;
+import org.davidmoten.kool.StreamIterator;
+
+public final class MaybeIterator&lt;T&gt; implements StreamIterator&lt;T&gt; {
+
+    private final Maybe&lt;T&gt; maybe;
+    private Optional&lt;T&gt; value;
+    private boolean finished;
+
+<span class="fc" id="L14">    public MaybeIterator(Maybe&lt;T&gt; maybe) {</span>
+<span class="fc" id="L15">        this.maybe = maybe;</span>
+<span class="fc" id="L16">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="fc" id="L20">        load();</span>
+<span class="pc bpc" id="L21" title="1 of 4 branches missed.">        return !finished &amp;&amp; value.isPresent();</span>
+    }
+
+    @Override
+    public T next() {
+<span class="fc" id="L26">        load();</span>
+        try {
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">            if (finished) {</span>
+<span class="nc" id="L29">                throw new RuntimeException(&quot;stream is finished&quot;);</span>
+            } else {
+<span class="fc" id="L31">                finished = true;</span>
+<span class="fc" id="L32">                return value.get();</span>
+            }
+        } finally {
+<span class="fc" id="L35">            dispose();</span>
+        }
+    }
+
+    @Override
+    public void dispose() {
+<span class="fc" id="L41">        finished = true;</span>
+<span class="fc" id="L42">        value = null;</span>
+<span class="fc" id="L43">    }</span>
+
+    private void load() {
+<span class="fc bfc" id="L46" title="All 4 branches covered.">        if (!finished &amp;&amp; value == null) {</span>
+<span class="fc" id="L47">            value = maybe.get();</span>
+        }
+<span class="fc" id="L49">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

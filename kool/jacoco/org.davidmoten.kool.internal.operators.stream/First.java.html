@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>First.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool.internal.operators.stream</a> &gt; <span class="el_source">First.java</span></div><h1>First.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool.internal.operators.stream;
+
+import java.util.NoSuchElementException;
+
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.StreamIterable;
+import org.davidmoten.kool.StreamIterator;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class First&lt;T&gt; implements Stream&lt;T&gt; {
+
+    private final StreamIterable&lt;T&gt; source;
+
+<span class="fc" id="L15">    public First(StreamIterable&lt;T&gt; source) {</span>
+<span class="fc" id="L16">        this.source = source;</span>
+<span class="fc" id="L17">    }</span>
+
+    @Override
+    public StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L21">        return new StreamIterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L23">            StreamIterator&lt;T&gt; it = Preconditions.checkNotNull(source.iterator());</span>
+            T value;
+
+            @Override
+            public boolean hasNext() {
+<span class="fc" id="L28">                loadNext();</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">                return value != null;</span>
+            }
+
+            @Override
+            public T next() {
+<span class="fc" id="L34">                loadNext();</span>
+<span class="pc bpc" id="L35" title="2 of 4 branches missed.">                if (value == null || it == null) {</span>
+<span class="nc" id="L36">                    dispose();</span>
+<span class="nc" id="L37">                    throw new NoSuchElementException();</span>
+                } else {
+<span class="fc" id="L39">                    dispose();</span>
+<span class="fc" id="L40">                    it = null;</span>
+<span class="fc" id="L41">                    return value;</span>
+                }
+            }
+
+            private void loadNext() {
+<span class="pc bpc" id="L46" title="1 of 6 branches missed.">                if (value == null &amp;&amp; it != null &amp;&amp; it.hasNext()) {</span>
+<span class="fc" id="L47">                    value = Preconditions.checkNotNull(it.next());</span>
+                }
+<span class="fc" id="L49">            }</span>
+
+            @Override
+            public void dispose() {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                if (it != null) {</span>
+<span class="fc" id="L54">                    it.dispose();</span>
+                }
+<span class="fc" id="L56">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

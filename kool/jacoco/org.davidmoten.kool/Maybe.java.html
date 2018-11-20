@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Maybe.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">kool</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.kool</a> &gt; <span class="el_source">Maybe.java</span></div><h1>Maybe.java</h1><pre class="source lang-java linenums">package org.davidmoten.kool;
+
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.davidmoten.kool.internal.operators.maybe.MaybeDefer;
+import org.davidmoten.kool.internal.operators.maybe.MaybeDoOnEmpty;
+import org.davidmoten.kool.internal.operators.maybe.MaybeDoOnError;
+import org.davidmoten.kool.internal.operators.maybe.MaybeDoOnValue;
+import org.davidmoten.kool.internal.operators.maybe.MaybeError;
+import org.davidmoten.kool.internal.operators.maybe.MaybeFlatMap;
+import org.davidmoten.kool.internal.operators.maybe.MaybeFromCallable;
+import org.davidmoten.kool.internal.operators.maybe.MaybeIsPresent;
+import org.davidmoten.kool.internal.operators.maybe.MaybeIterator;
+import org.davidmoten.kool.internal.operators.maybe.MaybeMap;
+import org.davidmoten.kool.internal.operators.maybe.MaybeOrElse;
+import org.davidmoten.kool.internal.operators.maybe.MaybeToStream;
+import org.davidmoten.kool.internal.util.MaybeImpl;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public interface Maybe&lt;T&gt; extends StreamIterable&lt;T&gt; {
+
+    Optional&lt;T&gt; get();
+    
+    //////////////////
+    // Factories
+    //////////////////
+
+    public static &lt;T&gt; Maybe&lt;T&gt; of(T value) {
+<span class="fc" id="L33">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L34">        return new MaybeImpl&lt;T&gt;(Optional.of(value));</span>
+    }
+
+    public static &lt;T&gt; Maybe&lt;T&gt; fromCallableNullable(Callable&lt;? extends T&gt; callable) {
+<span class="nc" id="L38">        return new MaybeFromCallable&lt;T&gt;(callable, true);</span>
+    }
+
+    public static &lt;T&gt; Maybe&lt;T&gt; fromCallable(Callable&lt;? extends T&gt; callable) {
+<span class="nc" id="L42">        return new MaybeFromCallable&lt;T&gt;(callable, false);</span>
+    }
+
+    public static &lt;T&gt; Maybe&lt;T&gt; ofNullable(T value) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L47">            return empty();</span>
+        } else {
+<span class="nc" id="L49">            return new MaybeImpl&lt;T&gt;(Optional.of(value));</span>
+        }
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Maybe&lt;T&gt; empty() {
+<span class="fc" id="L55">        return (Maybe&lt;T&gt;) MaybeImpl.EmptyHolder.INSTANCE;</span>
+    }
+
+    
+    public static &lt;T&gt; Maybe&lt;T&gt; defer(Callable&lt;? extends Maybe&lt;? extends T&gt;&gt; factory) {
+<span class="nc" id="L60">        return new MaybeDefer&lt;T&gt;(factory);</span>
+    }
+    
+    public static &lt;T&gt; Maybe&lt;T&gt; error(Callable&lt;? extends Throwable&gt; callable) {
+<span class="fc" id="L64">        return new MaybeError&lt;T&gt;(callable);</span>
+    }
+    
+    public static &lt;T&gt; Maybe&lt;T&gt; error(Throwable error) {
+<span class="fc" id="L68">        return error(() -&gt; error);</span>
+    }
+
+    //////////////////
+    // Operators
+    //////////////////
+    
+    public default &lt;R&gt; Maybe&lt;R&gt; map(Function&lt;? super T, ? extends R&gt; mapper) {
+<span class="fc" id="L76">        return new MaybeMap&lt;T, R&gt;(this, mapper);</span>
+    }
+
+    public default Stream&lt;T&gt; toStream() {
+<span class="fc" id="L80">        return new MaybeToStream&lt;T&gt;(this);</span>
+    }
+
+    public default &lt;R&gt; Stream&lt;R&gt; flatMap(Function&lt;? super T, ? extends StreamIterable&lt;? extends R&gt;&gt; mapper) {
+<span class="fc" id="L84">        return new MaybeFlatMap&lt;T, R&gt;(this, mapper);</span>
+    }
+
+    public default Maybe&lt;T&gt; doOnValue(Consumer&lt;? super T&gt; consumer) {
+<span class="fc" id="L88">        return new MaybeDoOnValue&lt;T&gt;(consumer, this);</span>
+    }
+
+    public default Maybe&lt;T&gt; doOnError(Consumer&lt;? super Throwable&gt; consumer) {
+<span class="nc" id="L92">        return new MaybeDoOnError&lt;T&gt;(consumer, this);</span>
+    }
+
+    public default Maybe&lt;T&gt; doOnEmpty(Runnable action) {
+<span class="fc" id="L96">        return new MaybeDoOnEmpty&lt;T&gt;(this, action);</span>
+    }
+    
+    public default Single&lt;T&gt; orElse(T value) {
+<span class="fc" id="L100">        return new MaybeOrElse&lt;T&gt;(this, value);</span>
+    }
+
+    default MaybeTester&lt;T&gt; test() {
+<span class="fc" id="L104">        return new MaybeTester&lt;T&gt;(this);</span>
+    }
+
+    default Single&lt;Boolean&gt; isPresent() {
+<span class="nc" id="L108">        return new MaybeIsPresent(this);</span>
+    }
+
+    default StreamIterator&lt;T&gt; iterator() {
+<span class="fc" id="L112">        return new MaybeIterator&lt;T&gt;(this);</span>
+    }
+    
+    public default &lt;R&gt; R to(Function&lt;? super Maybe&lt;T&gt;, R&gt; mapper){
+<span class="nc" id="L116">        return mapper.apply(this);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
