@@ -24,13 +24,15 @@
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>      @Override
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">public</strong> Boolean get() {
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>          StreamIterator&lt;?&gt; it = Preconditions.checkNotNull(source.iterator());
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>          <strong class="jxr_keyword">boolean</strong> hasNext = it.hasNext();
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>          it.dispose();
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>          <strong class="jxr_keyword">return</strong> !hasNext;
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>      }
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>  }
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>          StreamIterator&lt;?&gt; it = source.iteratorChecked();
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>              <strong class="jxr_keyword">return</strong> !it.hasNext();
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>          } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>              it.dispose();
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>          }
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      }
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2018. All rights reserved.</div>

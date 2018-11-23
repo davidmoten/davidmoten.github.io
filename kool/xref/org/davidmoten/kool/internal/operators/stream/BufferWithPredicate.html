@@ -11,10 +11,10 @@
 <a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.util.ArrayList;
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.List;
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.NoSuchElementException;
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.function.BiPredicate;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.Stream;
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.StreamIterator;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.Stream;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.StreamIterator;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.function.BiPredicate;
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>  
 <a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> BufferWithPredicate&lt;T&gt; <strong class="jxr_keyword">implements</strong> Stream&lt;List&lt;T&gt;&gt; {
 <a class="jxr_linenumber" name="L12" href="#L12">12</a>  
@@ -67,7 +67,7 @@
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>              <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> loadNext() {
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>                  <strong class="jxr_keyword">while</strong> (!ready &amp;&amp; it.hasNext()) {
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>                      T t = it.nextChecked();
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>                      <strong class="jxr_keyword">boolean</strong> b = condition.test(buffer, t);
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>                      <strong class="jxr_keyword">boolean</strong> b = condition.testUnchecked(buffer, t);
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>                      <strong class="jxr_keyword">if</strong> (!until) {
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>                          <em class="jxr_comment">// while</em>
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>                          <strong class="jxr_keyword">if</strong> (b) {
