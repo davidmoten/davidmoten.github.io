@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Iterables.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2</a> &gt; <span class="el_source">Iterables.java</span></div><h1>Iterables.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.function.Predicate;
+
+public final class Iterables {
+
+    private Iterables() {
+        // prevent instantiation
+    }
+
+    public static &lt;T&gt; Iterable&lt;T&gt; filter(Iterable&lt;? extends T&gt; iterable, Predicate&lt;? super T&gt; condition) {
+<span class="fc" id="L16">        return new FilterIterable&lt;T&gt;(iterable, condition);</span>
+    }
+
+    static final class FilterIterable&lt;T&gt; implements Iterable&lt;T&gt; {
+
+        private final Iterable&lt;? extends T&gt; iterable;
+        private final Predicate&lt;? super T&gt; condition;
+
+<span class="fc" id="L24">        FilterIterable(Iterable&lt;? extends T&gt; iterable, Predicate&lt;? super T&gt; condition) {</span>
+<span class="fc" id="L25">            this.iterable = iterable;</span>
+<span class="fc" id="L26">            this.condition = condition;</span>
+<span class="fc" id="L27">        }</span>
+
+        @Override
+        public Iterator&lt;T&gt; iterator() {
+<span class="fc" id="L31">            return new FilterIterator&lt;T&gt;(iterable.iterator(), condition);</span>
+        }
+
+    }
+
+    static final class FilterIterator&lt;T&gt; implements Iterator&lt;T&gt; {
+
+        private Iterator&lt;? extends T&gt; it;
+        private final Predicate&lt;? super T&gt; condition;
+        private T next;
+
+<span class="fc" id="L42">        FilterIterator(Iterator&lt;? extends T&gt; it, Predicate&lt;? super T&gt; condition) {</span>
+<span class="fc" id="L43">            this.it = it;</span>
+<span class="fc" id="L44">            this.condition = condition;</span>
+<span class="fc" id="L45">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="fc" id="L49">            load();</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            return next != null;</span>
+        }
+
+        @Override
+        public T next() {
+<span class="fc" id="L55">            load();</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            if (next == null) {</span>
+<span class="nc" id="L57">                throw new NoSuchElementException();</span>
+            } else {
+<span class="fc" id="L59">                T v = next;</span>
+<span class="fc" id="L60">                next = null;</span>
+<span class="fc" id="L61">                return v;</span>
+            }
+        }
+
+        private void load() {
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            if (next == null &amp;&amp; it != null) {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                while (it.hasNext()) {</span>
+<span class="fc" id="L68">                    T v = it.next();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                    if (condition.test(v)) {</span>
+<span class="fc" id="L70">                        next = v;</span>
+<span class="fc" id="L71">                        return;</span>
+                    }
+<span class="fc" id="L73">                }</span>
+<span class="fc" id="L74">                it = null;</span>
+            }
+<span class="fc" id="L76">        }</span>
+
+    }
+    
+    public static long size(Iterable&lt;?&gt; iterable) {
+<span class="fc" id="L81">        Iterator&lt;?&gt; it = iterable.iterator();</span>
+<span class="fc" id="L82">        long count = 0;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        while (it.hasNext()) {</span>
+<span class="fc" id="L84">            it.next();</span>
+<span class="fc" id="L85">            count++;</span>
+        }
+<span class="fc" id="L87">        return count;</span>
+    }
+    
+    public static &lt;T&gt; List&lt;T&gt; toList(Iterable&lt;T&gt; iterable) {
+<span class="fc" id="L91">        List&lt;T&gt; list = new ArrayList&lt;T&gt;();</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (T item : iterable) {</span>
+<span class="fc" id="L93">            list.add(item);</span>
+<span class="fc" id="L94">        }</span>
+<span class="fc" id="L95">        return list;</span>
+    }
+
+    public static boolean isEmpty(Iterable&lt;?&gt; entries) {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        return !entries.iterator().hasNext();</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

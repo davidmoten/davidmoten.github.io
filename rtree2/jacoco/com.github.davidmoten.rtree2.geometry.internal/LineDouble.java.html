@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LineDouble.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.geometry.internal</a> &gt; <span class="el_source">LineDouble.java</span></div><h1>LineDouble.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.geometry.internal;
+
+import com.github.davidmoten.guavamini.Objects;
+import com.github.davidmoten.rtree2.geometry.Circle;
+import com.github.davidmoten.rtree2.geometry.Geometries;
+import com.github.davidmoten.rtree2.geometry.Line;
+import com.github.davidmoten.rtree2.geometry.Point;
+import com.github.davidmoten.rtree2.geometry.Rectangle;
+import com.github.davidmoten.rtree2.internal.Line2D;
+import com.github.davidmoten.rtree2.internal.RectangleUtil;
+import com.github.davidmoten.rtree2.internal.util.ObjectsHelper;
+
+/**
+ * A line segment.
+ */
+public final class LineDouble implements Line {
+
+    private final double x1;
+    private final double y1;
+    private final double x2;
+    private final double y2;
+
+<span class="fc" id="L23">    private LineDouble(double x1, double y1, double x2, double y2) {</span>
+<span class="fc" id="L24">        this.x1 = x1;</span>
+<span class="fc" id="L25">        this.y1 = y1;</span>
+<span class="fc" id="L26">        this.x2 = x2;</span>
+<span class="fc" id="L27">        this.y2 = y2;</span>
+<span class="fc" id="L28">    }</span>
+
+    public static LineDouble create(double x1, double y1, double x2, double y2) {
+<span class="fc" id="L31">        return new LineDouble(x1, y1, x2, y2);</span>
+    }
+
+    @Override
+    public double distance(Rectangle r) {
+<span class="nc bnc" id="L36" title="All 4 branches missed.">        if (r.contains(x1, y1) || r.contains(x2, y2)) {</span>
+<span class="nc" id="L37">            return 0;</span>
+        } else {
+<span class="nc" id="L39">            double d1 = distance(r.x1(), r.y1(), r.x1(), r.y2());</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            if (d1 == 0)</span>
+<span class="nc" id="L41">                return 0;</span>
+<span class="nc" id="L42">            double d2 = distance(r.x1(), r.y2(), r.x2(), r.y2());</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">            if (d2 == 0)</span>
+<span class="nc" id="L44">                return 0;</span>
+<span class="nc" id="L45">            double d3 = distance(r.x2(), r.y2(), r.x2(), r.y1());</span>
+<span class="nc" id="L46">            double d4 = distance(r.x2(), r.y1(), r.x1(), r.y1());</span>
+<span class="nc" id="L47">            return Math.min(d1, Math.min(d2, Math.min(d3, d4)));</span>
+        }
+    }
+
+    private double distance(double x1, double y1, double x2, double y2) {
+<span class="nc" id="L52">        Line2D line = new Line2D(x1, y1, x2, y2);</span>
+<span class="nc" id="L53">        double d1 = line.ptSegDist(this.x1, this.y1);</span>
+<span class="nc" id="L54">        double d2 = line.ptSegDist(this.x2, this.y2);</span>
+<span class="nc" id="L55">        Line2D line2 = new Line2D(this.x1, this.y1, this.x2, this.y2);</span>
+<span class="nc" id="L56">        double d3 = line2.ptSegDist(x1, y1);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (d3 == 0)</span>
+<span class="nc" id="L58">            return 0;</span>
+<span class="nc" id="L59">        double d4 = line2.ptSegDist(x2, y2);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (d4 == 0)</span>
+<span class="nc" id="L61">            return 0;</span>
+        else
+<span class="nc" id="L63">            return Math.min(d1, Math.min(d2, Math.min(d3, d4)));</span>
+
+    }
+
+    @Override
+    public Rectangle mbr() {
+<span class="fc" id="L69">        return Geometries.rectangle(Math.min(x1, x2), Math.min(y1, y2), Math.max(x1, x2),</span>
+<span class="fc" id="L70">                Math.max(y1, y2));</span>
+    }
+
+    @Override
+    public boolean intersects(Rectangle r) {
+<span class="fc" id="L75">        return RectangleUtil.rectangleIntersectsLine(r.x1(), r.y1(), r.x2() - r.x1(),</span>
+<span class="fc" id="L76">                r.y2() - r.y1(), x1, y1, x2, y2);</span>
+    }
+
+    @Override
+    public double x1() {
+<span class="fc" id="L81">        return x1;</span>
+    }
+
+    @Override
+    public double y1() {
+<span class="fc" id="L86">        return y1;</span>
+    }
+
+    @Override
+    public double x2() {
+<span class="fc" id="L91">        return x2;</span>
+    }
+
+    @Override
+    public double y2() {
+<span class="fc" id="L96">        return y2;</span>
+    }
+
+    @Override
+    public boolean intersects(Line b) {
+<span class="nc" id="L101">        Line2D line1 = new Line2D(x1, y1, x2, y2);</span>
+<span class="nc" id="L102">        Line2D line2 = new Line2D(b.x1(), b.y1(), b.x2(), b.y2());</span>
+<span class="nc" id="L103">        return line2.intersectsLine(line1);</span>
+    }
+
+    @Override
+    public boolean intersects(Point point) {
+<span class="fc" id="L108">        return intersects(point.mbr());</span>
+    }
+
+    @Override
+    public boolean intersects(Circle circle) {
+<span class="nc" id="L113">        return GeometryUtil.lineIntersects(x1, y1, x2, y2, circle);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L118">        return Objects.hashCode(x1, y1, x2, y2);</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="nc" id="L123">        LineDouble other = ObjectsHelper.asClass(obj, LineDouble.class);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (other != null) {</span>
+<span class="nc bnc" id="L125" title="All 4 branches missed.">            return Objects.equal(x1, other.x1) &amp;&amp; Objects.equal(x2, other.x2)</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">                    &amp;&amp; Objects.equal(y1, other.y1) &amp;&amp; Objects.equal(y2, other.y2);</span>
+        } else
+<span class="nc" id="L128">            return false;</span>
+    }
+
+    @Override
+    public boolean isDoublePrecision() {
+<span class="nc" id="L133">        return true;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

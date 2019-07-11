@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NonLeafHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.internal</a> &gt; <span class="el_source">NonLeafHelper.java</span></div><h1>NonLeafHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.internal;
+
+import static java.util.Optional.of;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import com.github.davidmoten.rtree2.Context;
+import com.github.davidmoten.rtree2.Entry;
+import com.github.davidmoten.rtree2.Node;
+import com.github.davidmoten.rtree2.NonLeaf;
+import com.github.davidmoten.rtree2.geometry.Geometry;
+import com.github.davidmoten.rtree2.geometry.ListPair;
+
+public final class NonLeafHelper {
+
+    private NonLeafHelper() {
+        // prevent instantiation
+    }
+
+    public static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; add(
+            Entry&lt;? extends T, ? extends S&gt; entry, NonLeaf&lt;T, S&gt; node) {
+<span class="fc" id="L25">        Context&lt;T, S&gt; context = node.context();</span>
+<span class="fc" id="L26">        List&lt;Node&lt;T, S&gt;&gt; children = node.children();</span>
+<span class="fc" id="L27">        final Node&lt;T, S&gt; child = context.selector().select(entry.geometry().mbr(), children);</span>
+<span class="fc" id="L28">        List&lt;Node&lt;T, S&gt;&gt; list = child.add(entry);</span>
+<span class="fc" id="L29">        List&lt;? extends Node&lt;T, S&gt;&gt; children2 = Util.replace(children, child, list);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (children2.size() &lt;= context.maxChildren())</span>
+<span class="fc" id="L31">            return Collections.singletonList(</span>
+<span class="fc" id="L32">                    (Node&lt;T, S&gt;) context.factory().createNonLeaf(children2, context));</span>
+        else {
+<span class="fc" id="L34">            ListPair&lt;? extends Node&lt;T, S&gt;&gt; pair = context.splitter().split(children2,</span>
+<span class="fc" id="L35">                    context.minChildren());</span>
+<span class="fc" id="L36">            return makeNonLeaves(pair, context);</span>
+        }
+    }
+
+    private static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; makeNonLeaves(
+            ListPair&lt;? extends Node&lt;T, S&gt;&gt; pair, Context&lt;T, S&gt; context) {
+<span class="fc" id="L42">        List&lt;Node&lt;T, S&gt;&gt; list = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L43">        list.add(context.factory().createNonLeaf(pair.group1().list(), context));</span>
+<span class="fc" id="L44">        list.add(context.factory().createNonLeaf(pair.group2().list(), context));</span>
+<span class="fc" id="L45">        return list;</span>
+    }
+
+    public static &lt;T, S extends Geometry&gt; NodeAndEntries&lt;T, S&gt; delete(
+            Entry&lt;? extends T, ? extends S&gt; entry, boolean all, NonLeaf&lt;T, S&gt; node) {
+        // the result of performing a delete of the given entry from this node
+        // will be that zero or more entries will be needed to be added back to
+        // the root of the tree (because num entries of their node fell below
+        // minChildren),
+        // zero or more children will need to be removed from this node,
+        // zero or more nodes to be added as children to this node(because
+        // entries have been deleted from them and they still have enough
+        // members to be active)
+<span class="fc" id="L58">        List&lt;Entry&lt;T, S&gt;&gt; addTheseEntries = new ArrayList&lt;Entry&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L59">        List&lt;Node&lt;T, S&gt;&gt; removeTheseNodes = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L60">        List&lt;Node&lt;T, S&gt;&gt; addTheseNodes = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L61">        int countDeleted = 0;</span>
+<span class="fc" id="L62">        List&lt;? extends Node&lt;T, S&gt;&gt; children = node.children();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (final Node&lt;T, S&gt; child : children) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (entry.geometry().intersects(child.geometry().mbr())) {</span>
+<span class="fc" id="L65">                final NodeAndEntries&lt;T, S&gt; result = child.delete(entry, all);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (result.node().isPresent()) {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                    if (result.node().get() != child) {</span>
+                        // deletion occurred and child is above minChildren so
+                        // we update it
+<span class="fc" id="L70">                        addTheseNodes.add(result.node().get());</span>
+<span class="fc" id="L71">                        removeTheseNodes.add(child);</span>
+<span class="fc" id="L72">                        addTheseEntries.addAll(result.entriesToAdd());</span>
+<span class="fc" id="L73">                        countDeleted += result.countDeleted();</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">                        if (!all)</span>
+<span class="fc" id="L75">                            break;</span>
+                    }
+                    // else nothing was deleted from that child
+                } else {
+                    // deletion occurred and brought child below minChildren
+                    // so we redistribute its entries
+<span class="fc" id="L81">                    removeTheseNodes.add(child);</span>
+<span class="fc" id="L82">                    addTheseEntries.addAll(result.entriesToAdd());</span>
+<span class="fc" id="L83">                    countDeleted += result.countDeleted();</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                    if (!all)</span>
+<span class="fc" id="L85">                        break;</span>
+                }
+            }
+<span class="fc" id="L88">        }</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (removeTheseNodes.isEmpty())</span>
+<span class="fc" id="L90">            return new NodeAndEntries&lt;T, S&gt;(of(node), Collections.&lt;Entry&lt;T, S&gt;&gt; emptyList(), 0);</span>
+        else {
+<span class="fc" id="L92">            List&lt;Node&lt;T, S&gt;&gt; nodes = Util.remove(children, removeTheseNodes);</span>
+<span class="fc" id="L93">            nodes.addAll(addTheseNodes);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (nodes.size() == 0)</span>
+<span class="fc" id="L95">                return new NodeAndEntries&lt;T, S&gt;(Optional.&lt;Node&lt;T, S&gt;&gt; empty(), addTheseEntries,</span>
+                        countDeleted);
+            else {
+<span class="fc" id="L98">                NonLeaf&lt;T, S&gt; nd = node.context().factory().createNonLeaf(nodes, node.context());</span>
+<span class="fc" id="L99">                return new NodeAndEntries&lt;T, S&gt;(of(nd), addTheseEntries, countDeleted);</span>
+            }
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

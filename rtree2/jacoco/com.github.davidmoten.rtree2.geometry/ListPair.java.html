@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListPair.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.geometry</a> &gt; <span class="el_source">ListPair.java</span></div><h1>ListPair.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.geometry;
+
+import java.util.List;
+
+/**
+ *
+ * Not thread safe.
+ *
+ * @param &lt;T&gt;
+ *            list type
+ */
+public final class ListPair&lt;T extends HasGeometry&gt; {
+    private final Group&lt;T&gt; group1;
+    private final Group&lt;T&gt; group2;
+    // these non-final variable mean that this class is not thread-safe
+    // because access to them is not synchronized
+<span class="fc" id="L17">    private double areaSum = -1;</span>
+    private final double marginSum;
+
+<span class="fc" id="L20">    public ListPair(List&lt;T&gt; list1, List&lt;T&gt; list2) {</span>
+<span class="fc" id="L21">        this.group1 = new Group&lt;T&gt;(list1);</span>
+<span class="fc" id="L22">        this.group2 = new Group&lt;T&gt;(list2);</span>
+<span class="fc" id="L23">        this.marginSum = group1.geometry().mbr().perimeter() + group2.geometry().mbr().perimeter();</span>
+<span class="fc" id="L24">    }</span>
+
+    public Group&lt;T&gt; group1() {
+<span class="fc" id="L27">        return group1;</span>
+    }
+
+    public Group&lt;T&gt; group2() {
+<span class="fc" id="L31">        return group2;</span>
+    }
+
+    public double areaSum() {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (areaSum == -1)</span>
+<span class="fc" id="L36">            areaSum = group1.geometry().mbr().area() + group2.geometry().mbr().area();</span>
+<span class="fc" id="L37">        return areaSum;</span>
+    }
+
+    public double marginSum() {
+<span class="fc" id="L41">        return marginSum;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

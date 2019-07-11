@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RectangleUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.internal</a> &gt; <span class="el_source">RectangleUtil.java</span></div><h1>RectangleUtil.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.internal;
+
+import java.awt.geom.Line2D;
+
+public final class RectangleUtil {
+
+    private RectangleUtil() {
+        // prevent instantiation
+    }
+
+    /**
+     * The bitmask that indicates that a point lies to the left of this
+     * &lt;code&gt;Rectangle2D&lt;/code&gt;.
+     * 
+     * @since 1.2
+     */
+    public static final int OUT_LEFT = 1;
+
+    /**
+     * The bitmask that indicates that a point lies above this
+     * &lt;code&gt;Rectangle2D&lt;/code&gt;.
+     * 
+     * @since 1.2
+     */
+    public static final int OUT_TOP = 2;
+
+    /**
+     * The bitmask that indicates that a point lies to the right of this
+     * &lt;code&gt;Rectangle2D&lt;/code&gt;.
+     * 
+     * @since 1.2
+     */
+    public static final int OUT_RIGHT = 4;
+
+    /**
+     * The bitmask that indicates that a point lies below this
+     * &lt;code&gt;Rectangle2D&lt;/code&gt;.
+     * 
+     * @since 1.2
+     */
+    public static final int OUT_BOTTOM = 8;
+    
+    public static boolean rectangleIntersectsLine(double rectX, double rectY, double rectWidth, double rectHeight,
+            double x1, double y1, double x2, double y2) {
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        return _rectangleIntersectsLine(rectX, rectY, rectWidth, rectHeight, x1, y1, x2, y2)</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                || Line2D.Double.linesIntersect(rectX, rectY, rectX + rectWidth, rectY + rectHeight, x1, y1, x2, y2);</span>
+    }
+    
+    private static boolean _rectangleIntersectsLine(double rectX, double rectY, double rectWidth,
+            double rectHeight, double x1, double y1, double x2, double y2) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (rectangleCornerOnSegment(rectX, rectY, rectWidth, rectHeight, x1, y1, x2, y2)) {</span>
+<span class="fc" id="L52">            return true;</span>
+        }
+        int out1, out2;
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if ((out2 = outcode(rectX, rectY, rectWidth, rectHeight, x2, y2)) == 0) {</span>
+<span class="nc" id="L56">            return true;</span>
+        }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        while ((out1 = outcode(rectX, rectY, rectWidth, rectHeight, x1, y1)) != 0) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if ((out1 &amp; out2) != 0) {</span>
+<span class="fc" id="L60">                return false;</span>
+            }
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">            if ((out1 &amp; (OUT_LEFT | OUT_RIGHT)) != 0) {</span>
+<span class="fc" id="L63">                double x = rectX;</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                if ((out1 &amp; OUT_RIGHT) != 0) {</span>
+<span class="nc" id="L65">                    x += rectWidth;</span>
+                }
+<span class="fc" id="L67">                y1 = y1 + (x - x1) * (y2 - y1) / (x2 - x1);</span>
+<span class="fc" id="L68">                x1 = x;</span>
+<span class="fc" id="L69">            } else {</span>
+<span class="nc" id="L70">                double y = rectY;</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                if ((out1 &amp; OUT_BOTTOM) != 0) {</span>
+<span class="nc" id="L72">                    y += rectHeight;</span>
+                }
+<span class="nc" id="L74">                x1 = x1 + (y - y1) * (x2 - x1) / (y2 - y1);</span>
+<span class="nc" id="L75">                y1 = y;</span>
+<span class="nc" id="L76">            }</span>
+        }
+<span class="fc" id="L78">        return true;</span>
+    }
+
+    private static boolean rectangleCornerOnSegment(double rectX, double rectY, double rectWidth,
+            double rectHeight, double x1, double y1, double x2, double y2) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (pointOnSegment(rectX, rectY, x1, y1, x2, y2)) {</span>
+<span class="fc" id="L84">            return true;</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        } else if (pointOnSegment(rectX + rectWidth, rectY, x1, y1, x2, y2)) {</span>
+<span class="nc" id="L86">            return true;</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        } else if (pointOnSegment(rectX, rectY + rectHeight, x1, y1, x2, y2)) {</span>
+<span class="nc" id="L88">            return true;</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        } else if (pointOnSegment(rectX + rectWidth, rectY + rectHeight, x1, y1, x2, y2)) {</span>
+<span class="nc" id="L90">            return true;</span>
+        } else {
+<span class="fc" id="L92">            return false;</span>
+        }
+    }
+
+    private static final double PRECISION = 0.00000001;
+
+    private static boolean pointOnSegment(double x, double y, double x1, double y1, double x2,
+            double y2) {
+<span class="fc bfc" id="L100" title="All 8 branches covered.">        if (x &lt; x1 || x &gt; x2 || y &lt; y1 || y &gt; y2) {</span>
+<span class="fc" id="L101">            return false;</span>
+        } else {
+<span class="fc" id="L103">            double v = (y2 - y1) * (x - x1) - (x2 - x1) * (y - y1);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            return Math.abs(v) &lt; PRECISION;</span>
+        }
+    }
+
+    private static int outcode(double rectX, double rectY, double rectWidth, double rectHeight,
+            double x, double y) {
+<span class="fc" id="L110">        int out = 0;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (rectWidth &lt;= 0) {</span>
+<span class="fc" id="L112">            out |= OUT_LEFT | OUT_RIGHT;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        } else if (x &lt; rectX) {</span>
+<span class="fc" id="L114">            out |= OUT_LEFT;</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        } else if (x &gt; rectX + rectWidth) {</span>
+<span class="fc" id="L116">            out |= OUT_RIGHT;</span>
+        }
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (rectHeight &lt;= 0) {</span>
+<span class="fc" id="L119">            out |= OUT_TOP | OUT_BOTTOM;</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        } else if (y &lt; rectY) {</span>
+<span class="nc" id="L121">            out |= OUT_TOP;</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        } else if (y &gt; rectY + rectHeight) {</span>
+<span class="nc" id="L123">            out |= OUT_BOTTOM;</span>
+        }
+<span class="fc" id="L125">        return out;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

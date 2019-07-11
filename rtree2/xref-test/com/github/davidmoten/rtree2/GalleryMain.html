@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>GalleryMain xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../testapidocs/com/github/davidmoten/rtree2/GalleryMain.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.rtree2;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> org.davidmoten.kool.Stream;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree2.geometry.Point;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="GalleryMain" href="../../../../com/github/davidmoten/rtree2/GalleryMain.html#GalleryMain">GalleryMain</a> {
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) {
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>          Stream&lt;Entry&lt;Object, Point&gt;&gt; entries = GreekEarthquakes.entries(Precision.DOUBLE)
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>                  .cache();
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>          List&lt;Integer&gt; sizes = Arrays.asList(100, 1000, 10000, 1000000);
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>          List&lt;Integer&gt; maxChildrenValues = Arrays.asList(4, 8, 16, 32, 64, 128);
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> size : sizes)
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>              <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> maxChildren : maxChildrenValues) {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>                  <strong class="jxr_keyword">if</strong> (size &gt; maxChildren) {
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>                      System.out.println(<span class="jxr_string">"saving "</span> + size + <span class="jxr_string">" m="</span> + maxChildren);
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>                      RTree&lt;Object, Point&gt; tree = RTree.maxChildren(maxChildren)
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>                              .&lt;Object, Point&gt;create().add(entries.take(size));
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>                      tree.visualize(600, 600)
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>                              .save(<span class="jxr_string">"target/greek-"</span> + size + <span class="jxr_string">"-"</span> + maxChildren + <span class="jxr_string">"-quad.png"</span>);
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>                      RTree&lt;Object, Point&gt; tree2 = RTree.star().maxChildren(maxChildren)
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>                              .&lt;Object, Point&gt;create().add(entries.take(size));
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>                      tree2.visualize(600, 600)
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>                              .save(<span class="jxr_string">"target/greek-"</span> + size + <span class="jxr_string">"-"</span> + maxChildren + <span class="jxr_string">"-star.png"</span>);
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>                  }
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>              }
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      }
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2013&#x2013;2019. All rights reserved.</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Geometries.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.geometry</a> &gt; <span class="el_source">Geometries.java</span></div><h1>Geometries.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.geometry;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rtree2.geometry.internal.CircleDouble;
+import com.github.davidmoten.rtree2.geometry.internal.CircleFloat;
+import com.github.davidmoten.rtree2.geometry.internal.LineDouble;
+import com.github.davidmoten.rtree2.geometry.internal.LineFloat;
+import com.github.davidmoten.rtree2.geometry.internal.PointDouble;
+import com.github.davidmoten.rtree2.geometry.internal.PointFloat;
+import com.github.davidmoten.rtree2.geometry.internal.RectangleDouble;
+import com.github.davidmoten.rtree2.geometry.internal.RectangleFloat;
+
+public final class Geometries {
+
+    private Geometries() {
+        // prevent instantiation
+    }
+
+    public static Point point(double x, double y) {
+<span class="fc" id="L20">        return PointDouble.create(x, y);</span>
+    }
+
+    public static Point point(float x, float y) {
+<span class="fc" id="L24">        return PointFloat.create(x, y);</span>
+    }
+
+    public static Point pointGeographic(double lon, double lat) {
+<span class="fc" id="L28">        return point(normalizeLongitudeDouble(lon), lat);</span>
+    }
+
+    public static Point pointGeographic(float lon, float lat) {
+<span class="fc" id="L32">        return point(normalizeLongitude(lon), lat);</span>
+    }
+
+    public static Rectangle rectangle(double x1, double y1, double x2, double y2) {
+<span class="fc" id="L36">        return rectangleDouble(x1, y1, x2, y2);</span>
+    }
+
+    public static Rectangle rectangle(float x1, float y1, float x2, float y2) {
+<span class="fc" id="L40">        return RectangleFloat.create(x1, y1, x2, y2);</span>
+    }
+
+    public static Rectangle rectangleGeographic(double lon1, double lat1, double lon2,
+            double lat2) {
+<span class="nc" id="L45">        return rectangleGeographic((float) lon1, (float) lat1, (float) lon2, (float) lat2);</span>
+    }
+
+    public static Rectangle rectangleGeographic(float lon1, float lat1, float lon2, float lat2) {
+<span class="fc" id="L49">        float x1 = normalizeLongitude(lon1);</span>
+<span class="fc" id="L50">        float x2 = normalizeLongitude(lon2);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (x2 &lt; x1) {</span>
+<span class="fc" id="L52">            x2 += 360;</span>
+        }
+<span class="fc" id="L54">        return rectangle(x1, lat1, x2, lat2);</span>
+    }
+
+    private static Rectangle rectangleDouble(double x1, double y1, double x2, double y2) {
+<span class="fc" id="L58">        return  RectangleDouble.create(x1, y1, x2, y2);</span>
+    }
+
+    public static Circle circle(double x, double y, double radius) {
+<span class="fc" id="L62">        return CircleDouble.create(x, y, radius);</span>
+    }
+
+    public static Circle circle(float x, float y, float radius) {
+<span class="fc" id="L66">        return CircleFloat.create(x, y, radius);</span>
+    }
+
+    public static Line line(double x1, double y1, double x2, double y2) {
+<span class="fc" id="L70">        return LineDouble.create(x1, y1, x2, y2);</span>
+    }
+
+    public static Line line(float x1, float y1, float x2, float y2) {
+<span class="fc" id="L74">        return LineFloat.create(x1, y1, x2, y2);</span>
+    }
+
+    @VisibleForTesting
+    static double normalizeLongitude(double d) {
+<span class="fc" id="L79">        return normalizeLongitude((float) d);</span>
+    }
+
+    private static float normalizeLongitude(float d) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (d == -180.0f)</span>
+<span class="fc" id="L84">            return -180.0f;</span>
+        else {
+<span class="fc" id="L86">            float sign = Math.signum(d);</span>
+<span class="fc" id="L87">            float x = Math.abs(d) / 360;</span>
+<span class="fc" id="L88">            float x2 = (x - (float) Math.floor(x)) * 360;</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (x2 &gt;= 180)</span>
+<span class="fc" id="L90">                x2 -= 360;</span>
+<span class="fc" id="L91">            return x2 * sign;</span>
+        }
+    }
+
+    private static double normalizeLongitudeDouble(double d) {
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (d == -180.0f)</span>
+<span class="nc" id="L97">            return -180.0d;</span>
+        else {
+<span class="fc" id="L99">            double sign = Math.signum(d);</span>
+<span class="fc" id="L100">            double x = Math.abs(d) / 360;</span>
+<span class="fc" id="L101">            double x2 = (x - (float) Math.floor(x)) * 360;</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (x2 &gt;= 180)</span>
+<span class="nc" id="L103">                x2 -= 360;</span>
+<span class="fc" id="L104">            return x2 * sign;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

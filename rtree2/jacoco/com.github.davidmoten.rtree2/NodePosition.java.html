@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NodePosition.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2</a> &gt; <span class="el_source">NodePosition.java</span></div><h1>NodePosition.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rtree2.geometry.Geometry;
+
+//Mutable, not thread-safe
+final class NodePosition&lt;T, S extends Geometry&gt; {
+
+    private Node&lt;T, S&gt; node;
+    private int position;
+
+<span class="fc" id="L12">    NodePosition(Node&lt;T, S&gt; node, int position) {</span>
+<span class="fc" id="L13">        Preconditions.checkNotNull(node);</span>
+<span class="fc" id="L14">        this.node = node;</span>
+<span class="fc" id="L15">        this.position = position;</span>
+<span class="fc" id="L16">    }</span>
+
+    Node&lt;T, S&gt; node() {
+<span class="fc" id="L19">        return node;</span>
+    }
+
+    int position() {
+<span class="fc" id="L23">        return position;</span>
+    }
+    
+    boolean hasRemaining() {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        return position != node.count();</span>
+    }
+    
+    void setPosition(int position) {
+<span class="fc" id="L31">        this.position = position;</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L36">        String builder = &quot;NodePosition [node=&quot; +</span>
+                node +
+                &quot;, position=&quot; +
+                position +
+                &quot;]&quot;;
+<span class="fc" id="L41">        return builder;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

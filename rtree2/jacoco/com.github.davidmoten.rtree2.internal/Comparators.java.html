@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Comparators.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.internal</a> &gt; <span class="el_source">Comparators.java</span></div><h1>Comparators.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.internal;
+
+import java.util.Comparator;
+import java.util.List;
+
+import com.github.davidmoten.rtree2.Entry;
+import com.github.davidmoten.rtree2.Selector;
+import com.github.davidmoten.rtree2.Splitter;
+import com.github.davidmoten.rtree2.geometry.Geometry;
+import com.github.davidmoten.rtree2.geometry.HasGeometry;
+import com.github.davidmoten.rtree2.geometry.Rectangle;
+
+/**
+ * Utility functions asociated with {@link Comparator}s, especially for use with
+ * {@link Selector}s and {@link Splitter}s.
+ * 
+ */
+public final class Comparators {
+
+    private Comparators() {
+        // prevent instantiation
+    }
+
+    public static &lt;T extends HasGeometry&gt; Comparator&lt;HasGeometry&gt; overlapAreaThenAreaIncreaseThenAreaComparator(
+            final Rectangle r, final List&lt;T&gt; list) {
+<span class="fc" id="L26">        return new Comparator&lt;HasGeometry&gt;() {</span>
+
+            @Override
+            public int compare(HasGeometry g1, HasGeometry g2) {
+<span class="fc" id="L30">                int value = Double.compare(overlapArea(r, list, g1), overlapArea(r, list, g2));</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">                if (value == 0) {</span>
+<span class="fc" id="L32">                    value = Double.compare(areaIncrease(r, g1), areaIncrease(r, g2));</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">                    if (value == 0) {</span>
+<span class="fc" id="L34">                        value = Double.compare(area(r, g1), area(r, g2));</span>
+                    }
+                }
+<span class="fc" id="L37">                return value;</span>
+            }
+        };
+    }
+
+    private static double area(final Rectangle r, HasGeometry g1) {
+<span class="fc" id="L43">        return g1.geometry().mbr().add(r).area();</span>
+    }
+
+    public static &lt;T extends HasGeometry&gt; Comparator&lt;HasGeometry&gt; areaIncreaseThenAreaComparator(
+            final Rectangle r) {
+<span class="fc" id="L48">        return new Comparator&lt;HasGeometry&gt;() {</span>
+            @Override
+            public int compare(HasGeometry g1, HasGeometry g2) {
+<span class="fc" id="L51">                int value = Double.compare(areaIncrease(r, g1), areaIncrease(r, g2));</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                if (value == 0) {</span>
+<span class="fc" id="L53">                    value = Double.compare(area(r, g1), area(r, g2));</span>
+                }
+<span class="fc" id="L55">                return value;</span>
+            }
+        };
+    }
+
+    private static float overlapArea(Rectangle r, List&lt;? extends HasGeometry&gt; list, HasGeometry g) {
+<span class="fc" id="L61">        Rectangle gPlusR = g.geometry().mbr().add(r);</span>
+<span class="fc" id="L62">        float m = 0;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (HasGeometry other : list) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (other != g) {</span>
+<span class="fc" id="L65">                m += gPlusR.intersectionArea(other.geometry().mbr());</span>
+            }
+<span class="fc" id="L67">        }</span>
+<span class="fc" id="L68">        return m;</span>
+    }
+
+    private static double areaIncrease(Rectangle r, HasGeometry g) {
+<span class="fc" id="L72">        Rectangle gPlusR = g.geometry().mbr().add(r);</span>
+<span class="fc" id="L73">        return gPlusR.area() - g.geometry().mbr().area();</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns a comparator that can be used to sort entries returned by search
+     * methods. For example:
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * &lt;code&gt;search(100).toSortedList(ascendingDistance(r))&lt;/code&gt;
+     * &lt;/p&gt;
+     * 
+     * @param &lt;T&gt;
+     *            the value type
+     * @param &lt;S&gt;
+     *            the entry type
+     * @param r
+     *            rectangle to measure distance to
+     * @return a comparator to sort by ascending distance from the rectangle
+     */
+    public static &lt;T, S extends Geometry&gt; Comparator&lt;Entry&lt;T, S&gt;&gt; ascendingDistance(
+            final Rectangle r) {
+<span class="fc" id="L95">        return new Comparator&lt;Entry&lt;T, S&gt;&gt;() {</span>
+            @Override
+            public int compare(Entry&lt;T, S&gt; e1, Entry&lt;T, S&gt; e2) {
+<span class="fc" id="L98">                return Double.compare(e1.geometry().distance(r), e2.geometry().distance(r));</span>
+            }
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CircleFloat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree2</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree2.geometry.internal</a> &gt; <span class="el_source">CircleFloat.java</span></div><h1>CircleFloat.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree2.geometry.internal;
+
+import com.github.davidmoten.guavamini.Objects;
+import com.github.davidmoten.rtree2.geometry.Circle;
+import com.github.davidmoten.rtree2.geometry.Line;
+import com.github.davidmoten.rtree2.geometry.Point;
+import com.github.davidmoten.rtree2.geometry.Rectangle;
+import com.github.davidmoten.rtree2.internal.util.ObjectsHelper;
+
+public final class CircleFloat implements Circle {
+
+    private final float x, y, radius;
+    private final Rectangle mbr;
+
+<span class="fc" id="L15">    private CircleFloat(float x, float y, float radius) {</span>
+<span class="fc" id="L16">        this.x = x;</span>
+<span class="fc" id="L17">        this.y = y;</span>
+<span class="fc" id="L18">        this.radius = radius;</span>
+<span class="fc" id="L19">        this.mbr = RectangleFloat.create(x - radius, y - radius, x + radius, y + radius);</span>
+<span class="fc" id="L20">    }</span>
+
+    public static CircleFloat create(float x, float y, float radius) {
+<span class="fc" id="L23">        return new CircleFloat(x, y, radius);</span>
+    }
+
+    @Override
+    public double x() {
+<span class="fc" id="L28">        return x;</span>
+    }
+
+    @Override
+    public double y() {
+<span class="fc" id="L33">        return y;</span>
+    }
+
+    @Override
+    public double radius() {
+<span class="fc" id="L38">        return radius;</span>
+    }
+
+    @Override
+    public Rectangle mbr() {
+<span class="fc" id="L43">        return mbr;</span>
+    }
+
+    @Override
+    public double distance(Rectangle r) {
+<span class="fc" id="L48">        return Math.max(0, GeometryUtil.distance(x, y, r) - radius);</span>
+    }
+
+    @Override
+    public boolean intersects(Rectangle r) {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        return distance(r) == 0;</span>
+    }
+
+    @Override
+    public boolean intersects(Circle c) {
+<span class="fc" id="L58">        double total = radius + c.radius();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        return GeometryUtil.distanceSquared(x, y, c.x(), c.y()) &lt;= total * total;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L64">        return Objects.hashCode(x, y, radius);</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc" id="L69">        CircleFloat other = ObjectsHelper.asClass(obj, CircleFloat.class);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (other != null) {</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">            return Objects.equal(x, other.x) &amp;&amp; Objects.equal(y, other.y)</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                    &amp;&amp; Objects.equal(radius, other.radius);</span>
+        } else
+<span class="fc" id="L74">            return false;</span>
+    }
+
+    @Override
+    public boolean intersects(Point point) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        return Math.sqrt(sqr(x - point.x()) + sqr(y - point.y())) &lt;= radius;</span>
+    }
+
+    private double sqr(double x) {
+<span class="fc" id="L83">        return x * x;</span>
+    }
+
+    @Override
+    public boolean intersects(Line line) {
+<span class="nc" id="L88">        return line.intersects(this);</span>
+    }
+
+    @Override
+    public boolean isDoublePrecision() {
+<span class="nc" id="L93">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>
