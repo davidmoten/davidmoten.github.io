@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx2.io</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx2.io;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.Proxy;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.davidmoten.rx2.io.internal.FlowableFromInputStream;
+import org.davidmoten.rx2.io.internal.FlowableSingleFlatMapPublisher;
+import org.davidmoten.rx2.io.internal.HttpMethod;
+import org.davidmoten.rx2.io.internal.Util;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.Single;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.Consumer;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.Schedulers;
+
+public final class Client {
+
+<span class="fc" id="L42">    private Client() {</span>
+        // prevent instantiation
+<span class="fc" id="L44">    }</span>
+
+    /**
+     * Returns a Builder for an over-network {@link Flowable}. The HTTP verb used
+     * with the {@code url} will be {@code GET}.
+     * 
+     * @param url
+     *            location of the stream to connect to using HTTP GET
+     * @return Builder for an over-network {@code Flowable}
+     */
+    public static Builder get(String url) {
+<span class="fc" id="L55">        Preconditions.checkNotNull(url);</span>
+<span class="fc" id="L56">        return new Builder(url, HttpMethod.GET);</span>
+    }
+
+    /**
+     * Returns a Builder for an over-network {@link Flowable}. The HTTP verb used
+     * with the {@code url} will be {@code POST}.
+     * 
+     * @param url
+     *            location of the stream to connect to using HTTP POST
+     * @return Builder for an over-network {@code Flowable}
+     */
+    public static Builder post(String url) {
+<span class="fc" id="L68">        Preconditions.checkNotNull(url);</span>
+<span class="fc" id="L69">        return new Builder(url, HttpMethod.POST);</span>
+    }
+
+    public static final class Builder {
+
+        private final String url;
+        private final HttpMethod method;
+<span class="fc" id="L76">        private int connectTimeoutMs = 30000;</span>
+<span class="fc" id="L77">        private int readTimeoutMs = 0;</span>
+<span class="fc" id="L78">        private Map&lt;String, String&gt; requestHeaders = new HashMap&lt;&gt;();</span>
+        private SSLSocketFactory sslSocketFactory;
+<span class="fc" id="L80">        private List&lt;Consumer&lt;HttpURLConnection&gt;&gt; transforms = new ArrayList&lt;&gt;();</span>
+        private Proxy proxy;
+<span class="fc" id="L82">        private Scheduler requestScheduler = Schedulers.trampoline();</span>
+
+<span class="fc" id="L84">        Builder(String url, HttpMethod method) {</span>
+<span class="fc" id="L85">            this.url = url;</span>
+<span class="fc" id="L86">            this.method = method;</span>
+<span class="fc" id="L87">        }</span>
+
+        /**
+         * Sets the read timeout in ms for the HTTP connection. Default is zero which is
+         * advisable for a long-running occasionally quiet stream. When a read timeout
+         * occurs the {@link Flowable} will emit an error.
+         * 
+         * @param timeoutMs
+         *            read timeout for the HTTP connection.
+         * @return this
+         */
+        public Builder readTimeoutMs(int timeoutMs) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            Preconditions.checkArgument(timeoutMs &gt;= 0);</span>
+<span class="fc" id="L100">            this.readTimeoutMs = timeoutMs;</span>
+<span class="fc" id="L101">            return this;</span>
+        }
+
+        /**
+         * Sets the connect timeout in ms for the HTTP connection. Default is 30s which
+         * is When a read timeout occurs the {@link Flowable} will emit an error.
+         * 
+         * @param timeoutMs
+         *            connect timeout for the HTTP connection.
+         * @return this
+         */
+        public Builder connectTimeoutMs(int timeoutMs) {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            Preconditions.checkArgument(timeoutMs &gt;= 0);</span>
+<span class="fc" id="L114">            this.connectTimeoutMs = timeoutMs;</span>
+<span class="fc" id="L115">            return this;</span>
+        }
+
+        /**
+         * Sets the proxy details for the HTTP connection.
+         * 
+         * @param host
+         *            proxy host
+         * @param port
+         *            proxy port
+         * @return this
+         */
+        public Builder proxy(String host, int port) {
+<span class="fc" id="L128">            Preconditions.checkNotNull(host);</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            Preconditions.checkArgument(port &gt; 0);</span>
+<span class="fc" id="L130">            return proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port)));</span>
+        }
+
+        /**
+         * Sets the proxy for the HTTP connection.
+         * 
+         * @param proxy
+         *            the proxy details
+         * @return this
+         */
+        public Builder proxy(Proxy proxy) {
+<span class="fc" id="L141">            Preconditions.checkNotNull(proxy);</span>
+<span class="fc" id="L142">            this.proxy = proxy;</span>
+<span class="fc" id="L143">            return this;</span>
+        }
+
+        /**
+         * Sets the actions that should be applied to {@link HttpURLConnection} before
+         * calling {@code HttpURLConnection.getInputStream()}. This applies to all HTTP
+         * calls being the subscription, request and cancel calls.
+         * 
+         * @param transform
+         *            action to apply
+         * @return this
+         */
+        public Builder transform(Consumer&lt;HttpURLConnection&gt; transform) {
+<span class="fc" id="L156">            Preconditions.checkNotNull(transform);</span>
+<span class="fc" id="L157">            this.transforms.add(transform);</span>
+<span class="fc" id="L158">            return this;</span>
+        }
+
+        /**
+         * Sets the Basic Authentication details for all HTTP connections (subscription,
+         * request and cancellation).
+         * 
+         * @param username
+         *            authentication username
+         * @param password
+         *            authentication password
+         * @return this
+         */
+        public Builder basicAuth(String username, String password) {
+<span class="fc" id="L172">            Preconditions.checkNotNull(username);</span>
+<span class="fc" id="L173">            Preconditions.checkNotNull(password);</span>
+<span class="fc" id="L174">            String s = Base64.getEncoder()</span>
+<span class="fc" id="L175">                    .encodeToString((username + &quot;:&quot; + password).getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L176">            return requestHeader(&quot;Authorization&quot;, &quot;Basic &quot; + s);</span>
+        }
+
+        /**
+         * Sets a request header for the HTTP connection.
+         * 
+         * @param key
+         *            request header key
+         * @param value
+         *            request header value
+         * @return this
+         */
+        public Builder requestHeader(String key, String value) {
+<span class="fc" id="L189">            Preconditions.checkNotNull(key);</span>
+<span class="fc" id="L190">            Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L191">            requestHeaders.put(key, value);</span>
+<span class="fc" id="L192">            return this;</span>
+        }
+
+        /**
+         * Sets the {@link SSLSocketFactory} to be used for HTTPS connections.
+         * 
+         * @param sslSocketFactory
+         *            ssl socket factory
+         * @return this
+         */
+        public Builder sslSocketFactory(SSLSocketFactory sslSocketFactory) {
+<span class="fc" id="L203">            Preconditions.checkNotNull(sslSocketFactory);</span>
+<span class="fc" id="L204">            this.sslSocketFactory = sslSocketFactory;</span>
+<span class="fc" id="L205">            return this;</span>
+        }
+
+        /**
+         * Sets the {@link SSLContext} to be used for HTTP connections. The socket
+         * factory will be obtained from the SSLContext.
+         * 
+         * @param sslContext
+         *            ssl context
+         * @return this
+         */
+        public Builder sslContext(SSLContext sslContext) {
+<span class="fc" id="L217">            Preconditions.checkNotNull(sslContext);</span>
+<span class="fc" id="L218">            return sslSocketFactory(sslContext.getSocketFactory());</span>
+        }
+
+        public Builder requestScheduler(Scheduler scheduler) {
+<span class="nc" id="L222">            this.requestScheduler = scheduler;</span>
+<span class="nc" id="L223">            return this;</span>
+        }
+
+        /**
+         * Sets the deserializer to be used on the arriving {@link ByteBuffer}s.
+         * 
+         * @param &lt;T&gt; stream type
+         * @param serializer the deserializer to be used
+         * @return this
+         */
+        public &lt;T&gt; Flowable&lt;T&gt; deserializer(Deserializer&lt;T&gt; serializer) {
+<span class="fc" id="L234">            Preconditions.checkNotNull(serializer);</span>
+<span class="fc" id="L235">            return build().map(serializer::deserialize);</span>
+        }
+
+        /**
+         * Returns the {@link Flowable} where deserialization is performed by
+         * {@link Serializer#javaIo()}.
+         * 
+         * @param &lt;T&gt;
+         *            the Flowable result type
+         * @return the built Flowable
+         */
+        public &lt;T extends Serializable&gt; Flowable&lt;T&gt; deserialized() {
+<span class="fc" id="L247">            return deserializer(Serializer.javaIo());</span>
+        }
+
+        /**
+         * Returns the built {@code Flowable&lt;ByteBuffer&gt;} based on all the builder
+         * options specified.
+         * 
+         * @return the built Flowable.
+         */
+        public Flowable&lt;ByteBuffer&gt; build() {
+<span class="fc" id="L257">            return toFlowable(url, new Options(method, connectTimeoutMs, readTimeoutMs,</span>
+                    requestHeaders, sslSocketFactory, transforms, proxy, requestScheduler));
+        }
+    }
+
+    public static Flowable&lt;ByteBuffer&gt; read(Single&lt;InputStream&gt; inSource,
+            BiConsumer&lt;Long, Long&gt; requester) {
+<span class="fc" id="L264">        return new FlowableSingleFlatMapPublisher&lt;&gt;(inSource,</span>
+<span class="fc" id="L265">                in -&gt; new FlowableFromInputStream(in, requester));</span>
+    }
+
+    private static Flowable&lt;ByteBuffer&gt; toFlowable(String url, Options options) {
+        URL u;
+        try {
+<span class="fc" id="L271">            u = new URL(url);</span>
+<span class="fc" id="L272">        } catch (MalformedURLException e) {</span>
+<span class="fc" id="L273">            throw new RuntimeException(e);</span>
+<span class="fc" id="L274">        }</span>
+<span class="fc" id="L275">        BiConsumer&lt;Long, Long&gt; requester = new Requester(url, options);</span>
+
+<span class="fc" id="L277">        return Flowable.using( //</span>
+                () -&gt; {
+<span class="fc" id="L279">                    final HttpURLConnection con = open(u, options);</span>
+<span class="fc" id="L280">                    prepareConnection(con, options);</span>
+<span class="fc" id="L281">                    return con.getInputStream();</span>
+                }, //
+<span class="fc" id="L283">                in -&gt; read(Single.just(in), requester), //</span>
+<span class="fc" id="L284">                in -&gt; Util.close(in));</span>
+    }
+
+    private static HttpURLConnection open(URL url, Options options) throws IOException {
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        if (options.proxy == null) {</span>
+<span class="fc" id="L289">            return (HttpURLConnection) url.openConnection();</span>
+        } else {
+<span class="nc" id="L291">            return (HttpURLConnection) url.openConnection(options.proxy);</span>
+        }
+    }
+
+    private static void prepareConnection(HttpURLConnection con, Options options)
+            throws ProtocolException {
+<span class="fc" id="L297">        con.setRequestMethod(options.method.method());</span>
+<span class="fc" id="L298">        con.setUseCaches(false);</span>
+<span class="fc" id="L299">        con.setConnectTimeout(options.connectTimeoutMs);</span>
+<span class="fc" id="L300">        con.setReadTimeout(options.readTimeoutMs);</span>
+<span class="fc" id="L301">        options.requestHeaders.entrySet().stream()</span>
+<span class="fc" id="L302">                .forEach(entry -&gt; con.setRequestProperty(entry.getKey(), entry.getValue()));</span>
+<span class="pc bpc" id="L303" title="1 of 4 branches missed.">        if (options.sslSocketFactory != null &amp;&amp; con instanceof HttpsURLConnection) {</span>
+<span class="fc" id="L304">            ((HttpsURLConnection) con).setSSLSocketFactory(options.sslSocketFactory);</span>
+        }
+<span class="fc" id="L306">        transform(con, options.transforms);</span>
+<span class="fc" id="L307">    }</span>
+
+    private static void transform(final HttpURLConnection con,
+            List&lt;Consumer&lt;HttpURLConnection&gt;&gt; transforms) {
+<span class="fc" id="L311">        transforms.stream().forEach(transform -&gt; {</span>
+            try {
+<span class="fc" id="L313">                transform.accept(con);</span>
+<span class="nc" id="L314">            } catch (Exception e) {</span>
+<span class="nc" id="L315">                throw new RuntimeException(e);</span>
+<span class="fc" id="L316">            }</span>
+<span class="fc" id="L317">        });</span>
+<span class="fc" id="L318">    }</span>
+
+    @VisibleForTesting
+    static final class Options {
+        final HttpMethod method;
+        final int connectTimeoutMs;
+        int readTimeoutMs;
+        final Map&lt;String, String&gt; requestHeaders;
+        final SSLSocketFactory sslSocketFactory;
+        final List&lt;Consumer&lt;HttpURLConnection&gt;&gt; transforms;
+        final Proxy proxy;
+        final Scheduler requestScheduler;
+
+        Options(HttpMethod method, int connectTimeoutMs, int readTimeoutMs,
+                Map&lt;String, String&gt; requestHeaders, SSLSocketFactory sslSocketFactory,
+                List&lt;Consumer&lt;HttpURLConnection&gt;&gt; transforms, Proxy proxy,
+<span class="fc" id="L334">                Scheduler requestScheduler) {</span>
+<span class="fc" id="L335">            this.method = method;</span>
+<span class="fc" id="L336">            this.connectTimeoutMs = connectTimeoutMs;</span>
+<span class="fc" id="L337">            this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L338">            this.requestHeaders = requestHeaders;</span>
+<span class="fc" id="L339">            this.sslSocketFactory = sslSocketFactory;</span>
+<span class="fc" id="L340">            this.transforms = transforms;</span>
+<span class="fc" id="L341">            this.proxy = proxy;</span>
+<span class="fc" id="L342">            this.requestScheduler = requestScheduler;</span>
+<span class="fc" id="L343">        }</span>
+    }
+
+    static final class Requester implements BiConsumer&lt;Long, Long&gt; {
+
+        private final String url;
+        private final Options options;
+
+<span class="fc" id="L351">        Requester(String url, Options options) {</span>
+<span class="fc" id="L352">            this.url = url;</span>
+<span class="fc" id="L353">            this.options = options;</span>
+<span class="fc" id="L354">        }</span>
+
+        @Override
+        public void accept(Long id, Long request) throws Exception {
+<span class="fc" id="L358">            options.requestScheduler.scheduleDirect(() -&gt; {</span>
+                try {
+<span class="fc" id="L360">                    HttpURLConnection con = (HttpURLConnection) new URL(</span>
+                            url + &quot;?id=&quot; + id + &quot;&amp;r=&quot; + request) //
+<span class="fc" id="L362">                                    .openConnection();</span>
+<span class="fc" id="L363">                    prepareConnection(con, options);</span>
+<span class="fc" id="L364">                    int code = con.getResponseCode();</span>
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">                    if (code != 200) {</span>
+<span class="nc" id="L366">                        throw new IOException(</span>
+                                &quot;response code from request call was not 200: &quot; + code);
+                    }
+<span class="fc" id="L369">                } catch (Throwable e) {</span>
+<span class="fc" id="L370">                    RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L371">                }</span>
+<span class="fc" id="L372">            });</span>
+<span class="fc" id="L373">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

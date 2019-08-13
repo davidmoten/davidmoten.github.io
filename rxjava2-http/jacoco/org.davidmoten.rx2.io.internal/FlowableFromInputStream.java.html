@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableFromInputStream.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx2.io.internal</a> &gt; <span class="el_source">FlowableFromInputStream.java</span></div><h1>FlowableFromInputStream.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx2.io.internal;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+import io.reactivex.Flowable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.plugins.RxJavaPlugins;
+
+public final class FlowableFromInputStream extends Flowable&lt;ByteBuffer&gt; {
+
+<span class="fc" id="L26">    private static final Logger log = LoggerFactory.getLogger(FlowableFromInputStream.class);</span>
+    
+    private final InputStream in;
+    private final BiConsumer&lt;Long, Long&gt; requester;
+
+<span class="fc" id="L31">    public FlowableFromInputStream(InputStream in, BiConsumer&lt;Long, Long&gt; requester) {</span>
+<span class="fc" id="L32">        this.in = in;</span>
+<span class="fc" id="L33">        this.requester = requester;</span>
+<span class="fc" id="L34">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super ByteBuffer&gt; subscriber) {
+<span class="fc" id="L38">        log.debug(&quot;subscribeActual&quot;);</span>
+<span class="fc" id="L39">        FromStreamSubscription subscription = new FromStreamSubscription(in, requester, subscriber);</span>
+<span class="fc" id="L40">        subscription.start();</span>
+<span class="fc" id="L41">    }</span>
+
+    @VisibleForTesting
+    static final class FromStreamSubscription extends AtomicInteger implements Subscription {
+
+<span class="fc" id="L46">        private static final Logger log = LoggerFactory.getLogger(FromStreamSubscription.class);</span>
+
+        private static final long serialVersionUID = 5917186677331992560L;
+
+        private static final long ID_UNKNOWN = 0;
+
+        private final InputStream in;
+        private final Subscriber&lt;? super ByteBuffer&gt; child;
+        
+        // allocation costs are higher as requests come in because we
+        // are using an immutable class IdRequested
+        private final AtomicReference&lt;IdRequested&gt; requested;
+
+        private final BiConsumer&lt;Long, Long&gt; requester;
+<span class="fc" id="L60">        private int length = 0;</span>
+        private byte[] buffer;
+        private int bufferIndex;
+        private volatile Throwable error;
+<span class="fc" id="L64">        private static final IdRequested HAVE_NOT_READ_ID = new IdRequested(0, 0);</span>
+
+        FromStreamSubscription(InputStream in, BiConsumer&lt;Long, Long&gt; requester,
+<span class="fc" id="L67">                Subscriber&lt;? super ByteBuffer&gt; child) {</span>
+<span class="fc" id="L68">            this.in = in;</span>
+<span class="fc" id="L69">            this.requester = requester;</span>
+<span class="fc" id="L70">            this.child = child;</span>
+<span class="fc" id="L71">            this.requested = new AtomicReference&lt;&gt;(HAVE_NOT_READ_ID);</span>
+<span class="fc" id="L72">        }</span>
+
+        void start() {
+<span class="fc" id="L75">            log.debug(&quot;calling child.onSubscribe&quot;);</span>
+<span class="fc" id="L76">            child.onSubscribe(this);</span>
+<span class="fc" id="L77">        }</span>
+
+        private void readId(long n) {
+<span class="fc" id="L80">            log.debug(&quot;reading id&quot;);</span>
+            long id;
+            try {
+<span class="fc" id="L83">                id = Util.readLong(in);</span>
+<span class="fc" id="L84">            } catch (Throwable e) {</span>
+<span class="fc" id="L85">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L86">                closeStreamSilently();</span>
+<span class="fc" id="L87">                error = e;</span>
+<span class="fc" id="L88">                return;</span>
+<span class="fc" id="L89">            }</span>
+<span class="fc" id="L90">            log.debug(&quot;id={}&quot;, id);</span>
+            while (true) {
+<span class="fc" id="L92">                IdRequested idr = requested.get();</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                if (idr == null) {</span>
+                    // cancel occured while reading id
+                    // we must endeavour to cancel the server side of the connection explicitly
+<span class="nc" id="L96">                    cancelUpstream(id);</span>
+<span class="nc" id="L97">                    break;</span>
+                }
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (requested.compareAndSet(idr, new IdRequested(id, n))) {</span>
+                    try {
+<span class="fc" id="L101">                        log.debug(&quot;requesting id={}, n={}&quot;, idr.id, n);</span>
+<span class="fc" id="L102">                        requester.accept(id, n);</span>
+<span class="fc" id="L103">                    } catch (Exception e) {</span>
+<span class="fc" id="L104">                        Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L105">                        closeStreamSilently();</span>
+<span class="fc" id="L106">                        error = e;</span>
+<span class="fc" id="L107">                        break;</span>
+<span class="fc" id="L108">                    }</span>
+                    break;
+                }
+<span class="nc" id="L111">            }</span>
+<span class="fc" id="L112">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L116">            log.debug(&quot;request {}&quot;, n);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (requested.compareAndSet(HAVE_NOT_READ_ID, new IdRequested(0, 0))) {</span>
+                    // watch out for concurrent calls to request at this point, should be handled ok
+<span class="fc" id="L120">                    readId(n);</span>
+<span class="fc" id="L121">                    drain();</span>
+<span class="fc" id="L122">                    return;</span>
+                }
+                while (true) {
+<span class="fc" id="L125">                    IdRequested idr = requested.get();</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                    if (idr == null) {</span>
+                        // cancelled
+<span class="nc" id="L128">                        break;</span>
+                    }
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                    if (idr.requested == Long.MAX_VALUE) {</span>
+<span class="nc" id="L131">                        break;</span>
+                    }
+<span class="fc" id="L133">                    long r2 = idr.requested + n;</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                    if (r2 &lt; 0) {</span>
+<span class="nc" id="L135">                        r2 = Long.MAX_VALUE;</span>
+                    }
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                    if (requested.compareAndSet(idr, new IdRequested(idr.id, r2))) {</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">                        if (idr.id != ID_UNKNOWN) {</span>
+                            try {
+<span class="fc" id="L140">                                log.debug(&quot;requesting {} from stream {}&quot;, idr.requested, n);</span>
+<span class="fc" id="L141">                                requester.accept(idr.id, n);</span>
+<span class="nc" id="L142">                            } catch (Exception e) {</span>
+<span class="nc" id="L143">                                Exceptions.throwIfFatal(e);</span>
+<span class="nc" id="L144">                                error = e;</span>
+<span class="nc" id="L145">                                break;</span>
+<span class="fc" id="L146">                            }</span>
+                        }
+                        break;
+                    }
+<span class="nc" id="L150">                }</span>
+<span class="fc" id="L151">                drain();</span>
+            }
+<span class="fc" id="L153">        }</span>
+
+        private void drain() {
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L157">                int missed = 1;</span>
+                while (true) {
+<span class="fc" id="L159">                    IdRequested idr = requested.get();</span>
+                    long r;
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">                    if (idr == null) {</span>
+<span class="nc" id="L162">                        r = 0;</span>
+                    } else {
+<span class="fc" id="L164">                        r = idr.requested;</span>
+                    }
+<span class="fc" id="L166">                    long e = 0;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                    if (r == 0) {</span>
+                        // need to cover off not being able to get the id or make an initial request
+<span class="fc" id="L169">                        Throwable err = error;</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">                        if (err != null) {</span>
+<span class="fc" id="L171">                            error = null;</span>
+<span class="fc" id="L172">                            emitError(err);</span>
+<span class="fc" id="L173">                            return;</span>
+                        }
+                    }
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                        if (tryCancelled()) {</span>
+<span class="fc" id="L178">                            return;</span>
+                        }
+                        // read some more
+<span class="fc" id="L181">                        Throwable err = error;</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">                        if (buffer == null) {</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                            if (err != null) {</span>
+<span class="fc" id="L184">                                error = null;</span>
+<span class="fc" id="L185">                                emitError(err);</span>
+<span class="fc" id="L186">                                return;</span>
+                            } else {
+                                try {
+<span class="fc" id="L189">                                    length = Util.readInt(in);</span>
+<span class="fc" id="L190">                                } catch (IOException ex) {</span>
+<span class="fc" id="L191">                                    emitError(ex);</span>
+<span class="fc" id="L192">                                    return;</span>
+<span class="fc" id="L193">                                }</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                                if (length == Integer.MIN_VALUE) {</span>
+<span class="fc" id="L195">                                    closeStreamSilently();</span>
+<span class="fc" id="L196">                                    child.onComplete();</span>
+<span class="fc" id="L197">                                    return;</span>
+                                }
+<span class="fc" id="L199">                                buffer = new byte[Math.abs(length)];</span>
+<span class="fc" id="L200">                                bufferIndex = 0;</span>
+                            }
+                        }
+                        try {
+<span class="fc" id="L204">                            int count = in.read(buffer, bufferIndex,</span>
+<span class="fc" id="L205">                                    Math.abs(length) - bufferIndex);</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">                            if (count == -1) {</span>
+<span class="fc" id="L207">                                emitError(new EOFException(</span>
+                                        &quot;encountered EOF before expected length was read&quot;));
+<span class="fc" id="L209">                                return;</span>
+                            }
+<span class="fc" id="L211">                            bufferIndex += count;</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                            if (bufferIndex == Math.abs(length)) {</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                                if (length &lt; 0) {</span>
+<span class="fc" id="L214">                                    String t = new String(buffer, 0, -length,</span>
+                                            StandardCharsets.UTF_8);
+<span class="fc" id="L216">                                    buffer = null;</span>
+<span class="fc" id="L217">                                    child.onError(new RuntimeException(t));</span>
+<span class="fc" id="L218">                                    return;</span>
+                                } else {
+<span class="fc" id="L220">                                    child.onNext(ByteBuffer.wrap(buffer, 0, length));</span>
+<span class="fc" id="L221">                                    buffer = null;</span>
+<span class="fc" id="L222">                                    e++;</span>
+                                }
+                            }
+<span class="fc" id="L225">                        } catch (Throwable ex) {</span>
+<span class="fc" id="L226">                            emitError(ex);</span>
+<span class="fc" id="L227">                            return;</span>
+<span class="fc" id="L228">                        }</span>
+<span class="fc" id="L229">                    }</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">                    if (e != 0) {</span>
+<span class="fc" id="L231">                        produced(requested, e);</span>
+                    }
+<span class="fc" id="L233">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L235">                        return;</span>
+                    }
+<span class="fc" id="L237">                }</span>
+            }
+<span class="fc" id="L239">        }</span>
+
+        private void emitError(Throwable e) {
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">            if (!cancelled()) {</span>
+<span class="fc" id="L243">                closeStreamSilently();</span>
+<span class="fc" id="L244">                System.out.println(&quot;emitting error &quot; + e.getMessage());</span>
+<span class="fc" id="L245">                child.onError(e);</span>
+            }
+<span class="fc" id="L247">        }</span>
+
+        private boolean tryCancelled() {
+<span class="fc bfc" id="L250" title="All 2 branches covered.">            return requested.get() == null;</span>
+        }
+
+        private void closeStreamSilently() {
+<span class="fc" id="L254">            Util.close(in);</span>
+<span class="fc" id="L255">        }</span>
+
+        private boolean cancelled() {
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">            return requested.get() == null;</span>
+        }
+
+        @Override
+        public void cancel() {
+            while (true) {
+<span class="fc" id="L264">                IdRequested idr = requested.get();</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">                if (idr == null) {</span>
+                    // already cancelled
+<span class="nc" id="L267">                    break;</span>
+                }
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">                if (requested.compareAndSet(idr, null)) {</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">                    if (idr.id != ID_UNKNOWN) {</span>
+<span class="fc" id="L271">                        cancelUpstream(idr.id);</span>
+                    }
+                    break;
+                }
+<span class="nc" id="L275">            }</span>
+<span class="fc" id="L276">        }</span>
+
+        private void cancelUpstream(long id) {
+<span class="fc" id="L279">            log.debug(&quot;cancelUpstream&quot;);</span>
+            try {
+                // a negative request cancels the stream
+<span class="fc" id="L282">                requester.accept(id, -1L);</span>
+<span class="fc" id="L283">            } catch (Exception e) {</span>
+<span class="fc" id="L284">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L285">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L286">                return;</span>
+            } finally {
+<span class="pc" id="L288">                closeStreamSilently();</span>
+<span class="pc" id="L289">            }</span>
+<span class="fc" id="L290">        }</span>
+
+    }
+
+    @VisibleForTesting
+    static void produced(AtomicReference&lt;IdRequested&gt; requested, long e) {
+        IdRequested idr;
+        while (true) {
+<span class="fc" id="L298">            idr = requested.get();</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">            if (idr == null) {</span>
+                // have been cancelled
+<span class="fc" id="L301">                return;</span>
+            }
+<span class="fc" id="L303">            long r2 = idr.requested - e;</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">            if (r2 &lt; 0L) {</span>
+<span class="fc" id="L305">                RxJavaPlugins</span>
+<span class="fc" id="L306">                        .onError(new IllegalStateException(&quot;More produced than requested: &quot; + r2));</span>
+<span class="fc" id="L307">                r2 = 0;</span>
+            }
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">            if (requested.compareAndSet(idr, new IdRequested(idr.id, r2))) {</span>
+<span class="fc" id="L310">                break;</span>
+            }
+<span class="nc" id="L312">        }</span>
+<span class="fc" id="L313">    }</span>
+
+    @VisibleForTesting
+    static final class IdRequested {
+        final long id;
+        final long requested;
+
+<span class="fc" id="L320">        IdRequested(long id, long requested) {</span>
+<span class="fc" id="L321">            this.id = id;</span>
+<span class="fc" id="L322">            this.requested = requested;</span>
+<span class="fc" id="L323">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

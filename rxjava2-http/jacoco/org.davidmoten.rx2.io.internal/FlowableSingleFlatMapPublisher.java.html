@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableSingleFlatMapPublisher.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx2.io.internal</a> &gt; <span class="el_source">FlowableSingleFlatMapPublisher.java</span></div><h1>FlowableSingleFlatMapPublisher.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx2.io.internal;
+
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleSource;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+
+public final class FlowableSingleFlatMapPublisher&lt;S, T&gt; extends Flowable&lt;T&gt; {
+
+    private final SingleSource&lt;S&gt; source;
+    private final Function&lt;? super S, ? extends Publisher&lt;? extends T&gt;&gt; mapper;
+
+    public FlowableSingleFlatMapPublisher(SingleSource&lt;S&gt; source,
+<span class="fc" id="L24">            Function&lt;? super S, ? extends Flowable&lt;? extends T&gt;&gt; mapper) {</span>
+<span class="fc" id="L25">        this.source = source;</span>
+<span class="fc" id="L26">        this.mapper = mapper;</span>
+<span class="fc" id="L27">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L31">        SingleFlatMapPublisherObserver&lt;S, T&gt; observer = new SingleFlatMapPublisherObserver&lt;S, T&gt;(child, mapper);</span>
+<span class="fc" id="L32">        source.subscribe(observer);</span>
+<span class="fc" id="L33">    }</span>
+
+    static final class SingleFlatMapPublisherObserver&lt;S, T&gt; extends AtomicLong
+            implements SingleObserver&lt;S&gt;, FlowableSubscriber&lt;T&gt;, Subscription {
+
+        private static final long serialVersionUID = 7759721921468635667L;
+
+        private final Subscriber&lt;? super T&gt; child;
+        private final Function&lt;? super S, ? extends Publisher&lt;? extends T&gt;&gt; mapper;
+        private Disposable disposable;
+        private final AtomicReference&lt;Subscription&gt; parent;
+
+        SingleFlatMapPublisherObserver(Subscriber&lt;? super T&gt; child,
+<span class="fc" id="L46">                Function&lt;? super S, ? extends Publisher&lt;? extends T&gt;&gt; mapper) {</span>
+<span class="fc" id="L47">            this.child = child;</span>
+<span class="fc" id="L48">            this.mapper = mapper;</span>
+<span class="fc" id="L49">            this.parent = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L50">        }</span>
+
+        @Override
+        public void onSubscribe(Disposable d) {
+<span class="fc" id="L54">            this.disposable = d;</span>
+<span class="fc" id="L55">            child.onSubscribe(this);</span>
+<span class="fc" id="L56">        }</span>
+
+        @Override
+        public void onSuccess(S value) {
+            Publisher&lt;? extends T&gt; f;
+            try {
+<span class="fc" id="L62">                f = mapper.apply(value);</span>
+<span class="fc" id="L63">            } catch (Throwable e) {</span>
+<span class="fc" id="L64">                child.onError(e);</span>
+<span class="fc" id="L65">                return;</span>
+<span class="fc" id="L66">            }</span>
+<span class="fc" id="L67">            f.subscribe(this);</span>
+<span class="fc" id="L68">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription s) {
+<span class="fc" id="L72">            SubscriptionHelper.deferredSetOnce(parent, this, s);</span>
+<span class="fc" id="L73">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L77">            child.onNext(t);</span>
+<span class="fc" id="L78">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L82">            child.onComplete();</span>
+<span class="fc" id="L83">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L87">            child.onError(e);</span>
+<span class="fc" id="L88">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L92">            SubscriptionHelper.deferredRequest(parent, this, n);</span>
+<span class="fc" id="L93">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L97">            disposable.dispose();</span>
+<span class="fc" id="L98">            SubscriptionHelper.cancel(parent);</span>
+<span class="fc" id="L99">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

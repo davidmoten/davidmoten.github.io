@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Response.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx2.http</a> &gt; <span class="el_source">Response.java</span></div><h1>Response.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx2.http;
+
+import java.nio.ByteBuffer;
+
+import org.davidmoten.rx2.io.internal.AfterOnNextFactory;
+import org.reactivestreams.Publisher;
+
+import io.reactivex.Scheduler;
+import io.reactivex.schedulers.Schedulers;
+
+public final class Response {
+
+    private final Publisher&lt;? extends ByteBuffer&gt; publisher;
+
+    private final Scheduler requestScheduler;
+
+    private final boolean async;
+
+    private final WriterFactory writerFactory;
+
+    private final AfterOnNextFactory afterOnNextFactory;
+
+    Response(Publisher&lt;? extends ByteBuffer&gt; publisher, Scheduler requestScheduler, boolean async,
+<span class="fc" id="L24">            WriterFactory writerFactory, AfterOnNextFactory afterOnNextFactory) {</span>
+<span class="fc" id="L25">        this.publisher = publisher;</span>
+<span class="fc" id="L26">        this.requestScheduler = requestScheduler;</span>
+<span class="fc" id="L27">        this.async = async;</span>
+<span class="fc" id="L28">        this.writerFactory = writerFactory;</span>
+<span class="fc" id="L29">        this.afterOnNextFactory = afterOnNextFactory;</span>
+<span class="fc" id="L30">    }</span>
+
+    public Publisher&lt;? extends ByteBuffer&gt; publisher() {
+<span class="fc" id="L33">        return publisher;</span>
+    }
+
+    public WriterFactory writerFactory() {
+<span class="fc" id="L37">        return writerFactory;</span>
+    }
+
+    public Scheduler requestScheduler() {
+<span class="fc" id="L41">        return requestScheduler;</span>
+    }
+
+    public boolean isAsync() {
+<span class="fc" id="L45">        return async;</span>
+    }
+
+    public AfterOnNextFactory afterOnNextFactory() {
+<span class="fc" id="L49">        return afterOnNextFactory;</span>
+    }
+
+    public static Builder publisher(Publisher&lt;? extends ByteBuffer&gt; publisher) {
+<span class="fc" id="L53">        return new Builder(publisher);</span>
+    }
+
+    public static Response from(Publisher&lt;? extends ByteBuffer&gt; publisher) {
+<span class="fc" id="L57">        return publisher(publisher) //</span>
+<span class="fc" id="L58">                .async() //</span>
+<span class="fc" id="L59">                .requestScheduler(Schedulers.io()) //</span>
+<span class="fc" id="L60">                .writerFactory(WriterFactory.DEFAULT) //</span>
+<span class="fc" id="L61">                .flushAfterItems(1) //</span>
+<span class="fc" id="L62">                .flushAfterBytes(0) //</span>
+<span class="fc" id="L63">                .build();</span>
+    }
+
+    public static final class Builder {
+
+        private final Publisher&lt;? extends ByteBuffer&gt; publisher;
+<span class="fc" id="L69">        private Scheduler requestScheduler = Schedulers.io();</span>
+<span class="fc" id="L70">        private boolean async = true;</span>
+<span class="fc" id="L71">        private WriterFactory writerFactory = WriterFactory.DEFAULT;</span>
+<span class="fc" id="L72">        private int flushAfterItems = 1;</span>
+        private int flushAfterBytes;
+
+<span class="fc" id="L75">        Builder(Publisher&lt;? extends ByteBuffer&gt; publisher) {</span>
+<span class="fc" id="L76">            this.publisher = publisher;</span>
+<span class="fc" id="L77">        }</span>
+
+        public Builder requestScheduler(Scheduler scheduler) {
+<span class="fc" id="L80">            this.requestScheduler = scheduler;</span>
+<span class="fc" id="L81">            return this;</span>
+        }
+
+        public Builder async() {
+<span class="fc" id="L85">            return async(true);</span>
+        }
+
+        public Builder async(boolean async) {
+<span class="fc" id="L89">            this.async = async;</span>
+<span class="fc" id="L90">            return this;</span>
+        }
+
+        public Builder writerFactory(WriterFactory writerFactory) {
+<span class="fc" id="L94">            this.writerFactory = writerFactory;</span>
+<span class="fc" id="L95">            return this;</span>
+        }
+
+        /**
+         * Don'f flush after onNext emissions.
+         * 
+         * @return this
+         */
+        public Builder autoFlush() {
+<span class="nc" id="L104">            flushAfterItems = 0;</span>
+<span class="nc" id="L105">            flushAfterBytes = 0;</span>
+<span class="nc" id="L106">            return this;</span>
+        }
+
+        public Builder flushAfterItems(int numItems) {
+<span class="fc" id="L110">            this.flushAfterItems = numItems;</span>
+<span class="fc" id="L111">            return this;</span>
+        }
+
+        public Builder flushAfterBytes(int numBytes) {
+<span class="fc" id="L115">            this.flushAfterBytes = numBytes;</span>
+<span class="fc" id="L116">            return this;</span>
+        }
+
+        public Response build() {
+<span class="fc" id="L120">            return new Response(publisher, requestScheduler, async, writerFactory,</span>
+<span class="fc" id="L121">                    AfterOnNextFactory.flushAfter(flushAfterItems, flushAfterBytes));</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

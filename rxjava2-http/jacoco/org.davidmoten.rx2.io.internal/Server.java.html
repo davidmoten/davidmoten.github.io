@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Server.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx2.io.internal</a> &gt; <span class="el_source">Server.java</span></div><h1>Server.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx2.io.internal;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.davidmoten.rx2.http.Writer;
+import org.davidmoten.rx2.http.WriterFactory;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.reactivex.Scheduler;
+import io.reactivex.Scheduler.Worker;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleSource;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.SpscLinkedArrayQueue;
+import io.reactivex.internal.util.BackpressureHelper;
+import io.reactivex.plugins.RxJavaPlugins;
+
+public final class Server {
+
+<span class="fc" id="L32">    private Server() {</span>
+        // prevent instantiation
+<span class="fc" id="L34">    }</span>
+
+    public static void handle(Publisher&lt;? extends ByteBuffer&gt; flowable,
+            SingleSource&lt;OutputStream&gt; out, Runnable completion, long id,
+            Scheduler requestScheduler, Consumer&lt;Subscription&gt; subscription,
+            WriterFactory writerFactory, AfterOnNextFactory afterOnNextFactory) {
+        // when first request read (8 bytes) subscribe to Flowable
+        // and output to OutputStream on scheduler
+<span class="fc" id="L42">        HandlerSubscriber subscriber = new HandlerSubscriber(out, completion, id, requestScheduler,</span>
+<span class="fc" id="L43">                writerFactory, afterOnNextFactory.create());</span>
+        try {
+<span class="fc" id="L45">            subscription.accept(subscriber);</span>
+<span class="fc" id="L46">        } catch (Exception e) {</span>
+<span class="fc" id="L47">            throw new RuntimeException(&quot;subscription consumer threw&quot;, e);</span>
+<span class="fc" id="L48">        }</span>
+<span class="fc" id="L49">        flowable.subscribe(subscriber);</span>
+<span class="fc" id="L50">    }</span>
+
+    private static final class HandlerSubscriber extends AtomicInteger
+            implements Subscriber&lt;ByteBuffer&gt;, Subscription, SingleObserver&lt;OutputStream&gt; {
+
+<span class="fc" id="L55">        private static final Logger log = LoggerFactory.getLogger(HandlerSubscriber.class);</span>
+
+        private static final long serialVersionUID = 1331107616659478552L;
+
+        private final SingleSource&lt;OutputStream&gt; outSource;
+        private final Runnable completion;
+        private final long id;
+        private final Worker worker;
+        private final WriterFactory writerFactory;
+        private final AfterOnNext afterOnNext;
+        private Subscription parent;
+        private SimplePlainQueue&lt;ByteBuffer&gt; queue;
+        private volatile boolean finished;
+        private Throwable error;
+        private volatile boolean cancelled;
+        private Disposable disposable;
+        private Writer writer;
+<span class="fc" id="L72">        private final AtomicLong requested = new AtomicLong();</span>
+        private long emitted;
+
+        HandlerSubscriber(SingleSource&lt;OutputStream&gt; outSource, Runnable completion, long id,
+<span class="fc" id="L76">                Scheduler requestScheduler, WriterFactory writerFactory, AfterOnNext afterOnNext) {</span>
+<span class="fc" id="L77">            this.outSource = outSource;</span>
+<span class="fc" id="L78">            this.completion = completion;</span>
+<span class="fc" id="L79">            this.id = id;</span>
+<span class="fc" id="L80">            this.writerFactory = writerFactory;</span>
+<span class="fc" id="L81">            this.worker = requestScheduler.createWorker();</span>
+<span class="fc" id="L82">            this.queue = new SpscLinkedArrayQueue&lt;&gt;(16);</span>
+<span class="fc" id="L83">            this.afterOnNext = afterOnNext;</span>
+<span class="fc" id="L84">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription parent) {
+<span class="fc" id="L88">            this.parent = parent;</span>
+<span class="fc" id="L89">            outSource.subscribe(this);</span>
+<span class="fc" id="L90">            log.debug(&quot;subscribed to source&quot;);</span>
+<span class="fc" id="L91">        }</span>
+
+        // SingleObserver for outSource
+
+        @Override
+        public void onSubscribe(Disposable d) {
+<span class="fc" id="L97">            disposable = d;</span>
+<span class="fc" id="L98">        }</span>
+
+        @Override
+        public void onSuccess(OutputStream os) {
+            try {
+<span class="fc" id="L103">                writer = writerFactory.createWriter(os);</span>
+<span class="fc" id="L104">                writer.write(Util.toBytes(id));</span>
+<span class="fc" id="L105">                writer.flush();</span>
+<span class="fc" id="L106">            } catch (IOException e) {</span>
+<span class="fc" id="L107">                error = e;</span>
+<span class="fc" id="L108">                finished = true;</span>
+<span class="fc" id="L109">            }</span>
+<span class="fc" id="L110">            drain();</span>
+<span class="fc" id="L111">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L115">            log.debug(&quot;server request id={}, n={}&quot;, id, n);</span>
+<span class="fc" id="L116">            BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L117">            worker.schedule(() -&gt; {</span>
+<span class="fc" id="L118">                parent.request(n);</span>
+<span class="fc" id="L119">                drain();</span>
+<span class="fc" id="L120">            });</span>
+<span class="fc" id="L121">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L125">            cancelled = true;</span>
+<span class="fc" id="L126">            disposable.dispose();</span>
+<span class="fc" id="L127">            parent.cancel();</span>
+<span class="fc" id="L128">            worker.dispose();</span>
+<span class="fc" id="L129">        }</span>
+
+        // end of SingleObserver
+
+        @Override
+        public void onNext(ByteBuffer bb) {
+<span class="fc" id="L135">            queue.offer(bb);</span>
+<span class="fc" id="L136">            drain();</span>
+<span class="fc" id="L137">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L141">            error = e;</span>
+<span class="fc" id="L142">            finished = true;</span>
+<span class="fc" id="L143">            drain();</span>
+<span class="fc" id="L144">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L148">            finished = true;</span>
+<span class="fc" id="L149">            drain();</span>
+<span class="fc" id="L150">        }</span>
+
+        private void drain() {
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L154">                int missed = 1;</span>
+                while (true) {
+<span class="fc" id="L156">                    long r = requested.get();</span>
+<span class="fc" id="L157">                    long e = emitted;</span>
+                    while (true) {
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                        if (cancelled) {</span>
+<span class="fc" id="L160">                            parent.cancel();</span>
+<span class="fc" id="L161">                            queue.clear();</span>
+<span class="fc" id="L162">                            error = null;</span>
+<span class="fc" id="L163">                            worker.dispose();</span>
+<span class="fc" id="L164">                            completion.run();</span>
+<span class="fc" id="L165">                            return;</span>
+                        }
+<span class="fc" id="L167">                        boolean d = finished;</span>
+<span class="fc" id="L168">                        ByteBuffer bb = queue.poll();</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                        if (bb != null) {</span>
+                            try {
+<span class="fc" id="L171">                                e++;</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                                writeOnNext(bb, e == r);</span>
+<span class="fc" id="L173">                            } catch (Throwable ex) {</span>
+<span class="fc" id="L174">                                parent.cancel();</span>
+<span class="fc" id="L175">                                queue.clear();</span>
+<span class="fc" id="L176">                                worker.dispose();</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                                if (!cancelled) {</span>
+<span class="fc" id="L178">                                    writeError(ex);</span>
+                                }
+<span class="fc" id="L180">                                completion.run();</span>
+<span class="fc" id="L181">                                return;</span>
+<span class="fc" id="L182">                            }</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                        } else if (d) {</span>
+<span class="fc" id="L184">                            Throwable err = error;</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                            if (err != null) {</span>
+<span class="fc" id="L186">                                error = null;</span>
+<span class="fc" id="L187">                                parent.cancel();</span>
+<span class="fc" id="L188">                                queue.clear();</span>
+<span class="fc" id="L189">                                worker.dispose();</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">                                if (!cancelled) {</span>
+<span class="fc" id="L191">                                    writeError(err);</span>
+                                }
+<span class="fc" id="L193">                                completion.run();</span>
+<span class="fc" id="L194">                                return;</span>
+                            } else {
+<span class="fc" id="L196">                                doOnComplete();</span>
+<span class="fc" id="L197">                                completion.run();</span>
+<span class="fc" id="L198">                                return;</span>
+                            }
+                        } else {
+                            break;
+                        }
+<span class="fc" id="L203">                    }</span>
+<span class="fc" id="L204">                    emitted = e;</span>
+<span class="fc" id="L205">                    missed = addAndGet(-missed);</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                    if (missed == 0) {</span>
+<span class="fc" id="L207">                        return;</span>
+                    }
+<span class="nc" id="L209">                }</span>
+            }
+<span class="fc" id="L211">        }</span>
+
+        private void doOnComplete() {
+<span class="fc" id="L214">            log.debug(&quot;server: onComplete&quot;);</span>
+            try {
+                // send the bytes -128, 0, 0, 0 to indicate completion
+<span class="fc" id="L217">                writeInt(writer, Integer.MIN_VALUE);</span>
+<span class="fc" id="L218">                writer.flush();</span>
+<span class="fc" id="L219">            } catch (IOException e) {</span>
+<span class="fc" id="L220">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L221">            }</span>
+<span class="fc" id="L222">        }</span>
+
+        private void writeError(Throwable err) {
+<span class="fc" id="L225">            log.debug(&quot;server: onError&quot;, err);</span>
+            try {
+                // set initial size to cover size of most stack traces
+<span class="fc" id="L228">                NoCopyByteArrayOutputStream bytes = new NoCopyByteArrayOutputStream(4096);</span>
+<span class="fc" id="L229">                err.printStackTrace(new PrintStream(bytes, true, &quot;UTF-8&quot;));</span>
+<span class="fc" id="L230">                bytes.close();</span>
+
+                // mark as error by reporting length as negative
+<span class="fc" id="L233">                writeInt(writer, -bytes.size());</span>
+<span class="fc" id="L234">                writer.write(bytes.buffer(), 0, bytes.size());</span>
+<span class="fc" id="L235">                writer.flush();</span>
+<span class="fc" id="L236">            } catch (IOException e) {</span>
+                // cancellation will close the OutputStream
+                // so we won't report that
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                if (!(e instanceof EOFException)) {</span>
+<span class="fc" id="L240">                    RxJavaPlugins.onError(e);</span>
+                }
+<span class="fc" id="L242">            }</span>
+<span class="fc" id="L243">        }</span>
+
+<span class="fc" id="L245">        boolean firstOnNext = true;</span>
+
+        private void writeOnNext(ByteBuffer bb, boolean emittedEqualsRequested) throws IOException {
+<span class="fc bfc" id="L248" title="All 2 branches covered.">            if (firstOnNext) {</span>
+<span class="fc" id="L249">                log.debug(&quot;server: first onNext&quot;);</span>
+<span class="fc" id="L250">                firstOnNext = false;</span>
+            }
+<span class="fc" id="L252">            writeInt(writer, bb.remaining());</span>
+<span class="fc" id="L253">            writer.write(bb);</span>
+<span class="fc bfc" id="L254" title="All 4 branches covered.">            if (emittedEqualsRequested || afterOnNext.flushRequested(bb.remaining())) {</span>
+<span class="fc" id="L255">                writer.flush();</span>
+            }
+<span class="fc" id="L257">        }</span>
+
+    }
+
+    private static void writeInt(Writer writer, int v) throws IOException {
+<span class="fc" id="L262">        writer.write((v &gt;&gt;&gt; 24) &amp; 0xFF);</span>
+<span class="fc" id="L263">        writer.write((v &gt;&gt;&gt; 16) &amp; 0xFF);</span>
+<span class="fc" id="L264">        writer.write((v &gt;&gt;&gt; 8) &amp; 0xFF);</span>
+<span class="fc" id="L265">        writer.write((v &gt;&gt;&gt; 0) &amp; 0xFF);</span>
+<span class="fc" id="L266">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
