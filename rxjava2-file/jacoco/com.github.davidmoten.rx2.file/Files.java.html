@@ -1,0 +1,1059 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Files.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-file</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.file</a> &gt; <span class="el_source">Files.java</span></div><h1>Files.java</h1><pre class="source lang-java linenums">
+package com.github.davidmoten.rx2.file;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.ClosedWatchServiceException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchEvent.Modifier;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.TimeUnit;
+
+import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rx2.Bytes;
+
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
+import io.reactivex.observables.GroupedObservable;
+import io.reactivex.schedulers.Schedulers;
+
+/**
+ * Flowable utility methods related to {@link File}.
+ */
+public final class Files {
+
+    private static final long DEFAULT_POLLING_INTERVAL_MS = 1000;
+    private static final long DEFAULT_SAMPLE_TIME_MS = 2 * DEFAULT_POLLING_INTERVAL_MS;
+    public static final int DEFAULT_MAX_BYTES_PER_EMISSION = 8192;
+<span class="fc" id="L46">    public static final List&lt;Kind&lt;?&gt;&gt; ALL_KINDS = Lists.newArrayList(StandardWatchEventKinds.ENTRY_CREATE,</span>
+            StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.OVERFLOW);
+
+<span class="nc" id="L50">    private Files() {</span>
+        // prevent instantiation
+<span class="nc" id="L52">    }</span>
+
+    /**
+     * Returns an {@link Flowable} that uses given given Flowable to push modified
+     * events to an Flowable that reads and reports new sequences of bytes to a
+     * subscriber. The NIO {@link WatchService} MODIFY and OVERFLOW events are
+     * sampled according to &lt;code&gt;sampleTimeMs&lt;/code&gt; so that lots of discrete
+     * activity on a file (for example a log file with very frequent entries) does
+     * not prompt an inordinate number of file reads to pick up changes. File create
+     * events are not sampled and are always passed through.
+     * 
+     * @param file
+     *            the file to tail
+     * @param startPosition
+     *            start tailing file at position in bytes
+     * @param pollingIntervalMs
+     *            polling time in millis for MODIFY and OVERFLOW events and half of
+     *            sample time for overflow
+     * @param chunkSize
+     *            max array size of each element emitted by the Flowable. Is also
+     *            used as the buffer size for reading from the file. Try
+     *            {@link FileFlowable#DEFAULT_MAX_BYTES_PER_EMISSION} if you don't
+     *            know what to put here.
+     * @param events
+     *            trigger a check for file changes. Use
+     *            {@link Flowable#interval(long, TimeUnit)} for example.
+     * @return Flowable of byte arrays
+     */
+    private static Flowable&lt;byte[]&gt; tailBytes(File file, long startPosition, long sampleTimeMs, int chunkSize,
+            Observable&lt;?&gt; events, BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L82">        Preconditions.checkNotNull(file);</span>
+<span class="nc" id="L83">        return eventsToBytes(sampleModifyOrOverflowEventsOnly(events, sampleTimeMs), //</span>
+                backpressureStrategy,
+                file, startPosition, chunkSize);
+    }
+
+    /**
+     * Returns an {@link Flowable} of String that uses the given events stream to
+     * trigger checks on file change so that new lines can be read and emitted.
+     * 
+     * @param file
+     *            the file to tail, cannot be null
+     * @param startPosition
+     *            start tailing file at position in bytes
+     * @param chunkSize
+     *            max array size of each element emitted by the Flowable. Is also
+     *            used as the buffer size for reading from the file. Try
+     *            {@link FileFlowable#DEFAULT_MAX_BYTES_PER_EMISSION} if you don't
+     *            know what to put here.
+     * @param charset
+     *            the character set to use to decode the bytes to a string
+     * @param events
+     *            trigger a check for file changes. Use
+     *            {@link Flowable#interval(long, TimeUnit)} for example.
+     * @return Flowable of strings
+     */
+    private static Flowable&lt;String&gt; tailLines(File file, long startPosition, int chunkSize, Charset charset,
+            Observable&lt;?&gt; events, BackpressureStrategy backpressureStrategy) {
+<span class="fc" id="L110">        Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L111">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L112">        Preconditions.checkNotNull(events);</span>
+<span class="fc" id="L113">        return toLines(eventsToBytes(events, backpressureStrategy, file, startPosition, chunkSize), charset);</span>
+    }
+
+    private static Observable&lt;WatchEvent&lt;?&gt;&gt; events(WatchService watchService, Scheduler scheduler, long intervalMs) {
+<span class="fc" id="L117">        Preconditions.checkNotNull(watchService, &quot;watchService cannot be null&quot;);</span>
+<span class="fc" id="L118">        Preconditions.checkNotNull(scheduler, &quot;scheduler cannot be null&quot;);</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        Preconditions.checkArgument(intervalMs &gt; 0, &quot;intervalMs must be positive&quot;);</span>
+<span class="fc" id="L120">        return Observable.interval(intervalMs, TimeUnit.MILLISECONDS, scheduler) //</span>
+<span class="fc" id="L121">                .flatMap(x -&gt; {</span>
+                    try {
+<span class="fc" id="L123">                        WatchKey key = watchService.poll();</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">                        if (key != null &amp;&amp; key.isValid()) {</span>
+<span class="fc" id="L125">                            Observable&lt;WatchEvent&lt;?&gt;&gt; r = Observable.fromIterable(key.pollEvents());</span>
+<span class="fc" id="L126">                            key.reset();</span>
+<span class="fc" id="L127">                            return r;</span>
+                        } else {
+<span class="fc" id="L129">                            return Observable.empty();</span>
+                        }
+<span class="nc" id="L131">                    } catch (ClosedWatchServiceException e) {</span>
+                        // ignore
+<span class="nc" id="L133">                        return Observable.empty();</span>
+                    }
+                });
+    }
+
+    private static Observable&lt;WatchEvent&lt;?&gt;&gt; eventsBlocking(WatchService watchService) {
+<span class="fc" id="L139">        Preconditions.checkNotNull(watchService, &quot;watchService cannot be null&quot;);</span>
+<span class="fc" id="L140">        return Observable.&lt;WatchEvent&lt;?&gt;, Queue&lt;WatchEvent&lt;?&gt;&gt;&gt;generate(() -&gt; new LinkedList&lt;WatchEvent&lt;?&gt;&gt;(), //</span>
+                (q, emitter) -&gt; {
+                    try {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                        while (q.isEmpty()) {</span>
+                            // blocking call
+<span class="fc" id="L145">                            WatchKey key = watchService.take();</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">                            if (key.isValid()) {</span>
+<span class="fc" id="L147">                                q.addAll(key.pollEvents());</span>
+                            }
+<span class="fc" id="L149">                            key.reset();</span>
+<span class="fc" id="L150">                        }</span>
+<span class="fc" id="L151">                        emitter.onNext(q.poll());</span>
+<span class="fc" id="L152">                    } catch (ClosedWatchServiceException e) {</span>
+                        // ignore
+<span class="fc" id="L154">                        emitter.onComplete();</span>
+<span class="nc" id="L155">                    } catch (Throwable e) {</span>
+<span class="nc" id="L156">                        emitter.onError(e);</span>
+<span class="fc" id="L157">                    }</span>
+<span class="fc" id="L158">                }, q -&gt; q.clear());</span>
+
+    }
+
+    /**
+     * If file does not exist at subscribe time then is assumed to not be a
+     * directory. If the file is not a directory (bearing in mind the aforesaid
+     * assumption) then a {@link WatchService} is set up on its parent and
+     * {@link WatchEvent}s of the given kinds are filtered to concern the file in
+     * question. If the file is a directory then a {@link WatchService} is set up on
+     * the directory and all events are passed through of the given kinds.
+     * 
+     * @param file
+     *            file to generate watch events from
+     * @param onWatchStarted
+     *            called when WatchService is created
+     * @param kinds
+     *            kinds of watch events to register for
+     * @return Flowable of watch events
+     */
+    private static Observable&lt;WatchEvent&lt;?&gt;&gt; eventsNonBlocking(File file, Scheduler scheduler, long pollingIntervalMs,
+            List&lt;Kind&lt;?&gt;&gt; kinds, List&lt;Modifier&gt; modifiers) {
+<span class="fc" id="L180">        return Observable.using(() -&gt; watchService(file, kinds, modifiers), //</span>
+<span class="fc" id="L181">                ws -&gt; events(ws, scheduler, pollingIntervalMs)</span>
+                        // restrict to events related to the file
+<span class="fc" id="L183">                        .filter(onlyRelatedTo(file)), //</span>
+<span class="fc" id="L184">                ws -&gt; ws.close(), true);</span>
+    }
+
+    private static Observable&lt;WatchEvent&lt;?&gt;&gt; eventsBlocking(File file, List&lt;Kind&lt;?&gt;&gt; kinds, List&lt;Modifier&gt; modifiers) {
+<span class="fc" id="L188">        return Observable.using(() -&gt; watchService(file, kinds, modifiers), //</span>
+<span class="fc" id="L189">                ws -&gt; eventsBlocking(ws)</span>
+                        // restrict to events related to the file
+<span class="fc" id="L191">                        .filter(onlyRelatedTo(file)), //</span>
+<span class="fc" id="L192">                ws -&gt; ws.close(), true);</span>
+    }
+
+    /**
+     * Creates a {@link WatchService} on subscribe for the given file and event
+     * kinds.
+     * 
+     * @param file
+     *            the file to watch
+     * @param kinds
+     *            event kinds to watch for
+     * @return Flowable of watch events
+     * @throws IOException
+     */
+    private static WatchService watchService(File file, List&lt;Kind&lt;?&gt;&gt; kinds, List&lt;Modifier&gt; modifiers)
+            throws IOException {
+<span class="fc" id="L208">        final Path path = getBasePath(file);</span>
+<span class="fc" id="L209">        WatchService watchService = path.getFileSystem().newWatchService();</span>
+<span class="fc" id="L210">        path.register(watchService, kinds.toArray(new Kind&lt;?&gt;[] {}), modifiers.toArray(new Modifier[] {}));</span>
+<span class="fc" id="L211">        return watchService;</span>
+    }
+
+    /**
+     * Returns true if and only if the path corresponding to a WatchEvent represents
+     * the given file. This will be the case for Create, Modify, Delete events.
+     * 
+     * @param file
+     *            the file to restrict events to
+     * @return predicate
+     */
+    private final static Predicate&lt;WatchEvent&lt;?&gt;&gt; onlyRelatedTo(final File file) {
+<span class="fc" id="L223">        return new Predicate&lt;WatchEvent&lt;?&gt;&gt;() {</span>
+
+            @Override
+            public boolean test(WatchEvent&lt;?&gt; event) {
+
+                final boolean ok;
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">                if (file.isDirectory())</span>
+<span class="nc" id="L230">                    ok = true;</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">                else if (StandardWatchEventKinds.OVERFLOW.equals(event.kind()))</span>
+<span class="nc" id="L232">                    ok = true;</span>
+                else {
+<span class="fc" id="L234">                    Object context = event.context();</span>
+<span class="pc bpc" id="L235" title="2 of 4 branches missed.">                    if (context != null &amp;&amp; context instanceof Path) {</span>
+<span class="fc" id="L236">                        Path p = (Path) context;</span>
+<span class="fc" id="L237">                        Path basePath = getBasePath(file);</span>
+<span class="fc" id="L238">                        File pFile = new File(basePath.toFile(), p.toString());</span>
+<span class="fc" id="L239">                        ok = pFile.getAbsolutePath().equals(file.getAbsolutePath());</span>
+<span class="fc" id="L240">                    } else</span>
+<span class="nc" id="L241">                        ok = false;</span>
+                }
+<span class="fc" id="L243">                return ok;</span>
+            }
+        };
+    }
+
+    private static Flowable&lt;String&gt; toLines(Flowable&lt;byte[]&gt; bytes, Charset charset) {
+<span class="fc" id="L249">        return com.github.davidmoten.rx2.Strings.split(com.github.davidmoten.rx2.Strings.decode(bytes, charset), &quot;\n&quot;);</span>
+    }
+
+    private static Observable&lt;Object&gt; sampleModifyOrOverflowEventsOnly(Observable&lt;?&gt; events, final long sampleTimeMs) {
+<span class="nc" id="L253">        return events</span>
+                // group by true if is modify or overflow, false otherwise
+<span class="nc" id="L255">                .groupBy(IS_MODIFY_OR_OVERFLOW)</span>
+                // only sample if is modify or overflow
+<span class="nc" id="L257">                .flatMap(sampleIfTrue(sampleTimeMs));</span>
+    }
+
+    private static Function&lt;GroupedObservable&lt;Boolean, ?&gt;, Observable&lt;?&gt;&gt; sampleIfTrue(final long sampleTimeMs) {
+<span class="nc" id="L261">        return group -&gt; { // if is modify or overflow WatchEvent</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            if (group.getKey())</span>
+<span class="nc" id="L263">                return group.sample(sampleTimeMs, TimeUnit.MILLISECONDS);</span>
+            else
+<span class="nc" id="L265">                return group;</span>
+        };
+    }
+
+<span class="fc" id="L269">    private static Function&lt;Object, Boolean&gt; IS_MODIFY_OR_OVERFLOW = event -&gt; {</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (event instanceof WatchEvent) {</span>
+<span class="nc" id="L271">            WatchEvent&lt;?&gt; w = (WatchEvent&lt;?&gt;) event;</span>
+<span class="nc" id="L272">            String kind = w.kind().name();</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (kind.equals(StandardWatchEventKinds.ENTRY_MODIFY.name())</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">                    || kind.equals(StandardWatchEventKinds.OVERFLOW.name())) {</span>
+<span class="nc" id="L275">                return true;</span>
+            } else
+<span class="nc" id="L277">                return false;</span>
+        } else
+<span class="nc" id="L279">            return false;</span>
+    };
+
+    public static WatchEventsBuilder watch(File file) {
+<span class="fc" id="L283">        return new WatchEventsBuilder(file);</span>
+    }
+
+    public static final class WatchEventsBuilder {
+
+        private final File file;
+
+<span class="fc" id="L290">        WatchEventsBuilder(File file) {</span>
+<span class="fc" id="L291">            this.file = file;</span>
+<span class="fc" id="L292">        }</span>
+
+        /**
+         * Uses {@link WatchService#poll} under the covers.
+         * @return builder
+         */
+        public WatchEventsNonBlockingBuilder nonBlocking() {
+<span class="fc" id="L299">            return new WatchEventsNonBlockingBuilder(file);</span>
+        }
+
+        /**
+         * Uses blocking {@link WatchService#take} under the covers.
+         * @return builder
+         */
+        public WatchEventsBlockingBuilder blocking() {
+<span class="nc" id="L307">            return new WatchEventsBlockingBuilder(file);</span>
+        }
+
+    }
+
+    public static final class WatchEventsNonBlockingBuilder {
+        private final File file;
+<span class="fc" id="L314">        private Optional&lt;Scheduler&gt; scheduler = Optional.empty();</span>
+<span class="fc" id="L315">        private long pollInterval = DEFAULT_POLLING_INTERVAL_MS;</span>
+<span class="fc" id="L316">        private TimeUnit pollIntervalUnit = TimeUnit.MILLISECONDS;</span>
+<span class="fc" id="L317">        private final List&lt;Kind&lt;?&gt;&gt; kinds = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L318">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L320">        private WatchEventsNonBlockingBuilder(File file) {</span>
+<span class="fc" id="L321">            Preconditions.checkNotNull(file, &quot;file cannot be null&quot;);</span>
+<span class="fc" id="L322">            this.file = file;</span>
+<span class="fc" id="L323">        }</span>
+
+        public WatchEventsNonBlockingBuilder pollInterval(long interval, TimeUnit unit, Scheduler scheduler) {
+<span class="fc" id="L326">            Preconditions.checkNotNull(unit);</span>
+<span class="fc" id="L327">            Preconditions.checkNotNull(scheduler);</span>
+<span class="fc" id="L328">            this.pollInterval = interval;</span>
+<span class="fc" id="L329">            this.pollIntervalUnit = unit;</span>
+<span class="fc" id="L330">            this.scheduler = Optional.ofNullable(scheduler);</span>
+<span class="fc" id="L331">            return this;</span>
+        }
+
+        public WatchEventsNonBlockingBuilder pollInterval(long interval, TimeUnit unit) {
+<span class="nc" id="L335">            return pollInterval(interval, unit, Schedulers.io());</span>
+        }
+
+        /**
+         * If no kind is specified then all {@link StandardWatchEventKinds} are used.
+         * 
+         * @param kind
+         *            kind to add
+         * @return this
+         */
+        public WatchEventsNonBlockingBuilder kind(Kind&lt;?&gt; kind) {
+<span class="nc" id="L346">            Preconditions.checkNotNull(kind);</span>
+<span class="nc" id="L347">            this.kinds.add(kind);</span>
+<span class="nc" id="L348">            return this;</span>
+        }
+
+        public WatchEventsNonBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L352">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L353">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L354">            return this;</span>
+        }
+
+        /**
+         * If no kind is specified then all {@link StandardWatchEventKinds} are used.
+         * 
+         * @param kinds
+         *            kinds to add
+         * @return this
+         */
+        public WatchEventsNonBlockingBuilder kinds(Kind&lt;?&gt;... kinds) {
+<span class="nc" id="L365">            Preconditions.checkNotNull(kinds);</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            for (Kind&lt;?&gt; kind : kinds) {</span>
+<span class="nc" id="L367">                this.kinds.add(kind);</span>
+            }
+<span class="nc" id="L369">            return this;</span>
+        }
+
+        public Observable&lt;WatchEvent&lt;?&gt;&gt; build() {
+<span class="fc" id="L373">            List&lt;Kind&lt;?&gt;&gt; kindsCopy = new ArrayList&lt;&gt;(kinds);</span>
+<span class="pc bpc" id="L374" title="1 of 2 branches missed.">            if (kindsCopy.isEmpty()) {</span>
+<span class="fc" id="L375">                kindsCopy.add(StandardWatchEventKinds.ENTRY_CREATE);</span>
+<span class="fc" id="L376">                kindsCopy.add(StandardWatchEventKinds.ENTRY_DELETE);</span>
+<span class="fc" id="L377">                kindsCopy.add(StandardWatchEventKinds.ENTRY_MODIFY);</span>
+<span class="fc" id="L378">                kindsCopy.add(StandardWatchEventKinds.OVERFLOW);</span>
+            }
+<span class="fc" id="L380">            return Observable.using( //</span>
+<span class="fc" id="L381">                    () -&gt; watchService(file, kindsCopy, modifiers), //</span>
+<span class="fc" id="L382">                    ws -&gt; Files.events(ws, scheduler.orElse(Schedulers.io()), pollIntervalUnit.toMillis(pollInterval)), //</span>
+<span class="fc" id="L383">                    ws -&gt; ws.close(), //</span>
+                    true);
+        }
+
+    }
+
+    public static final class WatchEventsBlockingBuilder {
+        private final File file;
+<span class="nc" id="L391">        private final List&lt;Kind&lt;?&gt;&gt; kinds = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L392">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L394">        private WatchEventsBlockingBuilder(File file) {</span>
+<span class="nc" id="L395">            Preconditions.checkNotNull(file);</span>
+<span class="nc" id="L396">            this.file = file;</span>
+<span class="nc" id="L397">        }</span>
+
+        /**
+         * If no kind is specified then all {@link StandardWatchEventKinds} are used.
+         * 
+         * @param kind
+         *            kind to add
+         * @return this
+         */
+        public WatchEventsBlockingBuilder kind(Kind&lt;?&gt; kind) {
+<span class="nc" id="L407">            Preconditions.checkNotNull(kind);</span>
+<span class="nc" id="L408">            this.kinds.add(kind);</span>
+<span class="nc" id="L409">            return this;</span>
+        }
+
+        public WatchEventsBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L413">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L414">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L415">            return this;</span>
+        }
+
+        /**
+         * If no kind is specified then all {@link StandardWatchEventKinds} are used.
+         * 
+         * @param kinds
+         *            kinds to add
+         * @return this
+         */
+        public WatchEventsBlockingBuilder kinds(Kind&lt;?&gt;... kinds) {
+<span class="nc" id="L426">            Preconditions.checkNotNull(kinds);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">            for (Kind&lt;?&gt; kind : kinds) {</span>
+<span class="nc" id="L428">                this.kinds.add(kind);</span>
+            }
+<span class="nc" id="L430">            return this;</span>
+        }
+
+        public Observable&lt;WatchEvent&lt;?&gt;&gt; build() {
+<span class="nc" id="L434">            List&lt;Kind&lt;?&gt;&gt; kindsCopy = new ArrayList&lt;&gt;(kinds);</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">            if (kindsCopy.isEmpty()) {</span>
+<span class="nc" id="L436">                kindsCopy.add(StandardWatchEventKinds.ENTRY_CREATE);</span>
+<span class="nc" id="L437">                kindsCopy.add(StandardWatchEventKinds.ENTRY_DELETE);</span>
+<span class="nc" id="L438">                kindsCopy.add(StandardWatchEventKinds.ENTRY_MODIFY);</span>
+<span class="nc" id="L439">                kindsCopy.add(StandardWatchEventKinds.OVERFLOW);</span>
+            }
+<span class="nc" id="L441">            return Observable.using( //</span>
+<span class="nc" id="L442">                    () -&gt; watchService(file, kindsCopy, modifiers), //</span>
+<span class="nc" id="L443">                    ws -&gt; Files.eventsBlocking(ws), //</span>
+<span class="nc" id="L444">                    ws -&gt; ws.close(), //</span>
+                    true);
+        }
+
+    }
+
+    public static TailBytesBuilder tailBytes(File file) {
+<span class="nc" id="L451">        return new TailBytesBuilder(file);</span>
+    }
+
+    public static TailBytesBuilder tailBytes(String filename) {
+<span class="nc" id="L455">        return tailBytes(new File(filename));</span>
+    }
+
+    public static TailLinesBuilder tailLines(File file) {
+<span class="fc" id="L459">        return new TailLinesBuilder(file);</span>
+    }
+
+    public static TailLinesBuilder tailLines(String filename) {
+<span class="nc" id="L463">        return tailLines(new File(filename));</span>
+    }
+
+    public static final class TailBytesBuilder {
+        private final File file;
+
+<span class="nc" id="L469">        TailBytesBuilder(File file) {</span>
+<span class="nc" id="L470">            this.file = file;</span>
+<span class="nc" id="L471">        }</span>
+        
+        /**
+         * Uses {@link WatchService#poll} under the covers.
+         * @return builder
+         */
+        public TailBytesNonBlockingBuilder nonBlocking() {
+<span class="nc" id="L478">            return new TailBytesNonBlockingBuilder(file);</span>
+        }
+        
+        /**
+         * Uses blocking {@link WatchService#take} under the covers.
+         * @return builder
+         */
+        public TailBytesBlockingBuilder blocking() {
+<span class="nc" id="L486">            return new TailBytesBlockingBuilder(file);</span>
+        }
+        
+        /**
+         * Specifies a custom source of {@link WatchEvent}s.
+         * @param events custom source of WatchEvents.
+         * @return this
+         */
+        public TailBytesUsingCustomEventsBuilder events(Observable&lt;WatchEvent&lt;?&gt;&gt; events) {
+<span class="nc" id="L495">            return new TailBytesUsingCustomEventsBuilder(file, events);</span>
+        }
+        
+    }
+    
+    public static final class TailBytesUsingCustomEventsBuilder {
+
+<span class="nc" id="L502">        private long startPosition = 0;</span>
+<span class="nc" id="L503">        private int chunkSize = 8192;</span>
+<span class="nc" id="L504">        private long sampleIntervalMs = DEFAULT_SAMPLE_TIME_MS;</span>
+<span class="nc" id="L505">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+        private final File file;
+        private final Observable&lt;WatchEvent&lt;?&gt;&gt; events;
+<span class="nc" id="L508">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="nc" id="L510">        public TailBytesUsingCustomEventsBuilder(File file, Observable&lt;WatchEvent&lt;?&gt;&gt; events) {</span>
+<span class="nc" id="L511">            this.file = file;</span>
+<span class="nc" id="L512">            this.events = events;</span>
+<span class="nc" id="L513">        }</span>
+        
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailBytesUsingCustomEventsBuilder startPosition(long startPosition) {
+<span class="nc" id="L524">            this.startPosition = startPosition;</span>
+<span class="nc" id="L525">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailBytesUsingCustomEventsBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L536">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L537">            return this;</span>
+        }
+
+        public TailBytesUsingCustomEventsBuilder modifier(Modifier modifier) {
+<span class="nc" id="L541">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L542">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L543">            return this;</span>
+        }
+        
+        public TailBytesUsingCustomEventsBuilder sampleInterval(long duration, TimeUnit unit) {
+<span class="nc" id="L547">            this.sampleIntervalMs = unit.toMillis(duration);</span>
+<span class="nc" id="L548">            return this;</span>
+        }
+        
+        public TailBytesUsingCustomEventsBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L552">            this.backpressureStrategy  = backpressureStrategy;</span>
+<span class="nc" id="L553">            return this;</span>
+        }
+        
+        public Flowable&lt;byte[]&gt; build() {
+<span class="nc" id="L557">            return Files.tailBytes(file, startPosition, sampleIntervalMs, chunkSize, events, backpressureStrategy);</span>
+        }
+        
+    }
+
+    public static final class TailBytesNonBlockingBuilder {
+
+        private final File file;
+<span class="nc" id="L565">        private long startPosition = 0;</span>
+<span class="nc" id="L566">        private int chunkSize = 8192;</span>
+<span class="nc" id="L567">        private long pollingIntervalMs = DEFAULT_POLLING_INTERVAL_MS;</span>
+<span class="nc" id="L568">        private Scheduler scheduler = Schedulers.io();</span>
+<span class="nc" id="L569">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L570">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="nc" id="L572">        TailBytesNonBlockingBuilder(File file) {</span>
+<span class="nc" id="L573">            Preconditions.checkNotNull(file);</span>
+<span class="nc" id="L574">            this.file = file;</span>
+<span class="nc" id="L575">        }</span>
+        
+        public TailBytesNonBlockingBuilder pollingInterval(long pollingInterval, TimeUnit unit, Scheduler scheduler) {
+<span class="nc" id="L578">            Preconditions.checkNotNull(unit);</span>
+<span class="nc" id="L579">            Preconditions.checkNotNull(scheduler);</span>
+<span class="nc" id="L580">            this.pollingIntervalMs = unit.toMillis(pollingInterval);</span>
+<span class="nc" id="L581">            this.scheduler = scheduler;</span>
+<span class="nc" id="L582">            return this;</span>
+        }
+
+        public TailBytesNonBlockingBuilder pollingInterval(long pollingInterval, TimeUnit unit) {
+<span class="nc" id="L586">            Preconditions.checkNotNull(unit);</span>
+<span class="nc" id="L587">            return pollingInterval(pollingInterval, unit, Schedulers.io());</span>
+        }
+
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailBytesNonBlockingBuilder startPosition(long startPosition) {
+<span class="nc" id="L599">            this.startPosition = startPosition;</span>
+<span class="nc" id="L600">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailBytesNonBlockingBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L611">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L612">            return this;</span>
+        }
+
+        public TailBytesNonBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L616">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L617">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L618">            return this;</span>
+        }
+        
+        public TailBytesNonBlockingBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L622">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="nc" id="L623">            return this;</span>
+        }
+        
+        
+        public Flowable&lt;byte[]&gt; build() {
+<span class="nc" id="L628">            Observable&lt;WatchEvent&lt;?&gt;&gt; events = Files.eventsNonBlocking(file, scheduler, pollingIntervalMs, ALL_KINDS, modifiers);</span>
+<span class="nc" id="L629">            return Files.tailBytes(file, startPosition, pollingIntervalMs * 2, chunkSize, events, backpressureStrategy);</span>
+        }
+
+    }
+
+    public static final class TailBytesBlockingBuilder {
+
+        private final File file;
+<span class="nc" id="L637">        private long startPosition = 0;</span>
+<span class="nc" id="L638">        private int chunkSize = 8192;</span>
+<span class="nc" id="L639">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L640">        private long sampleTimeMs = DEFAULT_SAMPLE_TIME_MS;</span>
+<span class="nc" id="L641">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="nc" id="L643">        TailBytesBlockingBuilder(File file) {</span>
+<span class="nc" id="L644">            Preconditions.checkNotNull(file);</span>
+<span class="nc" id="L645">            this.file = file;</span>
+<span class="nc" id="L646">        }</span>
+
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailBytesBlockingBuilder startPosition(long startPosition) {
+<span class="nc" id="L657">            this.startPosition = startPosition;</span>
+<span class="nc" id="L658">            return this;</span>
+        }
+
+        public TailBytesBlockingBuilder sampleTime(long time, TimeUnit unit) {
+<span class="nc" id="L662">            Preconditions.checkNotNull(unit);</span>
+<span class="nc" id="L663">            this.sampleTimeMs = unit.toMillis(time);</span>
+<span class="nc" id="L664">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailBytesBlockingBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L675">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L676">            return this;</span>
+        }
+
+        public TailBytesBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L680">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L681">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L682">            return this;</span>
+        }
+        
+        public TailBytesBlockingBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L686">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="nc" id="L687">            return this;</span>
+        }
+
+        public Flowable&lt;byte[]&gt; build() {
+<span class="nc" id="L691">            Observable&lt;WatchEvent&lt;?&gt;&gt; events = Files.eventsBlocking(file, ALL_KINDS, modifiers);</span>
+<span class="nc" id="L692">            return Files.tailBytes(file, startPosition, sampleTimeMs, chunkSize, events, backpressureStrategy);</span>
+        }
+
+    }
+    
+    public static final class TailLinesBuilder {
+        
+        private final File file;
+
+<span class="fc" id="L701">        TailLinesBuilder(File file) {</span>
+<span class="fc" id="L702">            this.file  = file;</span>
+<span class="fc" id="L703">        }</span>
+        
+        /**
+         * Uses {@link WatchService#poll} under the covers.
+         * @return builder
+         */
+        public TailLinesNonBlockingBuilder nonBlocking() {
+<span class="fc" id="L710">            return new TailLinesNonBlockingBuilder(file);</span>
+        }
+        
+        /**
+         * Uses blocking {@link WatchService#take} under the covers.
+         * @return builder
+         */
+        public TailLinesBlockingBuilder blocking() {
+<span class="fc" id="L718">            return new TailLinesBlockingBuilder(file);</span>
+        }
+        
+        /**
+         * Specifies a custom source of {@link WatchEvent}s.
+         * @param events custom source of WatchEvents.
+         * @return this
+         */
+        public TailLinesUsingCustomEventsBuilder events(Observable&lt;WatchEvent&lt;?&gt;&gt; events) {
+<span class="nc" id="L727">            Preconditions.checkNotNull(events);</span>
+<span class="nc" id="L728">            return new TailLinesUsingCustomEventsBuilder(file, events);</span>
+        }
+    }
+    
+    public static final class TailLinesUsingCustomEventsBuilder {
+
+        private final File file;
+        private final Observable&lt;WatchEvent&lt;?&gt;&gt; events;
+        
+<span class="nc" id="L737">        private long startPosition = 0;</span>
+<span class="nc" id="L738">        private int chunkSize = 8192;</span>
+<span class="nc" id="L739">        private Charset charset = StandardCharsets.UTF_8;</span>
+<span class="nc" id="L740">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L741">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="nc" id="L743">        TailLinesUsingCustomEventsBuilder(File file, Observable&lt;WatchEvent&lt;?&gt;&gt; events) {</span>
+<span class="nc" id="L744">            this.file = file;</span>
+<span class="nc" id="L745">            this.events = events;</span>
+<span class="nc" id="L746">        }</span>
+        
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailLinesUsingCustomEventsBuilder startPosition(long startPosition) {
+<span class="nc" id="L757">            this.startPosition = startPosition;</span>
+<span class="nc" id="L758">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailLinesUsingCustomEventsBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L769">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L770">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode with
+         * @return this
+         */
+        public TailLinesUsingCustomEventsBuilder charset(Charset charset) {
+<span class="nc" id="L781">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L782">            this.charset = charset;</span>
+<span class="nc" id="L783">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode the file with
+         * @return this
+         */
+        public TailLinesUsingCustomEventsBuilder charset(String charset) {
+<span class="nc" id="L794">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L795">            return charset(Charset.forName(charset));</span>
+        }
+
+        public TailLinesUsingCustomEventsBuilder utf8() {
+<span class="nc" id="L799">            return charset(&quot;UTF-8&quot;);</span>
+        }
+
+        public TailLinesUsingCustomEventsBuilder modifier(Modifier modifier) {
+<span class="nc" id="L803">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L804">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L805">            return this;</span>
+        }
+        
+        public TailLinesUsingCustomEventsBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L809">            this.backpressureStrategy  = backpressureStrategy;</span>
+<span class="nc" id="L810">            return this;</span>
+        }
+        
+        public Flowable&lt;String&gt; build() {
+<span class="nc" id="L814">            return Files.tailLines(file, startPosition, chunkSize, charset, events, backpressureStrategy);</span>
+        }
+        
+    }
+
+    public static final class TailLinesNonBlockingBuilder {
+
+        private final File file;
+<span class="fc" id="L822">        private long startPosition = 0;</span>
+<span class="fc" id="L823">        private int chunkSize = 8192;</span>
+<span class="fc" id="L824">        private Charset charset = StandardCharsets.UTF_8;</span>
+<span class="fc" id="L825">        private long pollingIntervalMs = DEFAULT_POLLING_INTERVAL_MS;</span>
+<span class="fc" id="L826">        private Scheduler scheduler = Schedulers.io();</span>
+<span class="fc" id="L827">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L828">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="fc" id="L830">        TailLinesNonBlockingBuilder(File file) {</span>
+<span class="fc" id="L831">            Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L832">            this.file = file;</span>
+<span class="fc" id="L833">        }</span>
+        
+        public TailLinesNonBlockingBuilder pollingInterval(long pollingInterval, TimeUnit unit, Scheduler scheduler) {
+<span class="fc" id="L836">            Preconditions.checkNotNull(unit);</span>
+<span class="fc" id="L837">            Preconditions.checkNotNull(scheduler);</span>
+<span class="fc" id="L838">            this.pollingIntervalMs = unit.toMillis(pollingInterval);</span>
+<span class="fc" id="L839">            this.scheduler = scheduler;</span>
+<span class="fc" id="L840">            return this;</span>
+        }
+
+        public TailLinesNonBlockingBuilder pollingInterval(long pollingInterval, TimeUnit unit) {
+<span class="fc" id="L844">            Preconditions.checkNotNull(unit);</span>
+<span class="fc" id="L845">            return pollingInterval(pollingInterval, unit, Schedulers.io());</span>
+        }
+
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailLinesNonBlockingBuilder startPosition(long startPosition) {
+<span class="nc" id="L857">            this.startPosition = startPosition;</span>
+<span class="nc" id="L858">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailLinesNonBlockingBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L869">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L870">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode with
+         * @return this
+         */
+        public TailLinesNonBlockingBuilder charset(Charset charset) {
+<span class="nc" id="L881">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L882">            this.charset = charset;</span>
+<span class="nc" id="L883">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode the file with
+         * @return this
+         */
+        public TailLinesNonBlockingBuilder charset(String charset) {
+<span class="nc" id="L894">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L895">            return charset(Charset.forName(charset));</span>
+        }
+
+        public TailLinesNonBlockingBuilder utf8() {
+<span class="nc" id="L899">            return charset(&quot;UTF-8&quot;);</span>
+        }
+
+        public TailLinesNonBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L903">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L904">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L905">            return this;</span>
+        }
+        
+        public TailLinesNonBlockingBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="fc" id="L909">            this.backpressureStrategy   = backpressureStrategy;</span>
+<span class="fc" id="L910">            return this;</span>
+        }
+        
+        public Flowable&lt;String&gt; build() {
+<span class="fc" id="L914">            Observable&lt;WatchEvent&lt;?&gt;&gt; events = Files.eventsNonBlocking(file, scheduler, pollingIntervalMs, ALL_KINDS, modifiers);</span>
+<span class="fc" id="L915">            return Files.tailLines(file, startPosition, chunkSize, charset, events, backpressureStrategy);</span>
+        }
+    }
+
+    public static final class TailLinesBlockingBuilder {
+
+        private final File file;
+<span class="fc" id="L922">        private long startPosition = 0;</span>
+<span class="fc" id="L923">        private int chunkSize = 8192;</span>
+<span class="fc" id="L924">        private Charset charset = StandardCharsets.UTF_8;</span>
+<span class="fc" id="L925">        private final List&lt;Modifier&gt; modifiers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L926">        private BackpressureStrategy backpressureStrategy = BackpressureStrategy.BUFFER;</span>
+
+<span class="fc" id="L928">        TailLinesBlockingBuilder(File file) {</span>
+<span class="fc" id="L929">            Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L930">            this.file = file;</span>
+<span class="fc" id="L931">        }</span>
+
+        /**
+         * The startPosition in bytes in the file to commence the tail from. 0 = start
+         * of file. Defaults to 0.
+         * 
+         * @param startPosition
+         *            start position
+         * @return this
+         */
+        public TailLinesBlockingBuilder startPosition(long startPosition) {
+<span class="nc" id="L942">            this.startPosition = startPosition;</span>
+<span class="nc" id="L943">            return this;</span>
+        }
+
+        /**
+         * Emissions from the tailed file will be no bigger than this.
+         * 
+         * @param chunkSize
+         *            chunk size in bytes
+         * @return this
+         */
+        public TailLinesBlockingBuilder chunkSize(int chunkSize) {
+<span class="nc" id="L954">            this.chunkSize = chunkSize;</span>
+<span class="nc" id="L955">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode with
+         * @return this
+         */
+        public TailLinesBlockingBuilder charset(Charset charset) {
+<span class="nc" id="L966">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L967">            this.charset = charset;</span>
+<span class="nc" id="L968">            return this;</span>
+        }
+
+        /**
+         * The charset of the file. Only used for tailing a text file. Default is UTF-8.
+         * 
+         * @param charset
+         *            charset to decode the file with
+         * @return this
+         */
+        public TailLinesBlockingBuilder charset(String charset) {
+<span class="nc" id="L979">            Preconditions.checkNotNull(charset);</span>
+<span class="nc" id="L980">            return charset(Charset.forName(charset));</span>
+        }
+
+        public TailLinesBlockingBuilder utf8() {
+<span class="nc" id="L984">            return charset(&quot;UTF-8&quot;);</span>
+        }
+
+        public TailLinesBlockingBuilder modifier(Modifier modifier) {
+<span class="nc" id="L988">            Preconditions.checkNotNull(modifier);</span>
+<span class="nc" id="L989">            this.modifiers.add(modifier);</span>
+<span class="nc" id="L990">            return this;</span>
+        }
+        
+        public TailLinesBlockingBuilder backpressureStrategy(BackpressureStrategy backpressureStrategy) {
+<span class="nc" id="L994">            this.backpressureStrategy  = backpressureStrategy;</span>
+<span class="nc" id="L995">            return this;</span>
+        }
+
+        public Flowable&lt;String&gt; build() {
+<span class="fc" id="L999">            Observable&lt;WatchEvent&lt;?&gt;&gt; events = Files.eventsBlocking(file, ALL_KINDS, modifiers);</span>
+<span class="fc" id="L1000">            return Files.tailLines(file, startPosition, chunkSize, charset, events, backpressureStrategy);</span>
+        }
+    }
+
+<span class="fc" id="L1004">    private static final class State {</span>
+        long position;
+    }
+
+    private static Flowable&lt;byte[]&gt; eventsToBytes(Observable&lt;?&gt; events, BackpressureStrategy backpressureStrategy, File file, long startPosition, int chunkSize) {
+<span class="fc" id="L1009">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L1010">            State state = new State();</span>
+<span class="fc" id="L1011">            state.position = startPosition;</span>
+            // TODO allow user to specify BackpressureStrategy
+<span class="fc" id="L1013">            return events.toFlowable(backpressureStrategy) //</span>
+<span class="fc" id="L1014">                    .flatMap(event -&gt; eventToBytes(event, file, state, chunkSize));</span>
+        });
+    }
+
+    private static Flowable&lt;byte[]&gt; eventToBytes(Object event, File file, State state, int chunkSize) {
+<span class="pc bpc" id="L1019" title="1 of 2 branches missed.">        if (event instanceof WatchEvent) {</span>
+<span class="fc" id="L1020">            WatchEvent&lt;?&gt; w = (WatchEvent&lt;?&gt;) event;</span>
+<span class="fc" id="L1021">            String kind = w.kind().name();</span>
+<span class="fc bfc" id="L1022" title="All 2 branches covered.">            if (kind.equals(StandardWatchEventKinds.ENTRY_CREATE.name())) {</span>
+                // if file has just been created then start from the start of the new file
+<span class="fc" id="L1024">                state.position = 0;</span>
+<span class="pc bpc" id="L1025" title="1 of 2 branches missed.">            } else if (kind.equals(StandardWatchEventKinds.ENTRY_DELETE.name())) {</span>
+<span class="nc" id="L1026">                return Flowable.error(new IOException(&quot;file has been deleted&quot;));</span>
+            }
+            // we hope that ENTRY_CREATE and ENTRY_DELETE events never get wrapped up into
+            // ENTRY_OVERFLOW!
+        }
+<span class="fc" id="L1031">        long length = file.length();</span>
+<span class="fc bfc" id="L1032" title="All 2 branches covered.">        if (length &gt; state.position) {</span>
+            // apply using method to ensure fis is closed on
+            // termination or unsubscription
+<span class="fc" id="L1035">            return Flowable.using( //</span>
+<span class="fc" id="L1036">                    () -&gt; new FileInputStream(file), //</span>
+                    fis -&gt; {
+<span class="fc" id="L1038">                        fis.skip(state.position);</span>
+<span class="fc" id="L1039">                        return Bytes.from(fis, chunkSize) //</span>
+<span class="fc" id="L1040">                                .doOnNext(x -&gt; state.position += x.length);</span>
+                    }, //
+<span class="fc" id="L1042">                    fis -&gt; fis.close(), //</span>
+                    true);
+        } else {
+<span class="fc" id="L1045">            return Flowable.empty();</span>
+        }
+    }
+
+    private final static Path getBasePath(final File file) {
+        final Path path;
+<span class="pc bpc" id="L1051" title="1 of 4 branches missed.">        if (file.exists() &amp;&amp; file.isDirectory())</span>
+<span class="nc" id="L1052">            path = Paths.get(file.toURI());</span>
+        else
+<span class="fc" id="L1054">            path = Paths.get(file.getParentFile().toURI());</span>
+<span class="fc" id="L1055">        return path;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
