@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WithStats.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sparse-hilbert-index</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.shi</a> &gt; <span class="el_source">WithStats.java</span></div><h1>WithStats.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.shi;
+
+import java.text.DecimalFormat;
+
+public final class WithStats&lt;T&gt; {
+
+    private final T value;
+    private final long recordsRead;
+    private final long bytesRead;
+    private final long recordsFound;
+    private final long timeToFirstByte;
+    private final long chunksRead;
+    private final long elapsedTime;
+
+    WithStats(T value, long recordsRead, long recordsFound, long bytesRead, long timeToFirstByte,
+<span class="fc" id="L16">            long chunksRead, long elapsedTime) {</span>
+
+<span class="fc" id="L18">        this.value = value;</span>
+<span class="fc" id="L19">        this.recordsRead = recordsRead;</span>
+<span class="fc" id="L20">        this.recordsFound = recordsFound;</span>
+<span class="fc" id="L21">        this.bytesRead = bytesRead;</span>
+<span class="fc" id="L22">        this.timeToFirstByte = timeToFirstByte;</span>
+<span class="fc" id="L23">        this.chunksRead = chunksRead;</span>
+<span class="fc" id="L24">        this.elapsedTime = elapsedTime;</span>
+<span class="fc" id="L25">    }</span>
+
+    public boolean hasValue() {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        return value != null;</span>
+    }
+
+    public T value() {
+<span class="fc" id="L32">        return value;</span>
+    }
+
+    public long recordsRead() {
+<span class="fc" id="L36">        return recordsRead;</span>
+    }
+
+    public double hitRatio() {
+<span class="fc" id="L40">        return (double) recordsFound / recordsRead;</span>
+    }
+
+    public long bytesRead() {
+<span class="fc" id="L44">        return bytesRead;</span>
+    }
+
+    public long recordsFound() {
+<span class="fc" id="L48">        return recordsFound;</span>
+    }
+
+    public long timeToFirstByteMs() {
+<span class="fc" id="L52">        return timeToFirstByte;</span>
+    }
+
+    public double timeToFirstByteMsAverage() {
+<span class="fc" id="L56">        return (double) timeToFirstByte / chunksRead;</span>
+    }
+
+    public long chunksRead() {
+<span class="fc" id="L60">        return chunksRead;</span>
+    }
+
+    public long elapsedTimeMs() {
+<span class="fc" id="L64">        return elapsedTime;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L69">        DecimalFormat df = new DecimalFormat(&quot;0.0000&quot;);</span>
+<span class="fc" id="L70">        DecimalFormat df2 = new DecimalFormat(&quot;0.000&quot;);</span>
+<span class="fc" id="L71">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L72">        b.append(&quot;WithStats [&quot;);</span>
+<span class="fc" id="L73">        b.append(&quot;elapsedMs=&quot;);</span>
+<span class="fc" id="L74">        b.append(elapsedTimeMs());</span>
+<span class="fc" id="L75">        b.append(&quot;, recordsFound=&quot;);</span>
+<span class="fc" id="L76">        b.append(recordsFound);</span>
+<span class="fc" id="L77">        b.append(&quot;, recordsRead=&quot;);</span>
+<span class="fc" id="L78">        b.append(recordsRead);</span>
+<span class="fc" id="L79">        b.append(&quot;, hitRatio=&quot;);</span>
+<span class="fc" id="L80">        b.append(df.format(hitRatio()));</span>
+<span class="fc" id="L81">        b.append(&quot;, bytesRead=&quot;);</span>
+<span class="fc" id="L82">        b.append(df2.format(bytesRead / 1024.0 / 1024.0) + &quot;m&quot;);</span>
+<span class="fc" id="L83">        b.append(&quot;, timeToFirstByteMsTotal=&quot;);</span>
+<span class="fc" id="L84">        b.append(timeToFirstByte);</span>
+<span class="fc" id="L85">        b.append(&quot;, timeToFirstByteMsAverage=&quot;);</span>
+<span class="fc" id="L86">        b.append(df.format(timeToFirstByteMsAverage()));</span>
+<span class="fc" id="L87">        b.append(&quot;, chunksRead=&quot;);</span>
+<span class="fc" id="L88">        b.append(chunksRead);</span>
+<span class="fc" id="L89">        b.append(&quot;]&quot;);</span>
+<span class="fc" id="L90">        return b.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

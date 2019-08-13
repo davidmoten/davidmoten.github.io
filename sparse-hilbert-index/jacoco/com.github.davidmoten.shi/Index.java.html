@@ -1,0 +1,1017 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Index.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sparse-hilbert-index</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.shi</a> &gt; <span class="el_source">Index.java</span></div><h1>Index.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.shi;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.channels.Channels;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Function;
+
+import org.davidmoten.hilbert.HilbertCurve;
+import org.davidmoten.hilbert.Range;
+import org.davidmoten.hilbert.Ranges;
+import org.davidmoten.hilbert.SmallHilbertCurve;
+import org.davidmoten.kool.Stream;
+import org.davidmoten.kool.function.BiFunction;
+
+import com.github.davidmoten.bigsorter.Reader;
+import com.github.davidmoten.bigsorter.Serializer;
+import com.github.davidmoten.bigsorter.Sorter;
+import com.github.davidmoten.bigsorter.Writer;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
+
+public final class Index&lt;T&gt; {
+
+    private static final short VERSION = 1;
+    private final TreeMap&lt;Integer, Long&gt; indexPositions;
+    private final double[] mins;
+    private final double[] maxes;
+    private final SmallHilbertCurve hc;
+    private final long count;
+    private final Serializer&lt;? extends T&gt; serializer;
+    private final Function&lt;? super T, double[]&gt; pointMapper;
+
+    Index(TreeMap&lt;Integer, Long&gt; indexPositions, double[] mins, double[] maxes, int bits,
+            long count, Serializer&lt;? extends T&gt; serializer,
+<span class="fc" id="L58">            Function&lt;? super T, double[]&gt; pointMapper) {</span>
+<span class="fc" id="L59">        this.indexPositions = indexPositions;</span>
+<span class="fc" id="L60">        this.mins = mins;</span>
+<span class="fc" id="L61">        this.maxes = maxes;</span>
+<span class="fc" id="L62">        this.count = count;</span>
+<span class="fc" id="L63">        this.serializer = serializer;</span>
+<span class="fc" id="L64">        this.pointMapper = pointMapper;</span>
+<span class="fc" id="L65">        this.hc = HilbertCurve.small().bits(bits).dimensions(mins.length);</span>
+<span class="fc" id="L66">    }</span>
+
+    public Serializer&lt;? extends T&gt; serializer() {
+<span class="fc" id="L69">        return serializer;</span>
+    }
+
+    public Function&lt;? super T, double[]&gt; pointMapper() {
+<span class="fc" id="L73">        return pointMapper;</span>
+    }
+
+    public static &lt;T&gt; Builder1&lt;T&gt; serializer(Serializer&lt;? extends T&gt; serializer) {
+<span class="fc" id="L77">        return new Builder1&lt;T&gt;(serializer);</span>
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L81">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+<span class="fc" id="L85">        Builder() {</span>
+            // prevent instantiation externally
+<span class="fc" id="L87">        }</span>
+
+        public &lt;T&gt; Builder1&lt;T&gt; serializer(Serializer&lt;? extends T&gt; serializer) {
+<span class="fc" id="L90">            return new Builder1&lt;T&gt;(serializer);</span>
+        }
+    }
+
+    public static final class Builder1&lt;T&gt; {
+        private final Serializer&lt;? extends T&gt; serializer;
+        Function&lt;? super T, double[]&gt; pointMapper;
+        File input;
+        File output;
+        int bits;
+        int dimensions;
+<span class="fc" id="L101">        int numIndexEntriesApproximate = 10000;</span>
+<span class="fc" id="L102">        int sortMaxFilesPerMerge = 100;</span>
+<span class="fc" id="L103">        int sortMaxItemsPerFile = 100000;</span>
+
+<span class="fc" id="L105">        Builder1(Serializer&lt;? extends T&gt; serializer) {</span>
+<span class="fc" id="L106">            this.serializer = serializer;</span>
+<span class="fc" id="L107">        }</span>
+
+        public Builder2&lt;T&gt; pointMapper(Function&lt;? super T, double[]&gt; pointMapper) {
+<span class="fc" id="L110">            this.pointMapper = pointMapper;</span>
+<span class="fc" id="L111">            return new Builder2&lt;T&gt;(this);</span>
+        }
+    }
+
+    public static final class Builder2&lt;T&gt; {
+
+        private final Builder1&lt;T&gt; b;
+
+<span class="fc" id="L119">        Builder2(Builder1&lt;T&gt; b) {</span>
+<span class="fc" id="L120">            this.b = b;</span>
+<span class="fc" id="L121">        }</span>
+
+        public Builder3&lt;T&gt; input(File input) {
+<span class="fc" id="L124">            b.input = input;</span>
+<span class="fc" id="L125">            return new Builder3&lt;T&gt;(b);</span>
+        }
+
+        public Builder3&lt;T&gt; input(String filename) {
+<span class="fc" id="L129">            return input(new File(filename));</span>
+        }
+
+        public Index&lt;T&gt; read(DataInputStream in) {
+<span class="fc" id="L133">            return Index.read(in, b.serializer, b.pointMapper);</span>
+        }
+
+        public Index&lt;T&gt; read(File file) {
+<span class="fc" id="L137">            try (DataInputStream in = new DataInputStream(</span>
+                    new BufferedInputStream(new FileInputStream(file)))) {
+<span class="fc" id="L139">                return read(in);</span>
+<span class="fc" id="L140">            } catch (IOException e) {</span>
+<span class="fc" id="L141">                throw new UncheckedIOException(e);</span>
+            }
+        }
+
+        public Index&lt;T&gt; read(URL url) {
+<span class="fc" id="L146">            try (DataInputStream in = new DataInputStream(</span>
+<span class="fc" id="L147">                    new BufferedInputStream(url.openStream()))) {</span>
+<span class="fc" id="L148">                return read(in);</span>
+<span class="fc" id="L149">            } catch (IOException e) {</span>
+<span class="fc" id="L150">                throw new UncheckedIOException(e);</span>
+            }
+        }
+    }
+
+    public static final class Builder3&lt;T&gt; {
+        private final Builder1&lt;T&gt; b;
+
+<span class="fc" id="L158">        Builder3(Builder1&lt;T&gt; b) {</span>
+<span class="fc" id="L159">            this.b = b;</span>
+<span class="fc" id="L160">        }</span>
+
+        public Builder4&lt;T&gt; output(File output) {
+<span class="fc" id="L163">            b.output = output;</span>
+<span class="fc" id="L164">            return new Builder4&lt;T&gt;(b);</span>
+        }
+
+        public Builder4&lt;T&gt; output(String output) {
+<span class="fc" id="L168">            return output(new File(output));</span>
+        }
+    }
+
+    public static final class Builder4&lt;T&gt; {
+
+        private final Builder1&lt;T&gt; b;
+
+<span class="fc" id="L176">        Builder4(Builder1&lt;T&gt; b) {</span>
+<span class="fc" id="L177">            this.b = b;</span>
+<span class="fc" id="L178">        }</span>
+
+        public Builder5&lt;T&gt; bits(int bits) {
+<span class="fc" id="L181">            b.bits = bits;</span>
+<span class="fc" id="L182">            return new Builder5&lt;T&gt;(b);</span>
+        }
+
+    }
+
+    public static final class Builder5&lt;T&gt; {
+
+        private final Builder1&lt;T&gt; b;
+
+<span class="fc" id="L191">        Builder5(Builder1&lt;T&gt; b) {</span>
+<span class="fc" id="L192">            this.b = b;</span>
+<span class="fc" id="L193">        }</span>
+
+        public Builder6&lt;T&gt; dimensions(int dimensions) {
+<span class="fc" id="L196">            b.dimensions = dimensions;</span>
+<span class="fc" id="L197">            return new Builder6&lt;T&gt;(b);</span>
+        }
+    }
+
+    public static final class Builder6&lt;T&gt; {
+
+        private final Builder1&lt;T&gt; b;
+
+<span class="fc" id="L205">        Builder6(Builder1&lt;T&gt; b) {</span>
+<span class="fc" id="L206">            this.b = b;</span>
+<span class="fc" id="L207">        }</span>
+
+        /**
+         * Sets the &lt;i&gt;approximate&lt;/i&gt; number of index entries. The number required will
+         * depend on where the chunking falls so can vary by a few from the desired
+         * value.
+         * 
+         * @param numIndexEntries approximate number of index entries
+         * @return builder
+         */
+        public Builder6&lt;T&gt; numIndexEntries(int numIndexEntries) {
+<span class="fc" id="L218">            b.numIndexEntriesApproximate = numIndexEntries;</span>
+<span class="fc" id="L219">            return this;</span>
+        }
+
+        public Builder6&lt;T&gt; sortMaxFilesPerMerge(int sortMaxFilesPerMerge) {
+<span class="fc" id="L223">            b.sortMaxFilesPerMerge = sortMaxFilesPerMerge;</span>
+<span class="fc" id="L224">            return this;</span>
+        }
+
+        public Builder6&lt;T&gt; sortMaxItemsPerFile(int sortMaxItemsPerFile) {
+<span class="fc" id="L228">            b.sortMaxItemsPerFile = sortMaxItemsPerFile;</span>
+<span class="fc" id="L229">            return this;</span>
+        }
+
+        public Index&lt;T&gt; createIndex(String filename) {
+<span class="fc" id="L233">            return createIndex(new File(filename));</span>
+        }
+
+        public Index&lt;T&gt; createIndex(File file) {
+<span class="fc" id="L237">            return createIndex().write(file);</span>
+        }
+
+        public Index&lt;T&gt; createIndex() {
+            try {
+<span class="fc" id="L242">                return Index.createIndex(b.input, b.serializer, b.pointMapper, b.output, b.bits,</span>
+                        b.dimensions, b.numIndexEntriesApproximate, b.sortMaxFilesPerMerge,
+                        b.sortMaxItemsPerFile);
+<span class="fc" id="L245">            } catch (IOException e) {</span>
+<span class="fc" id="L246">                throw new UncheckedIOException(e);</span>
+            }
+        }
+    }
+
+    @VisibleForTesting
+    TreeMap&lt;Integer, Long&gt; indexPositions() {
+<span class="fc" id="L253">        return indexPositions;</span>
+    }
+
+    /**
+     * Fits the desired ranges to the effective querying ranges according to the
+     * known index positions.
+     * 
+     * @param ranges list of ranges in ascending order
+     * @return querying ranges based on known index positions
+     */
+    public List&lt;PositionRange&gt; positionRanges(Iterable&lt;Range&gt; ranges) {
+<span class="fc" id="L264">        return positionRanges(indexPositions, ranges);</span>
+    }
+
+    @VisibleForTesting
+    static List&lt;PositionRange&gt; positionRanges(TreeMap&lt;Integer, Long&gt; indexPositions,
+            Iterable&lt;Range&gt; ranges) {
+<span class="fc" id="L270">        LinkedList&lt;PositionRange&gt; list = new LinkedList&lt;&gt;();</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        for (Range range : ranges) {</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">            if (range.low() &lt;= indexPositions.lastKey()</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                    &amp;&amp; range.high() &gt;= indexPositions.firstKey()) {</span>
+<span class="fc" id="L274">                Long startPosition = value(indexPositions.floorEntry((int) range.low()));</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (startPosition == null) {</span>
+<span class="fc" id="L276">                    startPosition = indexPositions.firstEntry().getValue();</span>
+                }
+<span class="fc" id="L278">                Long endPosition = value(indexPositions.higherEntry((int) range.high()));</span>
+<span class="fc bfc" id="L279" title="All 2 branches covered.">                if (endPosition == null) {</span>
+<span class="fc" id="L280">                    endPosition = Long.MAX_VALUE;</span>
+                }
+<span class="fc" id="L282">                PositionRange p = new PositionRange(range.high(), startPosition, endPosition);</span>
+<span class="fc" id="L283">                append(list, p);</span>
+            }
+<span class="fc" id="L285">        }</span>
+<span class="fc" id="L286">        return list;</span>
+    }
+
+    private static void append(LinkedList&lt;PositionRange&gt; list, PositionRange p) {
+<span class="fc bfc" id="L290" title="All 2 branches covered.">        if (list.isEmpty()) {</span>
+<span class="fc" id="L291">            list.offer(p);</span>
+        } else {
+<span class="fc" id="L293">            PositionRange last = list.getLast();</span>
+<span class="fc bfc" id="L294" title="All 2 branches covered.">            if (p.floorPosition() &lt;= last.ceilingPosition()) {</span>
+<span class="fc" id="L295">                list.pollLast();</span>
+<span class="fc" id="L296">                list.offer(last.join(p));</span>
+            } else {
+<span class="fc" id="L298">                list.offer(p);</span>
+            }
+        }
+<span class="fc" id="L301">    }</span>
+
+    private static &lt;T, R&gt; R value(Entry&lt;T, R&gt; entry) {
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        if (entry == null) {</span>
+<span class="fc" id="L305">            return null;</span>
+        } else {
+<span class="fc" id="L307">            return entry.getValue();</span>
+        }
+    }
+
+    public double[] mins() {
+<span class="fc" id="L312">        return mins;</span>
+    }
+
+    public double[] maxes() {
+<span class="fc" id="L316">        return maxes;</span>
+    }
+
+    /**
+     * Returns count of records in file indexed by this.
+     * 
+     * @return count of records in file indexed by this.
+     */
+    public long count() {
+<span class="fc" id="L325">        return count;</span>
+    }
+
+    public long[] ordinates(double... d) {
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        Preconditions.checkArgument(d.length == mins.length);</span>
+<span class="fc" id="L330">        long[] x = new long[d.length];</span>
+<span class="fc bfc" id="L331" title="All 2 branches covered.">        for (int i = 0; i &lt; d.length; i++) {</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            if (mins[i] == maxes[i]) {</span>
+<span class="fc" id="L333">                x[i] = 0;</span>
+            } else {
+<span class="fc" id="L335">                x[i] = Math.round(((Math.min(d[i], maxes[i]) - mins[i]) / (maxes[i] - mins[i]))</span>
+<span class="fc" id="L336">                        * hc.maxOrdinate());</span>
+            }
+        }
+<span class="fc" id="L339">        return x;</span>
+    }
+
+    public SmallHilbertCurve hilbertCurve() {
+<span class="fc" id="L343">        return hc;</span>
+    }
+
+    private static &lt;T&gt; Index&lt;T&gt; read(DataInputStream dis, Serializer&lt;? extends T&gt; serializer,
+            Function&lt;? super T, double[]&gt; point) {
+        try {
+            // read version
+<span class="fc" id="L350">            dis.readShort();</span>
+<span class="fc" id="L351">            int bits = dis.readInt();</span>
+<span class="fc" id="L352">            int dimensions = dis.readInt();</span>
+<span class="fc" id="L353">            double[] mins = new double[dimensions];</span>
+<span class="fc" id="L354">            double[] maxes = new double[dimensions];</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">            for (int i = 0; i &lt; dimensions; i++) {</span>
+<span class="fc" id="L356">                mins[i] = dis.readDouble();</span>
+<span class="fc" id="L357">                maxes[i] = dis.readDouble();</span>
+            }
+<span class="fc" id="L359">            long count = dis.readLong();</span>
+<span class="fc" id="L360">            int numEntries = dis.readInt();</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">            boolean useLongPositions = dis.readInt() == 1;</span>
+
+<span class="fc" id="L363">            TreeMap&lt;Integer, Long&gt; indexPositions = new TreeMap&lt;Integer, Long&gt;();</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">            for (int i = 0; i &lt; numEntries; i++) {</span>
+<span class="fc" id="L365">                int index = dis.readInt();</span>
+                final long pos;
+<span class="fc bfc" id="L367" title="All 2 branches covered.">                if (useLongPositions) {</span>
+<span class="fc" id="L368">                    pos = dis.readLong();</span>
+                } else {
+<span class="fc" id="L370">                    pos = (long) dis.readInt();</span>
+                }
+<span class="fc" id="L372">                indexPositions.put(index, pos);</span>
+            }
+<span class="fc" id="L374">            return new Index&lt;T&gt;(indexPositions, mins, maxes, bits, count, serializer, point);</span>
+<span class="fc" id="L375">        } catch (IOException e) {</span>
+<span class="fc" id="L376">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    public Index&lt;T&gt; write(File idx) {
+<span class="fc" id="L381">        try (DataOutputStream dos = new DataOutputStream(</span>
+                new BufferedOutputStream(new FileOutputStream(idx)))) {
+<span class="fc" id="L383">            write(dos);</span>
+<span class="fc" id="L384">        } catch (IOException e) {</span>
+<span class="fc" id="L385">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L386">        }</span>
+<span class="fc" id="L387">        return this;</span>
+    }
+
+    public Index&lt;T&gt; write(DataOutputStream dos) throws IOException {
+        try {
+<span class="fc" id="L392">            dos.writeShort(VERSION);</span>
+<span class="fc" id="L393">            dos.writeInt(hc.bits());</span>
+<span class="fc" id="L394">            dos.writeInt(hc.dimensions());</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">            for (int i = 0; i &lt; hc.dimensions(); i++) {</span>
+<span class="fc" id="L396">                dos.writeDouble(mins[i]);</span>
+<span class="fc" id="L397">                dos.writeDouble(maxes[i]);</span>
+            }
+
+<span class="fc" id="L400">            dos.writeLong(count);</span>
+
+            // num index entries
+<span class="fc" id="L403">            dos.writeInt(indexPositions.size());</span>
+
+<span class="fc" id="L405">            boolean useLongPositions = Stream.from(indexPositions.values())</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">                    .findFirst(x -&gt; x &gt; Integer.MAX_VALUE).get().isPresent();</span>
+
+            // write 0 for int position
+            // write 1 for long position
+<span class="fc bfc" id="L410" title="All 2 branches covered.">            dos.writeInt(useLongPositions ? 1 : 0);</span>
+
+<span class="fc bfc" id="L412" title="All 2 branches covered.">            for (Entry&lt;Integer, Long&gt; entry : indexPositions.entrySet()) {</span>
+<span class="fc" id="L413">                dos.writeInt(entry.getKey());</span>
+<span class="fc" id="L414">                long pos = entry.getValue();</span>
+<span class="fc bfc" id="L415" title="All 2 branches covered.">                if (useLongPositions) {</span>
+<span class="fc" id="L416">                    dos.writeLong(pos);</span>
+                } else {
+<span class="fc" id="L418">                    dos.writeInt((int) pos);</span>
+                }
+<span class="fc" id="L420">            }</span>
+<span class="fc" id="L421">        } catch (IOException e) {</span>
+<span class="fc" id="L422">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L423">        }</span>
+<span class="fc" id="L424">        return this;</span>
+    }
+
+    private static BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; rafInputStreamFactory(File file) {
+<span class="fc" id="L428">        return (first, last) -&gt; {</span>
+<span class="fc" id="L429">            RandomAccessFile raf = createRaf(file);</span>
+<span class="fc" id="L430">            raf.seek(first);</span>
+<span class="fc" id="L431">            return new ClosingInputStream( //</span>
+                    new LimitingInputStream( //
+<span class="fc" id="L433">                            new BufferedInputStream(Channels.newInputStream(raf.getChannel())),</span>
+<span class="fc" id="L434">                            last.orElse(Long.MAX_VALUE) - first),</span>
+<span class="fc" id="L435">                    () -&gt; raf.close());</span>
+        };
+    }
+
+    @VisibleForTesting
+    Flowable&lt;T&gt; search(Bounds queryBounds, File file, PositionRange pr) throws IOException {
+<span class="fc" id="L441">        return search(queryBounds, rafInputStreamFactory(file), pr);</span>
+    }
+
+    @VisibleForTesting
+    Flowable&lt;T&gt; search(Bounds queryBounds, BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; factory,
+            PositionRange pr) throws IOException {
+<span class="fc" id="L447">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L448">            return getValues(factory, pr) //</span>
+<span class="fc" id="L449">                    .takeUntil(rec -&gt; hc.index(ordinates(pointMapper.apply(rec))) &gt; pr</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                            .maxHilbertIndex()) //</span>
+<span class="fc" id="L451">                    .filter(t -&gt; queryBounds.contains(pointMapper.apply(t)));</span>
+        });
+    }
+
+    static final class Counts {
+        final long startTime;
+        long recordsRead;
+        long recordsFound;
+        long positionRanges;
+        long bytesRead;
+        long totalTimeToFirstByte;
+
+<span class="fc" id="L463">        Counts() {</span>
+<span class="fc" id="L464">            this.startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L465">        }</span>
+
+        synchronized void incrementRecordsRead() {
+<span class="fc" id="L468">            recordsRead++;</span>
+<span class="fc" id="L469">        }</span>
+
+        synchronized void incrementRecordsFoundAndAddTTFBAndAddBytesRead(long ttfb, long bytes) {
+<span class="fc" id="L472">            recordsFound++;</span>
+<span class="fc" id="L473">            totalTimeToFirstByte += ttfb;</span>
+<span class="fc" id="L474">            bytesRead += bytes;</span>
+<span class="fc" id="L475">        }</span>
+
+    }
+
+    @VisibleForTesting
+    Flowable&lt;WithStats&lt;T&gt;&gt; searchWithStats(Bounds queryBounds,
+            BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; factory, PositionRange pr, Counts counts)
+            throws IOException {
+<span class="fc" id="L483">        counts.positionRanges++;</span>
+<span class="fc" id="L484">        CountingInputStream[] in = new CountingInputStream[1];</span>
+<span class="fc" id="L485">        BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; factoryWithCount = (x, y) -&gt; {</span>
+<span class="fc" id="L486">            long startTime = System.currentTimeMillis();</span>
+<span class="fc" id="L487">            CountingInputStream is = new CountingInputStream(factory.apply(x, y), startTime);</span>
+<span class="fc" id="L488">            in[0] = is;</span>
+<span class="fc" id="L489">            return is;</span>
+        };
+<span class="fc" id="L491">        return getValues(factoryWithCount, pr) //</span>
+<span class="fc" id="L492">                .doOnNext(x -&gt; counts.incrementRecordsRead()) //</span>
+<span class="fc" id="L493">                .takeUntil(</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">                        rec -&gt; hc.index(ordinates(pointMapper.apply(rec))) &gt; pr.maxHilbertIndex()) //</span>
+<span class="fc" id="L495">                .filter(t -&gt; queryBounds.contains(pointMapper.apply(t))) //</span>
+<span class="fc" id="L496">                .doOnNext(x -&gt; counts.incrementRecordsFoundAndAddTTFBAndAddBytesRead(</span>
+<span class="fc" id="L497">                        in[0].readTimeToFirstByteAndSetToZero(), in[0].count())) //</span>
+<span class="fc" id="L498">                .map(x -&gt; {</span>
+<span class="fc" id="L499">                    synchronized (counts) {</span>
+<span class="fc" id="L500">                        return new WithStats&lt;T&gt;(x, counts.recordsRead, counts.recordsFound,</span>
+                                counts.bytesRead, counts.totalTimeToFirstByte,
+                                counts.positionRanges,
+<span class="fc" id="L503">                                System.currentTimeMillis() - counts.startTime);</span>
+                    }
+                });
+    }
+
+    private Flowable&lt;T&gt; getValues(BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; factory,
+            PositionRange pr) {
+<span class="fc" id="L510">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L511">            InputStream[] in = new InputStream[1];</span>
+            final Reader&lt;? extends T&gt; r;
+            try {
+<span class="fc bfc" id="L514" title="All 2 branches covered.">                Optional&lt;Long&gt; ceiling = pr.ceilingPosition() == Long.MAX_VALUE ? Optional.empty()</span>
+<span class="fc" id="L515">                        : Optional.of(pr.ceilingPosition());</span>
+                // TODO don't block
+<span class="fc" id="L517">                in[0] = factory.apply(pr.floorPosition(), ceiling);</span>
+<span class="fc" id="L518">                r = serializer.createReader(in[0]);</span>
+<span class="fc" id="L519">            } catch (Throwable t) {</span>
+<span class="fc" id="L520">                closeSilently(in[0]);</span>
+<span class="fc" id="L521">                return Flowable.error(t);</span>
+<span class="fc" id="L522">            }</span>
+<span class="fc" id="L523">            return Flowable.&lt;T&gt;generate( //</span>
+                    emitter -&gt; {
+                        T t;
+                        while (true) {
+<span class="fc" id="L527">                            t = r.read();</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">                            if (t == null) {</span>
+<span class="fc" id="L529">                                emitter.onComplete();</span>
+<span class="fc" id="L530">                                break;</span>
+                            } else {
+<span class="fc" id="L532">                                emitter.onNext(t);</span>
+                                break;
+                            }
+                            // else keep reading till EOF or next record found within queryBounds
+                        }
+<span class="fc" id="L537">                    }) //</span>
+<span class="fc" id="L538">                    .doOnCancel(() -&gt; {</span>
+<span class="fc" id="L539">                        closeSilently(r);</span>
+<span class="fc" id="L540">                        closeSilently(in[0]);</span>
+<span class="fc" id="L541">                    });</span>
+        });
+    }
+
+    @VisibleForTesting
+    static void closeSilently(Closeable c) {
+        try {
+<span class="fc bfc" id="L548" title="All 2 branches covered.">            if (c != null) {</span>
+<span class="fc" id="L549">                c.close();</span>
+            }
+<span class="fc" id="L551">        } catch (Throwable t) {</span>
+            // do nothing
+<span class="fc" id="L553">        }</span>
+<span class="fc" id="L554">    }</span>
+
+    public int numEntries() {
+<span class="fc" id="L557">        return indexPositions.size();</span>
+    }
+
+    public SearchBuilder search(double[] a, double[] b) {
+<span class="fc" id="L561">        return search(Bounds.create(a, b));</span>
+    }
+
+    public SearchBuilder search(Bounds bounds) {
+<span class="fc" id="L565">        return new SearchBuilder(bounds);</span>
+    }
+
+    public final class SearchBuilder {
+
+        private final Bounds bounds;
+        private int maxRanges;
+        private int rangesBufferSize;
+<span class="fc" id="L573">        private int concurrency = 1;</span>
+
+<span class="fc" id="L575">        SearchBuilder(Bounds bounds) {</span>
+<span class="fc" id="L576">            this.bounds = bounds;</span>
+<span class="fc" id="L577">        }</span>
+
+        public SearchBuilderWithStats withStats() {
+<span class="fc" id="L580">            return new SearchBuilderWithStats(this);</span>
+        }
+
+        public SearchBuilderAdvanced advanced() {
+<span class="fc" id="L584">            return new SearchBuilderAdvanced(this);</span>
+        }
+
+        public SearchBuilder maxRanges(int maxRanges) {
+<span class="fc" id="L588">            this.maxRanges = maxRanges;</span>
+<span class="fc" id="L589">            return this;</span>
+        }
+
+        public SearchBuilder rangesBufferSize(int rangeBufferSize) {
+<span class="fc" id="L593">            this.rangesBufferSize = rangeBufferSize;</span>
+<span class="fc" id="L594">            return this;</span>
+        }
+
+        public SearchBuilder concurrency(int concurrency) {
+<span class="fc bfc" id="L598" title="All 2 branches covered.">            Preconditions.checkArgument(concurrency &gt; 0, &quot;concurrency must be greater than zero&quot;);</span>
+<span class="fc" id="L599">            this.concurrency = concurrency;</span>
+<span class="fc" id="L600">            return this;</span>
+        }
+
+        public Flowable&lt;T&gt; file(File file) {
+<span class="fc" id="L604">            return Flowable.defer(() -&gt; inputStreamFactory(rafInputStreamFactory(file)));</span>
+        }
+
+        public Flowable&lt;T&gt; file(String filename) {
+<span class="fc" id="L608">            return file(new File(filename));</span>
+        }
+
+        public Flowable&lt;T&gt; inputStreamFactory(
+                BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory) {
+<span class="fc bfc" id="L613" title="All 2 branches covered.">            if (concurrency == 1) {</span>
+<span class="fc" id="L614">                return search(bounds, inputStreamFactory, maxRanges, rangesBufferSize);</span>
+            } else {
+<span class="fc" id="L616">                return advanced() //</span>
+<span class="fc" id="L617">                        .inputStreamFactory(inputStreamFactory) //</span>
+<span class="fc" id="L618">                        .flatMap(x -&gt; x.subscribeOn(Schedulers.io()), concurrency);</span>
+            }
+        }
+
+        /**
+         * Specify an HTTP url to use (server must support Range HTTP header)
+         * @param url address
+         * @return stream 
+         */
+        public Flowable&lt;T&gt; url(String url) {
+            try {
+<span class="fc" id="L629">                return url(new URL(url));</span>
+<span class="fc" id="L630">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L631">                throw new RuntimeException(e);</span>
+            }
+        }
+
+        /**
+         * Specify an HTTP url to use (server must support Range HTTP header)
+         * @param url address
+         * @return stream
+         */
+        public Flowable&lt;T&gt; url(URL url) {
+<span class="fc" id="L641">            return inputStreamFactory(inputStreamForRange(url));</span>
+        }
+    }
+
+    public final class SearchBuilderAdvanced {
+
+        private final Index&lt;T&gt;.SearchBuilder b;
+
+<span class="fc" id="L649">        SearchBuilderAdvanced(SearchBuilder b) {</span>
+<span class="fc" id="L650">            this.b = b;</span>
+<span class="fc" id="L651">        }</span>
+
+        public SearchBuilderWithStatsAdvanced withStats() {
+<span class="fc" id="L654">            return new SearchBuilderWithStatsAdvanced(b);</span>
+        }
+
+        public SearchBuilderAdvanced maxRanges(int maxRanges) {
+<span class="fc" id="L658">            b.maxRanges = maxRanges;</span>
+<span class="fc" id="L659">            return this;</span>
+        }
+
+        public SearchBuilderAdvanced rangesBufferSize(int rangeBufferSize) {
+<span class="fc" id="L663">            b.rangesBufferSize = rangeBufferSize;</span>
+<span class="fc" id="L664">            return this;</span>
+        }
+
+        public Flowable&lt;Flowable&lt;T&gt;&gt; file(File file) {
+<span class="fc" id="L668">            return Flowable.defer(() -&gt; inputStreamFactory(rafInputStreamFactory(file)));</span>
+        }
+
+        public Flowable&lt;Flowable&lt;T&gt;&gt; file(String filename) {
+<span class="fc" id="L672">            return file(new File(filename));</span>
+        }
+
+        public Flowable&lt;Flowable&lt;T&gt;&gt; inputStreamFactory(
+                BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory) {
+<span class="fc" id="L677">            return searchAdvanced(b.bounds, inputStreamFactory, b.maxRanges, b.rangesBufferSize);</span>
+        }
+
+        /**
+         * Specify an HTTP url to use (server must support Range HTTP header)
+         * @param url address
+         * @return stream of streams
+         */
+        public Flowable&lt;Flowable&lt;T&gt;&gt; url(String url) {
+            try {
+<span class="fc" id="L687">                return url(new URL(url));</span>
+<span class="fc" id="L688">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L689">                throw new RuntimeException(e);</span>
+            }
+        }
+
+        /**
+         * Specify an HTTP url to use (server must support Range HTTP header)
+         * @param url address
+         * @return stream of streams
+         */
+        public Flowable&lt;Flowable&lt;T&gt;&gt; url(URL url) {
+<span class="fc" id="L699">            return inputStreamFactory(inputStreamForRange(url));</span>
+        }
+
+    }
+
+    public final class SearchBuilderWithStats {
+
+        private final Index&lt;T&gt;.SearchBuilder b;
+
+<span class="fc" id="L708">        SearchBuilderWithStats(Index&lt;T&gt;.SearchBuilder b) {</span>
+<span class="fc" id="L709">            this.b = b;</span>
+<span class="fc" id="L710">        }</span>
+
+        public SearchBuilderWithStats maxRanges(int maxRanges) {
+<span class="fc" id="L713">            b.maxRanges = maxRanges;</span>
+<span class="fc" id="L714">            return this;</span>
+        }
+
+        public SearchBuilderWithStats rangesBufferSize(int rangeBufferSize) {
+<span class="fc" id="L718">            b.rangesBufferSize = rangeBufferSize;</span>
+<span class="fc" id="L719">            return this;</span>
+        }
+
+        public SearchBuilderWithStats concurrency(int concurrency) {
+<span class="fc" id="L723">            b.concurrency(concurrency);</span>
+<span class="fc" id="L724">            return this;</span>
+        }
+
+        public SearchBuilderWithStatsAdvanced advanced() {
+<span class="fc" id="L728">            return new SearchBuilderWithStatsAdvanced(b);</span>
+        }
+
+        public Flowable&lt;WithStats&lt;T&gt;&gt; file(File file) {
+<span class="fc" id="L732">            return Flowable.defer(() -&gt; inputStreamFactory(rafInputStreamFactory(file)));</span>
+        }
+
+        public Flowable&lt;WithStats&lt;T&gt;&gt; inputStreamFactory(
+                BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory) {
+<span class="fc bfc" id="L737" title="All 2 branches covered.">            if (b.concurrency == 1) {</span>
+<span class="fc" id="L738">                return searchWithStats(b.bounds, inputStreamFactory, b.maxRanges,</span>
+<span class="fc" id="L739">                        b.rangesBufferSize);</span>
+            } else {
+<span class="fc" id="L741">                return advanced() //</span>
+<span class="fc" id="L742">                        .inputStreamFactory(inputStreamFactory) //</span>
+<span class="fc" id="L743">                        .flatMap(x -&gt; x.subscribeOn(Schedulers.io()), b.concurrency);</span>
+            }
+        }
+
+        public Flowable&lt;WithStats&lt;T&gt;&gt; url(String url) {
+            try {
+<span class="fc" id="L749">                return url(new URL(url));</span>
+<span class="fc" id="L750">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L751">                throw new RuntimeException(e);</span>
+            }
+        }
+
+        public Flowable&lt;WithStats&lt;T&gt;&gt; url(URL url) {
+<span class="fc" id="L756">            return inputStreamFactory(inputStreamForRange(url));</span>
+        }
+
+    }
+
+    public final class SearchBuilderWithStatsAdvanced {
+
+        private final Index&lt;T&gt;.SearchBuilder b;
+
+<span class="fc" id="L765">        SearchBuilderWithStatsAdvanced(SearchBuilder b) {</span>
+<span class="fc" id="L766">            this.b = b;</span>
+<span class="fc" id="L767">        }</span>
+
+        public SearchBuilderWithStatsAdvanced maxRanges(int maxRanges) {
+<span class="fc" id="L770">            b.maxRanges = maxRanges;</span>
+<span class="fc" id="L771">            return this;</span>
+        }
+
+        public SearchBuilderWithStatsAdvanced rangesBufferSize(int rangeBufferSize) {
+<span class="fc" id="L775">            b.rangesBufferSize = rangeBufferSize;</span>
+<span class="fc" id="L776">            return this;</span>
+        }
+
+        public Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; file(File file) {
+<span class="fc" id="L780">            return Flowable.defer(() -&gt; inputStreamFactory(rafInputStreamFactory(file)));</span>
+        }
+
+        public Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; file(String filename) {
+<span class="fc" id="L784">            return file(new File(filename));</span>
+        }
+
+        public Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; inputStreamFactory(
+                BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory) {
+<span class="fc" id="L789">            return searchWithStatsAdvanced(b.bounds, inputStreamFactory, b.maxRanges,</span>
+<span class="fc" id="L790">                    b.rangesBufferSize);</span>
+        }
+
+        public Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; url(String url) {
+            try {
+<span class="fc" id="L795">                return url(new URL(url));</span>
+<span class="fc" id="L796">            } catch (MalformedURLException e) {</span>
+<span class="fc" id="L797">                throw new RuntimeException(e);</span>
+            }
+        }
+
+        public Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; url(URL url) {
+<span class="fc" id="L802">            return inputStreamFactory(inputStreamForRange(url));</span>
+        }
+
+    }
+
+    private static RandomAccessFile createRaf(File f) {
+        try {
+<span class="fc" id="L809">            return new RandomAccessFile(f, &quot;r&quot;);</span>
+<span class="fc" id="L810">        } catch (FileNotFoundException e) {</span>
+<span class="fc" id="L811">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    private Flowable&lt;T&gt; search(Bounds queryBounds,
+            BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory, int maxRanges,
+            int rangesBufferSize) {
+<span class="fc" id="L818">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L819">            long[] a = ordinates(queryBounds.mins());</span>
+<span class="fc" id="L820">            long[] b = ordinates(queryBounds.maxes());</span>
+<span class="fc" id="L821">            Ranges ranges = hc.query(a, b, maxRanges, rangesBufferSize);</span>
+<span class="fc" id="L822">            return Flowable.fromIterable(positionRanges(ranges)) //</span>
+<span class="fc" id="L823">                    .flatMap(pr -&gt; search(queryBounds, inputStreamFactory, pr));</span>
+        });
+    }
+
+    private Flowable&lt;Flowable&lt;T&gt;&gt; searchAdvanced(Bounds queryBounds,
+            BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory, int maxRanges,
+            int rangesBufferSize) {
+<span class="fc" id="L830">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L831">            long[] a = ordinates(queryBounds.mins());</span>
+<span class="fc" id="L832">            long[] b = ordinates(queryBounds.maxes());</span>
+            // TODO make hc.query return a Flowable (lazy calculation)?
+<span class="fc" id="L834">            Ranges ranges = hc.query(a, b, maxRanges, rangesBufferSize);</span>
+<span class="fc" id="L835">            return Flowable.fromIterable(positionRanges(ranges)) //</span>
+<span class="fc" id="L836">                    .map(pr -&gt; search(queryBounds, inputStreamFactory, pr));</span>
+        });
+    }
+
+    private Flowable&lt;Flowable&lt;WithStats&lt;T&gt;&gt;&gt; searchWithStatsAdvanced(Bounds queryBounds,
+            BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory, int maxRanges,
+            int rangesBufferSize) {
+<span class="fc" id="L843">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L844">            long[] a = ordinates(queryBounds.mins());</span>
+<span class="fc" id="L845">            long[] b = ordinates(queryBounds.maxes());</span>
+<span class="fc" id="L846">            Ranges ranges = hc.query(a, b, maxRanges, rangesBufferSize);</span>
+<span class="fc" id="L847">            Counts counts = new Counts();</span>
+<span class="fc" id="L848">            return Flowable.fromIterable(positionRanges(ranges)) //</span>
+<span class="fc" id="L849">                    .map(pr -&gt; searchWithStats(queryBounds, inputStreamFactory, pr, counts)) //</span>
+<span class="fc" id="L850">                    .concatWith(Flowable.just(finalStats(counts)));</span>
+        });
+    }
+
+    private Flowable&lt;WithStats&lt;T&gt;&gt; searchWithStats(Bounds queryBounds,
+            BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamFactory, int maxRanges,
+            int rangesBufferSize) {
+<span class="fc" id="L857">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L858">            long[] a = ordinates(queryBounds.mins());</span>
+<span class="fc" id="L859">            long[] b = ordinates(queryBounds.maxes());</span>
+<span class="fc" id="L860">            Ranges ranges = hc.query(a, b, maxRanges, rangesBufferSize);</span>
+<span class="fc" id="L861">            Counts counts = new Counts();</span>
+<span class="fc" id="L862">            return Flowable.fromIterable(positionRanges(ranges)) //</span>
+<span class="fc" id="L863">                    .flatMap(pr -&gt; searchWithStats(queryBounds, inputStreamFactory, pr, counts))</span>
+<span class="fc" id="L864">                    .concatWith(finalStats(counts));</span>
+        });
+    }
+
+    private Flowable&lt;WithStats&lt;T&gt;&gt; finalStats(Counts counts) {
+<span class="fc" id="L869">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L870">            synchronized (counts) {</span>
+<span class="fc" id="L871">                return Flowable.just(new WithStats&lt;T&gt;(null, counts.recordsRead, counts.recordsFound,</span>
+                        counts.bytesRead, counts.totalTimeToFirstByte, counts.positionRanges,
+<span class="fc" id="L873">                        System.currentTimeMillis() - counts.startTime));</span>
+            }
+        });
+    }
+
+    private static BiFunction&lt;Long, Optional&lt;Long&gt;, InputStream&gt; inputStreamForRange(URL u) {
+<span class="fc" id="L879">        return (start, end) -&gt; {</span>
+<span class="fc" id="L880">            URLConnection con = u.openConnection();</span>
+<span class="fc" id="L881">            String bytesRange = getRangeHeaderValue(start, end);</span>
+<span class="fc" id="L882">            con.addRequestProperty(&quot;Range&quot;, bytesRange);</span>
+<span class="fc" id="L883">            return new BufferedInputStream(con.getInputStream());</span>
+        };
+    }
+
+    @VisibleForTesting
+    static String getRangeHeaderValue(long start, Optional&lt;Long&gt; end) {
+<span class="fc" id="L889">        return &quot;bytes=&quot; + start + end.map(x -&gt; &quot;-&quot; + x).orElse(&quot;&quot;);</span>
+    }
+
+    private static &lt;T&gt; Index&lt;T&gt; createIndex( //
+            File input, //
+            Serializer&lt;? extends T&gt; serializer, //
+            Function&lt;? super T, double[]&gt; point, //
+            File output, //
+            int bits, //
+            int dimensions, //
+            int numIndexEntriesApproximate, //
+            int sortMaxFiles, //
+            int sortMaxItemsPerFile) //
+            throws IOException {
+
+<span class="fc bfc" id="L904" title="All 2 branches covered.">        Preconditions.checkArgument(bits * dimensions &lt;= 31,</span>
+                &quot;bits * dimensions must be at most 31&quot;);
+
+        // scan once to get the mins, maxes, count
+<span class="fc" id="L908">        final double[] mins = new double[dimensions];</span>
+<span class="fc" id="L909">        final double[] maxes = new double[dimensions];</span>
+<span class="fc" id="L910">        long count = 0;</span>
+<span class="fc" id="L911">        try (InputStream in = Util.bufferedInput(input); //</span>
+<span class="fc" id="L912">                Reader&lt;? extends T&gt; reader = serializer.createReader(in)) {</span>
+<span class="fc" id="L913">            Arrays.setAll(mins, i -&gt; Double.MAX_VALUE);</span>
+<span class="fc" id="L914">            Arrays.setAll(maxes, i -&gt; Double.MIN_VALUE);</span>
+            T t;
+<span class="fc bfc" id="L916" title="All 2 branches covered.">            while ((t = reader.read()) != null) {</span>
+<span class="fc" id="L917">                count++;</span>
+<span class="fc" id="L918">                double[] p = point.apply(t);</span>
+<span class="fc bfc" id="L919" title="All 2 branches covered.">                if (p.length != dimensions) {</span>
+<span class="fc" id="L920">                    throw new IllegalArgumentException(</span>
+                            &quot;point function should be of length equal to number of dimensions but was: &quot;
+<span class="fc" id="L922">                                    + Arrays.toString(p));</span>
+                }
+<span class="fc bfc" id="L924" title="All 2 branches covered.">                for (int i = 0; i &lt; p.length; i++) {</span>
+<span class="fc bfc" id="L925" title="All 2 branches covered.">                    if (p[i] &lt; mins[i]) {</span>
+<span class="fc" id="L926">                        mins[i] = p[i];</span>
+                    }
+<span class="fc bfc" id="L928" title="All 2 branches covered.">                    if (p[i] &gt; maxes[i]) {</span>
+<span class="fc" id="L929">                        maxes[i] = p[i];</span>
+                    }
+                }
+<span class="fc" id="L932">            }</span>
+        }
+
+<span class="fc" id="L935">        SmallHilbertCurve hc = HilbertCurve.small().bits(bits).dimensions(dimensions);</span>
+
+<span class="fc" id="L937">        Sorter //</span>
+<span class="fc" id="L938">                .serializer(serializer) //</span>
+<span class="fc" id="L939">                .comparator((a, b) -&gt; {</span>
+<span class="fc" id="L940">                    double[] x = point.apply(a);</span>
+<span class="fc" id="L941">                    double[] y = point.apply(b);</span>
+<span class="fc" id="L942">                    return Integer.compare( //</span>
+<span class="fc" id="L943">                            hilbertIndex(hc, x, mins, maxes), //</span>
+<span class="fc" id="L944">                            hilbertIndex(hc, y, mins, maxes));</span>
+                }) //
+<span class="fc" id="L946">                .input(input) //</span>
+<span class="fc" id="L947">                .output(output) //</span>
+<span class="fc" id="L948">                .maxFilesPerMerge(sortMaxFiles) //</span>
+<span class="fc" id="L949">                .maxItemsPerFile(sortMaxItemsPerFile) //</span>
+<span class="fc" id="L950">                .loggerStdOut() //</span>
+<span class="fc" id="L951">                .sort();</span>
+
+<span class="fc" id="L953">        long chunk = Math.max(1, count / numIndexEntriesApproximate);</span>
+<span class="fc" id="L954">        TreeMap&lt;Integer, Long&gt; indexPositions = createIndexPositions(serializer, point, output,</span>
+                mins, maxes, hc, chunk);
+<span class="fc" id="L956">        return new Index&lt;T&gt;(indexPositions, mins, maxes, bits, count, serializer, point);</span>
+    }
+
+    private static &lt;T&gt; TreeMap&lt;Integer, Long&gt; createIndexPositions(Serializer&lt;T&gt; serializer,
+            Function&lt;? super T, double[]&gt; point, File output, final double[] mins,
+            final double[] maxes, SmallHilbertCurve hc, long chunk)
+            throws IOException, FileNotFoundException {
+<span class="fc" id="L963">        TreeMap&lt;Integer, Long&gt; indexPositions = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L964">        try (//</span>
+<span class="fc" id="L965">                InputStream in = Util.bufferedInput(output); //</span>
+<span class="fc" id="L966">                Reader&lt;T&gt; reader = serializer.createReader(in);</span>
+<span class="fc" id="L967">                CountingOutputStream counter = new CountingOutputStream();</span>
+<span class="fc" id="L968">                Writer&lt;T&gt; writer = serializer.createWriter(counter)) {</span>
+            T t;
+<span class="fc" id="L970">            long position = 0;</span>
+<span class="fc" id="L971">            T lastT = null;</span>
+<span class="fc bfc" id="L972" title="All 2 branches covered.">            while ((t = reader.read()) != null) {</span>
+<span class="fc" id="L973">                position = counter.count();</span>
+<span class="fc bfc" id="L974" title="All 2 branches covered.">                if (position % chunk == 0) {</span>
+<span class="fc" id="L975">                    double[] p = point.apply(t);</span>
+<span class="fc" id="L976">                    int index = hilbertIndex(hc, p, mins, maxes);</span>
+<span class="fc bfc" id="L977" title="All 2 branches covered.">                    if (!indexPositions.containsKey(index)) {</span>
+                        // don't overwrite an earlier start position for the index
+<span class="fc" id="L979">                        indexPositions.put(index, position);</span>
+                    }
+                }
+<span class="fc" id="L982">                writer.write(t);</span>
+
+                // must flush otherwise position may be wrong for the next pass through the loop
+<span class="fc" id="L985">                writer.flush();</span>
+
+<span class="fc" id="L987">                lastT = t;</span>
+            }
+<span class="fc bfc" id="L989" title="All 2 branches covered.">            if (counter.count() % chunk != 0) {</span>
+                // write the last record too so we know index of last position
+<span class="fc" id="L991">                double[] p = point.apply(lastT);</span>
+<span class="fc" id="L992">                int index = hilbertIndex(hc, p, mins, maxes);</span>
+<span class="fc" id="L993">                indexPositions.put(index, position);</span>
+            }
+        }
+<span class="fc" id="L996">        return indexPositions;</span>
+    }
+
+    private static int hilbertIndex(SmallHilbertCurve hc, double[] point, double[] mins,
+            double[] maxes) {
+<span class="fc" id="L1001">        long[] ordinates = new long[point.length];</span>
+<span class="fc bfc" id="L1002" title="All 2 branches covered.">        for (int i = 0; i &lt; ordinates.length; i++) {</span>
+<span class="fc" id="L1003">            ordinates[i] = Math</span>
+<span class="fc" id="L1004">                    .round((point[i] - mins[i]) / (maxes[i] - mins[i]) * hc.maxOrdinate());</span>
+        }
+        // can do this because bits * dimensions &lt;= 31
+<span class="fc" id="L1007">        return (int) hc.index(ordinates);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L1012">        return &quot;Index [mins=&quot; + Arrays.toString(mins) + &quot;, maxes=&quot; + Arrays.toString(maxes)</span>
+<span class="fc" id="L1013">                + &quot;, numEntries=&quot; + indexPositions.size() + &quot;]&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

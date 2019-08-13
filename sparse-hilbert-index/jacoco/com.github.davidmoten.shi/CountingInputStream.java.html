@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sparse-hilbert-index</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.shi</a> &gt; <span class="el_source">CountingInputStream.java</span></div><h1>CountingInputStream.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.shi;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+final class CountingInputStream extends InputStream {
+
+    private final InputStream in;
+    private long count;
+    private long startTime;
+    private long ttfb;
+
+<span class="fc" id="L13">    CountingInputStream(InputStream in, long startTime) {</span>
+<span class="fc" id="L14">        this.in = in;</span>
+<span class="fc" id="L15">        this.startTime = startTime;</span>
+<span class="fc" id="L16">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L20">        int v = in.read();</span>
+<span class="fc" id="L21">        postRead();</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (v != -1) {</span>
+<span class="fc" id="L23">            count++;</span>
+        }
+<span class="fc" id="L25">        return v;</span>
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+<span class="fc" id="L30">        int n = in.read(b, off, len);</span>
+<span class="fc" id="L31">        postRead();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (n != -1) {</span>
+<span class="fc" id="L33">            count += n;</span>
+        }
+<span class="fc" id="L35">        return n;</span>
+    }
+
+    private void postRead() {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (startTime != -1) {</span>
+<span class="fc" id="L40">            ttfb = System.currentTimeMillis() - startTime;</span>
+<span class="fc" id="L41">            startTime = -1;</span>
+        }
+<span class="fc" id="L43">    }</span>
+
+    long count() {
+<span class="fc" id="L46">        long c = count;</span>
+<span class="fc" id="L47">        count = 0;</span>
+<span class="fc" id="L48">        return c;</span>
+    }
+
+    long readTimeToFirstByteAndSetToZero() {
+<span class="fc" id="L52">        long v = ttfb;</span>
+<span class="fc" id="L53">        ttfb = 0;</span>
+<span class="fc" id="L54">        return v;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

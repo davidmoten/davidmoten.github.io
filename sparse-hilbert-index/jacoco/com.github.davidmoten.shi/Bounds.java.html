@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Bounds.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">sparse-hilbert-index</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.shi</a> &gt; <span class="el_source">Bounds.java</span></div><h1>Bounds.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.shi;
+
+import java.util.Arrays;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class Bounds {
+
+    private final double[] mins;
+    private final double[] maxes;
+
+<span class="fc" id="L12">    private Bounds(double[] a, double[] b) {</span>
+<span class="fc bfc" id="L13" title="All 2 branches covered.">        Preconditions.checkArgument(a.length &gt; 0);</span>
+<span class="fc bfc" id="L14" title="All 2 branches covered.">        Preconditions.checkArgument(a.length == b.length);</span>
+<span class="fc" id="L15">        double[] mins = new double[a.length];</span>
+<span class="fc" id="L16">        double[] maxes = new double[a.length];</span>
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        for (int i = 0; i &lt; a.length; i++) {</span>
+<span class="fc" id="L18">            mins[i] = Math.min(a[i], b[i]);</span>
+<span class="fc" id="L19">            maxes[i] = Math.max(a[i], b[i]);</span>
+        }
+<span class="fc" id="L21">        this.mins = mins;</span>
+<span class="fc" id="L22">        this.maxes = maxes;</span>
+<span class="fc" id="L23">    }</span>
+
+    public static Bounds create(double[] a, double[] b) {
+<span class="fc" id="L26">        return new Bounds(a, b);</span>
+    }
+
+    public boolean contains(double[] d) {
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        Preconditions.checkArgument(mins.length == d.length);</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        for (int i = 0; i &lt; mins.length; i++) {</span>
+<span class="fc bfc" id="L32" title="All 4 branches covered.">            if (d[i] &lt; mins[i] || d[i] &gt; maxes[i]) {</span>
+<span class="fc" id="L33">                return false;</span>
+            }
+        }
+<span class="fc" id="L36">        return true;</span>
+    }
+
+    public double[] mins() {
+<span class="fc" id="L40">        return mins;</span>
+    }
+
+    public double[] maxes() {
+<span class="fc" id="L44">        return maxes;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L49">        return &quot;Bounds [mins=&quot; + Arrays.toString(mins) + &quot;, maxes=&quot; + Arrays.toString(maxes) + &quot;]&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>
