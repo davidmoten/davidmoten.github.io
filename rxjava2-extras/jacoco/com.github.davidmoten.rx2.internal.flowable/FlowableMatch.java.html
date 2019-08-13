@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableMatch.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMatch.java</span></div><h1>FlowableMatch.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableMatch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMatch.java</span></div><h1>FlowableMatch.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -14,6 +14,7 @@ import org.reactivestreams.Subscription;
 import com.github.davidmoten.guavamini.Preconditions;
 
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Function;
@@ -32,28 +33,28 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
     private final long requestSize;
 
     public FlowableMatch(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, ? extends K&gt; aKey,
-<span class="fc" id="L35">            Function&lt;? super B, ? extends K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize) {</span>
-<span class="fc" id="L36">        Preconditions.checkNotNull(a, &quot;a should not be null&quot;);</span>
-<span class="fc" id="L37">        Preconditions.checkNotNull(b, &quot;b should not be null&quot;);</span>
-<span class="fc" id="L38">        Preconditions.checkNotNull(aKey, &quot;aKey cannot be null&quot;);</span>
-<span class="fc" id="L39">        Preconditions.checkNotNull(bKey, &quot;bKey cannot be null&quot;);</span>
-<span class="fc" id="L40">        Preconditions.checkNotNull(combiner, &quot;combiner cannot be null&quot;);</span>
-<span class="fc bfc" id="L41" title="All 2 branches covered.">        Preconditions.checkArgument(requestSize &gt;= 1, &quot;requestSize must be &gt;=1&quot;);</span>
-<span class="fc" id="L42">        this.a = a;</span>
-<span class="fc" id="L43">        this.b = b;</span>
-<span class="fc" id="L44">        this.aKey = aKey;</span>
-<span class="fc" id="L45">        this.bKey = bKey;</span>
-<span class="fc" id="L46">        this.combiner = combiner;</span>
-<span class="fc" id="L47">        this.requestSize = requestSize;</span>
-<span class="fc" id="L48">    }</span>
+<span class="fc" id="L36">            Function&lt;? super B, ? extends K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize) {</span>
+<span class="fc" id="L37">        Preconditions.checkNotNull(a, &quot;a should not be null&quot;);</span>
+<span class="fc" id="L38">        Preconditions.checkNotNull(b, &quot;b should not be null&quot;);</span>
+<span class="fc" id="L39">        Preconditions.checkNotNull(aKey, &quot;aKey cannot be null&quot;);</span>
+<span class="fc" id="L40">        Preconditions.checkNotNull(bKey, &quot;bKey cannot be null&quot;);</span>
+<span class="fc" id="L41">        Preconditions.checkNotNull(combiner, &quot;combiner cannot be null&quot;);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        Preconditions.checkArgument(requestSize &gt;= 1, &quot;requestSize must be &gt;=1&quot;);</span>
+<span class="fc" id="L43">        this.a = a;</span>
+<span class="fc" id="L44">        this.b = b;</span>
+<span class="fc" id="L45">        this.aKey = aKey;</span>
+<span class="fc" id="L46">        this.bKey = bKey;</span>
+<span class="fc" id="L47">        this.combiner = combiner;</span>
+<span class="fc" id="L48">        this.requestSize = requestSize;</span>
+<span class="fc" id="L49">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super C&gt; child) {
-<span class="fc" id="L52">        MatchCoordinator&lt;A, B, K, C&gt; coordinator = new MatchCoordinator&lt;A, B, K, C&gt;(aKey, bKey, combiner, requestSize,</span>
+<span class="fc" id="L53">        MatchCoordinator&lt;A, B, K, C&gt; coordinator = new MatchCoordinator&lt;A, B, K, C&gt;(aKey, bKey, combiner, requestSize,</span>
                 child);
-<span class="fc" id="L54">        child.onSubscribe(coordinator);</span>
-<span class="fc" id="L55">        coordinator.subscribe(a, b);</span>
-<span class="fc" id="L56">    }</span>
+<span class="fc" id="L55">        child.onSubscribe(coordinator);</span>
+<span class="fc" id="L56">        coordinator.subscribe(a, b);</span>
+<span class="fc" id="L57">    }</span>
 
     interface Receiver {
         void offer(Object item);
@@ -61,22 +62,22 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 
     @SuppressWarnings(&quot;serial&quot;)
     private static final class MatchCoordinator&lt;A, B, K, C&gt; extends AtomicInteger implements Receiver, Subscription {
-<span class="fc" id="L64">        private final Map&lt;K, Queue&lt;A&gt;&gt; as = new HashMap&lt;K, Queue&lt;A&gt;&gt;();</span>
-<span class="fc" id="L65">        private final Map&lt;K, Queue&lt;B&gt;&gt; bs = new HashMap&lt;K, Queue&lt;B&gt;&gt;();</span>
+<span class="fc" id="L65">        private final Map&lt;K, Queue&lt;A&gt;&gt; as = new HashMap&lt;K, Queue&lt;A&gt;&gt;();</span>
+<span class="fc" id="L66">        private final Map&lt;K, Queue&lt;B&gt;&gt; bs = new HashMap&lt;K, Queue&lt;B&gt;&gt;();</span>
         private final Function&lt;? super A, ? extends K&gt; aKey;
         private final Function&lt;? super B, ? extends K&gt; bKey;
         private final BiFunction&lt;? super A, ? super B, C&gt; combiner;
         private final long requestSize;
         private final transient SimpleQueue&lt;Object&gt; queue;
         private final Subscriber&lt;? super C&gt; child;
-<span class="fc" id="L72">        private final AtomicLong requested = new AtomicLong(0);</span>
+<span class="fc" id="L73">        private final AtomicLong requested = new AtomicLong(0);</span>
 
         // mutable fields, guarded by `this` atomics
-<span class="fc" id="L75">        private int requestFromA = 0;</span>
-<span class="fc" id="L76">        private int requestFromB = 0;</span>
+<span class="fc" id="L76">        private int requestFromA = 0;</span>
+<span class="fc" id="L77">        private int requestFromB = 0;</span>
 
         // completion state machine
-<span class="fc" id="L79">        private int completed = COMPLETED_NONE;</span>
+<span class="fc" id="L80">        private int completed = COMPLETED_NONE;</span>
         // completion states
         private static final int COMPLETED_NONE = 0;
         private static final int COMPLETED_A = 1;
@@ -86,111 +87,111 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
         private MySubscriber&lt;A, K&gt; aSub;
         private MySubscriber&lt;B, K&gt; bSub;
 
-<span class="fc" id="L89">        private volatile boolean cancelled = false;</span>
+<span class="fc" id="L90">        private volatile boolean cancelled = false;</span>
 
         MatchCoordinator(Function&lt;? super A, ? extends K&gt; aKey, Function&lt;? super B, ? extends K&gt; bKey,
-<span class="fc" id="L92">                BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize, Subscriber&lt;? super C&gt; child) {</span>
-<span class="fc" id="L93">            this.aKey = aKey;</span>
-<span class="fc" id="L94">            this.bKey = bKey;</span>
-<span class="fc" id="L95">            this.combiner = combiner;</span>
-<span class="fc" id="L96">            this.requestSize = requestSize;</span>
-<span class="fc" id="L97">            this.queue = new MpscLinkedQueue&lt;Object&gt;();</span>
-<span class="fc" id="L98">            this.child = child;</span>
-<span class="fc" id="L99">        }</span>
+<span class="fc" id="L93">                BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize, Subscriber&lt;? super C&gt; child) {</span>
+<span class="fc" id="L94">            this.aKey = aKey;</span>
+<span class="fc" id="L95">            this.bKey = bKey;</span>
+<span class="fc" id="L96">            this.combiner = combiner;</span>
+<span class="fc" id="L97">            this.requestSize = requestSize;</span>
+<span class="fc" id="L98">            this.queue = new MpscLinkedQueue&lt;Object&gt;();</span>
+<span class="fc" id="L99">            this.child = child;</span>
+<span class="fc" id="L100">        }</span>
 
         public void subscribe(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b) {
-<span class="fc" id="L102">            aSub = new MySubscriber&lt;A, K&gt;(Source.A, this, requestSize);</span>
-<span class="fc" id="L103">            bSub = new MySubscriber&lt;B, K&gt;(Source.B, this, requestSize);</span>
-<span class="fc" id="L104">            a.subscribe(aSub);</span>
-<span class="fc" id="L105">            b.subscribe(bSub);</span>
-<span class="fc" id="L106">        }</span>
+<span class="fc" id="L103">            aSub = new MySubscriber&lt;A, K&gt;(Source.A, this, requestSize);</span>
+<span class="fc" id="L104">            bSub = new MySubscriber&lt;B, K&gt;(Source.B, this, requestSize);</span>
+<span class="fc" id="L105">            a.subscribe(aSub);</span>
+<span class="fc" id="L106">            b.subscribe(bSub);</span>
+<span class="fc" id="L107">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L111">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L112">                drain();</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L112">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L113">                drain();</span>
             }
-<span class="fc" id="L114">        }</span>
+<span class="fc" id="L115">        }</span>
 
         @Override
         public void cancel() {
-<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (!cancelled) {</span>
-<span class="fc" id="L119">                cancelled = true;</span>
-<span class="fc" id="L120">                cancelAll();</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (!cancelled) {</span>
+<span class="fc" id="L120">                cancelled = true;</span>
+<span class="fc" id="L121">                cancelAll();</span>
             }
-<span class="fc" id="L122">        }</span>
+<span class="fc" id="L123">        }</span>
 
         void cancelAll() {
-<span class="fc" id="L125">            aSub.cancel();</span>
-<span class="fc" id="L126">            bSub.cancel();</span>
-<span class="fc" id="L127">        }</span>
+<span class="fc" id="L126">            aSub.cancel();</span>
+<span class="fc" id="L127">            bSub.cancel();</span>
+<span class="fc" id="L128">        }</span>
 
         void drain() {
-<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (getAndIncrement() != 0) {</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            if (getAndIncrement() != 0) {</span>
                 // work already in progress
                 // so exit
-<span class="fc" id="L133">                return;</span>
+<span class="fc" id="L134">                return;</span>
             }
-<span class="fc" id="L135">            int missed = 1;</span>
+<span class="fc" id="L136">            int missed = 1;</span>
             while (true) {
-<span class="fc" id="L137">                long r = requested.get();</span>
-<span class="fc" id="L138">                long emitted = 0;</span>
-<span class="fc bfc" id="L139" title="All 2 branches covered.">                while (emitted != r) {</span>
-<span class="fc bfc" id="L140" title="All 2 branches covered.">                    if (cancelled) {</span>
-<span class="fc" id="L141">                        return;</span>
+<span class="fc" id="L138">                long r = requested.get();</span>
+<span class="fc" id="L139">                long emitted = 0;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                while (emitted != r) {</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                    if (cancelled) {</span>
+<span class="fc" id="L142">                        return;</span>
                     }
                     // note no null values on the queue
                     Object v;
                     try {
-<span class="fc" id="L146">                        v = queue.poll();</span>
-<span class="nc" id="L147">                    } catch (Exception e) {</span>
-<span class="nc" id="L148">                        Exceptions.throwIfFatal(e);</span>
-<span class="nc" id="L149">                        clear();</span>
-<span class="nc" id="L150">                        child.onError(e);</span>
-<span class="nc" id="L151">                        return;</span>
-<span class="fc" id="L152">                    }</span>
-<span class="fc bfc" id="L153" title="All 2 branches covered.">                    if (v == null) {</span>
+<span class="fc" id="L147">                        v = queue.poll();</span>
+<span class="nc" id="L148">                    } catch (Exception e) {</span>
+<span class="nc" id="L149">                        Exceptions.throwIfFatal(e);</span>
+<span class="nc" id="L150">                        clear();</span>
+<span class="nc" id="L151">                        child.onError(e);</span>
+<span class="nc" id="L152">                        return;</span>
+<span class="fc" id="L153">                    }</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                    if (v == null) {</span>
                         // queue is empty
-<span class="fc" id="L155">                        break;</span>
-<span class="fc bfc" id="L156" title="All 2 branches covered.">                    } else if (v instanceof ItemA) {</span>
-<span class="fc" id="L157">                        Emitted em = handleItem(((ItemA) v).value, Source.A);</span>
-<span class="fc bfc" id="L158" title="All 2 branches covered.">                        if (em == Emitted.FINISHED) {</span>
-<span class="fc" id="L159">                            return;</span>
-<span class="fc bfc" id="L160" title="All 2 branches covered.">                        } else if (em == Emitted.ONE) {</span>
-<span class="fc" id="L161">                            emitted += 1;</span>
+<span class="fc" id="L156">                        break;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                    } else if (v instanceof ItemA) {</span>
+<span class="fc" id="L158">                        Emitted em = handleItem(((ItemA) v).value, Source.A);</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                        if (em == Emitted.FINISHED) {</span>
+<span class="fc" id="L160">                            return;</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                        } else if (em == Emitted.ONE) {</span>
+<span class="fc" id="L162">                            emitted += 1;</span>
                         }
-<span class="fc bfc" id="L163" title="All 2 branches covered.">                    } else if (v instanceof Source) {</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                    } else if (v instanceof Source) {</span>
                         // source completed
-<span class="fc" id="L165">                        Status status = handleCompleted((Source) v);</span>
-<span class="fc bfc" id="L166" title="All 2 branches covered.">                        if (status == Status.FINISHED) {</span>
-<span class="fc" id="L167">                            return;</span>
+<span class="fc" id="L166">                        Status status = handleCompleted((Source) v);</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                        if (status == Status.FINISHED) {</span>
+<span class="fc" id="L168">                            return;</span>
                         }
-<span class="fc bfc" id="L169" title="All 2 branches covered.">                    } else if (v instanceof MyError) {</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                    } else if (v instanceof MyError) {</span>
                         // v must be an error
-<span class="fc" id="L171">                        clear();</span>
-<span class="fc" id="L172">                        child.onError(((MyError) v).error);</span>
-<span class="fc" id="L173">                        return;</span>
+<span class="fc" id="L172">                        clear();</span>
+<span class="fc" id="L173">                        child.onError(((MyError) v).error);</span>
+<span class="fc" id="L174">                        return;</span>
                     } else {
                         // is onNext from B
-<span class="fc" id="L176">                        Emitted em = handleItem(v, Source.B);</span>
-<span class="fc bfc" id="L177" title="All 2 branches covered.">                        if (em == Emitted.FINISHED) {</span>
-<span class="fc" id="L178">                            return;</span>
-<span class="fc bfc" id="L179" title="All 2 branches covered.">                        } else if (em == Emitted.ONE) {</span>
-<span class="fc" id="L180">                            emitted += 1;</span>
+<span class="fc" id="L177">                        Emitted em = handleItem(v, Source.B);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                        if (em == Emitted.FINISHED) {</span>
+<span class="fc" id="L179">                            return;</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                        } else if (em == Emitted.ONE) {</span>
+<span class="fc" id="L181">                            emitted += 1;</span>
                         }
                     }
-<span class="fc bfc" id="L183" title="All 2 branches covered.">                    if (r == emitted) {</span>
-<span class="fc" id="L184">                        break;</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                    if (r == emitted) {</span>
+<span class="fc" id="L185">                        break;</span>
                     }
-<span class="fc" id="L186">                }</span>
+<span class="fc" id="L187">                }</span>
                 // reduce requested by emitted which will always be positive
-<span class="fc" id="L188">                BackpressureHelper.produced(requested, emitted);</span>
-<span class="fc" id="L189">                missed = this.addAndGet(-missed);</span>
-<span class="fc bfc" id="L190" title="All 2 branches covered.">                if (missed == 0) {</span>
-<span class="fc" id="L191">                    return;</span>
+<span class="fc" id="L189">                BackpressureHelper.produced(requested, emitted);</span>
+<span class="fc" id="L190">                missed = this.addAndGet(-missed);</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L192">                    return;</span>
                 }
-<span class="fc" id="L193">            }</span>
+<span class="fc" id="L194">            }</span>
         }
 
         private Emitted handleItem(Object value, Source source) {
@@ -199,256 +200,256 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
             // logic duplication occurs below
             // would be nice to simplify without making code
             // unreadable. A bit of a toss-up.
-<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (source == Source.A) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            if (source == Source.A) {</span>
                 // look for match
                 @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L205">                A a = (A) value;</span>
+<span class="fc" id="L206">                A a = (A) value;</span>
                 K key;
                 try {
-<span class="fc" id="L208">                    key = aKey.apply(a);</span>
-<span class="fc" id="L209">                } catch (Throwable e) {</span>
-<span class="fc" id="L210">                    clear();</span>
-<span class="fc" id="L211">                    child.onError(e);</span>
-<span class="fc" id="L212">                    return Emitted.FINISHED;</span>
-<span class="fc" id="L213">                }</span>
-<span class="fc" id="L214">                Queue&lt;B&gt; q = bs.get(key);</span>
-<span class="fc bfc" id="L215" title="All 2 branches covered.">                if (q == null) {</span>
+<span class="fc" id="L209">                    key = aKey.apply(a);</span>
+<span class="fc" id="L210">                } catch (Throwable e) {</span>
+<span class="fc" id="L211">                    clear();</span>
+<span class="fc" id="L212">                    child.onError(e);</span>
+<span class="fc" id="L213">                    return Emitted.FINISHED;</span>
+<span class="fc" id="L214">                }</span>
+<span class="fc" id="L215">                Queue&lt;B&gt; q = bs.get(key);</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                if (q == null) {</span>
                     // cache value
-<span class="fc" id="L217">                    add(as, key, a);</span>
-<span class="fc" id="L218">                    result = Emitted.NONE;</span>
+<span class="fc" id="L218">                    add(as, key, a);</span>
+<span class="fc" id="L219">                    result = Emitted.NONE;</span>
                 } else {
                     // emit match
-<span class="fc" id="L221">                    B b = poll(bs, q, key);</span>
+<span class="fc" id="L222">                    B b = poll(bs, q, key);</span>
                     C c;
                     try {
-<span class="fc" id="L224">                        c = combiner.apply(a, b);</span>
-<span class="nc" id="L225">                    } catch (Throwable e) {</span>
-<span class="nc" id="L226">                        clear();</span>
-<span class="nc" id="L227">                        child.onError(e);</span>
-<span class="nc" id="L228">                        return Emitted.FINISHED;</span>
-<span class="fc" id="L229">                    }</span>
-<span class="fc" id="L230">                    child.onNext(c);</span>
-<span class="fc" id="L231">                    result = Emitted.ONE;</span>
+<span class="fc" id="L225">                        c = combiner.apply(a, b);</span>
+<span class="nc" id="L226">                    } catch (Throwable e) {</span>
+<span class="nc" id="L227">                        clear();</span>
+<span class="nc" id="L228">                        child.onError(e);</span>
+<span class="nc" id="L229">                        return Emitted.FINISHED;</span>
+<span class="fc" id="L230">                    }</span>
+<span class="fc" id="L231">                    child.onNext(c);</span>
+<span class="fc" id="L232">                    result = Emitted.ONE;</span>
                 }
                 // if the other source has completed and there
                 // is nothing to match with then we should stop
-<span class="fc bfc" id="L235" title="All 4 branches covered.">                if (completed == COMPLETED_B &amp;&amp; bs.isEmpty()) {</span>
+<span class="fc bfc" id="L236" title="All 4 branches covered.">                if (completed == COMPLETED_B &amp;&amp; bs.isEmpty()) {</span>
                     // can finish
-<span class="fc" id="L237">                    clear();</span>
-<span class="fc" id="L238">                    child.onComplete();</span>
-<span class="fc" id="L239">                    return Emitted.FINISHED;</span>
+<span class="fc" id="L238">                    clear();</span>
+<span class="fc" id="L239">                    child.onComplete();</span>
+<span class="fc" id="L240">                    return Emitted.FINISHED;</span>
                 } else {
-<span class="fc" id="L241">                    requestFromA += 1;</span>
+<span class="fc" id="L242">                    requestFromA += 1;</span>
                 }
-<span class="fc" id="L243">            } else {</span>
+<span class="fc" id="L244">            } else {</span>
                 // look for match
                 @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L246">                B b = (B) value;</span>
+<span class="fc" id="L247">                B b = (B) value;</span>
                 K key;
                 try {
-<span class="fc" id="L249">                    key = bKey.apply(b);</span>
-<span class="fc" id="L250">                } catch (Throwable e) {</span>
-<span class="fc" id="L251">                    clear();</span>
-<span class="fc" id="L252">                    child.onError(e);</span>
-<span class="fc" id="L253">                    return Emitted.FINISHED;</span>
-<span class="fc" id="L254">                }</span>
-<span class="fc" id="L255">                Queue&lt;A&gt; q = as.get(key);</span>
-<span class="fc bfc" id="L256" title="All 2 branches covered.">                if (q == null) {</span>
+<span class="fc" id="L250">                    key = bKey.apply(b);</span>
+<span class="fc" id="L251">                } catch (Throwable e) {</span>
+<span class="fc" id="L252">                    clear();</span>
+<span class="fc" id="L253">                    child.onError(e);</span>
+<span class="fc" id="L254">                    return Emitted.FINISHED;</span>
+<span class="fc" id="L255">                }</span>
+<span class="fc" id="L256">                Queue&lt;A&gt; q = as.get(key);</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">                if (q == null) {</span>
                     // cache value
-<span class="fc" id="L258">                    add(bs, key, b);</span>
-<span class="fc" id="L259">                    result = Emitted.NONE;</span>
+<span class="fc" id="L259">                    add(bs, key, b);</span>
+<span class="fc" id="L260">                    result = Emitted.NONE;</span>
                 } else {
                     // emit match
-<span class="fc" id="L262">                    A a = poll(as, q, key);</span>
+<span class="fc" id="L263">                    A a = poll(as, q, key);</span>
                     C c;
                     try {
-<span class="fc" id="L265">                        c = combiner.apply(a, b);</span>
-<span class="fc" id="L266">                    } catch (Throwable e) {</span>
-<span class="fc" id="L267">                        clear();</span>
-<span class="fc" id="L268">                        child.onError(e);</span>
-<span class="fc" id="L269">                        return Emitted.FINISHED;</span>
-<span class="fc" id="L270">                    }</span>
-<span class="fc" id="L271">                    child.onNext(c);</span>
-<span class="fc" id="L272">                    result = Emitted.ONE;</span>
+<span class="fc" id="L266">                        c = combiner.apply(a, b);</span>
+<span class="fc" id="L267">                    } catch (Throwable e) {</span>
+<span class="fc" id="L268">                        clear();</span>
+<span class="fc" id="L269">                        child.onError(e);</span>
+<span class="fc" id="L270">                        return Emitted.FINISHED;</span>
+<span class="fc" id="L271">                    }</span>
+<span class="fc" id="L272">                    child.onNext(c);</span>
+<span class="fc" id="L273">                    result = Emitted.ONE;</span>
                 }
                 // if the other source has completed and there
                 // is nothing to match with then we should stop
-<span class="fc bfc" id="L276" title="All 4 branches covered.">                if (completed == COMPLETED_A &amp;&amp; as.isEmpty()) {</span>
+<span class="fc bfc" id="L277" title="All 4 branches covered.">                if (completed == COMPLETED_A &amp;&amp; as.isEmpty()) {</span>
                     // can finish
-<span class="fc" id="L278">                    clear();</span>
-<span class="fc" id="L279">                    child.onComplete();</span>
-<span class="fc" id="L280">                    return Emitted.FINISHED;</span>
+<span class="fc" id="L279">                    clear();</span>
+<span class="fc" id="L280">                    child.onComplete();</span>
+<span class="fc" id="L281">                    return Emitted.FINISHED;</span>
                 } else {
-<span class="fc" id="L282">                    requestFromB += 1;</span>
+<span class="fc" id="L283">                    requestFromB += 1;</span>
                 }
             }
             // requests are batched so that each source gets a turn
-<span class="fc" id="L286">            checkToRequestMore();</span>
-<span class="fc" id="L287">            return result;</span>
+<span class="fc" id="L287">            checkToRequestMore();</span>
+<span class="fc" id="L288">            return result;</span>
         }
 
-<span class="pc" id="L290">        private enum Emitted {</span>
-<span class="fc" id="L291">            ONE, NONE, FINISHED;</span>
+<span class="fc" id="L291">        private enum Emitted {</span>
+<span class="fc" id="L292">            ONE, NONE, FINISHED;</span>
         }
 
         private Status handleCompleted(Source source) {
-<span class="fc" id="L295">            completed(source);</span>
+<span class="fc" id="L296">            completed(source);</span>
             final boolean done;
-<span class="fc bfc" id="L297" title="All 2 branches covered.">            if (source == Source.A) {</span>
-<span class="fc" id="L298">                aSub.cancel();</span>
-<span class="pc bpc" id="L299" title="2 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_A &amp;&amp; as.isEmpty());</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">            if (source == Source.A) {</span>
+<span class="fc" id="L299">                aSub.cancel();</span>
+<span class="pc bpc" id="L300" title="2 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_A &amp;&amp; as.isEmpty());</span>
             } else {
-<span class="fc" id="L301">                bSub.cancel();</span>
-<span class="pc bpc" id="L302" title="1 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_B &amp;&amp; bs.isEmpty());</span>
+<span class="fc" id="L302">                bSub.cancel();</span>
+<span class="pc bpc" id="L303" title="1 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_B &amp;&amp; bs.isEmpty());</span>
             }
-<span class="fc bfc" id="L304" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L305">                clear();</span>
-<span class="fc" id="L306">                child.onComplete();</span>
-<span class="fc" id="L307">                return Status.FINISHED;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L306">                clear();</span>
+<span class="fc" id="L307">                child.onComplete();</span>
+<span class="fc" id="L308">                return Status.FINISHED;</span>
             } else {
-<span class="fc" id="L309">                checkToRequestMore();</span>
-<span class="fc" id="L310">                return Status.KEEP_GOING;</span>
+<span class="fc" id="L310">                checkToRequestMore();</span>
+<span class="fc" id="L311">                return Status.KEEP_GOING;</span>
             }
         }
 
-<span class="pc" id="L314">        private enum Status {</span>
-<span class="fc" id="L315">            FINISHED, KEEP_GOING;</span>
+<span class="fc" id="L315">        private enum Status {</span>
+<span class="fc" id="L316">            FINISHED, KEEP_GOING;</span>
         }
 
         private void checkToRequestMore() {
-<span class="fc bfc" id="L319" title="All 4 branches covered.">            if (requestFromA == requestSize &amp;&amp; completed == COMPLETED_B) {</span>
-<span class="fc" id="L320">                requestFromA = 0;</span>
-<span class="fc" id="L321">                aSub.request(requestSize);</span>
-<span class="fc bfc" id="L322" title="All 4 branches covered.">            } else if (requestFromB == requestSize &amp;&amp; completed == COMPLETED_A) {</span>
-<span class="fc" id="L323">                requestFromB = 0;</span>
-<span class="fc" id="L324">                bSub.request(requestSize);</span>
-<span class="fc bfc" id="L325" title="All 4 branches covered.">            } else if (requestFromA == requestSize &amp;&amp; requestFromB == requestSize) {</span>
-<span class="fc" id="L326">                requestFromA = 0;</span>
-<span class="fc" id="L327">                requestFromB = 0;</span>
-<span class="fc" id="L328">                aSub.request(requestSize);</span>
-<span class="fc" id="L329">                bSub.request(requestSize);</span>
+<span class="fc bfc" id="L320" title="All 4 branches covered.">            if (requestFromA == requestSize &amp;&amp; completed == COMPLETED_B) {</span>
+<span class="fc" id="L321">                requestFromA = 0;</span>
+<span class="fc" id="L322">                aSub.request(requestSize);</span>
+<span class="fc bfc" id="L323" title="All 4 branches covered.">            } else if (requestFromB == requestSize &amp;&amp; completed == COMPLETED_A) {</span>
+<span class="fc" id="L324">                requestFromB = 0;</span>
+<span class="fc" id="L325">                bSub.request(requestSize);</span>
+<span class="fc bfc" id="L326" title="All 4 branches covered.">            } else if (requestFromA == requestSize &amp;&amp; requestFromB == requestSize) {</span>
+<span class="fc" id="L327">                requestFromA = 0;</span>
+<span class="fc" id="L328">                requestFromB = 0;</span>
+<span class="fc" id="L329">                aSub.request(requestSize);</span>
+<span class="fc" id="L330">                bSub.request(requestSize);</span>
             }
-<span class="fc" id="L331">        }</span>
+<span class="fc" id="L332">        }</span>
 
         private void completed(Source source) {
-<span class="fc bfc" id="L334" title="All 2 branches covered.">            if (source == Source.A) {</span>
-<span class="pc bpc" id="L335" title="1 of 2 branches missed.">                if (completed == COMPLETED_NONE) {</span>
-<span class="fc" id="L336">                    completed = COMPLETED_A;</span>
-<span class="nc bnc" id="L337" title="All 2 branches missed.">                } else if (completed == COMPLETED_B) {</span>
-<span class="nc" id="L338">                    completed = COMPLETED_BOTH;</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">            if (source == Source.A) {</span>
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">                if (completed == COMPLETED_NONE) {</span>
+<span class="fc" id="L337">                    completed = COMPLETED_A;</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                } else if (completed == COMPLETED_B) {</span>
+<span class="nc" id="L339">                    completed = COMPLETED_BOTH;</span>
                 }
             } else {
-<span class="fc bfc" id="L341" title="All 2 branches covered.">                if (completed == COMPLETED_NONE) {</span>
-<span class="fc" id="L342">                    completed = COMPLETED_B;</span>
-<span class="pc bpc" id="L343" title="1 of 2 branches missed.">                } else if (completed == COMPLETED_A) {</span>
-<span class="fc" id="L344">                    completed = COMPLETED_BOTH;</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">                if (completed == COMPLETED_NONE) {</span>
+<span class="fc" id="L343">                    completed = COMPLETED_B;</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">                } else if (completed == COMPLETED_A) {</span>
+<span class="fc" id="L345">                    completed = COMPLETED_BOTH;</span>
                 }
             }
-<span class="fc" id="L347">        }</span>
+<span class="fc" id="L348">        }</span>
 
         private void clear() {
-<span class="fc" id="L350">            as.clear();</span>
-<span class="fc" id="L351">            bs.clear();</span>
-<span class="fc" id="L352">            queue.clear();</span>
-<span class="fc" id="L353">            aSub.cancel();</span>
-<span class="fc" id="L354">            bSub.cancel();</span>
-<span class="fc" id="L355">        }</span>
+<span class="fc" id="L351">            as.clear();</span>
+<span class="fc" id="L352">            bs.clear();</span>
+<span class="fc" id="L353">            queue.clear();</span>
+<span class="fc" id="L354">            aSub.cancel();</span>
+<span class="fc" id="L355">            bSub.cancel();</span>
+<span class="fc" id="L356">        }</span>
 
         private static &lt;K, T&gt; void add(Map&lt;K, Queue&lt;T&gt;&gt; map, K key, T value) {
-<span class="fc" id="L358">            Queue&lt;T&gt; q = map.get(key);</span>
-<span class="fc bfc" id="L359" title="All 2 branches covered.">            if (q == null) {</span>
-<span class="fc" id="L360">                q = new LinkedList&lt;T&gt;();</span>
-<span class="fc" id="L361">                map.put(key, q);</span>
+<span class="fc" id="L359">            Queue&lt;T&gt; q = map.get(key);</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">            if (q == null) {</span>
+<span class="fc" id="L361">                q = new LinkedList&lt;T&gt;();</span>
+<span class="fc" id="L362">                map.put(key, q);</span>
             }
-<span class="fc" id="L363">            q.offer(value);</span>
-<span class="fc" id="L364">        }</span>
+<span class="fc" id="L364">            q.offer(value);</span>
+<span class="fc" id="L365">        }</span>
 
         private static &lt;K, T&gt; T poll(Map&lt;K, Queue&lt;T&gt;&gt; map, Queue&lt;T&gt; q, K key) {
-<span class="fc" id="L367">            T t = q.poll();</span>
-<span class="fc bfc" id="L368" title="All 2 branches covered.">            if (q.isEmpty()) {</span>
-<span class="fc" id="L369">                map.remove(key);</span>
+<span class="fc" id="L368">            T t = q.poll();</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">            if (q.isEmpty()) {</span>
+<span class="fc" id="L370">                map.remove(key);</span>
             }
-<span class="fc" id="L371">            return t;</span>
+<span class="fc" id="L372">            return t;</span>
         }
 
         @Override
         public void offer(Object item) {
-<span class="fc" id="L376">            queue.offer(item);</span>
-<span class="fc" id="L377">            drain();</span>
-<span class="fc" id="L378">        }</span>
+<span class="fc" id="L377">            queue.offer(item);</span>
+<span class="fc" id="L378">            drain();</span>
+<span class="fc" id="L379">        }</span>
 
     }
 
     @SuppressWarnings(&quot;serial&quot;)
-    private static final class MySubscriber&lt;T, K&gt; extends AtomicReference&lt;Subscription&gt; implements Subscription, Subscriber&lt;T&gt; {
+    private static final class MySubscriber&lt;T, K&gt; extends AtomicReference&lt;Subscription&gt; implements FlowableSubscriber&lt;T&gt;, Subscription {
 
         private final Receiver receiver;
         private final Source source;
         private final long requestSize;
 
-<span class="fc" id="L389">        MySubscriber(Source source, Receiver receiver, long requestSize) {</span>
-<span class="fc" id="L390">            this.source = source;</span>
-<span class="fc" id="L391">            this.receiver = receiver;</span>
-<span class="fc" id="L392">            this.requestSize = requestSize;</span>
-<span class="fc" id="L393">        }</span>
+<span class="fc" id="L390">        MySubscriber(Source source, Receiver receiver, long requestSize) {</span>
+<span class="fc" id="L391">            this.source = source;</span>
+<span class="fc" id="L392">            this.receiver = receiver;</span>
+<span class="fc" id="L393">            this.requestSize = requestSize;</span>
+<span class="fc" id="L394">        }</span>
 
         @Override
         public void onSubscribe(Subscription subscription) {
-<span class="fc bfc" id="L397" title="All 2 branches covered.">            if (SubscriptionHelper.setOnce(this, subscription)) {</span>
-<span class="fc" id="L398">                subscription.request(requestSize);</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">            if (SubscriptionHelper.setOnce(this, subscription)) {</span>
+<span class="fc" id="L399">                subscription.request(requestSize);</span>
             }
-<span class="fc" id="L400">        }</span>
+<span class="fc" id="L401">        }</span>
 
         @Override
         public void request(long n) {
-<span class="fc" id="L404">            get().request(n);</span>
-<span class="fc" id="L405">        }</span>
+<span class="fc" id="L405">            get().request(n);</span>
+<span class="fc" id="L406">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L409">            SubscriptionHelper.cancel(this);</span>
-<span class="fc" id="L410">        }</span>
+<span class="fc" id="L410">            SubscriptionHelper.cancel(this);</span>
+<span class="fc" id="L411">        }</span>
 
         @Override
         public void onNext(T t) {
-<span class="fc bfc" id="L414" title="All 2 branches covered.">            if (source == Source.A) {</span>
-<span class="fc" id="L415">                receiver.offer(new ItemA(t));</span>
+<span class="fc bfc" id="L415" title="All 2 branches covered.">            if (source == Source.A) {</span>
+<span class="fc" id="L416">                receiver.offer(new ItemA(t));</span>
             } else {
-<span class="fc" id="L417">                receiver.offer(t);</span>
+<span class="fc" id="L418">                receiver.offer(t);</span>
             }
-<span class="fc" id="L419">        }</span>
+<span class="fc" id="L420">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc" id="L423">            receiver.offer(source);</span>
-<span class="fc" id="L424">        }</span>
+<span class="fc" id="L424">            receiver.offer(source);</span>
+<span class="fc" id="L425">        }</span>
 
         @Override
         public void onError(Throwable e) {
-<span class="fc" id="L428">            receiver.offer(new MyError(e));</span>
-<span class="fc" id="L429">        }</span>
+<span class="fc" id="L429">            receiver.offer(new MyError(e));</span>
+<span class="fc" id="L430">        }</span>
 
     }
 
     private static final class MyError {
         final Throwable error;
 
-<span class="fc" id="L436">        MyError(Throwable error) {</span>
-<span class="fc" id="L437">            this.error = error;</span>
-<span class="fc" id="L438">        }</span>
+<span class="fc" id="L437">        MyError(Throwable error) {</span>
+<span class="fc" id="L438">            this.error = error;</span>
+<span class="fc" id="L439">        }</span>
     }
 
     private static final class ItemA {
         final Object value;
 
-<span class="fc" id="L444">        ItemA(Object value) {</span>
-<span class="fc" id="L445">            this.value = value;</span>
-<span class="fc" id="L446">        }</span>
+<span class="fc" id="L445">        ItemA(Object value) {</span>
+<span class="fc" id="L446">            this.value = value;</span>
+<span class="fc" id="L447">        }</span>
     }
 
-<span class="pc" id="L449">    private enum Source {</span>
-<span class="fc" id="L450">        A, B;</span>
+<span class="fc" id="L450">    private enum Source {</span>
+<span class="fc" id="L451">        A, B;</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,26 +1,30 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Transformers.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.flowable</a> &gt; <span class="el_source">Transformers.java</span></div><h1>Transformers.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Transformers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.flowable</a> &gt; <span class="el_source">Transformers.java</span></div><h1>Transformers.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.flowable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.reactivestreams.Publisher;
 
 import com.github.davidmoten.guavamini.Preconditions;
 import com.github.davidmoten.rx2.BiFunctions;
 import com.github.davidmoten.rx2.Flowables;
+import com.github.davidmoten.rx2.Functions;
 import com.github.davidmoten.rx2.StateMachine;
 import com.github.davidmoten.rx2.StateMachine2;
 import com.github.davidmoten.rx2.Statistics;
-import com.github.davidmoten.rx2.StateMachine.Builder;
 import com.github.davidmoten.rx2.buffertofile.Options;
 import com.github.davidmoten.rx2.internal.flowable.FlowableCollectWhile;
 import com.github.davidmoten.rx2.internal.flowable.FlowableDoOnEmpty;
+import com.github.davidmoten.rx2.internal.flowable.FlowableInsertMaybe;
+import com.github.davidmoten.rx2.internal.flowable.FlowableInsertTimeout;
 import com.github.davidmoten.rx2.internal.flowable.FlowableMapLast;
 import com.github.davidmoten.rx2.internal.flowable.FlowableMatch;
 import com.github.davidmoten.rx2.internal.flowable.FlowableMaxRequest;
 import com.github.davidmoten.rx2.internal.flowable.FlowableMinRequest;
+import com.github.davidmoten.rx2.internal.flowable.FlowableRepeatingTransform;
 import com.github.davidmoten.rx2.internal.flowable.FlowableReverse;
 import com.github.davidmoten.rx2.internal.flowable.FlowableWindowMinMax;
 import com.github.davidmoten.rx2.internal.flowable.FlowableWindowMinMax.Metric;
@@ -31,55 +35,77 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.FlowableTransformer;
+import io.reactivex.Maybe;
+import io.reactivex.Notification;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.BiPredicate;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Function3;
+import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 
 public final class Transformers {
 
-<span class="fc" id="L42">    private Transformers() {</span>
+<span class="fc" id="L52">    private Transformers() {</span>
         // prevent instantiation
-<span class="fc" id="L44">    }</span>
+<span class="fc" id="L54">    }</span>
 
     public static &lt;State, In, Out&gt; FlowableTransformer&lt;In, Out&gt; stateMachine(Callable&lt;? extends State&gt; initialState,
             Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition,
             BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
             BackpressureStrategy backpressureStrategy, int requestBatchSize) {
-<span class="fc" id="L50">        return TransformerStateMachine.create(initialState, transition, completion, backpressureStrategy,</span>
+<span class="fc" id="L60">        return TransformerStateMachine.create(initialState, transition, completion, backpressureStrategy,</span>
                 requestBatchSize);
     }
 
     public static StateMachine.Builder stateMachine() {
-<span class="fc" id="L55">        return StateMachine.builder();</span>
+<span class="fc" id="L65">        return StateMachine.builder();</span>
     }
 
     public static StateMachine2.Builder stateMachine2() {
-<span class="nc" id="L59">        return StateMachine2.builder();</span>
+<span class="nc" id="L69">        return StateMachine2.builder();</span>
     }
 
+    /**
+     * Returns a transformer that when a stream is empty runs the given
+     * {@link Action}.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://raw.githubusercontent.com/davidmoten/rxjava2-extras/master/src/docs/doOnEmpty.png&quot;
+     * alt=&quot;image&quot;&gt;
+     * 
+     * @param action
+     *            to be called when the stream is determined to be empty.
+     * @param &lt;T&gt;
+     *            item type
+     * 
+     * @return a transformer that when a stream is empty runs the given action.
+     */
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; doOnEmpty(final Action action) {
-<span class="fc" id="L63">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L89">        return new FlowableTransformer&lt;T, T&gt;() {</span>
 
             @Override
             public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; upstream) {
-<span class="fc" id="L67">                return new FlowableDoOnEmpty&lt;T&gt;(upstream, action);</span>
+<span class="fc" id="L93">                return new FlowableDoOnEmpty&lt;T&gt;(upstream, action);</span>
             }
         };
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; reverse() {
-<span class="fc" id="L74">        return (FlowableTransformer&lt;T, T&gt;) ReverseHolder.INSTANCE;</span>
+<span class="fc" id="L100">        return (FlowableTransformer&lt;T, T&gt;) ReverseHolder.INSTANCE;</span>
     }
 
-<span class="nc" id="L77">    private static final class ReverseHolder {</span>
-<span class="fc" id="L78">        static final FlowableTransformer&lt;Object, Object&gt; INSTANCE = new FlowableTransformer&lt;Object, Object&gt;() {</span>
+<span class="nc" id="L103">    private static final class ReverseHolder {</span>
+<span class="fc" id="L104">        static final FlowableTransformer&lt;Object, Object&gt; INSTANCE = new FlowableTransformer&lt;Object, Object&gt;() {</span>
 
             @Override
             public Publisher&lt;Object&gt; apply(Flowable&lt;Object&gt; upstream) {
-<span class="fc" id="L82">                return FlowableReverse.reverse(upstream);</span>
+<span class="fc" id="L108">                return FlowableReverse.reverse(upstream);</span>
             }
 
         };
@@ -87,11 +113,11 @@ public final class Transformers {
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; mapLast(final Function&lt;? super T, ? extends T&gt; function) {
-<span class="fc" id="L90">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L116">        return new FlowableTransformer&lt;T, T&gt;() {</span>
 
             @Override
             public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; upstream) {
-<span class="fc" id="L94">                return new FlowableMapLast&lt;T&gt;(upstream, function);</span>
+<span class="fc" id="L120">                return new FlowableMapLast&lt;T&gt;(upstream, function);</span>
             }
 
         };
@@ -100,17 +126,17 @@ public final class Transformers {
 
     public static &lt;A, B, K, C&gt; Flowable&lt;C&gt; match(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, K&gt; aKey,
             Function&lt;? super B, K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, int requestSize) {
-<span class="nc" id="L103">        return new FlowableMatch&lt;A, B, K, C&gt;(a, b, aKey, bKey, combiner, requestSize);</span>
+<span class="nc" id="L129">        return new FlowableMatch&lt;A, B, K, C&gt;(a, b, aKey, bKey, combiner, requestSize);</span>
     }
 
     public static &lt;A, B, C, K&gt; FlowableTransformer&lt;A, C&gt; matchWith(final Flowable&lt;B&gt; b,
             final Function&lt;? super A, K&gt; aKey, final Function&lt;? super B, K&gt; bKey,
             final BiFunction&lt;? super A, ? super B, C&gt; combiner, int requestSize) {
-<span class="fc" id="L109">        return new FlowableTransformer&lt;A, C&gt;() {</span>
+<span class="fc" id="L135">        return new FlowableTransformer&lt;A, C&gt;() {</span>
 
             @Override
             public Publisher&lt;C&gt; apply(Flowable&lt;A&gt; upstream) {
-<span class="fc" id="L113">                return Flowables.match(upstream, b, aKey, bKey, combiner);</span>
+<span class="fc" id="L139">                return Flowables.match(upstream, b, aKey, bKey, combiner);</span>
             }
         };
     }
@@ -118,53 +144,93 @@ public final class Transformers {
     public static &lt;A, B, C, K&gt; FlowableTransformer&lt;A, C&gt; matchWith(final Flowable&lt;B&gt; b,
             final Function&lt;? super A, K&gt; aKey, final Function&lt;? super B, K&gt; bKey,
             final BiFunction&lt;? super A, ? super B, C&gt; combiner) {
-<span class="fc" id="L121">        return matchWith(b, aKey, bKey, combiner, 128);</span>
+<span class="fc" id="L147">        return matchWith(b, aKey, bKey, combiner, 128);</span>
     }
 
     public static Options.BuilderFlowable onBackpressureBufferToFile() {
-<span class="fc" id="L125">        return Options.builderFlowable();</span>
+<span class="fc" id="L151">        return Options.builderFlowable();</span>
     }
 
+    /**
+     * &lt;p&gt;
+     * Converts a stream of {@code Number} to a stream of {@link Statistics} about
+     * those numbers.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://raw.githubusercontent.com/davidmoten/rxjava2-extras/master/src/docs/collectStats.png&quot;
+     * alt=&quot;image&quot;&gt;
+     * 
+     * @param &lt;T&gt;
+     *            item type
+     * @return transformer that converts a stream of Number to a stream of
+     *         Statistics
+     */
     @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T extends Number&gt; FlowableTransformer&lt;T, Statistics&gt; collectStats() {
-<span class="fc" id="L130">        return (FlowableTransformer&lt;T, Statistics&gt;) CollectStatsHolder.INSTANCE;</span>
+<span class="fc" id="L171">        return (FlowableTransformer&lt;T, Statistics&gt;) CollectStatsHolder.INSTANCE;</span>
     }
 
-<span class="nc" id="L133">    private static final class CollectStatsHolder {</span>
-<span class="fc" id="L134">        static final FlowableTransformer&lt;Number, Statistics&gt; INSTANCE = new FlowableTransformer&lt;Number, Statistics&gt;() {</span>
+<span class="nc" id="L174">    private static final class CollectStatsHolder {</span>
+<span class="fc" id="L175">        static final FlowableTransformer&lt;Number, Statistics&gt; INSTANCE = new FlowableTransformer&lt;Number, Statistics&gt;() {</span>
 
             @Override
             public Flowable&lt;Statistics&gt; apply(Flowable&lt;Number&gt; source) {
-<span class="fc" id="L138">                return source.scan(Statistics.create(), BiFunctions.collectStats());</span>
+<span class="fc" id="L179">                return source.scan(Statistics.create(), BiFunctions.collectStats());</span>
             }
         };
     }
 
     public static &lt;T, R extends Number&gt; FlowableTransformer&lt;T, Pair&lt;T, Statistics&gt;&gt; collectStats(
             final Function&lt;? super T, ? extends R&gt; function) {
-<span class="fc" id="L145">        return new FlowableTransformer&lt;T, Pair&lt;T, Statistics&gt;&gt;() {</span>
+<span class="fc" id="L186">        return new FlowableTransformer&lt;T, Pair&lt;T, Statistics&gt;&gt;() {</span>
 
             @Override
             public Flowable&lt;Pair&lt;T, Statistics&gt;&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L149">                return source.scan(Pair.create((T) null, Statistics.create()),</span>
-<span class="fc" id="L150">                        new BiFunction&lt;Pair&lt;T, Statistics&gt;, T, Pair&lt;T, Statistics&gt;&gt;() {</span>
+<span class="fc" id="L190">                return source.scan(Pair.create((T) null, Statistics.create()),</span>
+<span class="fc" id="L191">                        new BiFunction&lt;Pair&lt;T, Statistics&gt;, T, Pair&lt;T, Statistics&gt;&gt;() {</span>
                             @Override
                             public Pair&lt;T, Statistics&gt; apply(Pair&lt;T, Statistics&gt; pair, T t) throws Exception {
-<span class="fc" id="L153">                                return Pair.create(t, pair.b().add(function.apply(t)));</span>
+<span class="fc" id="L194">                                return Pair.create(t, pair.b().add(function.apply(t)));</span>
                             }
-<span class="fc" id="L155">                        }).skip(1);</span>
+<span class="fc" id="L196">                        }).skip(1);</span>
             }
         };
     }
 
+    /**
+     * Returns a transformer that emits collections of items with the collection
+     * boundaries determined by the given {@link BiPredicate}.
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://raw.githubusercontent.com/davidmoten/rxjava2-extras/master/src/docs/collectWhile.png&quot;
+     * alt=&quot;image&quot;&gt;
+     * 
+     * @param collectionFactory
+     *            factory to create a new collection
+     * @param add
+     *            method to add an item to a collection
+     * @param condition
+     *            while true will continue to add to the current collection. Do not
+     *            modify the given collection!
+     * @param emitRemainder
+     *            whether to emit the remainder as a collection
+     * @param &lt;T&gt;
+     *            item type
+     * @param &lt;R&gt;
+     *            collection type
+     * @return transform that collects while some conditions is returned then starts
+     *         a new collection
+     */
     public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; collectWhile(final Callable&lt;R&gt; collectionFactory,
             final BiFunction&lt;? super R, ? super T, ? extends R&gt; add, final BiPredicate&lt;? super R, ? super T&gt; condition,
             final boolean emitRemainder) {
-<span class="fc" id="L163">        return new FlowableTransformer&lt;T, R&gt;() {</span>
+<span class="fc" id="L229">        return new FlowableTransformer&lt;T, R&gt;() {</span>
 
             @Override
             public Publisher&lt;R&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L167">                return new FlowableCollectWhile&lt;T, R&gt;(source, collectionFactory, add, condition, emitRemainder);</span>
+<span class="fc" id="L233">                return new FlowableCollectWhile&lt;T, R&gt;(source, collectionFactory, add, condition, emitRemainder);</span>
             }
         };
     }
@@ -172,133 +238,493 @@ public final class Transformers {
     public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; collectWhile(final Callable&lt;R&gt; collectionFactory,
             final BiFunction&lt;? super R, ? super T, ? extends R&gt; add,
             final BiPredicate&lt;? super R, ? super T&gt; condition) {
-<span class="fc" id="L175">        return collectWhile(collectionFactory, add, condition, true);</span>
+<span class="fc" id="L241">        return collectWhile(collectionFactory, add, condition, true);</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; toListWhile(
             final BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition, boolean emitRemainder) {
-<span class="fc" id="L180">        return collectWhile(ListFactoryHolder.&lt;T&gt;factory(), ListFactoryHolder.&lt;T&gt;add(), condition, emitRemainder);</span>
+<span class="fc" id="L246">        return collectWhile(ListFactoryHolder.&lt;T&gt;factory(), ListFactoryHolder.&lt;T&gt;add(), condition, emitRemainder);</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; toListWhile(
             final BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition) {
-<span class="fc" id="L185">        return toListWhile(condition, true);</span>
+<span class="fc" id="L251">        return toListWhile(condition, true);</span>
     }
 
-<span class="nc" id="L188">    private static final class ListFactoryHolder {</span>
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; bufferWhile(
+            final BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition, boolean emitRemainder) {
+<span class="nc" id="L256">        return toListWhile(condition, emitRemainder);</span>
+    }
 
-<span class="fc" id="L190">        private static final Callable&lt;List&lt;Object&gt;&gt; INSTANCE = new Callable&lt;List&lt;Object&gt;&gt;() {</span>
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; bufferWhile(
+            final BiPredicate&lt;? super List&lt;T&gt;, ? super T&gt; condition) {
+<span class="nc" id="L261">        return toListWhile(condition);</span>
+    }
+
+<span class="nc" id="L264">    private static final class ListFactoryHolder {</span>
+
+<span class="fc" id="L266">        private static final Callable&lt;List&lt;Object&gt;&gt; INSTANCE = new Callable&lt;List&lt;Object&gt;&gt;() {</span>
 
             @Override
             public List&lt;Object&gt; call() throws Exception {
-<span class="fc" id="L194">                return new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L270">                return new ArrayList&lt;Object&gt;();</span>
             }
         };
 
-<span class="fc" id="L198">        private static final BiFunction&lt;List&lt;Object&gt;, Object, List&lt;Object&gt;&gt; ADD = new BiFunction&lt;List&lt;Object&gt;, Object, List&lt;Object&gt;&gt;() {</span>
+<span class="fc" id="L274">        private static final BiFunction&lt;List&lt;Object&gt;, Object, List&lt;Object&gt;&gt; ADD = new BiFunction&lt;List&lt;Object&gt;, Object, List&lt;Object&gt;&gt;() {</span>
 
             @Override
             public List&lt;Object&gt; apply(List&lt;Object&gt; list, Object t) throws Exception {
-<span class="fc" id="L202">                list.add(t);</span>
-<span class="fc" id="L203">                return list;</span>
+<span class="fc" id="L278">                list.add(t);</span>
+<span class="fc" id="L279">                return list;</span>
             }
         };
 
         @SuppressWarnings(&quot;unchecked&quot;)
         static &lt;T&gt; Callable&lt;List&lt;T&gt;&gt; factory() {
-<span class="fc" id="L209">            return (Callable&lt;List&lt;T&gt;&gt;) (Callable&lt;?&gt;) INSTANCE;</span>
+<span class="fc" id="L285">            return (Callable&lt;List&lt;T&gt;&gt;) (Callable&lt;?&gt;) INSTANCE;</span>
         };
 
         @SuppressWarnings(&quot;unchecked&quot;)
         static &lt;T&gt; BiFunction&lt;List&lt;T&gt;, T, List&lt;T&gt;&gt; add() {
-<span class="fc" id="L214">            return (BiFunction&lt;List&lt;T&gt;, T, List&lt;T&gt;&gt;) (BiFunction&lt;?, ?, ?&gt;) ADD;</span>
+<span class="fc" id="L290">            return (BiFunction&lt;List&lt;T&gt;, T, List&lt;T&gt;&gt;) (BiFunction&lt;?, ?, ?&gt;) ADD;</span>
         }
 
     }
 
     public static &lt;T extends Comparable&lt;T&gt;&gt; FlowableTransformer&lt;T, T&gt; windowMax(final int windowSize) {
-<span class="fc" id="L220">        return windowMax(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
+<span class="fc" id="L296">        return windowMax(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; windowMax(final int windowSize,
             final Comparator&lt;? super T&gt; comparator) {
-<span class="fc" id="L225">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L301">        return new FlowableTransformer&lt;T, T&gt;() {</span>
             @Override
             public Flowable&lt;T&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L228">                return new FlowableWindowMinMax&lt;T&gt;(source, windowSize, comparator, Metric.MAX);</span>
+<span class="fc" id="L304">                return new FlowableWindowMinMax&lt;T&gt;(source, windowSize, comparator, Metric.MAX);</span>
             }
         };
     }
 
     public static &lt;T extends Comparable&lt;T&gt;&gt; FlowableTransformer&lt;T, T&gt; windowMin(final int windowSize) {
-<span class="fc" id="L234">        return windowMin(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
+<span class="fc" id="L310">        return windowMin(windowSize, Transformers.&lt;T&gt;naturalComparator());</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; windowMin(final int windowSize,
             final Comparator&lt;? super T&gt; comparator) {
-<span class="fc" id="L239">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L315">        return new FlowableTransformer&lt;T, T&gt;() {</span>
             @Override
             public Flowable&lt;T&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L242">                return new FlowableWindowMinMax&lt;T&gt;(source, windowSize, comparator, Metric.MIN);</span>
+<span class="fc" id="L318">                return new FlowableWindowMinMax&lt;T&gt;(source, windowSize, comparator, Metric.MIN);</span>
             }
         };
     }
 
-<span class="nc" id="L247">    private static class NaturalComparatorHolder {</span>
-<span class="fc" id="L248">        static final Comparator&lt;Comparable&lt;Object&gt;&gt; INSTANCE = new Comparator&lt;Comparable&lt;Object&gt;&gt;() {</span>
+<span class="nc" id="L323">    private static class NaturalComparatorHolder {</span>
+<span class="fc" id="L324">        static final Comparator&lt;Comparable&lt;Object&gt;&gt; INSTANCE = new Comparator&lt;Comparable&lt;Object&gt;&gt;() {</span>
 
             @Override
             public int compare(Comparable&lt;Object&gt; o1, Comparable&lt;Object&gt; o2) {
-<span class="fc" id="L252">                return o1.compareTo(o2);</span>
+<span class="fc" id="L328">                return o1.compareTo(o2);</span>
             }
         };
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private static &lt;T extends Comparable&lt;T&gt;&gt; Comparator&lt;T&gt; naturalComparator() {
-<span class="fc" id="L259">        return (Comparator&lt;T&gt;) (Comparator&lt;?&gt;) NaturalComparatorHolder.INSTANCE;</span>
+<span class="fc" id="L335">        return (Comparator&lt;T&gt;) (Comparator&lt;?&gt;) NaturalComparatorHolder.INSTANCE;</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; maxRequest(final long... maxRequest) {
-<span class="fc" id="L263">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L339">        return new FlowableTransformer&lt;T, T&gt;() {</span>
 
             @Override
             public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L267">                return new FlowableMaxRequest&lt;T&gt;(source, maxRequest);</span>
+<span class="fc" id="L343">                return new FlowableMaxRequest&lt;T&gt;(source, maxRequest);</span>
             }
         };
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; minRequest(final int... minRequests) {
-<span class="fc" id="L273">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc" id="L349">        return new FlowableTransformer&lt;T, T&gt;() {</span>
 
             @Override
             public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L277">                return new FlowableMinRequest&lt;T&gt;(source, minRequests);</span>
+<span class="fc" id="L353">                return new FlowableMinRequest&lt;T&gt;(source, minRequests);</span>
             }
         };
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; rebatchRequests(final int minRequest, final long maxRequest,
             final boolean constrainFirstRequestMin) {
-<span class="fc bfc" id="L284" title="All 2 branches covered.">        Preconditions.checkArgument(minRequest &lt;= maxRequest, &quot;minRequest cannot be greater than maxRequest&quot;);</span>
-<span class="fc" id="L285">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        Preconditions.checkArgument(minRequest &lt;= maxRequest, &quot;minRequest cannot be greater than maxRequest&quot;);</span>
+<span class="fc" id="L361">        return new FlowableTransformer&lt;T, T&gt;() {</span>
 
             @Override
             public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc bfc" id="L289" title="All 4 branches covered.">                if (minRequest == maxRequest &amp;&amp; constrainFirstRequestMin) {</span>
-<span class="fc" id="L290">                    return source.rebatchRequests(minRequest);</span>
+<span class="fc bfc" id="L365" title="All 4 branches covered.">                if (minRequest == maxRequest &amp;&amp; constrainFirstRequestMin) {</span>
+<span class="fc" id="L366">                    return source.rebatchRequests(minRequest);</span>
                 } else {
-<span class="pc bpc" id="L292" title="1 of 2 branches missed.">                    return source.compose(</span>
-<span class="fc" id="L293">                            Transformers.&lt;T&gt;minRequest(constrainFirstRequestMin ? minRequest : 1, minRequest))</span>
-<span class="fc" id="L294">                            .compose(Transformers.&lt;T&gt;maxRequest(maxRequest));</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">                    return source</span>
+<span class="fc" id="L369">                            .compose(Transformers.&lt;T&gt;minRequest(constrainFirstRequestMin ? minRequest : 1, minRequest))</span>
+<span class="fc" id="L370">                            .compose(Transformers.&lt;T&gt;maxRequest(maxRequest));</span>
                 }
             }
         };
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; rebatchRequests(int minRequest, long maxRequest) {
-<span class="fc" id="L301">        return rebatchRequests(minRequest, maxRequest, true);</span>
+<span class="fc" id="L377">        return rebatchRequests(minRequest, maxRequest, true);</span>
+    }
+
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Flowable&lt;T&gt;&gt; repeat(
+            final Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform, final int maxChained,
+            final long maxIterations, final Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt; tester) {
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        Preconditions.checkArgument(maxChained &gt; 0, &quot;maxChained must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        Preconditions.checkArgument(maxIterations &gt; 0, &quot;maxIterations must be &gt; 0&quot;);</span>
+<span class="fc" id="L385">        Preconditions.checkNotNull(transform, &quot;transform must not be null&quot;);</span>
+<span class="fc" id="L386">        Preconditions.checkNotNull(tester, &quot;tester must not be null&quot;);</span>
+<span class="fc" id="L387">        return new Function&lt;Flowable&lt;T&gt;, Flowable&lt;T&gt;&gt;() {</span>
+            @Override
+            public Flowable&lt;T&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L390">                return new FlowableRepeatingTransform&lt;T&gt;(source, transform, maxChained, maxIterations, tester);</span>
+            }
+        };
+    }
+
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Flowable&lt;T&gt;&gt; reduce(
+            final Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; reducer, final int maxChained,
+            final long maxIterations) {
+<span class="fc" id="L398">        return repeat(reducer, maxChained, maxIterations, Transformers.&lt;T&gt;finishWhenSingle());</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T&gt; Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt; finishWhenSingle() {
+<span class="fc" id="L403">        return (Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt;) (Function&lt;?, Observable&lt;?&gt;&gt;) FINISH_WHEN_SINGLE;</span>
+    }
+
+<span class="fc" id="L406">    private static final Function&lt;Observable&lt;Object&gt;, Observable&lt;?&gt;&gt; FINISH_WHEN_SINGLE = new Function&lt;Observable&lt;Object&gt;, Observable&lt;?&gt;&gt;() {</span>
+
+        @Override
+        public Observable&lt;?&gt; apply(final Observable&lt;Object&gt; o) throws Exception {
+<span class="fc" id="L410">            return Observable.defer(new Callable&lt;Observable&lt;Object&gt;&gt;() {</span>
+
+<span class="fc" id="L412">                final long[] count = new long[1];</span>
+
+                @Override
+                public Observable&lt;Object&gt; call() throws Exception {
+<span class="fc" id="L416">                    return o.materialize() //</span>
+<span class="fc" id="L417">                            .flatMap(new Function&lt;Notification&lt;Object&gt;, Observable&lt;Notification&lt;Object&gt;&gt;&gt;() {</span>
+                                @Override
+                                public Observable&lt;Notification&lt;Object&gt;&gt; apply(Notification&lt;Object&gt; x) throws Exception {
+<span class="fc bfc" id="L420" title="All 2 branches covered.">                                    if (x.isOnNext()) {</span>
+<span class="fc" id="L421">                                        count[0]++;</span>
+<span class="fc bfc" id="L422" title="All 2 branches covered.">                                        if (count[0] &gt; 1) {</span>
+<span class="fc" id="L423">                                            return Observable.just(x);</span>
+                                        } else {
+<span class="fc" id="L425">                                            return Observable.empty();</span>
+                                        }
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                                    } else if (x.isOnComplete()) {</span>
+<span class="fc bfc" id="L428" title="All 2 branches covered.">                                        if (count[0] &lt;= 1) {</span>
+                                            // complete the stream
+<span class="fc" id="L430">                                            return Observable.just(x);</span>
+                                        } else {
+                                            // never complete
+<span class="fc" id="L433">                                            return Observable.never();</span>
+                                        }
+                                    } else {
+                                        // is onError
+<span class="fc" id="L437">                                        return Observable.just(x);</span>
+                                    }
+                                }
+                            }) //
+<span class="fc" id="L441">                            .dematerialize(Functions.&lt;Notification&lt;Object&gt;&gt;identity());</span>
+                }
+            });
+        }
+    };
+
+    public static &lt;T&gt; Function&lt;Flowable&lt;T&gt;, Flowable&lt;T&gt;&gt; reduce(
+            final Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; reducer, final int maxChained) {
+<span class="fc" id="L449">        return reduce(reducer, maxChained, Long.MAX_VALUE);</span>
+    }
+
+    public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; flatMapInterleaved(
+            final Function&lt;? super T, ? extends Publisher&lt;? extends R&gt;&gt; mapper, final int maxConcurrency) {
+<span class="fc" id="L454">        return flatMapInterleaved(mapper, maxConcurrency, 128, false);</span>
+    }
+
+    public static &lt;T, R&gt; FlowableTransformer&lt;T, R&gt; flatMapInterleaved(
+            final Function&lt;? super T, ? extends Publisher&lt;? extends R&gt;&gt; mapper, final int maxConcurrency,
+            final int bufferSize, final boolean delayErrors) {
+<span class="fc" id="L460">        return new FlowableTransformer&lt;T, R&gt;() {</span>
+            @Override
+            public Publisher&lt;R&gt; apply(Flowable&lt;T&gt; f) {
+<span class="fc" id="L463">                return Flowables.mergeInterleaved(f.map(mapper), maxConcurrency, bufferSize, delayErrors);</span>
+            }
+        };
+    }
+
+    /**
+     * For every onNext emission from the source stream, the {@code valueToInsert}
+     * Maybe is subscribed to. If the Maybe emits before the next upstream emission
+     * then the result from the Maybe will be inserted into the stream. If the Maybe
+     * does not emit before the next upstream emission then it is cancelled (and no
+     * value is inserted).
+     * 
+     * @param valueToInsert
+     *            a Maybe is calculated from last source emission and subscribed to.
+     *            If succeeds before next source emission then result is inserted
+     *            into stream.
+     * @param &lt;T&gt;
+     *            stream element type
+     * @return source with operator insert applied
+     */
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(
+            final Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert) {
+<span class="fc" id="L485">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L489">                return new FlowableInsertMaybe&lt;T&gt;(source, valueToInsert);</span>
+            }
+
+        };
+    }
+    
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(long timeout, TimeUnit unit, T value) {
+<span class="nc" id="L496">        return insert(Functions.constant(timeout), unit, value);</span>
+    }
+    
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(Function&lt;? super T, ? extends Long&gt; timeout, TimeUnit unit,
+            T value) {
+<span class="nc" id="L501">        return insert(timeout, unit, Functions.constant(value));</span>
+    }
+    
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(Function&lt;? super T, ? extends Long&gt; timeout, TimeUnit unit,
+            Function&lt;? super T, ? extends T&gt; value) {
+<span class="fc" id="L506">        return insert(timeout, unit, value, Schedulers.computation());</span>
+    }
+    
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(final Function&lt;? super T, ? extends Long&gt; timeout,
+            final TimeUnit unit, final Function&lt;? super T, ? extends T&gt; value, final Scheduler scheduler) {
+<span class="fc" id="L511">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L515">                return new FlowableInsertTimeout&lt;T&gt;(source, timeout, unit, value, scheduler);</span>
+            }
+
+        };
+    }
+    
+    public static &lt;T&gt; FlowableTransformer&lt;T, T&gt; insert(
+            final Maybe&lt;? extends T&gt; valueToInsert) {
+<span class="fc" id="L523">        return new FlowableTransformer&lt;T, T&gt;() {</span>
+
+            @Override
+            public Publisher&lt;T&gt; apply(Flowable&lt;T&gt; source) {
+<span class="fc" id="L527">                return new FlowableInsertMaybe&lt;T&gt;(source, Functions.constant(valueToInsert));</span>
+            }
+
+        };
+    }
+
+    private static final class MyOptional&lt;T&gt; {
+<span class="fc" id="L534">        private static final MyOptional&lt;Object&gt; EMPTY = new MyOptional&lt;Object&gt;(null);</span>
+
+        final T t;
+
+<span class="fc" id="L538">        private MyOptional(T t) {</span>
+<span class="fc" id="L539">            this.t = t;</span>
+<span class="fc" id="L540">        }</span>
+
+        static &lt;T&gt; MyOptional&lt;T&gt; of(T t) {
+<span class="fc" id="L543">            Preconditions.checkNotNull(t);</span>
+<span class="fc" id="L544">            return new MyOptional&lt;T&gt;(t);</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; MyOptional&lt;T&gt; empty() {
+<span class="fc" id="L549">            return (MyOptional&lt;T&gt;) EMPTY;</span>
+        }
+
+        boolean isPresent() {
+<span class="fc bfc" id="L553" title="All 2 branches covered.">            return t != null;</span>
+        }
+
+        T get() {
+<span class="fc" id="L557">            Preconditions.checkNotNull(t);</span>
+<span class="fc" id="L558">            return t;</span>
+        }
+
+<span class="fc" id="L561">        private static final Function&lt;Object, MyOptional&lt;Object&gt;&gt; OF = new Function&lt;Object, MyOptional&lt;Object&gt;&gt;() {</span>
+            @Override
+            public MyOptional&lt;Object&gt; apply(Object x) throws Exception {
+<span class="fc" id="L564">                return MyOptional.of(x);</span>
+            }
+        };
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; Function&lt;Object, MyOptional&lt;T&gt;&gt; of() {
+<span class="fc" id="L570">            return (Function&lt;Object, MyOptional&lt;T&gt;&gt;) (Function&lt;Object, ?&gt;) OF;</span>
+        }
+
+<span class="fc" id="L573">        private static final BiFunction&lt;List&lt;Object&gt;, MyOptional&lt;Object&gt;, List&lt;Object&gt;&gt; ADD = new BiFunction&lt;List&lt;Object&gt;, MyOptional&lt;Object&gt;, List&lt;Object&gt;&gt;() {</span>
+            @Override
+            public List&lt;Object&gt; apply(List&lt;Object&gt; list, MyOptional&lt;Object&gt; x) throws Exception {
+<span class="fc bfc" id="L576" title="All 2 branches covered.">                if (x.isPresent()) {</span>
+<span class="fc" id="L577">                    list.add(x.get());</span>
+                }
+<span class="fc" id="L579">                return list;</span>
+            }
+        };
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; BiFunction&lt;List&lt;T&gt;, MyOptional&lt;T&gt;, List&lt;T&gt;&gt; addIfPresent() {
+<span class="fc" id="L585">            return (BiFunction&lt;List&lt;T&gt;, MyOptional&lt;T&gt;, List&lt;T&gt;&gt;) (BiFunction&lt;?, ?, ?&gt;) ADD;</span>
+        }
+
+        // does not really belong in MyOptional but saves creating another class
+<span class="fc" id="L589">        private static final Predicate&lt;List&lt;Object&gt;&gt; LIST_HAS_ELEMENTS = new Predicate&lt;List&lt;Object&gt;&gt;() {</span>
+            @Override
+            public boolean test(List&lt;Object&gt; list) throws Exception {
+<span class="fc bfc" id="L592" title="All 2 branches covered.">                return !list.isEmpty();</span>
+            }
+        };
+
+        // does not really belong in MyOptional but saves creating another class
+        @SuppressWarnings(&quot;unchecked&quot;)
+        static &lt;T&gt; Predicate&lt;List&lt;T&gt;&gt; listHasElements() {
+<span class="fc" id="L599">            return (Predicate&lt;List&lt;T&gt;&gt;) (Predicate&lt;?&gt;) LIST_HAS_ELEMENTS;</span>
+        }
+    }
+
+    /**
+     * Buffers the source {@link Flowable} into {@link List}s, emitting Lists when
+     * the size of a list reaches {@code maxSize} or if the elapsed time since last
+     * emission from the source reaches the given duration.
+     * {@link Schedulers#computation} is used for scheduling an inserted emission.
+     * 
+     * @param maxSize
+     *            max size of emitted lists
+     * @param duration
+     *            buffered list is emitted if the elapsed time since last emission
+     *            from the source reaches this duration
+     * @param unit
+     *            unit of {@code duration}
+     * @param &lt;T&gt;
+     *            type of the source stream items
+     * @return source with operator applied
+     */
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; buffer(final int maxSize, final long duration,
+            final TimeUnit unit) {
+<span class="fc" id="L622">        return buffer(maxSize, Functions.constant(duration), unit);</span>
+    }
+
+    /**
+     * Buffers the source {@link Flowable} into {@link List}s, emitting Lists when the size of a
+     * list reaches {@code maxSize} or if the elapsed time since last emission from
+     * the source reaches the given duration.
+     * 
+     * @param maxSize
+     *            max size of emitted lists
+     * @param duration
+     *            buffered list is emitted if the elapsed time since last emission
+     *            from the source reaches this duration
+     * @param unit
+     *            unit of {@code duration}
+     * @param scheduler
+     *            scheduler to use to schedule emission of a buffer (as a list) if
+     *            the time since last emission from the source reaches duration
+     * @param &lt;T&gt;
+     *            type of the source stream items
+     * @return source with operator applied
+     */
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; buffer(final int maxSize, final long duration,
+            final TimeUnit unit, final Scheduler scheduler) {
+<span class="fc" id="L646">        return buffer(maxSize, Functions.constant(duration), unit, scheduler);</span>
+    }
+    
+    /**
+     * Buffers the source {@link Flowable} into {@link List}s, emitting Lists when
+     * the size of a list reaches {@code maxSize} or if the elapsed time since last
+     * emission from the source reaches the given duration. An emission on timeout
+     * is scheduled on {@link Schedulers#computation()}.
+     * 
+     * @param maxSize
+     *            max size of emitted lists
+     * @param duration
+     *            function that based on the last emission calculates the elapsed
+     *            time to be used before emitting a buffered list
+     * @param unit
+     *            unit of {@code duration}
+     * @param &lt;T&gt;
+     *            type of the source stream items
+     * @return source with operator applied
+     */
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; buffer(final int maxSize,
+            final Function&lt;? super T, ? extends Long&gt; duration, final TimeUnit unit) {
+<span class="fc" id="L668">        return buffer(maxSize, duration, unit, Schedulers.computation());</span>
+    }
+    
+    /**
+     * Buffers the source {@link Flowable} into {@link List}s, emitting Lists when
+     * the size of a list reaches {@code maxSize} or if the elapsed time since last
+     * emission from the source reaches the given duration.
+     * 
+     * @param maxSize
+     *            max size of emitted lists
+     * @param duration
+     *            function that based on the last emission calculates the elapsed
+     *            time to be used before emitting a buffered list
+     * @param unit
+     *            unit of {@code duration}
+     * @param scheduler
+     *            scheduler to use to schedule emission of a buffer (as a list) if
+     *            the time since last emission from the source reaches duration
+     * @param &lt;T&gt;
+     *            type of the source stream items
+     * @return source with operator applied
+     */
+    public static &lt;T&gt; FlowableTransformer&lt;T, List&lt;T&gt;&gt; buffer(final int maxSize,
+            final Function&lt;? super T, ? extends Long&gt; duration, final TimeUnit unit, final Scheduler scheduler) {
+
+<span class="fc" id="L693">        final BiPredicate&lt;List&lt;T&gt;, MyOptional&lt;T&gt;&gt; condition = new BiPredicate&lt;List&lt;T&gt;, MyOptional&lt;T&gt;&gt;() {</span>
+            @Override
+            public boolean test(List&lt;T&gt; list, MyOptional&lt;T&gt; x) throws Exception {
+<span class="fc bfc" id="L696" title="All 4 branches covered.">                return list.size() &lt; maxSize &amp;&amp; x.isPresent();</span>
+            }
+        };
+<span class="fc" id="L699">        Function&lt;MyOptional&lt;T&gt;, Long&gt; timeout = new Function&lt;MyOptional&lt;T&gt;, Long&gt;() {</span>
+            @Override
+            public Long apply(MyOptional&lt;T&gt; t) throws Exception {
+<span class="fc" id="L702">                return duration.apply(t.get());</span>
+            }
+        };
+<span class="fc" id="L705">        final FlowableTransformer&lt;MyOptional&lt;T&gt;, MyOptional&lt;T&gt;&gt; insert = insert(timeout, unit,</span>
+<span class="fc" id="L706">                Functions.constant(MyOptional.&lt;T&gt;empty()), scheduler);</span>
+
+<span class="fc" id="L708">        final FlowableTransformer&lt;MyOptional&lt;T&gt;, List&lt;T&gt;&gt; collectWhile = collectWhile( //</span>
+                // factory
+<span class="fc" id="L710">                ListFactoryHolder.&lt;T&gt;factory(), //</span>
+                // add function
+<span class="fc" id="L712">                MyOptional.&lt;T&gt;addIfPresent(), //</span>
+                // condition
+                condition);
+
+<span class="fc" id="L716">        return new FlowableTransformer&lt;T, List&lt;T&gt;&gt;() {</span>
+            @Override
+            public Publisher&lt;List&lt;T&gt;&gt; apply(Flowable&lt;T&gt; source) {
+
+<span class="fc" id="L720">                return source //</span>
+<span class="fc" id="L721">                        .map(MyOptional.&lt;T&gt;of()) //</span>
+<span class="fc" id="L722">                        .compose(insert) //</span>
+<span class="fc" id="L723">                        .compose(collectWhile)</span>
+                        // need this filter because sometimes nothing gets added to list
+<span class="fc" id="L725">                        .filter(MyOptional.&lt;T&gt;listHasElements()); //</span>
+            }
+        };
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,51 +1,373 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Flowables.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Flowables.java</span></div><h1>Flowables.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Flowables.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Flowables.java</span></div><h1>Flowables.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Optional;
+import com.github.davidmoten.rx2.flowable.CachedFlowable;
+import com.github.davidmoten.rx2.flowable.CloseableFlowableWithReset;
 import com.github.davidmoten.rx2.internal.flowable.FlowableFetchPagesByRequest;
 import com.github.davidmoten.rx2.internal.flowable.FlowableMatch;
+import com.github.davidmoten.rx2.internal.flowable.FlowableMergeInterleave;
 import com.github.davidmoten.rx2.internal.flowable.FlowableRepeat;
 
 import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 
 public final class Flowables {
 
     private static final int DEFAULT_MATCH_BATCH_SIZE = 128;
 
-<span class="fc" id="L15">    private Flowables() {</span>
+<span class="fc" id="L27">    private Flowables() {</span>
         // prevent instantiation
-<span class="fc" id="L17">    }</span>
+<span class="fc" id="L29">    }</span>
 
-    public static &lt;A, B, K, C&gt; Flowable&lt;C&gt; match(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, K&gt; aKey,
-            Function&lt;? super B, K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, int requestSize) {
-<span class="fc" id="L21">        return new FlowableMatch&lt;A, B, K, C&gt;(a, b, aKey, bKey, combiner, requestSize);</span>
+    public static &lt;A, B, K, C&gt; Flowable&lt;C&gt; match(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b,
+            Function&lt;? super A, K&gt; aKey, Function&lt;? super B, K&gt; bKey,
+            BiFunction&lt;? super A, ? super B, C&gt; combiner, int requestSize) {
+<span class="fc" id="L34">        return new FlowableMatch&lt;A, B, K, C&gt;(a, b, aKey, bKey, combiner, requestSize);</span>
     }
 
-    public static &lt;A, B, K, C&gt; Flowable&lt;C&gt; match(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, K&gt; aKey,
-            Function&lt;? super B, K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner) {
-<span class="fc" id="L26">        return match(a, b, aKey, bKey, combiner, DEFAULT_MATCH_BATCH_SIZE);</span>
+    public static &lt;A, B, K, C&gt; Flowable&lt;C&gt; match(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b,
+            Function&lt;? super A, K&gt; aKey, Function&lt;? super B, K&gt; bKey,
+            BiFunction&lt;? super A, ? super B, C&gt; combiner) {
+<span class="fc" id="L40">        return match(a, b, aKey, bKey, combiner, DEFAULT_MATCH_BATCH_SIZE);</span>
     }
 
     public static &lt;T&gt; Flowable&lt;T&gt; repeat(T t) {
-<span class="fc" id="L30">        return new FlowableRepeat&lt;T&gt;(t, -1);</span>
+<span class="fc" id="L44">        return new FlowableRepeat&lt;T&gt;(t, -1);</span>
     }
 
     public static &lt;T&gt; Flowable&lt;T&gt; repeat(T t, long count) {
-<span class="fc" id="L34">        return new FlowableRepeat&lt;T&gt;(t, count);</span>
+<span class="fc" id="L48">        return new FlowableRepeat&lt;T&gt;(t, count);</span>
     }
 
-    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch,
-            long start, int maxConcurrent) {
-<span class="fc" id="L39">        return FlowableFetchPagesByRequest.create(fetch, start, maxConcurrent);</span>
+    /**
+     * &lt;p&gt;
+     * Creates a Flowable that is aimed at supporting calls to a service that
+     * provides data in pages where the page sizes are determined by requests from
+     * downstream (requests are a part of the backpressure machinery of RxJava).
+     * 
+     * &lt;p&gt;
+     * &lt;img src=
+     * &quot;https://raw.githubusercontent.com/davidmoten/rxjava2-extras/master/src/docs/fetchPagesByRequest.png&quot;
+     * alt=&quot;image&quot;&gt;
+     * 
+     * &lt;p&gt;
+     * Here's an example.
+     * 
+     * &lt;p&gt;
+     * Suppose you have a stateless web service, say a rest service that returns
+     * JSON/XML and supplies you with
+     * 
+     * &lt;ul&gt;
+     * &lt;li&gt;the most popular movies of the last 24 hours sorted by descending
+     * popularity&lt;/li&gt;
+     * &lt;/ul&gt;
+     * 
+     * &lt;p&gt;
+     * The service supports paging in that you can pass it a start number and a page
+     * size and it will return just that slice from the list.
+     * 
+     * &lt;p&gt;
+     * Now I want to give a library with a Flowable definition of this service to my
+     * colleagues that they can call in their applications whatever they may be. For
+     * example,
+     * 
+     * &lt;ul&gt;
+     * &lt;li&gt;Fred may just want to know the most popular movie each day,&lt;/li&gt;
+     * &lt;li&gt;Greta wants to get the top 20 and then have the ability to keep scrolling
+     * down the list in her UI.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * 
+     * &lt;p&gt;
+     * Let's see how we can efficiently support those use cases. I'm going to assume
+     * that the movie data returned by the service are mapped conveniently to
+     * objects by whatever framework I'm using (JAXB, Jersey, etc.). The fetch
+     * method looks like this:
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * // note that start is 0-based
+     * List&lt;Movie&gt; mostPopularMovies(int start, int size);
+     * }
+     * &lt;/pre&gt;
+     * 
+     * &lt;p&gt;
+     * Now I'm going to wrap this synchronous call as a Flowable to give to my
+     * colleagues:
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * Flowable&lt;Movie&gt; mostPopularMovies(int start) {
+     *     return Flowables.fetchPagesByRequest(
+     *           (position, n) -&gt; Flowable.fromIterable(mostPopular(position, n)),
+     *           start)
+     *         // rebatch requests so that they are always between 
+     *         // 5 and 100 except for the first request
+     *       .compose(Transformers.rebatchRequests(5, 100, false));
+     * }
+     * 
+     * Flowable&lt;Movie&gt; mostPopularMovies() {
+     *     return mostPopularMovies(0);
+     * }
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Note particularly that the method above uses a variant of rebatchRequests to
+     * limit both minimum and maximum requests. We particularly don't want to allow
+     * a single call requesting the top 100,000 popular movies because of the memory
+     * and network pressures that arise from that call.
+     * 
+     * &lt;p&gt;
+     * Righto, Fred now uses the new API like this:
+     * 
+     * &lt;pre&gt;
+     * {
+     *     &amp;#64;code
+     *     Movie top = mostPopularMovies().compose(Transformers.maxRequest(1)).first()
+     *             .blockingFirst();
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * The use of maxRequest above may seem unnecessary but strangely enough the
+     * first operator requests Long.MAX_VALUE of upstream and cancels as soon as one
+     * arrives. The take, elemnentAt and firstXXX operators all have this
+     * counter-intuitive characteristic.
+     * 
+     * &lt;p&gt;
+     * Greta uses the new API like this:
+     * 
+     * &lt;pre&gt;
+     * {@code
+     * mostPopularMovies()
+     *     .rebatchRequests(20)
+     *     .doOnNext(movie -&gt; addToUI(movie))
+     *     .subscribe(subscriber);
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * A bit more detail about fetchPagesByRequest:
+     * 
+     * &lt;p&gt;
+     * If the fetch function returns a Flowable that delivers fewer than the
+     * requested number of items then the overall stream completes.
+     * 
+     * @param fetch
+     *            a function that takes a position index and a length and returns a
+     *            Flowable
+     * @param start
+     *            the start index
+     * @param maxConcurrent
+     *            how many pages to request concurrently
+     * @param &lt;T&gt;
+     *            item type
+     * @return Flowable that fetches pages based on request amounts
+     */
+    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(
+            final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch, long start,
+            int maxConcurrent) {
+<span class="fc" id="L176">        return FlowableFetchPagesByRequest.create(fetch, start, maxConcurrent);</span>
     }
 
-    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch,
-            long start) {
-<span class="fc" id="L44">        return fetchPagesByRequest(fetch, start, 2);</span>
+    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(
+            final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch, long start) {
+<span class="fc" id="L181">        return fetchPagesByRequest(fetch, start, 2);</span>
     }
 
-    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch) {
-<span class="fc" id="L48">        return fetchPagesByRequest(fetch, 0, 2);</span>
+    public static &lt;T&gt; Flowable&lt;T&gt; fetchPagesByRequest(
+            final BiFunction&lt;? super Long, ? super Long, ? extends Flowable&lt;T&gt;&gt; fetch) {
+<span class="fc" id="L186">        return fetchPagesByRequest(fetch, 0, 2);</span>
+    }
+
+    /**
+     * Returns a cached {@link Flowable} like {@link Flowable#cache()} except that
+     * the cache can be reset by calling {@link CachedFlowable#reset()}.
+     *
+     * @param source
+     *            the observable to be cached.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return a cached observable whose cache can be reset.
+     */
+    public static &lt;T&gt; CachedFlowable&lt;T&gt; cache(Flowable&lt;T&gt; source) {
+<span class="nc" id="L200">        return new CachedFlowable&lt;T&gt;(source);</span>
+    }
+
+    /**
+     * Returns a cached {@link Flowable} like {@link Flowable#cache()} except that
+     * the cache can be reset by calling {@link CachedFlowable#reset()} and the
+     * cache will be automatically reset an interval after first subscription (or
+     * first subscription after reset). The interval is defined by {@code duration}
+     * and {@code unit} .
+     *
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param worker
+     *            worker to use for scheduling reset. Don't forget to unsubscribe
+     *            the worker when no longer required.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return cached observable that resets regularly on a time interval
+     */
+    public static &lt;T&gt; Flowable&lt;T&gt; cache(final Flowable&lt;T&gt; source, final long duration,
+            final TimeUnit unit, final Scheduler.Worker worker) {
+<span class="nc" id="L225">        final AtomicReference&lt;CachedFlowable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedFlowable&lt;T&gt;&gt;();</span>
+<span class="nc" id="L226">        CachedFlowable&lt;T&gt; cache = new CachedFlowable&lt;T&gt;(source);</span>
+<span class="nc" id="L227">        cacheRef.set(cache);</span>
+<span class="nc" id="L228">        return cache.doOnSubscribe(new Consumer&lt;Subscription&gt;() {</span>
+            @Override
+            public void accept(Subscription d) {
+<span class="nc" id="L231">                Runnable action = new Runnable() {</span>
+                    @Override
+                    public void run() {
+<span class="nc" id="L234">                        cacheRef.get().reset();</span>
+<span class="nc" id="L235">                    }</span>
+                };
+<span class="nc" id="L237">                worker.schedule(action, duration, unit);</span>
+<span class="nc" id="L238">            }</span>
+        });
+    }
+
+    /**
+     * Returns a cached {@link Flowable} like {@link Flowable#cache()} except that
+     * the cache may be reset by the user calling
+     * {@link CloseableFlowableWithReset#reset}.
+     *
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param scheduler
+     *            scheduler to use for scheduling reset.
+     * @param &lt;T&gt;
+     *            generic type of source observable
+     * @return {@link CloseableFlowableWithReset} that should be closed once
+     *         finished to prevent worker memory leak.
+     */
+    public static &lt;T&gt; CloseableFlowableWithReset&lt;T&gt; cache(final Flowable&lt;T&gt; source,
+            final long duration, final TimeUnit unit, final Scheduler scheduler) {
+<span class="fc" id="L262">        final AtomicReference&lt;CachedFlowable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedFlowable&lt;T&gt;&gt;();</span>
+<span class="fc" id="L263">        final AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt; workerRef = new AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt;(</span>
+<span class="fc" id="L264">                Optional.&lt;Scheduler.Worker&gt;absent());</span>
+<span class="fc" id="L265">        CachedFlowable&lt;T&gt; cache = new CachedFlowable&lt;T&gt;(source);</span>
+<span class="fc" id="L266">        cacheRef.set(cache);</span>
+<span class="fc" id="L267">        Runnable closeAction = new Runnable() {</span>
+            @Override
+            public void run() {
+                while (true) {
+<span class="nc" id="L271">                    Optional&lt;Scheduler.Worker&gt; w = workerRef.get();</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                    if (w == null) {</span>
+                        // we are finished
+<span class="nc" id="L274">                        break;</span>
+                    } else {
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                        if (workerRef.compareAndSet(w, null)) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                            if (w.isPresent()) {</span>
+<span class="nc" id="L278">                                w.get().dispose();</span>
+                            }
+                            // we are finished
+<span class="nc" id="L281">                            workerRef.set(null);</span>
+<span class="nc" id="L282">                            break;</span>
+                        }
+                    }
+                    // if not finished then try again
+<span class="nc" id="L286">                }</span>
+<span class="nc" id="L287">            }</span>
+        };
+<span class="fc" id="L289">        Runnable resetAction = new Runnable() {</span>
+
+            @Override
+            public void run() {
+<span class="fc" id="L293">                startScheduledResetAgain(duration, unit, scheduler, cacheRef, workerRef);</span>
+<span class="fc" id="L294">            }</span>
+        };
+<span class="fc" id="L296">        return new CloseableFlowableWithReset&lt;T&gt;(cache, closeAction, resetAction);</span>
+    }
+
+    private static &lt;T&gt; void startScheduledResetAgain(final long duration, final TimeUnit unit,
+            final Scheduler scheduler, final AtomicReference&lt;CachedFlowable&lt;T&gt;&gt; cacheRef,
+            final AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt; workerRef) {
+
+<span class="fc" id="L303">        Runnable action = new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="fc" id="L306">                cacheRef.get().reset();</span>
+<span class="fc" id="L307">            }</span>
+        };
+        // CAS loop to cancel the current worker and create a new one
+        while (true) {
+<span class="fc" id="L311">            Optional&lt;Scheduler.Worker&gt; wOld = workerRef.get();</span>
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">            if (wOld == null) {</span>
+                // we are finished
+<span class="nc" id="L314">                return;</span>
+            }
+<span class="fc" id="L316">            Optional&lt;Scheduler.Worker&gt; w = Optional.of(scheduler.createWorker());</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">            if (workerRef.compareAndSet(wOld, w)) {</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">                if (wOld.isPresent())</span>
+<span class="fc" id="L319">                    wOld.get().dispose();</span>
+<span class="fc" id="L320">                w.get().schedule(action, duration, unit);</span>
+<span class="fc" id="L321">                break;</span>
+            }
+<span class="nc" id="L323">        }</span>
+<span class="fc" id="L324">    }</span>
+
+    private static final int DEFAULT_RING_BUFFER_SIZE = 128;
+
+    public static &lt;T&gt; Flowable&lt;T&gt; mergeInterleaved(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; publishers,
+            int maxConcurrency, int batchSize, boolean delayErrors) {
+<span class="fc" id="L330">        return new FlowableMergeInterleave&lt;T&gt;(publishers, maxConcurrency, batchSize, delayErrors);</span>
+    }
+
+    public static &lt;T&gt; Flowable&lt;T&gt; mergeInterleaved(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; publishers,
+            int maxConcurrency) {
+<span class="nc" id="L335">        return mergeInterleaved(publishers, maxConcurrency, 128, false);</span>
+    }
+
+    public static &lt;T&gt; MergeInterleaveBuilder&lt;T&gt; mergeInterleaved(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; publishers) {
+<span class="fc" id="L339">        return new MergeInterleaveBuilder&lt;T&gt;(publishers);</span>
+    }
+
+    public static final class MergeInterleaveBuilder&lt;T&gt; {
+
+        private final Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; publishers;
+<span class="fc" id="L345">        private int maxConcurrency = 4;</span>
+<span class="fc" id="L346">        private int batchSize = DEFAULT_RING_BUFFER_SIZE;</span>
+<span class="fc" id="L347">        private boolean delayErrors = false;</span>
+
+<span class="fc" id="L349">        MergeInterleaveBuilder(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; publishers) {</span>
+<span class="fc" id="L350">            this.publishers = publishers;</span>
+<span class="fc" id="L351">        }</span>
+
+        public MergeInterleaveBuilder&lt;T&gt; maxConcurrency(int maxConcurrency) {
+<span class="fc" id="L354">            this.maxConcurrency = maxConcurrency;</span>
+<span class="fc" id="L355">            return this;</span>
+        }
+
+        public MergeInterleaveBuilder&lt;T&gt; batchSize(int batchSize) {
+<span class="fc" id="L359">            this.batchSize = batchSize;</span>
+<span class="fc" id="L360">            return this;</span>
+        }
+
+        public MergeInterleaveBuilder&lt;T&gt; delayErrors(boolean delayErrors) {
+<span class="fc" id="L364">            this.delayErrors = delayErrors;</span>
+<span class="fc" id="L365">            return this;</span>
+        }
+
+        public Flowable&lt;T&gt; build() {
+<span class="fc" id="L369">            return mergeInterleaved(publishers, maxConcurrency, batchSize, delayErrors);</span>
+        }
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

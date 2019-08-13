@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Observables.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Observables.java</span></div><h1>Observables.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+
+import com.github.davidmoten.guavamini.Optional;
+import com.github.davidmoten.rx2.flowable.CachedFlowable;
+import com.github.davidmoten.rx2.observable.CachedObservable;
+import com.github.davidmoten.rx2.observable.CloseableObservableWithReset;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.Scheduler;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+public final class Observables {
+
+
+<span class="fc" id="L19">    private Observables() {</span>
+        // prevent instantiation
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Returns a cached {@link Flowable} like {@link Flowable#cache()}
+     * except that the cache can be reset by calling
+     * {@link CachedFlowable#reset()}.
+     *
+     * @param source
+     *            the observable to be cached.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return a cached observable whose cache can be reset.
+     */
+    public static &lt;T&gt; CachedObservable&lt;T&gt; cache(Observable&lt;T&gt; source) {
+<span class="nc" id="L35">        return new CachedObservable&lt;T&gt;(source);</span>
+    }
+
+    /**
+     * Returns a cached {@link Observable} like {@link Observable#cache()}
+     * except that the cache can be reset by calling
+     * {@link CachedObservable#reset()} and the cache will be automatically
+     * reset an interval after first subscription (or first subscription after
+     * reset). The interval is defined by {@code duration} and {@code unit} .
+     *
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param worker
+     *            worker to use for scheduling reset. Don't forget to
+     *            unsubscribe the worker when no longer required.
+     * @param &lt;T&gt;
+     *            the generic type of the source
+     * @return cached observable that resets regularly on a time interval
+     */
+    public static &lt;T&gt; Observable&lt;T&gt; cache(final Observable&lt;T&gt; source, final long duration,
+                                        final TimeUnit unit, final Scheduler.Worker worker) {
+<span class="nc" id="L60">        final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedObservable&lt;T&gt;&gt;();</span>
+<span class="nc" id="L61">        CachedObservable&lt;T&gt; cache = new CachedObservable&lt;T&gt;(source);</span>
+<span class="nc" id="L62">        cacheRef.set(cache);</span>
+<span class="nc" id="L63">        return cache.doOnSubscribe(new Consumer&lt;Disposable&gt;() {</span>
+            @Override
+            public void accept(Disposable d) {
+<span class="nc" id="L66">                Runnable action = new Runnable() {</span>
+                    @Override
+                    public void run() {
+<span class="nc" id="L69">                        cacheRef.get().reset();</span>
+<span class="nc" id="L70">                    }</span>
+                };
+<span class="nc" id="L72">                worker.schedule(action, duration, unit);</span>
+<span class="nc" id="L73">            }</span>
+        });
+    }
+
+    /**
+     * Returns a cached {@link Observable} like {@link Observable#cache()}
+     * except that the cache may be reset by the user calling
+     * {@link CloseableObservableWithReset#reset}.
+     *
+     * @param source
+     *            the source observable
+     * @param duration
+     *            duration till next reset
+     * @param unit
+     *            units corresponding to the duration
+     * @param scheduler
+     *            scheduler to use for scheduling reset.
+     * @param &lt;T&gt;
+     *            generic type of source observable
+     * @return {@link CloseableObservableWithReset} that should be closed once
+     *         finished to prevent worker memory leak.
+     */
+    public static &lt;T&gt; CloseableObservableWithReset&lt;T&gt; cache(final Observable&lt;T&gt; source,
+                                                            final long duration, final TimeUnit unit, final Scheduler scheduler) {
+<span class="fc" id="L97">        final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef = new AtomicReference&lt;CachedObservable&lt;T&gt;&gt;();</span>
+<span class="fc" id="L98">        final AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt; workerRef = new AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt;(</span>
+<span class="fc" id="L99">                Optional.&lt;Scheduler.Worker&gt; absent());</span>
+<span class="fc" id="L100">        CachedObservable&lt;T&gt; cache = new CachedObservable&lt;T&gt;(source);</span>
+<span class="fc" id="L101">        cacheRef.set(cache);</span>
+<span class="fc" id="L102">        Runnable closeAction = new Runnable() {</span>
+            @Override
+            public void run() {
+                while (true) {
+<span class="nc" id="L106">                    Optional&lt;Scheduler.Worker&gt; w = workerRef.get();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                    if (w == null) {</span>
+                        // we are finished
+<span class="nc" id="L109">                        break;</span>
+                    } else {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                        if (workerRef.compareAndSet(w, null)) {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                            if (w.isPresent()) {</span>
+<span class="nc" id="L113">                                w.get().dispose();</span>
+                            }
+                            // we are finished
+<span class="nc" id="L116">                            workerRef.set(null);</span>
+<span class="nc" id="L117">                            break;</span>
+                        }
+                    }
+                    // if not finished then try again
+<span class="nc" id="L121">                }</span>
+<span class="nc" id="L122">            }</span>
+        };
+<span class="fc" id="L124">        Runnable resetAction = new Runnable() {</span>
+
+            @Override
+            public void run() {
+<span class="fc" id="L128">                startScheduledResetAgain(duration, unit, scheduler, cacheRef, workerRef);</span>
+<span class="fc" id="L129">            }</span>
+        };
+<span class="fc" id="L131">        return new CloseableObservableWithReset&lt;T&gt;(cache, closeAction, resetAction);</span>
+    }
+
+
+    private static &lt;T&gt; void startScheduledResetAgain(final long duration, final TimeUnit unit,
+                                                     final Scheduler scheduler, final AtomicReference&lt;CachedObservable&lt;T&gt;&gt; cacheRef,
+                                                     final AtomicReference&lt;Optional&lt;Scheduler.Worker&gt;&gt; workerRef) {
+
+<span class="fc" id="L139">        Runnable action = new Runnable() {</span>
+            @Override
+            public void run() {
+<span class="fc" id="L142">                cacheRef.get().reset();</span>
+<span class="fc" id="L143">            }</span>
+        };
+        // CAS loop to cancel the current worker and create a new one
+        while (true) {
+<span class="fc" id="L147">            Optional&lt;Scheduler.Worker&gt; wOld = workerRef.get();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            if (wOld == null) {</span>
+                // we are finished
+<span class="nc" id="L150">                return;</span>
+            }
+<span class="fc" id="L152">            Optional&lt;Scheduler.Worker&gt; w = Optional.of(scheduler.createWorker());</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (workerRef.compareAndSet(wOld, w)) {</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                if (wOld.isPresent())</span>
+<span class="fc" id="L155">                    wOld.get().dispose();</span>
+<span class="fc" id="L156">                w.get().schedule(action, duration, unit);</span>
+<span class="fc" id="L157">                break;</span>
+            }
+<span class="nc" id="L159">        }</span>
+<span class="fc" id="L160">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

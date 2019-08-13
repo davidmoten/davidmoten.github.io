@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RingBuffer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.util</a> &gt; <span class="el_source">RingBuffer.java</span></div><h1>RingBuffer.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.util;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+
+/**
+ * Non-threadsafe implementation of a Ring Buffer. Does not accept nulls.
+ * 
+ * @param &lt;T&gt;
+ */
+// @NotThreadSafe
+public class RingBuffer&lt;T&gt; implements Queue&lt;T&gt; {
+
+    private final T[] list;
+    private int start;
+    private int finish;
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L21">    private RingBuffer(int size) {</span>
+<span class="fc" id="L22">        list = (T[]) new Object[size + 1];</span>
+<span class="fc" id="L23">    }</span>
+
+    public static &lt;T&gt; RingBuffer&lt;T&gt; create(int size) {
+<span class="fc" id="L26">        return new RingBuffer&lt;T&gt;(size);</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="fc" id="L31">        finish = start;</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public Iterator&lt;T&gt; iterator() {
+<span class="nc" id="L36">        final int _start = start;</span>
+<span class="nc" id="L37">        final int _finish = finish;</span>
+<span class="nc" id="L38">        return new Iterator&lt;T&gt;() {</span>
+<span class="nc" id="L39">            int i = _start;</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">                return i != _finish;</span>
+            }
+
+            @Override
+            public T next() {
+<span class="nc" id="L48">                T value = list[i];</span>
+<span class="nc" id="L49">                i = (i + 1) % list.length;</span>
+<span class="nc" id="L50">                return value;</span>
+            }
+        };
+    }
+
+    @Override
+    public T peek() {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (start == finish)</span>
+<span class="nc" id="L58">            return null;</span>
+        else
+<span class="nc" id="L60">            return list[start];</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        return start == finish;</span>
+    }
+
+    public int size() {
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (start &lt;= finish)</span>
+<span class="fc" id="L69">            return finish - start;</span>
+        else
+<span class="nc" id="L71">            return finish - start + list.length;</span>
+    }
+
+    public int maxSize() {
+<span class="nc" id="L75">        return list.length - 1;</span>
+    }
+
+    @Override
+    public boolean contains(Object o) {
+<span class="nc" id="L80">        return notImplemented();</span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="nc" id="L85">        return notImplemented();</span>
+    }
+
+    @Override
+    public &lt;S&gt; S[] toArray(S[] a) {
+<span class="nc" id="L90">        return notImplemented();</span>
+    }
+
+    @Override
+    public boolean remove(Object o) {
+<span class="nc" id="L95">        return notImplemented();</span>
+    }
+
+    @Override
+    public boolean containsAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L100">        return notImplemented();</span>
+    }
+
+    private static &lt;T&gt; T notImplemented() {
+<span class="nc" id="L104">        throw new RuntimeException(&quot;Not implemented&quot;);</span>
+    }
+
+    @Override
+    public boolean addAll(Collection&lt;? extends T&gt; c) {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (T t : c)</span>
+<span class="nc" id="L110">            add(t);</span>
+<span class="nc" id="L111">        return true;</span>
+    }
+
+    @Override
+    public boolean removeAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L116">        return notImplemented();</span>
+    }
+
+    @Override
+    public boolean retainAll(Collection&lt;?&gt; c) {
+<span class="nc" id="L121">        return notImplemented();</span>
+    }
+
+    @Override
+    public boolean add(T t) {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (offer(t))</span>
+<span class="fc" id="L127">            return true;</span>
+        else
+<span class="fc" id="L129">            throw new IllegalStateException(&quot;Cannot add to queue because is full&quot;);</span>
+    }
+
+    @Override
+    public boolean offer(T t) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (t == null)</span>
+<span class="nc" id="L135">            throw new NullPointerException();</span>
+<span class="fc" id="L136">        int currentFinish = finish;</span>
+<span class="fc" id="L137">        finish = (finish + 1) % list.length;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (finish == start) {</span>
+<span class="fc" id="L139">            return false;</span>
+        } else {
+<span class="fc" id="L141">            list[currentFinish] = t;</span>
+<span class="fc" id="L142">            return true;</span>
+        }
+    }
+
+    @Override
+    public T remove() {
+<span class="nc" id="L148">        T t = poll();</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (t == null)</span>
+<span class="nc" id="L150">            throw new NoSuchElementException();</span>
+        else
+<span class="nc" id="L152">            return t;</span>
+    }
+
+    @Override
+    public T poll() {
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (start == finish) {</span>
+<span class="nc" id="L158">            return null;</span>
+        } else {
+<span class="fc" id="L160">            T value = list[start];</span>
+            // don't hold a reference to a popped value
+<span class="fc" id="L162">            list[start] = null;</span>
+<span class="fc" id="L163">            start = (start + 1) % list.length;</span>
+<span class="fc" id="L164">            return value;</span>
+        }
+    }
+
+    @Override
+    public T element() {
+<span class="nc" id="L170">        return notImplemented();</span>
+    }
+    
+    @Override
+    public String toString() {
+<span class="nc" id="L175">        StringBuilder s = new StringBuilder();</span>
+<span class="nc" id="L176">        s.append(&quot;RingBuffer[&quot;);</span>
+<span class="nc" id="L177">        boolean first = true;</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        for (T value: this) {</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (!first) {</span>
+<span class="nc" id="L180">                s.append(&quot;, &quot;);</span>
+            } else {
+<span class="nc" id="L182">                first = false;</span>
+            }
+<span class="nc" id="L184">            s.append(String.valueOf(value));</span>
+<span class="nc" id="L185">        }</span>
+<span class="nc" id="L186">        s.append(&quot;]&quot;);</span>
+<span class="nc" id="L187">        return s.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

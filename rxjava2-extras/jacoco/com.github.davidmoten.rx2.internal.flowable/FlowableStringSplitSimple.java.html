@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableStringSplitSimple.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableStringSplitSimple.java</span></div><h1>FlowableStringSplitSimple.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableStringSplitSimple.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableStringSplitSimple.java</span></div><h1>FlowableStringSplitSimple.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -10,6 +10,7 @@ import org.reactivestreams.Subscription;
 import com.github.davidmoten.guavamini.Preconditions;
 
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.internal.fuseable.SimplePlainQueue;
 import io.reactivex.internal.queue.SpscLinkedArrayQueue;
 import io.reactivex.internal.subscriptions.SubscriptionHelper;
@@ -20,29 +21,29 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
     private final Flowable&lt;String&gt; source;
     private final String delimiter;
 
-<span class="fc" id="L23">    public FlowableStringSplitSimple(Flowable&lt;String&gt; source, String delimiter) {</span>
-<span class="fc" id="L24">        Preconditions.checkNotNull(source);</span>
-<span class="fc" id="L25">        Preconditions.checkNotNull(delimiter);</span>
-<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        Preconditions.checkArgument(delimiter.length() &gt; 0);</span>
-<span class="fc" id="L27">        this.source = source;</span>
-<span class="fc" id="L28">        this.delimiter = delimiter;</span>
-<span class="fc" id="L29">    }</span>
+<span class="fc" id="L24">    public FlowableStringSplitSimple(Flowable&lt;String&gt; source, String delimiter) {</span>
+<span class="fc" id="L25">        Preconditions.checkNotNull(source);</span>
+<span class="fc" id="L26">        Preconditions.checkNotNull(delimiter);</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        Preconditions.checkArgument(delimiter.length() &gt; 0);</span>
+<span class="fc" id="L28">        this.source = source;</span>
+<span class="fc" id="L29">        this.delimiter = delimiter;</span>
+<span class="fc" id="L30">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super String&gt; s) {
-<span class="fc" id="L33">        source.subscribe(new StringSplitSubscriber(s, delimiter));</span>
-<span class="fc" id="L34">    }</span>
+<span class="fc" id="L34">        source.subscribe(new StringSplitSubscriber(s, delimiter));</span>
+<span class="fc" id="L35">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
     private static final class StringSplitSubscriber extends AtomicLong
-            implements Subscriber&lt;String&gt;, Subscription {
+            implements FlowableSubscriber&lt;String&gt;, Subscription {
 
         private final Subscriber&lt;? super String&gt; actual;
         // queue of notifications
-<span class="fc" id="L42">        private final transient SimplePlainQueue&lt;String&gt; queue = new SpscLinkedArrayQueue&lt;String&gt;(</span>
+<span class="fc" id="L43">        private final transient SimplePlainQueue&lt;String&gt; queue = new SpscLinkedArrayQueue&lt;String&gt;(</span>
                 16);
-<span class="fc" id="L44">        private final AtomicInteger wip = new AtomicInteger();</span>
-<span class="fc" id="L45">        private final AtomicBoolean once = new AtomicBoolean();</span>
+<span class="fc" id="L45">        private final AtomicInteger wip = new AtomicInteger();</span>
+<span class="fc" id="L46">        private final AtomicBoolean once = new AtomicBoolean();</span>
 
         private final DelimitedStringLinkedList ss;
         private volatile boolean cancelled;
@@ -52,123 +53,123 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
         private Throwable error;
         private volatile boolean done;
 
-<span class="fc" id="L55">        StringSplitSubscriber(Subscriber&lt;? super String&gt; actual, String delimiter) {</span>
-<span class="fc" id="L56">            this.actual = actual;</span>
-<span class="fc" id="L57">            this.ss = new DelimitedStringLinkedList(delimiter);</span>
-<span class="fc" id="L58">        }</span>
+<span class="fc" id="L56">        StringSplitSubscriber(Subscriber&lt;? super String&gt; actual, String delimiter) {</span>
+<span class="fc" id="L57">            this.actual = actual;</span>
+<span class="fc" id="L58">            this.ss = new DelimitedStringLinkedList(delimiter);</span>
+<span class="fc" id="L59">        }</span>
 
         @Override
         public void onSubscribe(Subscription subscription) {
-<span class="fc" id="L62">            this.parent = subscription;</span>
-<span class="fc" id="L63">            actual.onSubscribe(this);</span>
-<span class="fc" id="L64">        }</span>
+<span class="fc" id="L63">            this.parent = subscription;</span>
+<span class="fc" id="L64">            actual.onSubscribe(this);</span>
+<span class="fc" id="L65">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L68">            cancelled = true;</span>
-<span class="fc" id="L69">            parent.cancel();</span>
-<span class="fc" id="L70">        }</span>
+<span class="fc" id="L69">            cancelled = true;</span>
+<span class="fc" id="L70">            parent.cancel();</span>
+<span class="fc" id="L71">        }</span>
 
         @Override
         public void request(long n) {
-<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L75">                BackpressureHelper.add(this, n);</span>
-<span class="fc bfc" id="L76" title="All 2 branches covered.">                if (once.compareAndSet(false, true)) {</span>
-<span class="fc bfc" id="L77" title="All 2 branches covered.">                    if (n == Long.MAX_VALUE) {</span>
-<span class="fc" id="L78">                        parent.request(Long.MAX_VALUE);</span>
-<span class="fc" id="L79">                        unbounded = true;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L76">                BackpressureHelper.add(this, n);</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (once.compareAndSet(false, true)) {</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                    if (n == Long.MAX_VALUE) {</span>
+<span class="fc" id="L79">                        parent.request(Long.MAX_VALUE);</span>
+<span class="fc" id="L80">                        unbounded = true;</span>
                     } else {
-<span class="fc" id="L81">                        parent.request(1);</span>
+<span class="fc" id="L82">                        parent.request(1);</span>
                     }
                 }
-<span class="fc" id="L84">                drain();</span>
+<span class="fc" id="L85">                drain();</span>
             }
-<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        }</span>
 
         @Override
         public void onNext(String t) {
-<span class="fc" id="L90">            queue.offer(t);</span>
-<span class="fc" id="L91">            drain();</span>
-<span class="fc" id="L92">        }</span>
+<span class="fc" id="L91">            queue.offer(t);</span>
+<span class="fc" id="L92">            drain();</span>
+<span class="fc" id="L93">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc" id="L96">            done = true;</span>
-<span class="fc" id="L97">            drain();</span>
-<span class="fc" id="L98">        }</span>
+<span class="fc" id="L97">            done = true;</span>
+<span class="fc" id="L98">            drain();</span>
+<span class="fc" id="L99">        }</span>
 
         @Override
         public void onError(Throwable e) {
-<span class="fc" id="L102">            error = e;</span>
-<span class="fc" id="L103">            done = true;</span>
-<span class="fc" id="L104">            drain();</span>
-<span class="fc" id="L105">        }</span>
+<span class="fc" id="L103">            error = e;</span>
+<span class="fc" id="L104">            done = true;</span>
+<span class="fc" id="L105">            drain();</span>
+<span class="fc" id="L106">        }</span>
 
         private void drain() {
-<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (wip.getAndIncrement() != 0) {</span>
-<span class="fc" id="L109">                return;</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (wip.getAndIncrement() != 0) {</span>
+<span class="fc" id="L110">                return;</span>
             }
-<span class="fc" id="L111">            int missed = 1;</span>
+<span class="fc" id="L112">            int missed = 1;</span>
             while (true) {
-<span class="fc" id="L113">                long r = get(); // requested</span>
-<span class="fc" id="L114">                long e = 0; // emitted</span>
-<span class="fc bfc" id="L115" title="All 2 branches covered.">                while (e != r) {</span>
-<span class="fc bfc" id="L116" title="All 2 branches covered.">                    if (cancelled) {</span>
-<span class="fc" id="L117">                        return;</span>
+<span class="fc" id="L114">                long r = get(); // requested</span>
+<span class="fc" id="L115">                long e = 0; // emitted</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                while (e != r) {</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                    if (cancelled) {</span>
+<span class="fc" id="L118">                        return;</span>
                     }
-<span class="fc bfc" id="L119" title="All 2 branches covered.">                    if (find()) {</span>
-<span class="fc" id="L120">                        e++;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                    if (find()) {</span>
+<span class="fc" id="L121">                        e++;</span>
                     } else {
                         // must read `done` before poll occurs
-<span class="fc" id="L123">                        boolean d = done;</span>
-<span class="fc" id="L124">                        String t = queue.poll();</span>
-<span class="fc bfc" id="L125" title="All 2 branches covered.">                        if (t == null) {</span>
-<span class="fc bfc" id="L126" title="All 2 branches covered.">                            if (d) {</span>
-<span class="fc" id="L127">                                Throwable err = error;</span>
-<span class="fc bfc" id="L128" title="All 2 branches covered.">                                if (err != null) {</span>
-<span class="fc" id="L129">                                    ss.clear();</span>
-<span class="fc" id="L130">                                    actual.onError(err);</span>
-<span class="fc" id="L131">                                    return;</span>
+<span class="fc" id="L124">                        boolean d = done;</span>
+<span class="fc" id="L125">                        String t = queue.poll();</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L128">                                Throwable err = error;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">                                if (err != null) {</span>
+<span class="fc" id="L130">                                    ss.clear();</span>
+<span class="fc" id="L131">                                    actual.onError(err);</span>
+<span class="fc" id="L132">                                    return;</span>
                                 } else {
-<span class="fc" id="L133">                                    String remaining = ss.remaining();</span>
+<span class="fc" id="L134">                                    String remaining = ss.remaining();</span>
                                     final boolean checkCancelled;
-<span class="fc bfc" id="L135" title="All 2 branches covered.">                                    if (remaining != null) {</span>
-<span class="fc" id="L136">                                        ss.clear();</span>
-<span class="fc" id="L137">                                        queue.clear();</span>
-<span class="fc" id="L138">                                        actual.onNext(remaining);</span>
-<span class="fc" id="L139">                                        e++;</span>
-<span class="fc" id="L140">                                        checkCancelled = true;</span>
-<span class="fc bfc" id="L141" title="All 2 branches covered.">                                    } else if (ss.addCalled()) {</span>
-<span class="fc" id="L142">                                        ss.clear();</span>
-<span class="fc" id="L143">                                        queue.clear();</span>
-<span class="fc" id="L144">                                        actual.onNext(&quot;&quot;);</span>
-<span class="fc" id="L145">                                        e++;</span>
-<span class="fc" id="L146">                                        checkCancelled = true;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                                    if (remaining != null) {</span>
+<span class="fc" id="L137">                                        ss.clear();</span>
+<span class="fc" id="L138">                                        queue.clear();</span>
+<span class="fc" id="L139">                                        actual.onNext(remaining);</span>
+<span class="fc" id="L140">                                        e++;</span>
+<span class="fc" id="L141">                                        checkCancelled = true;</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                                    } else if (ss.addCalled()) {</span>
+<span class="fc" id="L143">                                        ss.clear();</span>
+<span class="fc" id="L144">                                        queue.clear();</span>
+<span class="fc" id="L145">                                        actual.onNext(&quot;&quot;);</span>
+<span class="fc" id="L146">                                        e++;</span>
+<span class="fc" id="L147">                                        checkCancelled = true;</span>
                                     } else {
-<span class="fc" id="L148">                                        checkCancelled = false;</span>
+<span class="fc" id="L149">                                        checkCancelled = false;</span>
                                     }
-<span class="pc bpc" id="L150" title="1 of 4 branches missed.">                                    if (!checkCancelled || !cancelled) {</span>
-<span class="fc" id="L151">                                        actual.onComplete();</span>
+<span class="pc bpc" id="L151" title="1 of 4 branches missed.">                                    if (!checkCancelled || !cancelled) {</span>
+<span class="fc" id="L152">                                        actual.onComplete();</span>
                                     }
-<span class="fc" id="L153">                                    return;</span>
+<span class="fc" id="L154">                                    return;</span>
                                 }
-<span class="fc bfc" id="L155" title="All 2 branches covered.">                            } else if (!unbounded) {</span>
-<span class="fc" id="L156">                                parent.request(1);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                            } else if (!unbounded) {</span>
+<span class="fc" id="L157">                                parent.request(1);</span>
                             }
                             break;
                         } else {
-<span class="fc" id="L160">                            ss.add(t);</span>
+<span class="fc" id="L161">                            ss.add(t);</span>
                         }
-<span class="fc" id="L162">                    }</span>
+<span class="fc" id="L163">                    }</span>
                 }
-<span class="fc bfc" id="L164" title="All 4 branches covered.">                if (e &gt; 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
-<span class="fc" id="L165">                    this.addAndGet(-e);</span>
+<span class="fc bfc" id="L165" title="All 4 branches covered.">                if (e &gt; 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L166">                    this.addAndGet(-e);</span>
                 }
-<span class="fc" id="L167">                missed = wip.addAndGet(-missed);</span>
-<span class="fc bfc" id="L168" title="All 2 branches covered.">                if (missed == 0) {</span>
-<span class="fc" id="L169">                    return;</span>
+<span class="fc" id="L168">                missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L170">                    return;</span>
                 }
-<span class="fc" id="L171">            }</span>
+<span class="fc" id="L172">            }</span>
         }
 
         /**
@@ -177,18 +178,18 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
          * @return true if and only if a value emitted
          */
         private boolean find() {
-<span class="pc bpc" id="L180" title="1 of 2 branches missed.">            if (ss == null) {</span>
-<span class="nc" id="L181">                return false;</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">            if (ss == null) {</span>
+<span class="nc" id="L182">                return false;</span>
             }
-<span class="fc" id="L183">            String s = ss.next();</span>
-<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (s != null) {</span>
-<span class="fc" id="L185">                actual.onNext(s);</span>
-<span class="fc" id="L186">                return true;</span>
+<span class="fc" id="L184">            String s = ss.next();</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (s != null) {</span>
+<span class="fc" id="L186">                actual.onNext(s);</span>
+<span class="fc" id="L187">                return true;</span>
             } else {
-<span class="fc" id="L188">                return false;</span>
+<span class="fc" id="L189">                return false;</span>
             }
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

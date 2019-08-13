@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Strings.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Strings.java</span></div><h1>Strings.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Strings.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2</a> &gt; <span class="el_source">Strings.java</span></div><h1>Strings.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +20,7 @@ import org.reactivestreams.Publisher;
 
 import com.github.davidmoten.guavamini.Preconditions;
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rx2.internal.flowable.FlowableStringInputStream;
 import com.github.davidmoten.rx2.internal.flowable.FlowableStringSplitSimple;
 import com.github.davidmoten.rx2.internal.flowable.TransformerDecode;
 import com.github.davidmoten.rx2.internal.flowable.TransformerStringSplit;
@@ -38,11 +39,11 @@ import io.reactivex.functions.Predicate;
 
 public final class Strings {
 
-<span class="fc" id="L41">    private Strings() {</span>
+<span class="fc" id="L42">    private Strings() {</span>
         // prevent instantiation
-<span class="fc" id="L43">    }</span>
+<span class="fc" id="L44">    }</span>
 
-<span class="fc" id="L45">    public static final Charset UTF_8 = Charset.forName(&quot;UTF-8&quot;);</span>
+<span class="fc" id="L46">    public static final Charset UTF_8 = Charset.forName(&quot;UTF-8&quot;);</span>
 
     private static final int DEFAULT_REQUEST_SIZE = 1;
     private static final int DEFAULT_BUFFER_SIZE = 8192;
@@ -51,179 +52,179 @@ public final class Strings {
      * Returns null if input is null otherwise returns input.toString().trim().
      */
     @VisibleForTesting
-<span class="fc" id="L54">    static Function&lt;Object, String&gt; TRIM = new Function&lt;Object, String&gt;() {</span>
+<span class="fc" id="L55">    static Function&lt;Object, String&gt; TRIM = new Function&lt;Object, String&gt;() {</span>
 
         @Override
         public String apply(Object input) throws Exception {
-<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (input == null)</span>
-<span class="fc" id="L59">                return null;</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (input == null)</span>
+<span class="fc" id="L60">                return null;</span>
             else
-<span class="fc" id="L61">                return input.toString().trim();</span>
+<span class="fc" id="L62">                return input.toString().trim();</span>
         }
     };
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public static &lt;T&gt; Function&lt;T, String&gt; trim() {
-<span class="fc" id="L67">        return (Function&lt;T, String&gt;) TRIM;</span>
+<span class="fc" id="L68">        return (Function&lt;T, String&gt;) TRIM;</span>
     }
 
     public static Flowable&lt;String&gt; from(final Reader reader, final int bufferSize) {
-<span class="fc" id="L71">        return Flowable.generate(new Consumer&lt;Emitter&lt;String&gt;&gt;() {</span>
-<span class="fc" id="L72">            final char[] buffer = new char[bufferSize];</span>
+<span class="fc" id="L72">        return Flowable.generate(new Consumer&lt;Emitter&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L73">            final char[] buffer = new char[bufferSize];</span>
 
             @Override
             public void accept(Emitter&lt;String&gt; emitter) throws Exception {
-<span class="fc" id="L76">                int count = reader.read(buffer);</span>
-<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (count == -1) {</span>
-<span class="fc" id="L78">                    emitter.onComplete();</span>
+<span class="fc" id="L77">                int count = reader.read(buffer);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                if (count == -1) {</span>
+<span class="fc" id="L79">                    emitter.onComplete();</span>
                 } else {
-<span class="fc" id="L80">                    emitter.onNext(String.valueOf(buffer, 0, count));</span>
+<span class="fc" id="L81">                    emitter.onNext(String.valueOf(buffer, 0, count));</span>
                 }
-<span class="fc" id="L82">            }</span>
+<span class="fc" id="L83">            }</span>
         });
     }
 
     public static Flowable&lt;String&gt; from(Reader reader) {
-<span class="fc" id="L87">        return from(reader, DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L88">        return from(reader, DEFAULT_BUFFER_SIZE);</span>
     }
 
     public static Flowable&lt;String&gt; from(InputStream is) {
-<span class="fc" id="L91">        return from(is, UTF_8);</span>
+<span class="fc" id="L92">        return from(is, UTF_8);</span>
     }
 
     public static Flowable&lt;String&gt; from(InputStream is, Charset charset) {
-<span class="fc" id="L95">        return from(is, charset, DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L96">        return from(is, charset, DEFAULT_BUFFER_SIZE);</span>
     }
 
     public static Flowable&lt;String&gt; from(InputStream is, Charset charset, int bufferSize) {
-<span class="fc" id="L99">        return from(new InputStreamReader(is, charset), bufferSize);</span>
+<span class="fc" id="L100">        return from(new InputStreamReader(is, charset), bufferSize);</span>
     }
 
     public static Flowable&lt;String&gt; split(Flowable&lt;String&gt; source, String pattern) {
-<span class="fc" id="L103">        return source.compose(Strings.split(pattern, BackpressureStrategy.BUFFER, 1));</span>
+<span class="fc" id="L104">        return source.compose(Strings.split(pattern, BackpressureStrategy.BUFFER, 1));</span>
     }
 
     public static Maybe&lt;String&gt; concat(Flowable&lt;String&gt; source) {
-<span class="fc" id="L107">        return concat(source, &quot;&quot;);</span>
+<span class="fc" id="L108">        return concat(source, &quot;&quot;);</span>
     }
 
     public static Maybe&lt;String&gt; concat(Flowable&lt;String&gt; source, final String delimiter) {
-<span class="fc" id="L111">        return join(source, delimiter);</span>
+<span class="fc" id="L112">        return join(source, delimiter);</span>
     }
 
     public static Flowable&lt;String&gt; strings(Flowable&lt;?&gt; source) {
-<span class="fc" id="L115">        return source.map(new Function&lt;Object, String&gt;() {</span>
+<span class="fc" id="L116">        return source.map(new Function&lt;Object, String&gt;() {</span>
             @Override
             public String apply(Object t) throws Exception {
-<span class="fc" id="L118">                return String.valueOf(t);</span>
+<span class="fc" id="L119">                return String.valueOf(t);</span>
             }
         });
     }
 
     public static Flowable&lt;String&gt; from(File file) {
-<span class="fc" id="L124">        return from(file, UTF_8);</span>
+<span class="fc" id="L125">        return from(file, UTF_8);</span>
     }
 
     public static Flowable&lt;String&gt; from(final File file, final Charset charset) {
-<span class="fc" id="L128">        Preconditions.checkNotNull(file);</span>
-<span class="fc" id="L129">        Preconditions.checkNotNull(charset);</span>
-<span class="fc" id="L130">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
+<span class="fc" id="L129">        Preconditions.checkNotNull(file);</span>
+<span class="fc" id="L130">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L131">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
             @Override
             public Reader call() throws FileNotFoundException {
-<span class="fc" id="L133">                return new InputStreamReader(new FileInputStream(file), charset);</span>
+<span class="fc" id="L134">                return new InputStreamReader(new FileInputStream(file), charset);</span>
             }
         };
-<span class="fc" id="L136">        return from(resourceFactory);</span>
+<span class="fc" id="L137">        return from(resourceFactory);</span>
     }
 
     public static Flowable&lt;String&gt; fromClasspath(final Class&lt;?&gt; cls, final String resource, final Charset charset) {
-<span class="fc" id="L140">        Preconditions.checkNotNull(resource);</span>
-<span class="fc" id="L141">        Preconditions.checkNotNull(charset);</span>
-<span class="fc" id="L142">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
+<span class="fc" id="L141">        Preconditions.checkNotNull(resource);</span>
+<span class="fc" id="L142">        Preconditions.checkNotNull(charset);</span>
+<span class="fc" id="L143">        Callable&lt;Reader&gt; resourceFactory = new Callable&lt;Reader&gt;() {</span>
             @Override
             public Reader call() {
-<span class="fc" id="L145">                return new InputStreamReader(cls.getResourceAsStream(resource), charset);</span>
+<span class="fc" id="L146">                return new InputStreamReader(cls.getResourceAsStream(resource), charset);</span>
             }
         };
-<span class="fc" id="L148">        return from(resourceFactory);</span>
+<span class="fc" id="L149">        return from(resourceFactory);</span>
     }
 
     public static Flowable&lt;String&gt; fromClasspath(final String resource, final Charset charset) {
-<span class="fc" id="L152">        return fromClasspath(Strings.class, resource, charset);</span>
+<span class="fc" id="L153">        return fromClasspath(Strings.class, resource, charset);</span>
     }
 
     public static Flowable&lt;String&gt; fromClasspath(final String resource) {
-<span class="fc" id="L156">        return fromClasspath(resource, Utf8Holder.INSTANCE);</span>
+<span class="fc" id="L157">        return fromClasspath(resource, Utf8Holder.INSTANCE);</span>
     }
 
     public static Flowable&lt;String&gt; from(final Callable&lt;Reader&gt; readerFactory) {
-<span class="fc" id="L160">        Function&lt;Reader, Flowable&lt;String&gt;&gt; flowableFactory = new Function&lt;Reader, Flowable&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L161">        Function&lt;Reader, Flowable&lt;String&gt;&gt; flowableFactory = new Function&lt;Reader, Flowable&lt;String&gt;&gt;() {</span>
             @Override
             public Flowable&lt;String&gt; apply(Reader reader) {
-<span class="fc" id="L163">                return from(reader);</span>
+<span class="fc" id="L164">                return from(reader);</span>
             }
         };
-<span class="fc" id="L166">        return Flowable.using(readerFactory, flowableFactory, DisposeActionHolder.INSTANCE, true);</span>
+<span class="fc" id="L167">        return Flowable.using(readerFactory, flowableFactory, DisposeActionHolder.INSTANCE, true);</span>
     }
 
     public static Maybe&lt;String&gt; join(Flowable&lt;String&gt; source) {
-<span class="fc" id="L170">        return join(source, &quot;&quot;);</span>
+<span class="fc" id="L171">        return join(source, &quot;&quot;);</span>
     }
 
     public static FlowableTransformer&lt;byte[], String&gt; decode(CharsetDecoder decoder) {
-<span class="fc" id="L174">        return decode(decoder, BackpressureStrategy.BUFFER, DEFAULT_REQUEST_SIZE);</span>
+<span class="fc" id="L175">        return decode(decoder, BackpressureStrategy.BUFFER, DEFAULT_REQUEST_SIZE);</span>
     }
 
     public static FlowableTransformer&lt;byte[], String&gt; decode(CharsetDecoder decoder,
             BackpressureStrategy backpressureStrategy, int requestBatchSize) {
-<span class="fc" id="L179">        return TransformerDecode.decode(decoder, BackpressureStrategy.BUFFER, requestBatchSize);</span>
+<span class="fc" id="L180">        return TransformerDecode.decode(decoder, BackpressureStrategy.BUFFER, requestBatchSize);</span>
     }
 
     public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, CharsetDecoder decoder) {
-<span class="fc" id="L183">        return source.compose(Strings.decode(decoder));</span>
+<span class="fc" id="L184">        return source.compose(Strings.decode(decoder));</span>
     }
 
     public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, Charset charset) {
-<span class="fc" id="L187">        return decode(source, charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)</span>
-<span class="fc" id="L188">                .onUnmappableCharacter(CodingErrorAction.REPLACE));</span>
+<span class="fc" id="L188">        return decode(source, charset.newDecoder().onMalformedInput(CodingErrorAction.REPLACE)</span>
+<span class="fc" id="L189">                .onUnmappableCharacter(CodingErrorAction.REPLACE));</span>
     }
 
     public static Flowable&lt;String&gt; decode(Flowable&lt;byte[]&gt; source, String charset) {
-<span class="fc" id="L192">        return decode(source, Charset.forName(charset));</span>
+<span class="fc" id="L193">        return decode(source, Charset.forName(charset));</span>
     }
 
     public static Maybe&lt;String&gt; join(final Flowable&lt;String&gt; source, final String delimiter) {
 
-<span class="fc" id="L197">        return Maybe.defer(new Callable&lt;Maybe&lt;String&gt;&gt;() {</span>
-<span class="fc" id="L198">            final AtomicBoolean afterFirst = new AtomicBoolean(false);</span>
-<span class="fc" id="L199">            final AtomicBoolean isEmpty = new AtomicBoolean(true);</span>
+<span class="fc" id="L198">        return Maybe.defer(new Callable&lt;Maybe&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L199">            final AtomicBoolean afterFirst = new AtomicBoolean(false);</span>
+<span class="fc" id="L200">            final AtomicBoolean isEmpty = new AtomicBoolean(true);</span>
 
             @Override
             public Maybe&lt;String&gt; call() {
-<span class="fc" id="L203">                return source.collect(new Callable&lt;StringBuilder&gt;() {</span>
+<span class="fc" id="L204">                return source.collect(new Callable&lt;StringBuilder&gt;() {</span>
                     @Override
                     public StringBuilder call() {
-<span class="fc" id="L206">                        return new StringBuilder();</span>
+<span class="fc" id="L207">                        return new StringBuilder();</span>
                     }
-<span class="fc" id="L208">                }, new BiConsumer&lt;StringBuilder, String&gt;() {</span>
+<span class="fc" id="L209">                }, new BiConsumer&lt;StringBuilder, String&gt;() {</span>
 
                     @Override
                     public void accept(StringBuilder b, String s) throws Exception {
-<span class="fc bfc" id="L212" title="All 2 branches covered.">                        if (!afterFirst.compareAndSet(false, true)) {</span>
-<span class="fc" id="L213">                            b.append(delimiter);</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                        if (!afterFirst.compareAndSet(false, true)) {</span>
+<span class="fc" id="L214">                            b.append(delimiter);</span>
                         }
-<span class="fc" id="L215">                        b.append(s);</span>
-<span class="fc" id="L216">                        isEmpty.set(false);</span>
+<span class="fc" id="L216">                        b.append(s);</span>
+<span class="fc" id="L217">                        isEmpty.set(false);</span>
 
-<span class="fc" id="L218">                    }</span>
-<span class="fc" id="L219">                }).flatMapMaybe(new Function&lt;StringBuilder, Maybe&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L219">                    }</span>
+<span class="fc" id="L220">                }).flatMapMaybe(new Function&lt;StringBuilder, Maybe&lt;String&gt;&gt;() {</span>
 
                     @Override
                     public Maybe&lt;String&gt; apply(StringBuilder b) {
-<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                        if (isEmpty.get())</span>
-<span class="nc" id="L224">                            return Maybe.empty();</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                        if (isEmpty.get())</span>
+<span class="nc" id="L225">                            return Maybe.empty();</span>
                         else
-<span class="fc" id="L226">                            return Maybe.just(b.toString());</span>
+<span class="fc" id="L227">                            return Maybe.just(b.toString());</span>
                     }
                 });
 
@@ -233,99 +234,99 @@ public final class Strings {
 
     public static Flowable&lt;List&lt;String&gt;&gt; splitLinesSkipComments(InputStream is, Charset charset, final String delimiter,
             final String commentPrefix) {
-<span class="fc" id="L236">        return from(is, charset) //</span>
-<span class="fc" id="L237">                .compose(Strings.split(&quot;\n&quot;, BackpressureStrategy.BUFFER, 1)) //</span>
-<span class="fc" id="L238">                .filter(new Predicate&lt;String&gt;() {</span>
+<span class="fc" id="L237">        return from(is, charset) //</span>
+<span class="fc" id="L238">                .compose(Strings.split(&quot;\n&quot;, BackpressureStrategy.BUFFER, 1)) //</span>
+<span class="fc" id="L239">                .filter(new Predicate&lt;String&gt;() {</span>
                     @Override
                     public boolean test(String line) {
-<span class="fc bfc" id="L241" title="All 2 branches covered.">                        return !line.startsWith(commentPrefix);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">                        return !line.startsWith(commentPrefix);</span>
                     }
                 }) //
-<span class="fc" id="L244">                .map(SplitLinesHolder.trim) //</span>
-<span class="fc" id="L245">                .filter(SplitLinesHolder.notEmpty) //</span>
-<span class="fc" id="L246">                .map(new Function&lt;String, List&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L245">                .map(SplitLinesHolder.trim) //</span>
+<span class="fc" id="L246">                .filter(SplitLinesHolder.notEmpty) //</span>
+<span class="fc" id="L247">                .map(new Function&lt;String, List&lt;String&gt;&gt;() {</span>
                     @Override
                     public List&lt;String&gt; apply(String line) {
-<span class="fc" id="L249">                        return Arrays.asList(line.split(delimiter));</span>
+<span class="fc" id="L250">                        return Arrays.asList(line.split(delimiter));</span>
                     }
                 });
     }
 
-<span class="nc" id="L254">    private static class Utf8Holder {</span>
-<span class="fc" id="L255">        static final Charset INSTANCE = Charset.forName(&quot;UTF-8&quot;);</span>
+<span class="nc" id="L255">    private static class Utf8Holder {</span>
+<span class="fc" id="L256">        static final Charset INSTANCE = Charset.forName(&quot;UTF-8&quot;);</span>
     }
 
-<span class="nc" id="L258">    private static class DisposeActionHolder {</span>
-<span class="fc" id="L259">        static final Consumer&lt;Reader&gt; INSTANCE = new Consumer&lt;Reader&gt;() {</span>
+<span class="nc" id="L259">    private static class DisposeActionHolder {</span>
+<span class="fc" id="L260">        static final Consumer&lt;Reader&gt; INSTANCE = new Consumer&lt;Reader&gt;() {</span>
             @Override
             public void accept(Reader reader) throws IOException {
-<span class="fc" id="L262">                reader.close();</span>
-<span class="fc" id="L263">            }</span>
+<span class="fc" id="L263">                reader.close();</span>
+<span class="fc" id="L264">            }</span>
         };
     }
 
-<span class="nc" id="L267">    private static class SplitLinesHolder {</span>
-<span class="fc" id="L268">        static final Function&lt;String, String&gt; trim = new Function&lt;String, String&gt;() {</span>
+<span class="nc" id="L268">    private static class SplitLinesHolder {</span>
+<span class="fc" id="L269">        static final Function&lt;String, String&gt; trim = new Function&lt;String, String&gt;() {</span>
             @Override
             public String apply(String line) {
-<span class="fc" id="L271">                return line.trim();</span>
+<span class="fc" id="L272">                return line.trim();</span>
             }
         };
-<span class="fc" id="L274">        static final Predicate&lt;String&gt; notEmpty = new Predicate&lt;String&gt;() {</span>
+<span class="fc" id="L275">        static final Predicate&lt;String&gt; notEmpty = new Predicate&lt;String&gt;() {</span>
             @Override
             public boolean test(String line) {
-<span class="fc bfc" id="L277" title="All 2 branches covered.">                return !line.isEmpty();</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">                return !line.isEmpty();</span>
             }
         };
     }
 
     public static FlowableTransformer&lt;String, String&gt; split(String pattern) {
-<span class="fc" id="L283">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
+<span class="fc" id="L284">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
     }
 
     public static FlowableTransformer&lt;String, String&gt; split(Pattern pattern) {
-<span class="fc" id="L287">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
+<span class="fc" id="L288">        return split(pattern, BackpressureStrategy.BUFFER, 128);</span>
     }
 
     public static FlowableTransformer&lt;String, String&gt; split(String pattern, BackpressureStrategy backpressureStrategy,
             int requestBatchSize) {
-<span class="fc" id="L292">        return TransformerStringSplit.split(pattern, null, backpressureStrategy, requestBatchSize);</span>
+<span class="fc" id="L293">        return TransformerStringSplit.split(pattern, null, backpressureStrategy, requestBatchSize);</span>
     }
 
     public static FlowableTransformer&lt;String, String&gt; split(Pattern pattern, BackpressureStrategy backpressureStrategy,
             int batchSize) {
-<span class="fc" id="L297">        return TransformerStringSplit.split(null, pattern, backpressureStrategy, batchSize);</span>
+<span class="fc" id="L298">        return TransformerStringSplit.split(null, pattern, backpressureStrategy, batchSize);</span>
     }
 
     public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; join(final String delimiter) {
-<span class="fc" id="L301">        return new Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt;() {</span>
+<span class="fc" id="L302">        return new Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt;() {</span>
 
             @Override
             public Maybe&lt;String&gt; apply(Flowable&lt;String&gt; source) throws Exception {
-<span class="fc" id="L305">                return Strings.join(source, delimiter);</span>
+<span class="fc" id="L306">                return Strings.join(source, delimiter);</span>
             }
 
         };
     }
 
     public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; join() {
-<span class="fc" id="L312">        return join(&quot;&quot;);</span>
+<span class="fc" id="L313">        return join(&quot;&quot;);</span>
     }
 
     public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; concat(final String delimiter) {
-<span class="fc" id="L316">        return join(delimiter);</span>
+<span class="fc" id="L317">        return join(delimiter);</span>
     }
 
     public static Function&lt;Flowable&lt;String&gt;, Maybe&lt;String&gt;&gt; concat() {
-<span class="fc" id="L320">        return concat(&quot;&quot;);</span>
+<span class="fc" id="L321">        return concat(&quot;&quot;);</span>
     }
 
     public static &lt;T&gt; FlowableTransformer&lt;T, String&gt; strings() {
-<span class="fc" id="L324">        return new FlowableTransformer&lt;T, String&gt;() {</span>
+<span class="fc" id="L325">        return new FlowableTransformer&lt;T, String&gt;() {</span>
 
             @Override
             public Publisher&lt;String&gt; apply(Flowable&lt;T&gt; source) {
-<span class="fc" id="L328">                return Strings.strings(source);</span>
+<span class="fc" id="L329">                return Strings.strings(source);</span>
             }
 
         };
@@ -334,9 +335,8 @@ public final class Strings {
     /**
      * Splits on a string delimiter, not a pattern. Is slower than RxJavaString
      * 1.1.1 implementation on benchmarks below but requests minimally from
-     * upstream and is potentially much faster when the stream is significantly
-     * truncated (for example by downstream
-     * {@code .take(), .takeUntil(), elementAt()}.
+     * upstream and is potentially much faster when the stream is significantly truncated
+     * (for example by downstream {@code .take(), .takeUntil(), elementAt()}.
      * 
      * &lt;pre&gt;
      * Benchmark                                  Mode  Cnt       Score       Error  Units
@@ -368,5 +368,31 @@ public final class Strings {
         };
     }
 
+    /**
+     * Returns an {@link InputStream} that offers the concatenated String data 
+     * emitted by a subscription to the given publisher using the given character set.
+     *  
+     * @param publisher the source of the String data
+     * @param charset the character set of the bytes to be read in the InputStream 
+     * @return offers the concatenated String data emitted by a subscription to 
+     *     the given publisher using the given character set
+     */
+    public static InputStream toInputStream(Publisher&lt;String&gt; publisher, Charset charset) {
+<span class="fc" id="L381">        return FlowableStringInputStream.createInputStream(publisher, charset);</span>
+    }
+
+    /**
+     * Returns an {@link InputStream} that offers the concatenated String data 
+     * emitted by a subscription to the given publisher using the  character set
+     * UTF-8 for the bytes read through the InputStream.
+     *  
+     * @param publisher the source of the String data
+     * @return offers the concatenated String data emitted by a subscription to 
+     *     the given publisher using the UTF-8 character set
+     */
+    public static InputStream toInputStream(Publisher&lt;String&gt; publisher) {
+<span class="fc" id="L394">        return toInputStream(publisher, Charset.forName(&quot;UTF-8&quot;));</span>
+    }
+
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

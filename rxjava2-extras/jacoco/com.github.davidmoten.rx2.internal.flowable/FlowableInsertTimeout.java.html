@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableInsertTimeout.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableInsertTimeout.java</span></div><h1>FlowableInsertTimeout.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.Scheduler;
+import io.reactivex.Scheduler.Worker;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.disposables.DisposableHelper;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.MpscLinkedQueue;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+import io.reactivex.plugins.RxJavaPlugins;
+
+public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final Flowable&lt;T&gt; source;
+    private final Function&lt;? super T, ? extends Long&gt; timeout;
+    private final TimeUnit unit;
+    private final Function&lt;? super T, ? extends T&gt; value;
+    private final Scheduler scheduler;
+
+    public FlowableInsertTimeout(Flowable&lt;T&gt; source, Function&lt;? super T, ? extends Long&gt; timeout, TimeUnit unit,
+<span class="fc" id="L36">            Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {</span>
+<span class="fc" id="L37">        Preconditions.checkNotNull(timeout, &quot;timeout cannot be null&quot;);</span>
+<span class="fc" id="L38">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L39">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
+<span class="fc" id="L40">        Preconditions.checkNotNull(scheduler, &quot;scheduler cannot be null&quot;);</span>
+<span class="fc" id="L41">        this.source = source;</span>
+<span class="fc" id="L42">        this.timeout = timeout;</span>
+<span class="fc" id="L43">        this.unit = unit;</span>
+<span class="fc" id="L44">        this.value = value;</span>
+<span class="fc" id="L45">        this.scheduler = scheduler;</span>
+<span class="fc" id="L46">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; downstream) {
+<span class="fc" id="L50">        source.subscribe(new InsertTimeoutSubscriber&lt;T&gt;(downstream, timeout, unit, value, scheduler));</span>
+<span class="fc" id="L51">    }</span>
+
+    static final class InsertTimeoutSubscriber&lt;T&gt; extends AtomicInteger implements FlowableSubscriber&lt;T&gt;, Subscription {
+
+        private static final long serialVersionUID = 1812803226317104954L;
+
+<span class="fc" id="L57">        private static final Object TERMINATED = new Object();</span>
+
+        private final Subscriber&lt;? super T&gt; downstream;
+        private final Function&lt;? super T, ? extends Long&gt; timeout;
+        private final TimeUnit unit;
+        private final Function&lt;? super T, ? extends T&gt; value;
+
+        private final SimplePlainQueue&lt;T&gt; queue;
+        private final AtomicLong requested;
+        private final AtomicLong inserted;
+
+        // set either with null (not terminated), Throwable (error), or
+        // TERMINATED (completion). TERMINATED is also used to replace an 
+        // error after it is reported downstream so that the local copy of the 
+        // error can be gc'd
+        private final AtomicReference&lt;Object&gt; terminated;
+        private final AtomicReference&lt;Disposable&gt; scheduled;
+
+        private Subscription upstream;
+        private volatile boolean cancelled;
+
+        // used to prevent emission of events after a terminal event
+        // does not need to be volatile
+        private boolean finished;
+
+        private final Worker worker;
+
+        InsertTimeoutSubscriber(Subscriber&lt;? super T&gt; downstream, Function&lt;? super T, ? extends Long&gt; timeout,
+<span class="fc" id="L85">                TimeUnit unit, Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {</span>
+<span class="fc" id="L86">            this.downstream = downstream;</span>
+<span class="fc" id="L87">            this.timeout = timeout;</span>
+<span class="fc" id="L88">            this.unit = unit;</span>
+<span class="fc" id="L89">            this.value = value;</span>
+<span class="fc" id="L90">            this.queue = new MpscLinkedQueue&lt;T&gt;();</span>
+<span class="fc" id="L91">            this.requested = new AtomicLong();</span>
+<span class="fc" id="L92">            this.inserted = new AtomicLong();</span>
+<span class="fc" id="L93">            this.terminated = new AtomicReference&lt;Object&gt;();</span>
+<span class="fc" id="L94">            this.scheduled = new AtomicReference&lt;Disposable&gt;();</span>
+<span class="fc" id="L95">            this.worker = scheduler.createWorker();</span>
+<span class="fc" id="L96">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription upstream) {
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.upstream, upstream)) {</span>
+<span class="fc" id="L101">                this.upstream = upstream;</span>
+<span class="fc" id="L102">                downstream.onSubscribe(this);</span>
+            }
+<span class="fc" id="L104">        }</span>
+
+        @Override
+        public void onNext(final T t) {
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (finished) {</span>
+<span class="nc" id="L109">                return;</span>
+            }
+<span class="fc" id="L111">            queue.offer(t);</span>
+            final long waitTime;
+            try {
+<span class="fc" id="L114">                waitTime = timeout.apply(t);</span>
+<span class="nc" id="L115">            } catch (Throwable e) {</span>
+<span class="nc" id="L116">                Exceptions.throwIfFatal(e);</span>
+                // we cancel upstream ourselves because the
+                // error did not originate from source
+<span class="nc" id="L119">                upstream.cancel();</span>
+<span class="nc" id="L120">                onError(e);</span>
+<span class="nc" id="L121">                return;</span>
+<span class="fc" id="L122">            }</span>
+<span class="fc" id="L123">            TimeoutAction&lt;T&gt; action = new TimeoutAction&lt;T&gt;(this, t);</span>
+<span class="fc" id="L124">            Disposable d = worker.schedule(action, waitTime, unit);</span>
+<span class="fc" id="L125">            DisposableHelper.set(scheduled, d);</span>
+<span class="fc" id="L126">            drain();</span>
+<span class="fc" id="L127">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            if (finished) {</span>
+<span class="nc" id="L132">                RxJavaPlugins.onError(e);</span>
+<span class="nc" id="L133">                return;</span>
+            }
+<span class="fc" id="L135">            finished = true;</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (terminated.compareAndSet(null, e)) {</span>
+<span class="fc" id="L137">                dispose();</span>
+<span class="fc" id="L138">                drain();</span>
+            } else {
+<span class="nc" id="L140">                RxJavaPlugins.onError(e);</span>
+            }
+<span class="fc" id="L142">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">            if (finished) {</span>
+<span class="nc" id="L147">                return;</span>
+            }
+<span class="fc" id="L149">            finished = true;</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">            if (terminated.compareAndSet(null, TERMINATED)) {</span>
+<span class="fc" id="L151">                dispose();</span>
+<span class="fc" id="L152">                drain();</span>
+            }
+<span class="fc" id="L154">        }</span>
+
+        private void drain() {
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (getAndIncrement() != 0) {</span>
+<span class="fc" id="L158">                return;</span>
+            }
+            // note that this drain loop does not shortcut errors
+<span class="fc" id="L161">            int missed = 1;</span>
+            while (true) {
+<span class="fc" id="L163">                long r = requested.get();</span>
+<span class="fc" id="L164">                long e = 0;</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">                while (e != r) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                    if (cancelled) {</span>
+<span class="fc" id="L167">                        dispose();</span>
+<span class="fc" id="L168">                        queue.clear();</span>
+<span class="fc" id="L169">                        return;</span>
+                    }
+<span class="fc" id="L171">                    Object d = terminated.get();</span>
+<span class="fc" id="L172">                    T t = queue.poll();</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                    if (t == null) {</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                        if (d != null) {</span>
+                            // d will be either TERMINATED or a Throwable
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                            if (d == TERMINATED) {</span>
+                                // don't need to dispose scheduled because already done in
+                                // onComplete
+<span class="fc" id="L179">                                downstream.onComplete();</span>
+                            } else {
+                                // clear the exception so can be gc'd
+                                // setting the value to TERMINATED just prevents it getting set again in a race
+                                // because the other setters which use CAS assume initial value of null
+<span class="fc" id="L184">                                terminated.set(TERMINATED);</span>
+<span class="fc" id="L185">                                dispose();</span>
+<span class="fc" id="L186">                                downstream.onError((Throwable) d);</span>
+                            }
+<span class="fc" id="L188">                            return;</span>
+                        } else {
+                            // nothing to emit and not done
+                            break;
+                        }
+                    } else {
+<span class="fc" id="L194">                        downstream.onNext(t);</span>
+<span class="fc" id="L195">                        e++;</span>
+                    }
+<span class="fc" id="L197">                }</span>
+<span class="pc bpc" id="L198" title="1 of 4 branches missed.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="nc" id="L199">                    requested.addAndGet(-e);</span>
+                }
+<span class="fc" id="L201">                missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L203">                    return;</span>
+                }
+<span class="fc" id="L205">            }</span>
+        }
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L211">                BackpressureHelper.add(requested, n);</span>
+                // modify request to upstream to account for inserted values
+                // use a CAS loop because request can be called from any thread
+                while (true) {
+<span class="fc" id="L215">                    long ins = inserted.get();</span>
+<span class="fc" id="L216">                    long d = Math.min(ins, n);</span>
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">                    if (inserted.compareAndSet(ins, ins - d)) {</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">                        if (n - d &gt; 0) {</span>
+<span class="fc" id="L219">                            upstream.request(n - d);</span>
+                        }
+                        break;
+                    }
+<span class="nc" id="L223">                }</span>
+<span class="fc" id="L224">                drain();</span>
+            }
+<span class="fc" id="L226">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">            if (!cancelled) {</span>
+<span class="fc" id="L231">                cancelled = true;</span>
+<span class="fc" id="L232">                upstream.cancel();</span>
+<span class="fc" id="L233">                dispose();</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                if (getAndIncrement() == 0) {</span>
+                    // use the same access control to queue as drain method
+                    // because `clear` just calls `queue.poll()` repeatedly till nothing left on the
+                    // queue (ignoring the dequeued items).
+                    //
+                    // this is best endeavours, there still exists a race with onNext and drain
+                    // where items could be left on the queue after cancel
+<span class="nc" id="L241">                    queue.clear();</span>
+                }
+            }
+<span class="fc" id="L244">        }</span>
+
+        private void dispose() {
+<span class="fc" id="L247">            DisposableHelper.dispose(scheduled);</span>
+<span class="fc" id="L248">            worker.dispose();</span>
+<span class="fc" id="L249">        }</span>
+        
+        void insert(T t) {
+<span class="fc" id="L252">            inserted.incrementAndGet();</span>
+<span class="fc" id="L253">            queue.offer(t);</span>
+<span class="fc" id="L254">            drain();</span>
+<span class="fc" id="L255">        }</span>
+
+        void insertError(Throwable e) {
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">            if (terminated.compareAndSet(null, e)) {</span>
+<span class="fc" id="L259">                upstream.cancel();</span>
+<span class="fc" id="L260">                dispose();</span>
+<span class="fc" id="L261">                drain();</span>
+            } else {
+<span class="nc" id="L263">                RxJavaPlugins.onError(e);</span>
+            }
+<span class="fc" id="L265">        }</span>
+
+        T calculateValueToInsert(T t) throws Exception {
+<span class="fc" id="L268">            return value.apply(t);</span>
+        }
+
+    }
+
+    private static final class TimeoutAction&lt;T&gt; implements Runnable {
+
+        private final InsertTimeoutSubscriber&lt;T&gt; subscriber;
+        private final T t;
+
+<span class="fc" id="L278">        TimeoutAction(InsertTimeoutSubscriber&lt;T&gt; subscriber, T t) {</span>
+<span class="fc" id="L279">            this.subscriber = subscriber;</span>
+<span class="fc" id="L280">            this.t = t;</span>
+<span class="fc" id="L281">        }</span>
+
+        @Override
+        public void run() {
+            final T v;
+            try {
+<span class="fc" id="L287">                v = subscriber.calculateValueToInsert(t);</span>
+<span class="fc" id="L288">            } catch (Throwable e) {</span>
+<span class="fc" id="L289">                subscriber.insertError(e);</span>
+<span class="fc" id="L290">                return;</span>
+<span class="fc" id="L291">            }</span>
+<span class="fc" id="L292">            subscriber.insert(v);</span>
+<span class="fc" id="L293">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

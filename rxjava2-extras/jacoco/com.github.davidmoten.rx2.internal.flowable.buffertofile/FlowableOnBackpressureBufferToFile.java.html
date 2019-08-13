@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableOnBackpressureBufferToFile.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable.buffertofile</a> &gt; <span class="el_source">FlowableOnBackpressureBufferToFile.java</span></div><h1>FlowableOnBackpressureBufferToFile.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable.buffertofile;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableOnBackpressureBufferToFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable.buffertofile</a> &gt; <span class="el_source">FlowableOnBackpressureBufferToFile.java</span></div><h1>FlowableOnBackpressureBufferToFile.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable.buffertofile;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -12,6 +12,7 @@ import com.github.davidmoten.rx2.buffertofile.Options;
 import com.github.davidmoten.rx2.buffertofile.Serializer;
 
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.Scheduler.Worker;
@@ -30,86 +31,86 @@ public final class FlowableOnBackpressureBufferToFile&lt;T&gt; extends Flowable&
     private final Serializer&lt;T&gt; serializer;
 
     public FlowableOnBackpressureBufferToFile(Flowable&lt;T&gt; source, Observable&lt;T&gt; source2,
-<span class="fc" id="L33">            Options options, Serializer&lt;T&gt; serializer) {</span>
+<span class="fc" id="L34">            Options options, Serializer&lt;T&gt; serializer) {</span>
         // only one source should be defined
-<span class="fc bfc" id="L35" title="All 4 branches covered.">        Preconditions.checkArgument((source != null) ^ (source2 != null));</span>
-<span class="fc" id="L36">        this.source = source;</span>
-<span class="fc" id="L37">        this.source2 = source2;</span>
-<span class="fc" id="L38">        this.options = options;</span>
-<span class="fc" id="L39">        this.serializer = serializer;</span>
-<span class="fc" id="L40">    }</span>
+<span class="fc bfc" id="L36" title="All 4 branches covered.">        Preconditions.checkArgument((source != null) ^ (source2 != null));</span>
+<span class="fc" id="L37">        this.source = source;</span>
+<span class="fc" id="L38">        this.source2 = source2;</span>
+<span class="fc" id="L39">        this.options = options;</span>
+<span class="fc" id="L40">        this.serializer = serializer;</span>
+<span class="fc" id="L41">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
-<span class="fc" id="L44">        PagedQueue queue = new PagedQueue(options.fileFactory(), options.pageSizeBytes());</span>
-<span class="fc" id="L45">        Worker worker = options.scheduler().createWorker();</span>
-<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (source != null) {</span>
-<span class="fc" id="L47">            source.subscribe(</span>
+<span class="fc" id="L45">        PagedQueue queue = new PagedQueue(options.fileFactory(), options.pageSizeBytes());</span>
+<span class="fc" id="L46">        Worker worker = options.scheduler().createWorker();</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (source != null) {</span>
+<span class="fc" id="L48">            source.subscribe(</span>
                     new BufferToFileSubscriberFlowable&lt;T&gt;(child, queue, serializer, worker));
         } else {
-<span class="fc" id="L50">            source2.subscribe(</span>
+<span class="fc" id="L51">            source2.subscribe(</span>
                     new BufferToFileSubscriberObservable&lt;T&gt;(child, queue, serializer, worker));
         }
-<span class="fc" id="L53">    }</span>
+<span class="fc" id="L54">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
     @VisibleForTesting
     public static final class BufferToFileSubscriberFlowable&lt;T&gt; extends BufferToFileSubscriber&lt;T&gt;
-            implements Subscriber&lt;T&gt;, Subscription {
+            implements FlowableSubscriber&lt;T&gt;, Subscription {
 
         private Subscription parent;
 
         @VisibleForTesting
         public BufferToFileSubscriberFlowable(Subscriber&lt;? super T&gt; child, PagedQueue queue,
                 Serializer&lt;T&gt; serializer, Worker worker) {
-<span class="fc" id="L65">            super(child, queue, serializer, worker);</span>
-<span class="fc" id="L66">        }</span>
+<span class="fc" id="L66">            super(child, queue, serializer, worker);</span>
+<span class="fc" id="L67">        }</span>
 
         @Override
         public void onSubscribe(Subscription parent) {
-<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
-<span class="fc" id="L71">                this.parent = parent;</span>
-<span class="fc" id="L72">                child.onSubscribe(this);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
+<span class="fc" id="L72">                this.parent = parent;</span>
+<span class="fc" id="L73">                child.onSubscribe(this);</span>
             }
-<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L79">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L80">                parent.request(n);</span>
-<span class="fc" id="L81">                scheduleDrain();</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L80">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L81">                parent.request(n);</span>
+<span class="fc" id="L82">                scheduleDrain();</span>
             }
-<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L87">            cancelled = true;</span>
-<span class="fc" id="L88">            parent.cancel();</span>
+<span class="fc" id="L88">            cancelled = true;</span>
+<span class="fc" id="L89">            parent.cancel();</span>
             // ensure queue is closed from the worker thread
             // to simplify concurrency controls in PagedQueue
-<span class="fc" id="L91">            scheduleDrain();</span>
-<span class="fc" id="L92">        }</span>
+<span class="fc" id="L92">            scheduleDrain();</span>
+<span class="fc" id="L93">        }</span>
 
         @Override
         public void onNext(T t) {
-<span class="fc" id="L96">            super.onNext(t);</span>
-<span class="fc" id="L97">        }</span>
+<span class="fc" id="L97">            super.onNext(t);</span>
+<span class="fc" id="L98">        }</span>
 
         @Override
         public void onError(Throwable e) {
-<span class="fc" id="L101">            super.onError(e);</span>
-<span class="fc" id="L102">        }</span>
+<span class="fc" id="L102">            super.onError(e);</span>
+<span class="fc" id="L103">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc" id="L106">            super.onComplete();</span>
-<span class="fc" id="L107">        }</span>
+<span class="fc" id="L107">            super.onComplete();</span>
+<span class="fc" id="L108">        }</span>
 
         @Override
         public void cancelUpstream() {
-<span class="fc" id="L111">            parent.cancel();</span>
-<span class="fc" id="L112">        }</span>
+<span class="fc" id="L112">            parent.cancel();</span>
+<span class="fc" id="L113">        }</span>
     }
 
     @SuppressWarnings(&quot;serial&quot;)
@@ -120,51 +121,51 @@ public final class FlowableOnBackpressureBufferToFile&lt;T&gt; extends Flowable&
 
         BufferToFileSubscriberObservable(Subscriber&lt;? super T&gt; child, PagedQueue queue,
                 Serializer&lt;T&gt; serializer, Worker worker) {
-<span class="fc" id="L123">            super(child, queue, serializer, worker);</span>
-<span class="fc" id="L124">        }</span>
+<span class="fc" id="L124">            super(child, queue, serializer, worker);</span>
+<span class="fc" id="L125">        }</span>
 
         @Override
         public void onSubscribe(Disposable d) {
-<span class="fc" id="L128">            this.parent = d;</span>
-<span class="fc" id="L129">            child.onSubscribe(this);</span>
-<span class="fc" id="L130">        }</span>
+<span class="fc" id="L129">            this.parent = d;</span>
+<span class="fc" id="L130">            child.onSubscribe(this);</span>
+<span class="fc" id="L131">        }</span>
 
         @Override
         public void onNext(T t) {
-<span class="fc" id="L134">            super.onNext(t);</span>
-<span class="fc" id="L135">        }</span>
+<span class="fc" id="L135">            super.onNext(t);</span>
+<span class="fc" id="L136">        }</span>
 
         @Override
         public void onError(Throwable e) {
-<span class="fc" id="L139">            super.onError(e);</span>
-<span class="fc" id="L140">        }</span>
+<span class="fc" id="L140">            super.onError(e);</span>
+<span class="fc" id="L141">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc" id="L144">            super.onComplete();</span>
-<span class="fc" id="L145">        }</span>
+<span class="fc" id="L145">            super.onComplete();</span>
+<span class="fc" id="L146">        }</span>
 
         @Override
         public void cancelUpstream() {
-<span class="fc" id="L149">            parent.dispose();</span>
-<span class="fc" id="L150">        }</span>
+<span class="fc" id="L150">            parent.dispose();</span>
+<span class="fc" id="L151">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L154" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L155">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L156">                scheduleDrain();</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L156">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L157">                scheduleDrain();</span>
             }
-<span class="fc" id="L158">        }</span>
+<span class="fc" id="L159">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L162">            cancelled = true;</span>
-<span class="fc" id="L163">            parent.dispose();</span>
+<span class="fc" id="L163">            cancelled = true;</span>
+<span class="fc" id="L164">            parent.dispose();</span>
             // ensure queue is closed from the worker thread
             // to simplify concurrency controls in PagedQueue
-<span class="fc" id="L166">            scheduleDrain();</span>
-<span class="fc" id="L167">        }</span>
+<span class="fc" id="L167">            scheduleDrain();</span>
+<span class="fc" id="L168">        }</span>
     }
 
     @SuppressWarnings({ &quot;serial&quot; })
@@ -175,7 +176,7 @@ public final class FlowableOnBackpressureBufferToFile&lt;T&gt; extends Flowable&
         private final PagedQueue queue;
         private final Serializer&lt;T&gt; serializer;
         private final Worker worker;
-<span class="fc" id="L178">        protected final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L179">        protected final AtomicLong requested = new AtomicLong();</span>
 
         protected volatile boolean cancelled;
         private volatile boolean done;
@@ -185,133 +186,133 @@ public final class FlowableOnBackpressureBufferToFile&lt;T&gt; extends Flowable&
         private Throwable error;
 
         BufferToFileSubscriber(Subscriber&lt;? super T&gt; child, PagedQueue queue,
-<span class="fc" id="L188">                Serializer&lt;T&gt; serializer, Worker worker) {</span>
-<span class="fc" id="L189">            this.child = child;</span>
-<span class="fc" id="L190">            this.queue = queue;</span>
-<span class="fc" id="L191">            this.serializer = serializer;</span>
-<span class="fc" id="L192">            this.worker = worker;</span>
-<span class="fc" id="L193">        }</span>
+<span class="fc" id="L189">                Serializer&lt;T&gt; serializer, Worker worker) {</span>
+<span class="fc" id="L190">            this.child = child;</span>
+<span class="fc" id="L191">            this.queue = queue;</span>
+<span class="fc" id="L192">            this.serializer = serializer;</span>
+<span class="fc" id="L193">            this.worker = worker;</span>
+<span class="fc" id="L194">        }</span>
 
         public void onNext(T t) {
             try {
-<span class="fc" id="L197">                queue.offer(serializer.serialize(t));</span>
-<span class="fc" id="L198">            } catch (Throwable e) {</span>
-<span class="fc" id="L199">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L200">                onError(e);</span>
-<span class="fc" id="L201">                return;</span>
-<span class="fc" id="L202">            }</span>
-<span class="fc" id="L203">            scheduleDrain();</span>
-<span class="fc" id="L204">        }</span>
+<span class="fc" id="L198">                queue.offer(serializer.serialize(t));</span>
+<span class="fc" id="L199">            } catch (Throwable e) {</span>
+<span class="fc" id="L200">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L201">                onError(e);</span>
+<span class="fc" id="L202">                return;</span>
+<span class="fc" id="L203">            }</span>
+<span class="fc" id="L204">            scheduleDrain();</span>
+<span class="fc" id="L205">        }</span>
 
         public void onError(Throwable e) {
             // must assign error before assign done = true to avoid race
             // condition in drain() and also so appropriate memory barrier in
             // place given error is non-volatile
-<span class="fc" id="L210">            error = e;</span>
-<span class="fc" id="L211">            done = true;</span>
-<span class="fc" id="L212">            scheduleDrain();</span>
-<span class="fc" id="L213">        }</span>
+<span class="fc" id="L211">            error = e;</span>
+<span class="fc" id="L212">            done = true;</span>
+<span class="fc" id="L213">            scheduleDrain();</span>
+<span class="fc" id="L214">        }</span>
 
         public void onComplete() {
-<span class="fc" id="L216">            done = true;</span>
-<span class="fc" id="L217">            scheduleDrain();</span>
-<span class="fc" id="L218">        }</span>
+<span class="fc" id="L217">            done = true;</span>
+<span class="fc" id="L218">            scheduleDrain();</span>
+<span class="fc" id="L219">        }</span>
 
         protected void scheduleDrain() {
             // only schedule a drain if current drain has finished
             // otherwise the drain requested counter (`this`) will be
             // incremented and the drain loop will ensure that another drain
             // cycle occurs if required
-<span class="fc bfc" id="L225" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
-<span class="fc" id="L226">                worker.schedule(this);</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L227">                worker.schedule(this);</span>
             }
-<span class="fc" id="L228">        }</span>
+<span class="fc" id="L229">        }</span>
 
         @Override
         public void run() {
-<span class="fc" id="L232">            drain();</span>
-<span class="fc" id="L233">        }</span>
+<span class="fc" id="L233">            drain();</span>
+<span class="fc" id="L234">        }</span>
 
         private void drain() {
             // check cancel outside of request drain loop because the drain
             // method is also used to serialize read with cancellation (closing
             // the queue) and we still want it to happen if there are no
             // requests
-<span class="fc bfc" id="L240" title="All 2 branches covered.">            if (cancelled) {</span>
-<span class="fc" id="L241">                close(queue);</span>
-<span class="fc" id="L242">                worker.dispose();</span>
-<span class="fc" id="L243">                return;</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            if (cancelled) {</span>
+<span class="fc" id="L242">                close(queue);</span>
+<span class="fc" id="L243">                worker.dispose();</span>
+<span class="fc" id="L244">                return;</span>
             }
-<span class="fc" id="L245">            int missed = 1;</span>
+<span class="fc" id="L246">            int missed = 1;</span>
             while (true) {
-<span class="fc" id="L247">                long r = requested.get();</span>
-<span class="fc" id="L248">                long e = 0; // emitted</span>
-<span class="fc bfc" id="L249" title="All 2 branches covered.">                while (e != r) {</span>
-<span class="fc bfc" id="L250" title="All 2 branches covered.">                    if (cancelled) {</span>
-<span class="fc" id="L251">                        close(queue);</span>
-<span class="fc" id="L252">                        worker.dispose();</span>
-<span class="fc" id="L253">                        return;</span>
+<span class="fc" id="L248">                long r = requested.get();</span>
+<span class="fc" id="L249">                long e = 0; // emitted</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                while (e != r) {</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">                    if (cancelled) {</span>
+<span class="fc" id="L252">                        close(queue);</span>
+<span class="fc" id="L253">                        worker.dispose();</span>
+<span class="fc" id="L254">                        return;</span>
                     }
                     // for visibility purposes must read error AFTER reading
                     // done (done is volatile and error is non-volatile)
-<span class="fc" id="L257">                    boolean isDone = done;</span>
+<span class="fc" id="L258">                    boolean isDone = done;</span>
                     // must check isDone and error because don't want to emit an
                     // error that is only partially visible to the current
                     // thread
-<span class="fc bfc" id="L261" title="All 4 branches covered.">                    if (isDone &amp;&amp; error != null) {</span>
-<span class="fc" id="L262">                        cancelNow();</span>
-<span class="fc" id="L263">                        child.onError(error);</span>
-<span class="fc" id="L264">                        return;</span>
+<span class="fc bfc" id="L262" title="All 4 branches covered.">                    if (isDone &amp;&amp; error != null) {</span>
+<span class="fc" id="L263">                        cancelNow();</span>
+<span class="fc" id="L264">                        child.onError(error);</span>
+<span class="fc" id="L265">                        return;</span>
                     }
                     byte[] bytes;
                     try {
-<span class="fc" id="L268">                        bytes = queue.poll();</span>
-<span class="fc" id="L269">                    } catch (Throwable err) {</span>
-<span class="fc" id="L270">                        Exceptions.throwIfFatal(err);</span>
-<span class="fc" id="L271">                        cancelNow();</span>
-<span class="fc" id="L272">                        child.onError(err);</span>
-<span class="fc" id="L273">                        return;</span>
-<span class="fc" id="L274">                    }</span>
-<span class="fc bfc" id="L275" title="All 2 branches covered.">                    if (bytes != null) {</span>
+<span class="fc" id="L269">                        bytes = queue.poll();</span>
+<span class="fc" id="L270">                    } catch (Throwable err) {</span>
+<span class="fc" id="L271">                        Exceptions.throwIfFatal(err);</span>
+<span class="fc" id="L272">                        cancelNow();</span>
+<span class="fc" id="L273">                        child.onError(err);</span>
+<span class="fc" id="L274">                        return;</span>
+<span class="fc" id="L275">                    }</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">                    if (bytes != null) {</span>
                         // assumed to be fast so we don't check cancelled
                         // after this call
                         T t;
                         try {
-<span class="fc" id="L280">                            t = ObjectHelper.requireNonNull( //</span>
-<span class="fc" id="L281">                                    serializer.deserialize(bytes),</span>
+<span class="fc" id="L281">                            t = ObjectHelper.requireNonNull( //</span>
+<span class="fc" id="L282">                                    serializer.deserialize(bytes),</span>
                                     &quot;Serializer.deserialize should not return null (because RxJava 2 does not support streams with null items&quot;);
-<span class="fc" id="L283">                        } catch (Throwable err) {</span>
-<span class="fc" id="L284">                            Exceptions.throwIfFatal(err);</span>
-<span class="fc" id="L285">                            cancelNow();</span>
-<span class="fc" id="L286">                            child.onError(err);</span>
-<span class="fc" id="L287">                            return;</span>
-<span class="fc" id="L288">                        }</span>
-<span class="fc" id="L289">                        child.onNext(t);</span>
-<span class="fc" id="L290">                        e++;</span>
-<span class="fc bfc" id="L291" title="All 2 branches covered.">                    } else if (isDone) {</span>
-<span class="fc" id="L292">                        cancelNow();</span>
-<span class="fc" id="L293">                        child.onComplete();</span>
-<span class="fc" id="L294">                        return;</span>
+<span class="fc" id="L284">                        } catch (Throwable err) {</span>
+<span class="fc" id="L285">                            Exceptions.throwIfFatal(err);</span>
+<span class="fc" id="L286">                            cancelNow();</span>
+<span class="fc" id="L287">                            child.onError(err);</span>
+<span class="fc" id="L288">                            return;</span>
+<span class="fc" id="L289">                        }</span>
+<span class="fc" id="L290">                        child.onNext(t);</span>
+<span class="fc" id="L291">                        e++;</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                    } else if (isDone) {</span>
+<span class="fc" id="L293">                        cancelNow();</span>
+<span class="fc" id="L294">                        child.onComplete();</span>
+<span class="fc" id="L295">                        return;</span>
                     } else {
                         break;
                     }
-<span class="fc" id="L298">                }</span>
-<span class="fc bfc" id="L299" title="All 4 branches covered.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
-<span class="fc" id="L300">                    requested.addAndGet(-e);</span>
+<span class="fc" id="L299">                }</span>
+<span class="fc bfc" id="L300" title="All 4 branches covered.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L301">                    requested.addAndGet(-e);</span>
                 }
-<span class="fc" id="L302">                missed = addAndGet(-missed);</span>
-<span class="fc bfc" id="L303" title="All 2 branches covered.">                if (missed == 0) {</span>
-<span class="fc" id="L304">                    return;</span>
+<span class="fc" id="L303">                missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">                if (missed == 0) {</span>
+<span class="fc" id="L305">                    return;</span>
                 }
-<span class="fc" id="L306">            }</span>
+<span class="fc" id="L307">            }</span>
         }
 
         private void cancelNow() {
-<span class="fc" id="L310">            cancelled = true;</span>
-<span class="fc" id="L311">            cancelUpstream();</span>
-<span class="fc" id="L312">            close(queue);</span>
-<span class="fc" id="L313">            worker.dispose();</span>
-<span class="fc" id="L314">        }</span>
+<span class="fc" id="L311">            cancelled = true;</span>
+<span class="fc" id="L312">            cancelUpstream();</span>
+<span class="fc" id="L313">            close(queue);</span>
+<span class="fc" id="L314">            worker.dispose();</span>
+<span class="fc" id="L315">        }</span>
 
         abstract public void cancelUpstream();
 
@@ -320,12 +321,12 @@ public final class FlowableOnBackpressureBufferToFile&lt;T&gt; extends Flowable&
     @VisibleForTesting
     public static void close(PagedQueue queue) {
         try {
-<span class="fc" id="L323">            queue.close();</span>
-<span class="fc" id="L324">        } catch (Throwable err) {</span>
-<span class="fc" id="L325">            Exceptions.throwIfFatal(err);</span>
-<span class="fc" id="L326">            RxJavaPlugins.onError(err);</span>
-<span class="fc" id="L327">        }</span>
-<span class="fc" id="L328">    }</span>
+<span class="fc" id="L324">            queue.close();</span>
+<span class="fc" id="L325">        } catch (Throwable err) {</span>
+<span class="fc" id="L326">            Exceptions.throwIfFatal(err);</span>
+<span class="fc" id="L327">            RxJavaPlugins.onError(err);</span>
+<span class="fc" id="L328">        }</span>
+<span class="fc" id="L329">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

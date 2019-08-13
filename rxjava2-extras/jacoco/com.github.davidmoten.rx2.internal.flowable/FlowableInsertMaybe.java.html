@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableInsertMaybe.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableInsertMaybe.java</span></div><h1>FlowableInsertMaybe.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.Maybe;
+import io.reactivex.MaybeObserver;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.disposables.DisposableHelper;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.MpscLinkedQueue;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+import io.reactivex.plugins.RxJavaPlugins;
+
+public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final Flowable&lt;T&gt; source;
+    private final Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert;
+
+<span class="fc" id="L31">    public FlowableInsertMaybe(Flowable&lt;T&gt; source, Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert) {</span>
+<span class="fc" id="L32">        Preconditions.checkNotNull(valueToInsert, &quot;valueToInsert cannot be null&quot;);</span>
+<span class="fc" id="L33">        this.source = source;</span>
+<span class="fc" id="L34">        this.valueToInsert = valueToInsert;</span>
+<span class="fc" id="L35">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; downstream) {
+<span class="fc" id="L39">        source.subscribe(new InsertSubscriber&lt;T&gt;(downstream, valueToInsert));</span>
+<span class="fc" id="L40">    }</span>
+
+    static final class InsertSubscriber&lt;T&gt; extends AtomicInteger implements FlowableSubscriber&lt;T&gt;, Subscription {
+
+        private static final long serialVersionUID = -15415234346097063L;
+
+        private final Subscriber&lt;? super T&gt; downstream;
+        private final Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert;
+        private final SimplePlainQueue&lt;T&gt; queue;
+        private final AtomicLong requested;
+        private final AtomicLong inserted;
+
+        // define as type Object so can set with a non-null sentinel object that does
+        // not gather a stacktrace. A further refinement would be to use just one
+        // AtomicReference for `error` and `done` (leaving it for now)
+        private final AtomicReference&lt;Object&gt; error;
+        private final AtomicReference&lt;Disposable&gt; valueToInsertObserver;
+
+        private Subscription upstream;
+        private volatile boolean done;
+        private volatile boolean cancelled;
+
+        // used to prevent emission of events after a terminal event
+        // does not need to be volatile
+        private boolean finished;
+
+        InsertSubscriber(Subscriber&lt;? super T&gt; downstream,
+<span class="fc" id="L67">                Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert) {</span>
+<span class="fc" id="L68">            this.downstream = downstream;</span>
+<span class="fc" id="L69">            this.valueToInsert = valueToInsert;</span>
+<span class="fc" id="L70">            this.queue = new MpscLinkedQueue&lt;T&gt;();</span>
+<span class="fc" id="L71">            this.requested = new AtomicLong();</span>
+<span class="fc" id="L72">            this.inserted = new AtomicLong();</span>
+<span class="fc" id="L73">            this.error = new AtomicReference&lt;Object&gt;();</span>
+<span class="fc" id="L74">            this.valueToInsertObserver = new AtomicReference&lt;Disposable&gt;();</span>
+<span class="fc" id="L75">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription upstream) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.upstream, upstream)) {</span>
+<span class="fc" id="L80">                this.upstream = upstream;</span>
+<span class="fc" id="L81">                downstream.onSubscribe(this);</span>
+            }
+<span class="fc" id="L83">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            if (finished) {</span>
+<span class="fc" id="L88">                return;</span>
+            }
+<span class="fc" id="L90">            queue.offer(t);</span>
+            Maybe&lt;? extends T&gt; maybe;
+            try {
+<span class="fc" id="L93">                maybe = valueToInsert.apply(t);</span>
+<span class="fc" id="L94">            } catch (Throwable e) {</span>
+<span class="fc" id="L95">                Exceptions.throwIfFatal(e);</span>
+                // we cancel upstream ourselves because the
+                // error did not originate from source
+<span class="fc" id="L98">                upstream.cancel();</span>
+<span class="fc" id="L99">                onError(e);</span>
+<span class="fc" id="L100">                return;</span>
+<span class="fc" id="L101">            }</span>
+<span class="fc" id="L102">            ValueToInsertObserver&lt;T&gt; o = new ValueToInsertObserver&lt;T&gt;(this);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            if (DisposableHelper.set(valueToInsertObserver, o)) {</span>
+                // note that at this point we have to cover o being disposed
+                // from another thread so the Observer class needs
+                // to handle dispose being called before/during onSubscribe
+<span class="fc" id="L107">                maybe.subscribe(o);</span>
+            }
+<span class="fc" id="L109">            drain();</span>
+<span class="fc" id="L110">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (finished) {</span>
+<span class="fc" id="L115">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L116">                return;</span>
+            }
+<span class="fc" id="L118">            finished = true;</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">            if (error.compareAndSet(null, e)) {</span>
+<span class="fc" id="L120">                DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="fc" id="L121">                done = true;</span>
+<span class="fc" id="L122">                drain();</span>
+            } else {
+<span class="nc" id="L124">                RxJavaPlugins.onError(e);</span>
+            }
+<span class="fc" id="L126">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (finished) {</span>
+<span class="fc" id="L131">                return;</span>
+            }
+<span class="fc" id="L133">            finished = true;</span>
+<span class="fc" id="L134">            DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="fc" id="L135">            done = true;</span>
+<span class="fc" id="L136">            drain();</span>
+<span class="fc" id="L137">        }</span>
+
+        private void drain() {
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (getAndIncrement() != 0) {</span>
+<span class="fc" id="L141">                return;</span>
+            }
+            // note that this drain loop does not shortcut errors
+<span class="fc" id="L144">            int missed = 1;</span>
+            while (true) {
+<span class="fc" id="L146">                long r = requested.get();</span>
+<span class="fc" id="L147">                long e = 0;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                while (e != r) {</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                    if (cancelled) {</span>
+<span class="nc" id="L150">                        DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="nc" id="L151">                        queue.clear();</span>
+<span class="nc" id="L152">                        return;</span>
+                    }
+                    // must read `done` before polling queue
+<span class="fc" id="L155">                    boolean d = done;</span>
+<span class="fc" id="L156">                    T t = queue.poll();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                    if (t == null) {</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">                        if (d) {</span>
+<span class="fc" id="L159">                            Object err = error.get();</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">                            if (err != null) {</span>
+                                // clear the exception so can be gc'd
+                                // `this` is not a real error, it just prevents
+                                // it getting set again in a race because the other
+                                // setters which use CAS assume initial value of null
+<span class="fc" id="L165">                                error.set(this);</span>
+<span class="fc" id="L166">                                DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="fc" id="L167">                                downstream.onError((Throwable) err);</span>
+                            } else {
+                                // don't need to dispose valueToInsertObserver because already done in
+                                // onComplete
+<span class="fc" id="L171">                                downstream.onComplete();</span>
+                            }
+<span class="fc" id="L173">                            return;</span>
+                        } else {
+                            // nothing to emit and not done
+                            break;
+                        }
+                    } else {
+<span class="fc" id="L179">                        downstream.onNext(t);</span>
+<span class="fc" id="L180">                        e++;</span>
+                    }
+<span class="fc" id="L182">                }</span>
+<span class="fc bfc" id="L183" title="All 4 branches covered.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L184">                    requested.addAndGet(-e);</span>
+                }
+<span class="fc" id="L186">                missed = addAndGet(-missed);</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">                if (missed == 0) {</span>
+<span class="fc" id="L188">                    return;</span>
+                }
+<span class="nc" id="L190">            }</span>
+        }
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L196">                BackpressureHelper.add(requested, n);</span>
+                // modify request to upstream to account for inserted values
+                // use a CAS loop because request can be called from any thread
+                while (true) {
+<span class="fc" id="L200">                    long ins = inserted.get();</span>
+<span class="fc" id="L201">                    long d = Math.min(ins, n);</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">                    if (inserted.compareAndSet(ins, ins - d)) {</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                        if (n - d &gt; 0) {</span>
+<span class="fc" id="L204">                            upstream.request(n - d);</span>
+                        }
+                        break;
+                    }
+<span class="nc" id="L208">                }</span>
+<span class="fc" id="L209">                drain();</span>
+            }
+<span class="fc" id="L211">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">            if (!cancelled) {</span>
+<span class="fc" id="L216">                cancelled = true;</span>
+<span class="fc" id="L217">                upstream.cancel();</span>
+<span class="fc" id="L218">                DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">                if (getAndIncrement() == 0) {</span>
+                    // use the same access control to queue as drain method
+                    // because `clear` just calls `queue.poll()` repeatedly till nothing left on the
+                    // queue (ignoring the dequeued items).
+                    //
+                    // this is best endeavours, there still exists a race with onNext and drain
+                    // where items could be left on the queue after cancel
+<span class="fc" id="L226">                    queue.clear();</span>
+                }
+            }
+<span class="fc" id="L229">        }</span>
+
+        void insert(T t) {
+<span class="fc" id="L232">            inserted.incrementAndGet();</span>
+<span class="fc" id="L233">            queue.offer(t);</span>
+<span class="fc" id="L234">            drain();</span>
+<span class="fc" id="L235">        }</span>
+
+        void insertError(Throwable e) {
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">            if (error.compareAndSet(null, e)) {</span>
+<span class="fc" id="L239">                upstream.cancel();</span>
+<span class="fc" id="L240">                DisposableHelper.dispose(valueToInsertObserver);</span>
+<span class="fc" id="L241">                done = true;</span>
+<span class="fc" id="L242">                drain();</span>
+            } else {
+<span class="nc" id="L244">                RxJavaPlugins.onError(e);</span>
+            }
+<span class="fc" id="L246">        }</span>
+
+    }
+
+    static final class ValueToInsertObserver&lt;T&gt; extends AtomicReference&lt;Disposable&gt;
+            implements MaybeObserver&lt;T&gt;, Disposable {
+
+        private static final long serialVersionUID = 41384726414575403L;
+
+        private final InsertSubscriber&lt;T&gt; downstream;
+
+<span class="fc" id="L257">        ValueToInsertObserver(InsertSubscriber&lt;T&gt; downstream) {</span>
+<span class="fc" id="L258">            this.downstream = downstream;</span>
+<span class="fc" id="L259">        }</span>
+
+        @Override
+        public void onSubscribe(Disposable upstream) {
+            // an AtomicReference is used to hold the upstream Disposable
+            // because this Observer can be disposed before onSubscribe
+            // is called (contrary to the normal contract).
+<span class="fc" id="L266">            DisposableHelper.setOnce(this, upstream);</span>
+<span class="fc" id="L267">        }</span>
+
+        @Override
+        public void onSuccess(T t) {
+<span class="fc" id="L271">            lazySet(DisposableHelper.DISPOSED);</span>
+<span class="fc" id="L272">            downstream.insert(t);</span>
+<span class="fc" id="L273">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L277">            lazySet(DisposableHelper.DISPOSED);</span>
+<span class="fc" id="L278">            downstream.insertError(e);</span>
+<span class="fc" id="L279">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L283">            lazySet(DisposableHelper.DISPOSED);</span>
+            // don't do anything else because no value to insert was reported
+<span class="fc" id="L285">        }</span>
+
+        @Override
+        public void dispose() {
+<span class="fc" id="L289">            DisposableHelper.dispose(this);</span>
+<span class="fc" id="L290">        }</span>
+
+        @Override
+        public boolean isDisposed() {
+<span class="nc bnc" id="L294" title="All 2 branches missed.">            return get() == DisposableHelper.DISPOSED;</span>
+        }
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

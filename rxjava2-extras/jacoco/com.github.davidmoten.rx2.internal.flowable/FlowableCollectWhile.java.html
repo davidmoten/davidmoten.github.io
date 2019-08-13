@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableCollectWhile.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableCollectWhile.java</span></div><h1>FlowableCollectWhile.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableCollectWhile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableCollectWhile.java</span></div><h1>FlowableCollectWhile.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,6 +8,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.BiPredicate;
@@ -29,32 +30,32 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
     public FlowableCollectWhile(Flowable&lt;T&gt; source, Callable&lt;R&gt; collectionFactory,
             BiFunction&lt;? super R, ? super T, ? extends R&gt; add,
             BiPredicate&lt;? super R, ? super T&gt; condition, boolean emitRemainder) {
-<span class="fc" id="L32">        super();</span>
-<span class="fc" id="L33">        this.source = source;</span>
-<span class="fc" id="L34">        this.collectionFactory = collectionFactory;</span>
-<span class="fc" id="L35">        this.add = add;</span>
-<span class="fc" id="L36">        this.condition = condition;</span>
-<span class="fc" id="L37">        this.emitRemainder = emitRemainder;</span>
-<span class="fc" id="L38">    }</span>
+<span class="fc" id="L33">        super();</span>
+<span class="fc" id="L34">        this.source = source;</span>
+<span class="fc" id="L35">        this.collectionFactory = collectionFactory;</span>
+<span class="fc" id="L36">        this.add = add;</span>
+<span class="fc" id="L37">        this.condition = condition;</span>
+<span class="fc" id="L38">        this.emitRemainder = emitRemainder;</span>
+<span class="fc" id="L39">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super R&gt; child) {
-<span class="fc" id="L42">        CollectWhileSubscriber&lt;T, R&gt; subscriber = new CollectWhileSubscriber&lt;T, R&gt;(</span>
+<span class="fc" id="L43">        CollectWhileSubscriber&lt;T, R&gt; subscriber = new CollectWhileSubscriber&lt;T, R&gt;(</span>
                 collectionFactory, add, condition, child, emitRemainder);
-<span class="fc" id="L44">        source.subscribe(subscriber);</span>
-<span class="fc" id="L45">    }</span>
+<span class="fc" id="L45">        source.subscribe(subscriber);</span>
+<span class="fc" id="L46">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
     private static final class CollectWhileSubscriber&lt;T, R&gt; extends AtomicInteger
-            implements Subscriber&lt;T&gt;, Subscription, ConditionalSubscriber&lt;T&gt; {
+            implements FlowableSubscriber&lt;T&gt;, Subscription, ConditionalSubscriber&lt;T&gt; {
 
         private final Callable&lt;R&gt; collectionFactory;
         private final BiFunction&lt;? super R, ? super T, ? extends R&gt; add;
         private final BiPredicate&lt;? super R, ? super T&gt; condition;
         private final Subscriber&lt;? super R&gt; child;
         private final boolean emitRemainder;
-<span class="fc" id="L56">        private final AtomicLong requested = new AtomicLong();</span>
-<span class="fc" id="L57">        private final SimplePlainQueue&lt;R&gt; queue = new SpscLinkedArrayQueue&lt;R&gt;(16);</span>
+<span class="fc" id="L57">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L58">        private final SimplePlainQueue&lt;R&gt; queue = new SpscLinkedArrayQueue&lt;R&gt;(16);</span>
 
         private Subscription parent;
         private R collection;
@@ -67,175 +68,175 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
         CollectWhileSubscriber(Callable&lt;R&gt; collectionFactory,
                 BiFunction&lt;? super R, ? super T, ? extends R&gt; add,
                 BiPredicate&lt;? super R, ? super T&gt; condition, Subscriber&lt;? super R&gt; child,
-<span class="fc" id="L70">                boolean emitRemainder) {</span>
-<span class="fc" id="L71">            this.collectionFactory = collectionFactory;</span>
-<span class="fc" id="L72">            this.add = add;</span>
-<span class="fc" id="L73">            this.condition = condition;</span>
-<span class="fc" id="L74">            this.child = child;</span>
-<span class="fc" id="L75">            this.emitRemainder = emitRemainder;</span>
-<span class="fc" id="L76">        }</span>
+<span class="fc" id="L71">                boolean emitRemainder) {</span>
+<span class="fc" id="L72">            this.collectionFactory = collectionFactory;</span>
+<span class="fc" id="L73">            this.add = add;</span>
+<span class="fc" id="L74">            this.condition = condition;</span>
+<span class="fc" id="L75">            this.child = child;</span>
+<span class="fc" id="L76">            this.emitRemainder = emitRemainder;</span>
+<span class="fc" id="L77">        }</span>
 
         @Override
         public void onSubscribe(Subscription parent) {
-<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
-<span class="fc" id="L81">                this.parent = parent;</span>
-<span class="fc" id="L82">                child.onSubscribe(this);</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
+<span class="fc" id="L82">                this.parent = parent;</span>
+<span class="fc" id="L83">                child.onSubscribe(this);</span>
             }
-<span class="fc" id="L84">        }</span>
+<span class="fc" id="L85">        }</span>
 
         @Override
         public void onNext(T t) {
             // this path taken by upstream if not enabled to call `tryOnNext`
-<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (!tryOnNext(t)) {</span>
-<span class="fc" id="L90">                parent.request(1);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (!tryOnNext(t)) {</span>
+<span class="fc" id="L91">                parent.request(1);</span>
             }
-<span class="fc" id="L92">        }</span>
+<span class="fc" id="L93">        }</span>
 
         @Override
         public boolean tryOnNext(T t) {
-<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L97">                return true;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L98">                return true;</span>
             }
-<span class="fc bfc" id="L99" title="All 4 branches covered.">            if (collection == null &amp;&amp; !collectionCreated()) {</span>
-<span class="fc" id="L100">                return true;</span>
+<span class="fc bfc" id="L100" title="All 4 branches covered.">            if (collection == null &amp;&amp; !collectionCreated()) {</span>
+<span class="fc" id="L101">                return true;</span>
             }
             boolean collect;
             try {
-<span class="fc" id="L104">                collect = condition.test(collection, t);</span>
-<span class="fc" id="L105">            } catch (Throwable e) {</span>
-<span class="fc" id="L106">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L107">                onError(e);</span>
-<span class="fc" id="L108">                return true;</span>
-<span class="fc" id="L109">            }</span>
-<span class="fc bfc" id="L110" title="All 2 branches covered.">            if (!collect) {</span>
-<span class="fc" id="L111">                queue.offer(collection);</span>
-<span class="pc bpc" id="L112" title="1 of 2 branches missed.">                if (!collectionCreated()) {</span>
-<span class="nc" id="L113">                    return true;</span>
+<span class="fc" id="L105">                collect = condition.test(collection, t);</span>
+<span class="fc" id="L106">            } catch (Throwable e) {</span>
+<span class="fc" id="L107">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L108">                onError(e);</span>
+<span class="fc" id="L109">                return true;</span>
+<span class="fc" id="L110">            }</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (!collect) {</span>
+<span class="fc" id="L112">                queue.offer(collection);</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">                if (!collectionCreated()) {</span>
+<span class="nc" id="L114">                    return true;</span>
                 }
             }
             try {
-<span class="fc" id="L117">                collection = add.apply(collection, t);</span>
-<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (collection == null) {</span>
-<span class="fc" id="L119">                    throw new NullPointerException(&quot;add function should not return null&quot;);</span>
+<span class="fc" id="L118">                collection = add.apply(collection, t);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                if (collection == null) {</span>
+<span class="fc" id="L120">                    throw new NullPointerException(&quot;add function should not return null&quot;);</span>
                 }
-<span class="fc" id="L121">            } catch (Throwable e) {</span>
-<span class="fc" id="L122">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L123">                onError(e);</span>
-<span class="fc" id="L124">                return true;</span>
-<span class="fc" id="L125">            }</span>
-<span class="fc" id="L126">            drain();</span>
-<span class="fc bfc" id="L127" title="All 2 branches covered.">            return !collect;</span>
+<span class="fc" id="L122">            } catch (Throwable e) {</span>
+<span class="fc" id="L123">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L124">                onError(e);</span>
+<span class="fc" id="L125">                return true;</span>
+<span class="fc" id="L126">            }</span>
+<span class="fc" id="L127">            drain();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            return !collect;</span>
         }
 
         public boolean collectionCreated() {
             try {
-<span class="fc" id="L132">                collection = collectionFactory.call();</span>
-<span class="fc bfc" id="L133" title="All 2 branches covered.">                if (collection == null) {</span>
-<span class="fc" id="L134">                    throw new NullPointerException(&quot;collectionFactory should not return null&quot;);</span>
+<span class="fc" id="L133">                collection = collectionFactory.call();</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (collection == null) {</span>
+<span class="fc" id="L135">                    throw new NullPointerException(&quot;collectionFactory should not return null&quot;);</span>
                 }
-<span class="fc" id="L136">                return true;</span>
-<span class="fc" id="L137">            } catch (Throwable e) {</span>
-<span class="fc" id="L138">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L139">                onError(e);</span>
-<span class="fc" id="L140">                return false;</span>
+<span class="fc" id="L137">                return true;</span>
+<span class="fc" id="L138">            } catch (Throwable e) {</span>
+<span class="fc" id="L139">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L140">                onError(e);</span>
+<span class="fc" id="L141">                return false;</span>
             }
         }
 
         @Override
         public void onError(Throwable e) {
-<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L147">                RxJavaPlugins.onError(e);</span>
-<span class="fc" id="L148">                return;</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L148">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L149">                return;</span>
             }
             //release for GC
-<span class="fc" id="L151">            collection = null;</span>
+<span class="fc" id="L152">            collection = null;</span>
             // must set `error` before done because `error` is not volatile and
             // `done` is
-<span class="fc" id="L154">            error = e;</span>
-<span class="fc" id="L155">            done = true;</span>
-<span class="fc" id="L156">            drain();</span>
-<span class="fc" id="L157">        }</span>
+<span class="fc" id="L155">            error = e;</span>
+<span class="fc" id="L156">            done = true;</span>
+<span class="fc" id="L157">            drain();</span>
+<span class="fc" id="L158">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L162">                return;</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L163">                return;</span>
             }
-<span class="fc" id="L164">            R col = collection;</span>
-<span class="fc bfc" id="L165" title="All 2 branches covered.">            if (col != null) {</span>
-<span class="fc" id="L166">                collection = null;</span>
+<span class="fc" id="L165">            R col = collection;</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (col != null) {</span>
+<span class="fc" id="L167">                collection = null;</span>
                 // ensure that the remainder is emitted
                 // if configured to
-<span class="fc bfc" id="L169" title="All 2 branches covered.">                if (emitRemainder) {</span>
-<span class="fc" id="L170">                    queue.offer(col);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                if (emitRemainder) {</span>
+<span class="fc" id="L171">                    queue.offer(col);</span>
                 }
             }
-<span class="fc" id="L173">            done = true;</span>
-<span class="fc" id="L174">            drain();</span>
-<span class="fc" id="L175">        }</span>
+<span class="fc" id="L174">            done = true;</span>
+<span class="fc" id="L175">            drain();</span>
+<span class="fc" id="L176">        }</span>
 
         private void drain() {
-<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
-<span class="fc" id="L179">                int missed = 1;</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L180">                int missed = 1;</span>
                 while (true) {
-<span class="fc" id="L181">                    long r = requested.get();</span>
-<span class="fc" id="L182">                    long e = 0;</span>
-<span class="fc bfc" id="L183" title="All 2 branches covered.">                    while (e != r) {</span>
-<span class="fc bfc" id="L184" title="All 2 branches covered.">                        if (cancelled) {</span>
-<span class="fc" id="L185">                            queue.clear();</span>
-<span class="fc" id="L186">                            return;</span>
+<span class="fc" id="L182">                    long r = requested.get();</span>
+<span class="fc" id="L183">                    long e = 0;</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                        if (cancelled) {</span>
+<span class="fc" id="L186">                            queue.clear();</span>
+<span class="fc" id="L187">                            return;</span>
                         }
                         //must read `done` before polling queue
-<span class="fc" id="L189">                        boolean d = done;</span>
-<span class="fc" id="L190">                        R c = queue.poll();</span>
-<span class="fc bfc" id="L191" title="All 2 branches covered.">                        if (c == null) {</span>
-<span class="fc bfc" id="L192" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L190">                        boolean d = done;</span>
+<span class="fc" id="L191">                        R c = queue.poll();</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                        if (c == null) {</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                            if (d) {</span>
                                 // `error` must be read AFTER `done` for
                                 // full visibility
-<span class="fc" id="L195">                                Throwable err = error;</span>
-<span class="fc bfc" id="L196" title="All 2 branches covered.">                                if (err != null) {</span>
-<span class="fc" id="L197">                                    error = null;</span>
-<span class="fc" id="L198">                                    child.onError(err);</span>
+<span class="fc" id="L196">                                Throwable err = error;</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">                                if (err != null) {</span>
+<span class="fc" id="L198">                                    error = null;</span>
+<span class="fc" id="L199">                                    child.onError(err);</span>
                                 } else {
-<span class="fc" id="L200">                                    child.onComplete();</span>
+<span class="fc" id="L201">                                    child.onComplete();</span>
                                 }
-<span class="fc" id="L202">                                return;</span>
+<span class="fc" id="L203">                                return;</span>
                             } else {
                                 // nothing to emit and not done
                                 break;
                             }
                         } else {
-<span class="fc" id="L208">                            child.onNext(c);</span>
-<span class="fc" id="L209">                            e++;</span>
+<span class="fc" id="L209">                            child.onNext(c);</span>
+<span class="fc" id="L210">                            e++;</span>
                         }
-<span class="fc" id="L211">                    }</span>
-<span class="fc bfc" id="L212" title="All 4 branches covered.">                    if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
-<span class="fc" id="L213">                        requested.addAndGet(-e);</span>
+<span class="fc" id="L212">                    }</span>
+<span class="fc bfc" id="L213" title="All 4 branches covered.">                    if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L214">                        requested.addAndGet(-e);</span>
                     }
-<span class="fc" id="L215">                    missed = addAndGet(-missed);</span>
-<span class="fc bfc" id="L216" title="All 2 branches covered.">                    if (missed == 0) {</span>
-<span class="fc" id="L217">                        return;</span>
+<span class="fc" id="L216">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L218">                        return;</span>
                     }
-<span class="fc" id="L219">                }</span>
+<span class="fc" id="L220">                }</span>
             }
 
-<span class="fc" id="L222">        }</span>
+<span class="fc" id="L223">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L226" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L227">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L228">                parent.request(n);</span>
-<span class="fc" id="L229">                drain();</span>
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L228">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L229">                parent.request(n);</span>
+<span class="fc" id="L230">                drain();</span>
             }
-<span class="fc" id="L231">        }</span>
+<span class="fc" id="L232">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L235">            cancelled = true;</span>
-<span class="fc" id="L236">            parent.cancel();</span>
-<span class="fc" id="L237">        }</span>
+<span class="fc" id="L236">            cancelled = true;</span>
+<span class="fc" id="L237">            parent.cancel();</span>
+<span class="fc" id="L238">        }</span>
 
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

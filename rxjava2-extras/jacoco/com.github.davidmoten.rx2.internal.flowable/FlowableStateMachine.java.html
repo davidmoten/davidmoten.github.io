@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableStateMachine.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableStateMachine.java</span></div><h1>FlowableStateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableStateMachine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableStateMachine.java</span></div><h1>FlowableStateMachine.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,6 +13,7 @@ import com.github.davidmoten.rx2.functions.Consumer3;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.functions.BiConsumer;
 import io.reactivex.functions.Function3;
@@ -39,30 +40,30 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
             BiConsumer&lt;? super State, ? super Emitter&lt;Out&gt;&gt; completionAction, //
             Consumer3&lt;? super State, ? super Throwable, ? super Emitter&lt;Out&gt;&gt; errorAction, //
             BackpressureStrategy backpressureStrategy, //
-<span class="fc" id="L42">            int requestBatchSize) {</span>
-<span class="fc" id="L43">        Preconditions.checkNotNull(initialState);</span>
-<span class="fc" id="L44">        Preconditions.checkNotNull(transition);</span>
-<span class="fc" id="L45">        Preconditions.checkNotNull(backpressureStrategy);</span>
-<span class="fc bfc" id="L46" title="All 2 branches covered.">        Preconditions.checkArgument(requestBatchSize &gt; 0,</span>
+<span class="fc" id="L43">            int requestBatchSize) {</span>
+<span class="fc" id="L44">        Preconditions.checkNotNull(initialState);</span>
+<span class="fc" id="L45">        Preconditions.checkNotNull(transition);</span>
+<span class="fc" id="L46">        Preconditions.checkNotNull(backpressureStrategy);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        Preconditions.checkArgument(requestBatchSize &gt; 0,</span>
                 &quot;initialRequest must be greater than zero&quot;);
-<span class="fc" id="L48">        this.source = source;</span>
-<span class="fc" id="L49">        this.initialState = initialState;</span>
-<span class="fc" id="L50">        this.transition = transition;</span>
-<span class="fc" id="L51">        this.completionAction = completionAction;</span>
-<span class="fc" id="L52">        this.errorAction = errorAction;</span>
-<span class="fc" id="L53">        this.backpressureStrategy = backpressureStrategy;</span>
-<span class="fc" id="L54">        this.requestBatchSize = requestBatchSize;</span>
-<span class="fc" id="L55">    }</span>
+<span class="fc" id="L49">        this.source = source;</span>
+<span class="fc" id="L50">        this.initialState = initialState;</span>
+<span class="fc" id="L51">        this.transition = transition;</span>
+<span class="fc" id="L52">        this.completionAction = completionAction;</span>
+<span class="fc" id="L53">        this.errorAction = errorAction;</span>
+<span class="fc" id="L54">        this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L55">        this.requestBatchSize = requestBatchSize;</span>
+<span class="fc" id="L56">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super Out&gt; child) {
-<span class="fc" id="L59">        source.subscribe(new StateMachineSubscriber&lt;State, In, Out&gt;(initialState, transition,</span>
+<span class="fc" id="L60">        source.subscribe(new StateMachineSubscriber&lt;State, In, Out&gt;(initialState, transition,</span>
                 completionAction, errorAction, backpressureStrategy, requestBatchSize, child));
-<span class="fc" id="L61">    }</span>
+<span class="fc" id="L62">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
     private static final class StateMachineSubscriber&lt;State, In, Out&gt; extends AtomicInteger
-            implements Subscriber&lt;In&gt;, Subscription, Emitter&lt;Out&gt; {
+            implements FlowableSubscriber&lt;In&gt;, Subscription, Emitter&lt;Out&gt; {
         private final Callable&lt;? extends State&gt; initialState;
         private final Function3&lt;? super State, ? super In, ? super Emitter&lt;Out&gt;, ? extends State&gt; transition;
         private final BiConsumer&lt;? super State, ? super Emitter&lt;Out&gt;&gt; completionAction;
@@ -71,9 +72,9 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
         private final BackpressureStrategy backpressureStrategy; // TODO
                                                                  // implement
         private final int requestBatchSize;
-<span class="fc" id="L74">        private final SimplePlainQueue&lt;Out&gt; queue = new SpscLinkedArrayQueue&lt;Out&gt;(16);</span>
+<span class="fc" id="L75">        private final SimplePlainQueue&lt;Out&gt; queue = new SpscLinkedArrayQueue&lt;Out&gt;(16);</span>
         private final Subscriber&lt;? super Out&gt; child;
-<span class="fc" id="L76">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L77">        private final AtomicLong requested = new AtomicLong();</span>
 
         private Subscription parent;
         private volatile boolean cancelled;
@@ -85,7 +86,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
         private long count; // counts down arrival of last request batch
 
         // indicates to drain method that we can request more if needed
-<span class="fc" id="L88">        private volatile boolean requestsArrived = true;</span>
+<span class="fc" id="L89">        private volatile boolean requestsArrived = true;</span>
 
         StateMachineSubscriber( //
                 Callable&lt;? extends State&gt; initialState,
@@ -94,210 +95,210 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
                 Consumer3&lt;? super State, ? super Throwable, ? super Emitter&lt;Out&gt;&gt; errorAction, //
                 BackpressureStrategy backpressureStrategy, //
                 int requestBatchSize, //
-<span class="fc" id="L97">                Subscriber&lt;? super Out&gt; child) {</span>
-<span class="fc" id="L98">            this.initialState = initialState;</span>
-<span class="fc" id="L99">            this.transition = transition;</span>
-<span class="fc" id="L100">            this.completionAction = completionAction;</span>
-<span class="fc" id="L101">            this.errorAction = errorAction;</span>
-<span class="fc" id="L102">            this.backpressureStrategy = backpressureStrategy;</span>
-<span class="fc" id="L103">            this.requestBatchSize = requestBatchSize;</span>
-<span class="fc" id="L104">            this.child = child;</span>
-<span class="fc" id="L105">            this.count = requestBatchSize;</span>
-<span class="fc" id="L106">        }</span>
+<span class="fc" id="L98">                Subscriber&lt;? super Out&gt; child) {</span>
+<span class="fc" id="L99">            this.initialState = initialState;</span>
+<span class="fc" id="L100">            this.transition = transition;</span>
+<span class="fc" id="L101">            this.completionAction = completionAction;</span>
+<span class="fc" id="L102">            this.errorAction = errorAction;</span>
+<span class="fc" id="L103">            this.backpressureStrategy = backpressureStrategy;</span>
+<span class="fc" id="L104">            this.requestBatchSize = requestBatchSize;</span>
+<span class="fc" id="L105">            this.child = child;</span>
+<span class="fc" id="L106">            this.count = requestBatchSize;</span>
+<span class="fc" id="L107">        }</span>
 
         @Override
         public void onSubscribe(Subscription parent) {
-<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
-<span class="fc" id="L111">                this.parent = parent;</span>
-<span class="fc" id="L112">                child.onSubscribe(this);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
+<span class="fc" id="L112">                this.parent = parent;</span>
+<span class="fc" id="L113">                child.onSubscribe(this);</span>
             }
-<span class="fc" id="L114">        }</span>
+<span class="fc" id="L115">        }</span>
 
         @Override
         public void onNext(In t) {
-<span class="fc bfc" id="L118" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L119">                return;</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L120">                return;</span>
             }
-<span class="fc bfc" id="L121" title="All 2 branches covered.">            if (!createdState()) {</span>
-<span class="fc" id="L122">                return;</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">            if (!createdState()) {</span>
+<span class="fc" id="L123">                return;</span>
             }
-<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (--count == 0) {</span>
-<span class="fc" id="L125">                requestsArrived = true;</span>
-<span class="fc" id="L126">                count = requestBatchSize;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            if (--count == 0) {</span>
+<span class="fc" id="L126">                requestsArrived = true;</span>
+<span class="fc" id="L127">                count = requestBatchSize;</span>
             }
             try {
-<span class="fc" id="L129">                drainCalled = false;</span>
-<span class="fc" id="L130">                state = ObjectHelper.requireNonNull(transition.apply(state, t, this),</span>
+<span class="fc" id="L130">                drainCalled = false;</span>
+<span class="fc" id="L131">                state = ObjectHelper.requireNonNull(transition.apply(state, t, this),</span>
                         &quot;intermediate state cannot be null&quot;);
-<span class="fc" id="L132">            } catch (Throwable e) {</span>
-<span class="fc" id="L133">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L134">                onError(e);</span>
-<span class="fc" id="L135">                return;</span>
-<span class="fc" id="L136">            }</span>
-<span class="fc bfc" id="L137" title="All 2 branches covered.">            if (!drainCalled) {</span>
-<span class="fc" id="L138">                drain();</span>
+<span class="fc" id="L133">            } catch (Throwable e) {</span>
+<span class="fc" id="L134">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L135">                onError(e);</span>
+<span class="fc" id="L136">                return;</span>
+<span class="fc" id="L137">            }</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (!drainCalled) {</span>
+<span class="fc" id="L139">                drain();</span>
             }
-<span class="fc" id="L140">        }</span>
+<span class="fc" id="L141">        }</span>
 
         private boolean createdState() {
-<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (state == null) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            if (state == null) {</span>
                 try {
-<span class="fc" id="L145">                    state = ObjectHelper.requireNonNull(initialState.call(),</span>
+<span class="fc" id="L146">                    state = ObjectHelper.requireNonNull(initialState.call(),</span>
                             &quot;initial state cannot be null&quot;);
-<span class="fc" id="L147">                    return true;</span>
-<span class="fc" id="L148">                } catch (Throwable e) {</span>
-<span class="fc" id="L149">                    Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L150">                    done = true;</span>
-<span class="fc" id="L151">                    onError_(e);</span>
-<span class="fc" id="L152">                    return false;</span>
+<span class="fc" id="L148">                    return true;</span>
+<span class="fc" id="L149">                } catch (Throwable e) {</span>
+<span class="fc" id="L150">                    Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L151">                    done = true;</span>
+<span class="fc" id="L152">                    onError_(e);</span>
+<span class="fc" id="L153">                    return false;</span>
                 }
             } else {
-<span class="fc" id="L155">                return true;</span>
+<span class="fc" id="L156">                return true;</span>
             }
         }
 
         @Override
         public void onError(Throwable e) {
-<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L162">                RxJavaPlugins.onError(e);</span>
-<span class="fc" id="L163">                return;</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L163">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L164">                return;</span>
             }
-<span class="fc" id="L165">            done = true;</span>
-<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (!createdState()) {</span>
-<span class="fc" id="L167">                return;</span>
+<span class="fc" id="L166">            done = true;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            if (!createdState()) {</span>
+<span class="fc" id="L168">                return;</span>
             }
-<span class="fc bfc" id="L169" title="All 2 branches covered.">            if (errorAction != null) {</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">            if (errorAction != null) {</span>
                 try {
-<span class="fc" id="L171">                    errorAction.accept(state, e, this);</span>
-<span class="fc" id="L172">                } catch (Throwable err) {</span>
-<span class="fc" id="L173">                    Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L174">                    onError_(err);</span>
-<span class="fc" id="L175">                    return;</span>
-<span class="fc" id="L176">                }</span>
+<span class="fc" id="L172">                    errorAction.accept(state, e, this);</span>
+<span class="fc" id="L173">                } catch (Throwable err) {</span>
+<span class="fc" id="L174">                    Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L175">                    onError_(err);</span>
+<span class="fc" id="L176">                    return;</span>
+<span class="fc" id="L177">                }</span>
             } else {
-<span class="fc" id="L178">                onError_(e);</span>
+<span class="fc" id="L179">                onError_(e);</span>
             }
-<span class="fc" id="L180">        }</span>
+<span class="fc" id="L181">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (done) {</span>
-<span class="fc" id="L185">                return;</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (done) {</span>
+<span class="fc" id="L186">                return;</span>
             }
-<span class="fc bfc" id="L187" title="All 2 branches covered.">            if (!createdState()) {</span>
-<span class="fc" id="L188">                return;</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (!createdState()) {</span>
+<span class="fc" id="L189">                return;</span>
             }
             try {
-<span class="fc bfc" id="L191" title="All 2 branches covered.">                if (completionAction != null) {</span>
-<span class="fc" id="L192">                    completionAction.accept(state, this);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                if (completionAction != null) {</span>
+<span class="fc" id="L193">                    completionAction.accept(state, this);</span>
                 } else {
-<span class="fc" id="L194">                    onComplete_();</span>
+<span class="fc" id="L195">                    onComplete_();</span>
                 }
-<span class="fc" id="L196">                done = true;</span>
-<span class="fc" id="L197">            } catch (Throwable e) {</span>
-<span class="fc" id="L198">                Exceptions.throwIfFatal(e);</span>
-<span class="fc" id="L199">                onError(e);</span>
-<span class="fc" id="L200">                return;</span>
-<span class="fc" id="L201">            }</span>
-<span class="fc" id="L202">        }</span>
+<span class="fc" id="L197">                done = true;</span>
+<span class="fc" id="L198">            } catch (Throwable e) {</span>
+<span class="fc" id="L199">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L200">                onError(e);</span>
+<span class="fc" id="L201">                return;</span>
+<span class="fc" id="L202">            }</span>
+<span class="fc" id="L203">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L206" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L207">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L208">                drain();</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L208">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L209">                drain();</span>
             }
-<span class="fc" id="L210">        }</span>
+<span class="fc" id="L211">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L214">            cancelled = true;</span>
-<span class="fc" id="L215">            parent.cancel();</span>
-<span class="fc" id="L216">        }</span>
+<span class="fc" id="L215">            cancelled = true;</span>
+<span class="fc" id="L216">            parent.cancel();</span>
+<span class="fc" id="L217">        }</span>
 
         @Override
         public void cancel_() {
-<span class="fc" id="L220">            cancel();</span>
-<span class="fc" id="L221">        }</span>
+<span class="fc" id="L221">            cancel();</span>
+<span class="fc" id="L222">        }</span>
 
         @Override
         public void onNext_(Out t) {
-<span class="fc bfc" id="L225" title="All 2 branches covered.">            if (done_) {</span>
-<span class="fc" id="L226">                return;</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">            if (done_) {</span>
+<span class="fc" id="L227">                return;</span>
             }
-<span class="fc" id="L228">            queue.offer(t);</span>
-<span class="fc" id="L229">            drain();</span>
-<span class="fc" id="L230">        }</span>
+<span class="fc" id="L229">            queue.offer(t);</span>
+<span class="fc" id="L230">            drain();</span>
+<span class="fc" id="L231">        }</span>
 
         @Override
         public void onError_(Throwable e) {
-<span class="fc bfc" id="L234" title="All 2 branches covered.">            if (done_) {</span>
-<span class="fc" id="L235">                RxJavaPlugins.onError(e);</span>
-<span class="fc" id="L236">                return;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            if (done_) {</span>
+<span class="fc" id="L236">                RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L237">                return;</span>
             }
-<span class="fc" id="L238">            error_ = e;</span>
-<span class="fc" id="L239">            done_ = true;</span>
-<span class="fc" id="L240">            drain();</span>
-<span class="fc" id="L241">        }</span>
+<span class="fc" id="L239">            error_ = e;</span>
+<span class="fc" id="L240">            done_ = true;</span>
+<span class="fc" id="L241">            drain();</span>
+<span class="fc" id="L242">        }</span>
 
         @Override
         public void onComplete_() {
-<span class="fc bfc" id="L245" title="All 2 branches covered.">            if (done_) {</span>
-<span class="fc" id="L246">                return;</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            if (done_) {</span>
+<span class="fc" id="L247">                return;</span>
             }
-<span class="fc" id="L248">            done_ = true;</span>
-<span class="fc" id="L249">            drain();</span>
-<span class="fc" id="L250">        }</span>
+<span class="fc" id="L249">            done_ = true;</span>
+<span class="fc" id="L250">            drain();</span>
+<span class="fc" id="L251">        }</span>
 
         public void drain() {
-<span class="fc" id="L253">            drainCalled = true;</span>
-<span class="fc bfc" id="L254" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
-<span class="fc" id="L255">                int missed = 1;</span>
+<span class="fc" id="L254">            drainCalled = true;</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L256">                int missed = 1;</span>
                 while (true) {
-<span class="fc" id="L257">                    boolean reqsArrived = requestsArrived;</span>
-<span class="fc" id="L258">                    long r = requested.get();</span>
-<span class="fc" id="L259">                    long e = 0;</span>
-<span class="fc bfc" id="L260" title="All 2 branches covered.">                    while (e != r) {</span>
-<span class="fc bfc" id="L261" title="All 2 branches covered.">                        if (cancelled) {</span>
-<span class="fc" id="L262">                            return;</span>
+<span class="fc" id="L258">                    boolean reqsArrived = requestsArrived;</span>
+<span class="fc" id="L259">                    long r = requested.get();</span>
+<span class="fc" id="L260">                    long e = 0;</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">                        if (cancelled) {</span>
+<span class="fc" id="L263">                            return;</span>
                         }
-<span class="fc" id="L264">                        boolean d = done_;</span>
-<span class="fc" id="L265">                        Out t = queue.poll();</span>
-<span class="fc bfc" id="L266" title="All 2 branches covered.">                        if (t == null) {</span>
-<span class="fc bfc" id="L267" title="All 2 branches covered.">                            if (d) {</span>
-<span class="fc" id="L268">                                Throwable err = error_;</span>
-<span class="fc bfc" id="L269" title="All 2 branches covered.">                                if (err != null) {</span>
-<span class="fc" id="L270">                                    cancel();</span>
-<span class="fc" id="L271">                                    queue.clear();</span>
-<span class="fc" id="L272">                                    child.onError(err);</span>
+<span class="fc" id="L265">                        boolean d = done_;</span>
+<span class="fc" id="L266">                        Out t = queue.poll();</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L269">                                Throwable err = error_;</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">                                if (err != null) {</span>
+<span class="fc" id="L271">                                    cancel();</span>
+<span class="fc" id="L272">                                    queue.clear();</span>
+<span class="fc" id="L273">                                    child.onError(err);</span>
                                 } else {
-<span class="fc" id="L274">                                    cancel();</span>
-<span class="fc" id="L275">                                    queue.clear();</span>
-<span class="fc" id="L276">                                    child.onComplete();</span>
+<span class="fc" id="L275">                                    cancel();</span>
+<span class="fc" id="L276">                                    queue.clear();</span>
+<span class="fc" id="L277">                                    child.onComplete();</span>
                                 }
-<span class="fc" id="L278">                                return;</span>
+<span class="fc" id="L279">                                return;</span>
                             } else {
                                 break;
                             }
                         } else {
-<span class="fc" id="L283">                            child.onNext(t);</span>
-<span class="fc" id="L284">                            e++;</span>
+<span class="fc" id="L284">                            child.onNext(t);</span>
+<span class="fc" id="L285">                            e++;</span>
                         }
-<span class="fc" id="L286">                    }</span>
-<span class="fc bfc" id="L287" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
-<span class="fc" id="L288">                        requested.addAndGet(-e);</span>
+<span class="fc" id="L287">                    }</span>
+<span class="fc bfc" id="L288" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L289">                        requested.addAndGet(-e);</span>
                     }
-<span class="pc bpc" id="L290" title="1 of 4 branches missed.">                    if (e != r &amp;&amp; reqsArrived) {</span>
-<span class="fc" id="L291">                        requestsArrived = false;</span>
-<span class="fc" id="L292">                        parent.request(requestBatchSize);</span>
+<span class="pc bpc" id="L291" title="1 of 4 branches missed.">                    if (e != r &amp;&amp; reqsArrived) {</span>
+<span class="fc" id="L292">                        requestsArrived = false;</span>
+<span class="fc" id="L293">                        parent.request(requestBatchSize);</span>
                     }
-<span class="fc" id="L294">                    missed = addAndGet(-missed);</span>
-<span class="fc bfc" id="L295" title="All 2 branches covered.">                    if (missed == 0) {</span>
-<span class="fc" id="L296">                        return;</span>
+<span class="fc" id="L295">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L297">                        return;</span>
                     }
-<span class="fc" id="L298">                }</span>
+<span class="fc" id="L299">                }</span>
             }
-<span class="fc" id="L300">        }</span>
+<span class="fc" id="L301">        }</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

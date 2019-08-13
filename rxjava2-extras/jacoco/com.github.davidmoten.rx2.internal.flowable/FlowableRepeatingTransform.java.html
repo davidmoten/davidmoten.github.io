@@ -1,0 +1,842 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableRepeatingTransform.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableRepeatingTransform.java</span></div><h1>FlowableRepeatingTransform.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
+import io.reactivex.Observable;
+import io.reactivex.Observer;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.Disposables;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.functions.Function;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.SpscLinkedArrayQueue;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+import io.reactivex.plugins.RxJavaPlugins;
+
+public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final Flowable&lt;T&gt; source;
+    private final Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform;
+    private final int maxChained;
+    private final long maxIterations;
+    private final Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; tester;
+
+    public FlowableRepeatingTransform(Flowable&lt;T&gt; source,
+            Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform, int maxChained,
+<span class="fc" id="L36">            long maxIterations, Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt; tester) {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxChained &gt; 0, &quot;maxChained must be &gt; 0&quot;);</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxIterations &gt; 0, &quot;maxIterations must be &gt; 0&quot;);</span>
+<span class="fc" id="L39">        Preconditions.checkNotNull(transform, &quot;transform must not be null&quot;);</span>
+<span class="fc" id="L40">        Preconditions.checkNotNull(tester, &quot;tester must not be null&quot;);</span>
+<span class="fc" id="L41">        this.source = source;</span>
+<span class="fc" id="L42">        this.transform = transform;</span>
+<span class="fc" id="L43">        this.maxChained = maxChained;</span>
+<span class="fc" id="L44">        this.maxIterations = maxIterations;</span>
+<span class="fc" id="L45">        this.tester = tester;</span>
+<span class="fc" id="L46">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
+
+        Flowable&lt;T&gt; f;
+        try {
+<span class="fc" id="L53">            f = transform.apply(source);</span>
+<span class="fc" id="L54">        } catch (Exception e) {</span>
+<span class="fc" id="L55">            Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L56">            child.onSubscribe(SubscriptionHelper.CANCELLED);</span>
+<span class="fc" id="L57">            child.onError(e);</span>
+<span class="fc" id="L58">            return;</span>
+<span class="fc" id="L59">        }</span>
+<span class="fc" id="L60">        AtomicReference&lt;Chain&lt;T&gt;&gt; chainRef = new AtomicReference&lt;Chain&lt;T&gt;&gt;();</span>
+<span class="fc" id="L61">        DestinationSerializedSubject&lt;T&gt; destination = new DestinationSerializedSubject&lt;T&gt;(child,</span>
+                chainRef);
+<span class="fc" id="L63">        Chain&lt;T&gt; chain = new Chain&lt;T&gt;(transform, destination, maxIterations, maxChained, tester);</span>
+<span class="fc" id="L64">        chainRef.set(chain);</span>
+        // destination is not initially subscribed to the chain but will be when
+        // tester function result completes
+<span class="fc" id="L67">        destination.subscribe(child);</span>
+<span class="fc" id="L68">        ChainedReplaySubject&lt;T&gt; sub = ChainedReplaySubject.create(destination, chain, tester);</span>
+<span class="fc" id="L69">        chain.initialize(sub);</span>
+<span class="fc" id="L70">        f.onTerminateDetach() //</span>
+<span class="fc" id="L71">                .subscribe(sub);</span>
+<span class="fc" id="L72">    }</span>
+
+<span class="fc" id="L74">    private static enum EventType {</span>
+<span class="fc" id="L75">        TESTER_ADD, TESTER_DONE, TESTER_COMPLETE_OR_CANCEL, NEXT, ERROR, COMPLETE;</span>
+    }
+
+    private static final class Event&lt;T&gt; {
+
+        final EventType eventType;
+        final ChainedReplaySubject&lt;T&gt; subject;
+        final Subscriber&lt;? super T&gt; subscriber;
+        final T t;
+        final Throwable error;
+
+        Event(EventType eventType, ChainedReplaySubject&lt;T&gt; subject,
+<span class="fc" id="L87">                Subscriber&lt;? super T&gt; subscriber, T t, Throwable error) {</span>
+<span class="fc" id="L88">            this.eventType = eventType;</span>
+<span class="fc" id="L89">            this.subject = subject;</span>
+<span class="fc" id="L90">            this.subscriber = subscriber;</span>
+<span class="fc" id="L91">            this.t = t;</span>
+<span class="fc" id="L92">            this.error = error;</span>
+<span class="fc" id="L93">        }</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    private static final class Chain&lt;T&gt; extends AtomicInteger implements Subscription {
+
+        private final Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform;
+        private final SimplePlainQueue&lt;Event&lt;T&gt;&gt; queue;
+        private final DestinationSerializedSubject&lt;T&gt; destination;
+        private final long maxIterations;
+        private final int maxChained;
+        private final Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test;
+
+        // state
+<span class="fc" id="L107">        private int iteration = 1;</span>
+        private int length;
+        private ChainedReplaySubject&lt;T&gt; finalSubscriber;
+        private boolean destinationAttached;
+        private volatile boolean cancelled;
+
+        Chain(Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform,
+                DestinationSerializedSubject&lt;T&gt; destination, long maxIterations, int maxChained,
+<span class="fc" id="L115">                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {</span>
+<span class="fc" id="L116">            this.transform = transform;</span>
+<span class="fc" id="L117">            this.destination = destination;</span>
+<span class="fc" id="L118">            this.maxIterations = maxIterations;</span>
+<span class="fc" id="L119">            this.maxChained = maxChained;</span>
+<span class="fc" id="L120">            this.test = test;</span>
+<span class="fc" id="L121">            this.queue = new SpscLinkedArrayQueue&lt;Event&lt;T&gt;&gt;(16);</span>
+<span class="fc" id="L122">        }</span>
+
+        void initialize(ChainedReplaySubject&lt;T&gt; subject) {
+<span class="fc" id="L125">            finalSubscriber = subject;</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (maxIterations == 1) {</span>
+<span class="fc" id="L127">                finalSubscriber.subscribe(destination);</span>
+<span class="fc" id="L128">                destinationAttached = true;</span>
+            }
+<span class="fc" id="L130">        }</span>
+
+        void tryAddSubscriber(ChainedReplaySubject&lt;T&gt; subject) {
+<span class="fc" id="L133">            queue.offer(new Event&lt;T&gt;(EventType.TESTER_ADD, subject, null, null, null));</span>
+<span class="fc" id="L134">            drain();</span>
+<span class="fc" id="L135">        }</span>
+
+        void done(ChainedReplaySubject&lt;T&gt; subject) {
+<span class="fc" id="L138">            queue.offer(new Event&lt;T&gt;(EventType.TESTER_DONE, subject, null, null, null));</span>
+<span class="fc" id="L139">            drain();</span>
+<span class="fc" id="L140">        }</span>
+
+        void completeOrCancel(ChainedReplaySubject&lt;T&gt; subject) {
+<span class="fc" id="L143">            queue.offer(</span>
+                    new Event&lt;T&gt;(EventType.TESTER_COMPLETE_OR_CANCEL, subject, null, null, null));
+<span class="fc" id="L145">            drain();</span>
+<span class="fc" id="L146">        }</span>
+
+        public void onError(Subscriber&lt;? super T&gt; child, Throwable err) {
+<span class="nc" id="L149">            queue.offer(new Event&lt;T&gt;(EventType.ERROR, null, child, null, err));</span>
+<span class="nc" id="L150">            drain();</span>
+
+<span class="nc" id="L152">        }</span>
+
+        public void onCompleted(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L155">            queue.offer(new Event&lt;T&gt;(EventType.COMPLETE, null, child, null, null));</span>
+<span class="fc" id="L156">            drain();</span>
+
+<span class="fc" id="L158">        }</span>
+
+        public void onNext(Subscriber&lt;? super T&gt; child, T t) {
+<span class="fc" id="L161">            queue.offer(new Event&lt;T&gt;(EventType.NEXT, null, child, t, null));</span>
+<span class="fc" id="L162">            drain();</span>
+<span class="fc" id="L163">        }</span>
+
+        void drain() {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                if (cancelled) {</span>
+<span class="fc" id="L168">                    finalSubscriber.cancel();</span>
+<span class="fc" id="L169">                    queue.clear();</span>
+<span class="fc" id="L170">                    return;</span>
+                }
+<span class="fc" id="L172">                int missed = 1;</span>
+                while (true) {
+                    while (true) {
+<span class="fc" id="L175">                        Event&lt;T&gt; v = queue.poll();</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                        if (v == null) {</span>
+<span class="fc" id="L177">                            break;</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                        } else if (v.eventType == EventType.TESTER_ADD) {</span>
+<span class="fc" id="L179">                            handleAdd(v);</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                        } else if (v.eventType == EventType.TESTER_DONE) {</span>
+<span class="fc" id="L181">                            handleDone();</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">                        } else if (v.eventType == EventType.NEXT) {</span>
+<span class="fc" id="L183">                            v.subscriber.onNext(v.t);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">                        } else if (v.eventType == EventType.COMPLETE) {</span>
+<span class="fc" id="L185">                            v.subscriber.onComplete();</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">                        } else if (v.eventType == EventType.ERROR) {</span>
+<span class="nc" id="L187">                            v.subscriber.onError(v.error);</span>
+                        } else {
+<span class="fc" id="L189">                            handleCompleteOrCancel(v);</span>
+                        }
+<span class="fc" id="L191">                    }</span>
+<span class="fc" id="L192">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L194">                        break;</span>
+                    }
+                }
+            }
+<span class="fc" id="L198">        }</span>
+
+        private void handleAdd(Event&lt;T&gt; v) {
+<span class="fc" id="L201">            debug(&quot;ADD &quot; + v.subject);</span>
+<span class="pc bpc" id="L202" title="1 of 8 branches missed.">            if (!destinationAttached &amp;&amp; v.subject == finalSubscriber &amp;&amp; length &lt; maxChained</span>
+                    &amp;&amp; !destinationAttached) {
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">                if (iteration &lt;= maxIterations - 1) {</span>
+                    // ok to add another subject to the chain
+<span class="fc" id="L206">                    ChainedReplaySubject&lt;T&gt; sub = ChainedReplaySubject.create(destination, this,</span>
+                            test);
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                    if (iteration == maxIterations - 1) {</span>
+<span class="fc" id="L209">                        sub.subscribe(destination);</span>
+<span class="fc" id="L210">                        debug(sub + &quot;subscribed to by destination&quot;);</span>
+<span class="fc" id="L211">                        destinationAttached = true;</span>
+                    }
+<span class="fc" id="L213">                    addToChain(sub);</span>
+<span class="fc" id="L214">                    finalSubscriber = sub;</span>
+<span class="fc" id="L215">                    iteration++;</span>
+<span class="fc" id="L216">                    length += 1;</span>
+                }
+            }
+<span class="fc" id="L219">        }</span>
+
+        private void handleDone() {
+<span class="fc" id="L222">            debug(&quot;DONE&quot;);</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            if (!destinationAttached) {</span>
+<span class="fc" id="L224">                destinationAttached = true;</span>
+<span class="fc" id="L225">                finalSubscriber.subscribe(destination);</span>
+            }
+<span class="fc" id="L227">        }</span>
+
+        private void handleCompleteOrCancel(Event&lt;T&gt; v) {
+<span class="fc" id="L230">            debug(&quot;COMPLETE/CANCEL &quot; + v.subject);</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (destinationAttached) {</span>
+<span class="fc" id="L232">                return;</span>
+            }
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">            if (v.subject == finalSubscriber) {</span>
+                // TODO what to do here?
+                // cancelWholeChain();
+<span class="fc bfc" id="L237" title="All 2 branches covered.">            } else if (iteration &lt; maxIterations - 1) {</span>
+<span class="fc" id="L238">                ChainedReplaySubject&lt;T&gt; sub = ChainedReplaySubject.create(destination, this, test);</span>
+<span class="fc" id="L239">                addToChain(sub);</span>
+<span class="fc" id="L240">                finalSubscriber = sub;</span>
+<span class="fc" id="L241">                iteration++;</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">            } else if (iteration == maxIterations - 1) {</span>
+<span class="fc" id="L243">                ChainedReplaySubject&lt;T&gt; sub = ChainedReplaySubject.create(destination, this, test);</span>
+<span class="fc" id="L244">                destinationAttached = true;</span>
+<span class="fc" id="L245">                sub.subscribe(destination);</span>
+<span class="fc" id="L246">                addToChain(sub);</span>
+<span class="fc" id="L247">                debug(sub + &quot;subscribed to by destination&quot;);</span>
+<span class="fc" id="L248">                finalSubscriber = sub;</span>
+<span class="fc" id="L249">                iteration++;</span>
+<span class="fc" id="L250">            } else {</span>
+<span class="nc" id="L251">                length--;</span>
+            }
+<span class="fc" id="L253">        }</span>
+
+        private void addToChain(final Subscriber&lt;T&gt; sub) {
+            Flowable&lt;T&gt; f;
+            try {
+<span class="fc" id="L258">                f = transform.apply(finalSubscriber);</span>
+<span class="fc" id="L259">            } catch (Exception e) {</span>
+<span class="fc" id="L260">                Exceptions.throwIfFatal(e);</span>
+<span class="fc" id="L261">                cancelWholeChain();</span>
+<span class="fc" id="L262">                destination.onError(e);</span>
+<span class="fc" id="L263">                return;</span>
+<span class="fc" id="L264">            }</span>
+<span class="fc" id="L265">            log(&quot;adding subscriber to &quot; + finalSubscriber);</span>
+<span class="fc" id="L266">            f.onTerminateDetach().subscribe(sub);</span>
+<span class="fc" id="L267">            debug(finalSubscriber + &quot; subscribed to by &quot; + sub);</span>
+<span class="fc" id="L268">        }</span>
+
+        private void cancelWholeChain() {
+<span class="fc" id="L271">            cancelled = true;</span>
+<span class="fc" id="L272">            drain();</span>
+<span class="fc" id="L273">        }</span>
+
+        @Override
+        public void request(long n) {
+            // ignore, just want to be able to cancel
+<span class="nc" id="L278">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L282">            cancelled = true;</span>
+<span class="fc" id="L283">            cancelWholeChain();</span>
+<span class="fc" id="L284">        }</span>
+
+    }
+
+    private static class DestinationSerializedSubject&lt;T&gt; extends Flowable&lt;T&gt;
+            implements FlowableSubscriber&lt;T&gt;, Subscription {
+
+        private final Subscriber&lt;? super T&gt; child;
+        private final AtomicReference&lt;Chain&lt;T&gt;&gt; chain;
+
+<span class="fc" id="L294">        private final AtomicInteger wip = new AtomicInteger();</span>
+<span class="fc" id="L295">        private final AtomicReference&lt;Subscription&gt; parent = new AtomicReference&lt;Subscription&gt;();</span>
+<span class="fc" id="L296">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L297">        private final SimplePlainQueue&lt;T&gt; queue = new SpscLinkedArrayQueue&lt;T&gt;(16);</span>
+<span class="fc" id="L298">        private final AtomicLong deferredRequests = new AtomicLong();</span>
+
+        private Throwable error;
+        private volatile boolean done;
+        private volatile boolean cancelled;
+
+<span class="fc" id="L304">        DestinationSerializedSubject(Subscriber&lt;? super T&gt; child, AtomicReference&lt;Chain&lt;T&gt;&gt; chain) {</span>
+<span class="fc" id="L305">            this.child = child;</span>
+<span class="fc" id="L306">            this.chain = chain;</span>
+<span class="fc" id="L307">        }</span>
+
+        @Override
+        protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L311">            debug(this + &quot; subscribed to by &quot; + child);</span>
+<span class="fc" id="L312">            child.onSubscribe(new MultiSubscription(this, chain.get()));</span>
+            // don't need to drain because destination is always subscribed to
+            // this before this is subscribed to parent
+<span class="fc" id="L315">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription pr) {
+<span class="fc" id="L319">            parent.set(pr);</span>
+<span class="fc" id="L320">            long r = deferredRequests.getAndSet(-1);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">            if (r &gt; 0L) {</span>
+<span class="fc" id="L322">                debug(this + &quot; requesting of parent &quot; + r);</span>
+<span class="fc" id="L323">                pr.request(r);</span>
+            }
+<span class="fc" id="L325">            drain();</span>
+<span class="fc" id="L326">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L330">            debug(this + &quot; request &quot; + n);</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L332">                BackpressureHelper.add(requested, n);</span>
+                while (true) {
+<span class="fc" id="L334">                    Subscription p = parent.get();</span>
+<span class="fc" id="L335">                    long d = deferredRequests.get();</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">                    if (d == -1) {</span>
+                        // parent exists so can request of it
+<span class="fc" id="L338">                        debug(this + &quot; requesting from parent &quot; + n);</span>
+<span class="fc" id="L339">                        p.request(n);</span>
+<span class="fc" id="L340">                        break;</span>
+                    } else {
+<span class="fc" id="L342">                        long d2 = d + n;</span>
+<span class="fc bfc" id="L343" title="All 2 branches covered.">                        if (d2 &lt; 0) {</span>
+<span class="fc" id="L344">                            d2 = Long.MAX_VALUE;</span>
+                        }
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">                        if (deferredRequests.compareAndSet(d, d2)) {</span>
+<span class="fc" id="L347">                            break;</span>
+                        }
+                    }
+<span class="nc" id="L350">                }</span>
+<span class="fc" id="L351">                drain();</span>
+            }
+<span class="fc" id="L353">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L357">            cancelled = true;</span>
+<span class="fc" id="L358">            SubscriptionHelper.cancel(this.parent);</span>
+<span class="fc" id="L359">            chain.get().cancel();</span>
+<span class="fc" id="L360">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L364">            queue.offer(t);</span>
+<span class="fc" id="L365">            drain();</span>
+<span class="fc" id="L366">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L370">            error = e;</span>
+<span class="fc" id="L371">            done = true;</span>
+<span class="fc" id="L372">            drain();</span>
+<span class="fc" id="L373">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L377">            debug(&quot;final complete&quot;);</span>
+<span class="fc" id="L378">            done = true;</span>
+<span class="fc" id="L379">            drain();</span>
+<span class="fc" id="L380">        }</span>
+
+        private void drain() {
+            // this is a pretty standard drain loop
+            // default is to shortcut errors (don't delay them)
+<span class="fc bfc" id="L385" title="All 2 branches covered.">            if (wip.getAndIncrement() == 0) {</span>
+<span class="fc" id="L386">                int missed = 1;</span>
+                while (true) {
+<span class="fc" id="L388">                    long r = requested.get();</span>
+<span class="fc" id="L389">                    long e = 0;</span>
+<span class="fc" id="L390">                    boolean d = done;</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">                        if (cancelled) {</span>
+<span class="nc" id="L393">                            queue.clear();</span>
+<span class="nc" id="L394">                            return;</span>
+                        }
+<span class="pc bpc" id="L396" title="1 of 4 branches missed.">                        if (d &amp;&amp; terminate()) {</span>
+<span class="fc" id="L397">                            return;</span>
+                        }
+<span class="fc" id="L399">                        T t = queue.poll();</span>
+<span class="fc bfc" id="L400" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">                            if (d) {</span>
+<span class="nc" id="L402">                                cancel();</span>
+<span class="nc" id="L403">                                child.onComplete();</span>
+<span class="nc" id="L404">                                return;</span>
+                            } else {
+                                break;
+                            }
+                        } else {
+<span class="fc" id="L409">                            child.onNext(t);</span>
+<span class="fc" id="L410">                            e++;</span>
+                        }
+<span class="fc" id="L412">                        d = done;</span>
+<span class="fc" id="L413">                    }</span>
+<span class="pc bpc" id="L414" title="1 of 4 branches missed.">                    if (d &amp;&amp; terminate()) {</span>
+<span class="fc" id="L415">                        return;</span>
+                    }
+<span class="fc bfc" id="L417" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L418">                        r = requested.addAndGet(-e);</span>
+                    }
+<span class="fc" id="L420">                    missed = wip.addAndGet(-missed);</span>
+<span class="pc bpc" id="L421" title="1 of 2 branches missed.">                    if (missed == 0) {</span>
+<span class="fc" id="L422">                        return;</span>
+                    }
+<span class="nc" id="L424">                }</span>
+            }
+<span class="fc" id="L426">        }</span>
+
+        private boolean terminate() {
+            // done is true at this point
+<span class="fc" id="L430">            Throwable err = error;</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            if (err != null) {</span>
+<span class="fc" id="L432">                queue.clear();</span>
+<span class="fc" id="L433">                error = null;</span>
+<span class="fc" id="L434">                cancel();</span>
+<span class="fc" id="L435">                child.onError(err);</span>
+<span class="fc" id="L436">                return true;</span>
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">            } else if (queue.isEmpty()) {</span>
+<span class="fc" id="L438">                cancel();</span>
+<span class="fc" id="L439">                child.onComplete();</span>
+<span class="fc" id="L440">                return true;</span>
+            } else {
+<span class="nc" id="L442">                return false;</span>
+            }
+        }
+
+    }
+
+<span class="fc" id="L448">    private static final class Tester&lt;T&gt; extends Observable&lt;T&gt; implements Observer&lt;T&gt; {</span>
+
+        private Observer&lt;? super T&gt; observer;
+
+        @Override
+        protected void subscribeActual(Observer&lt;? super T&gt; observer) {
+<span class="fc" id="L454">            observer.onSubscribe(Disposables.empty());</span>
+<span class="fc" id="L455">            this.observer = observer;</span>
+<span class="fc" id="L456">        }</span>
+
+        @Override
+        public void onSubscribe(Disposable d) {
+<span class="nc" id="L460">            throw new RuntimeException(&quot;unexpected&quot;);</span>
+        }
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L465">            observer.onNext(t);</span>
+<span class="fc" id="L466">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L470">            observer.onError(e);</span>
+<span class="fc" id="L471">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L475">            observer.onComplete();</span>
+<span class="fc" id="L476">        }</span>
+    }
+
+    private static final class TesterObserver&lt;T&gt; implements Observer&lt;Object&gt; {
+
+        private final Chain&lt;T&gt; chain;
+        private final ChainedReplaySubject&lt;T&gt; subject;
+
+<span class="fc" id="L484">        TesterObserver(Chain&lt;T&gt; chain, ChainedReplaySubject&lt;T&gt; subject) {</span>
+<span class="fc" id="L485">            this.chain = chain;</span>
+<span class="fc" id="L486">            this.subject = subject;</span>
+<span class="fc" id="L487">        }</span>
+
+        @Override
+        public void onSubscribe(Disposable d) {
+            // ignore
+<span class="fc" id="L492">        }</span>
+
+        @Override
+        public void onNext(Object t) {
+<span class="fc" id="L496">            debug(subject + &quot; TestObserver emits add &quot; + t);</span>
+<span class="fc" id="L497">            chain.tryAddSubscriber(subject);</span>
+<span class="fc" id="L498">        }</span>
+
+        @Override
+        public void onError(Throwable e) {
+<span class="fc" id="L502">            chain.cancel();</span>
+<span class="fc" id="L503">            subject.destination().onError(e);</span>
+<span class="fc" id="L504">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L508">            debug(subject + &quot; TestObserver emits done&quot;);</span>
+<span class="fc" id="L509">            chain.done(subject);</span>
+<span class="fc" id="L510">        }</span>
+    }
+
+    /**
+     * Requests minimally of upstream and buffers until this subscriber itself
+     * is subscribed to. A maximum of {@code maxDepthConcurrent} subscribers can
+     * be chained together at any one time.
+     * 
+     * @param &lt;T&gt;
+     *            generic type
+     */
+    private static final class ChainedReplaySubject&lt;T&gt; extends Flowable&lt;T&gt;
+            implements FlowableSubscriber&lt;T&gt;, Subscription {
+
+        // assigned in constructor
+        private final DestinationSerializedSubject&lt;T&gt; destination;
+        private final Chain&lt;T&gt; chain;
+
+        // assigned here
+<span class="fc" id="L529">        private final SimplePlainQueue&lt;T&gt; queue = new SpscLinkedArrayQueue&lt;T&gt;(16);</span>
+<span class="fc" id="L530">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L531">        private final AtomicReference&lt;Requests&lt;T&gt;&gt; requests = new AtomicReference&lt;Requests&lt;T&gt;&gt;(</span>
+                new Requests&lt;T&gt;(null, 0, 0, null));
+<span class="fc" id="L533">        private final AtomicInteger wip = new AtomicInteger();</span>
+        private final Tester&lt;T&gt; tester;
+
+        // mutable
+        private volatile boolean done;
+        // visibility controlled by `done`
+        private Throwable error;
+        private volatile boolean cancelled;
+        private final Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test;
+
+        static &lt;T&gt; ChainedReplaySubject&lt;T&gt; create(DestinationSerializedSubject&lt;T&gt; destination,
+                Chain&lt;T&gt; chain, Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {
+<span class="fc" id="L545">            ChainedReplaySubject&lt;T&gt; c = new ChainedReplaySubject&lt;T&gt;(destination, chain, test);</span>
+<span class="fc" id="L546">            c.init();</span>
+<span class="fc" id="L547">            return c;</span>
+        }
+
+        private ChainedReplaySubject(DestinationSerializedSubject&lt;T&gt; destination, Chain&lt;T&gt; chain,
+<span class="fc" id="L551">                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {</span>
+<span class="fc" id="L552">            this.destination = destination;</span>
+<span class="fc" id="L553">            this.chain = chain;</span>
+<span class="fc" id="L554">            this.test = test;</span>
+<span class="fc" id="L555">            this.tester = new Tester&lt;T&gt;();</span>
+<span class="fc" id="L556">        }</span>
+
+        private static final class Requests&lt;T&gt; {
+            final Subscription parent;
+            final long unreconciled;
+            final long deferred;
+            final Subscriber&lt;? super T&gt; child;
+
+            Requests(Subscription parent, long unreconciled, long deferred,
+<span class="fc" id="L565">                    Subscriber&lt;? super T&gt; child) {</span>
+<span class="fc" id="L566">                this.parent = parent;</span>
+<span class="fc" id="L567">                this.unreconciled = unreconciled;</span>
+<span class="fc" id="L568">                this.deferred = deferred;</span>
+<span class="fc" id="L569">                this.child = child;</span>
+<span class="fc" id="L570">            }</span>
+        }
+
+        private void init() {
+            Observable&lt;?&gt; o;
+            try {
+<span class="fc" id="L576">                o = test.apply(tester);</span>
+<span class="nc" id="L577">            } catch (Exception e) {</span>
+                // TODO
+<span class="nc" id="L579">                throw new RuntimeException(e);</span>
+<span class="fc" id="L580">            }</span>
+<span class="fc" id="L581">            o.subscribe(new TesterObserver&lt;T&gt;(chain, this));</span>
+<span class="fc" id="L582">        }</span>
+
+        DestinationSerializedSubject&lt;T&gt; destination() {
+<span class="fc" id="L585">            return destination;</span>
+        }
+
+        @Override
+        public void onSubscribe(Subscription parent) {
+            while (true) {
+<span class="fc" id="L591">                Requests&lt;T&gt; r = requests.get();</span>
+                Requests&lt;T&gt; r2;
+<span class="fc bfc" id="L593" title="All 2 branches covered.">                if (r.deferred == 0) {</span>
+<span class="fc" id="L594">                    r2 = new Requests&lt;T&gt;(parent, r.unreconciled + 1, 0, r.child);</span>
+<span class="pc bpc" id="L595" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc" id="L596">                        parent.request(1);</span>
+<span class="fc" id="L597">                        break;</span>
+                    }
+                } else {
+<span class="fc" id="L600">                    r2 = new Requests&lt;T&gt;(parent, r.unreconciled, 0, r.child);</span>
+<span class="pc bpc" id="L601" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc" id="L602">                        parent.request(r.deferred);</span>
+<span class="fc" id="L603">                        break;</span>
+                    }
+                }
+<span class="nc" id="L606">            }</span>
+<span class="fc" id="L607">            drain();</span>
+<span class="fc" id="L608">        }</span>
+
+        @Override
+        protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L612">            debug(this + &quot; subscribed with &quot; + child);</span>
+            while (true) {
+<span class="fc" id="L614">                Requests&lt;T&gt; r = requests.get();</span>
+<span class="fc" id="L615">                Requests&lt;T&gt; r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled, r.deferred, child);</span>
+<span class="pc bpc" id="L616" title="1 of 2 branches missed.">                if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc" id="L617">                    break;</span>
+                }
+<span class="nc" id="L619">            }</span>
+<span class="fc" id="L620">            child.onSubscribe(this);</span>
+<span class="fc" id="L621">            drain();</span>
+<span class="fc" id="L622">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L626">            debug(this + &quot; request &quot; + n);</span>
+<span class="pc bpc" id="L627" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L628">                BackpressureHelper.add(requested, n);</span>
+                while (true) {
+<span class="fc" id="L630">                    Requests&lt;T&gt; r = requests.get();</span>
+                    Requests&lt;T&gt; r2;
+<span class="fc bfc" id="L632" title="All 2 branches covered.">                    if (r.parent == null) {</span>
+<span class="fc" id="L633">                        long d = r.deferred + n;</span>
+<span class="pc bpc" id="L634" title="1 of 2 branches missed.">                        if (d &lt; 0) {</span>
+<span class="nc" id="L635">                            d = Long.MAX_VALUE;</span>
+                        }
+<span class="fc" id="L637">                        r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled, d, r.child);</span>
+<span class="pc bpc" id="L638" title="1 of 2 branches missed.">                        if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc" id="L639">                            break;</span>
+                        }
+<span class="nc" id="L641">                    } else {</span>
+<span class="fc" id="L642">                        long x = n + r.deferred - r.unreconciled;</span>
+<span class="fc" id="L643">                        long u = Math.max(0, -x);</span>
+<span class="fc" id="L644">                        r2 = new Requests&lt;T&gt;(r.parent, u, 0, r.child);</span>
+<span class="pc bpc" id="L645" title="1 of 2 branches missed.">                        if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">                            if (x &gt; 0) {</span>
+<span class="fc" id="L647">                                r.parent.request(x);</span>
+                            }
+                            break;
+                        }
+                    }
+<span class="nc" id="L652">                }</span>
+<span class="fc" id="L653">                drain();</span>
+            }
+<span class="fc" id="L655">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L659">            debug(this + &quot; arrived &quot; + t);</span>
+<span class="pc bpc" id="L660" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L661">                return;</span>
+            }
+<span class="fc" id="L663">            queue.offer(t);</span>
+<span class="fc" id="L664">            tester.onNext(t);</span>
+            while (true) {
+<span class="fc" id="L666">                Requests&lt;T&gt; r = requests.get();</span>
+                Requests&lt;T&gt; r2;
+<span class="fc bfc" id="L668" title="All 2 branches covered.">                if (r.child == null) {</span>
+<span class="fc" id="L669">                    r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled + 1, r.deferred, r.child);</span>
+<span class="pc bpc" id="L670" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
+                        // make minimal request to keep upstream producing
+<span class="fc" id="L672">                        r.parent.request(1);</span>
+<span class="fc" id="L673">                        break;</span>
+                    }
+                } else {
+<span class="fc" id="L676">                    r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled, 0, r.child);</span>
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
+<span class="fc" id="L678">                        break;</span>
+                    }
+                }
+<span class="nc" id="L681">            }</span>
+<span class="fc" id="L682">            drain();</span>
+<span class="fc" id="L683">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L687">            debug(this + &quot; complete&quot;);</span>
+<span class="pc bpc" id="L688" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L689">                return;</span>
+            }
+<span class="fc" id="L691">            done = true;</span>
+<span class="fc" id="L692">            cancelParent();</span>
+<span class="fc" id="L693">            debug(this + &quot; emits complete to tester&quot;);</span>
+<span class="fc" id="L694">            tester.onComplete();</span>
+<span class="fc" id="L695">            drain();</span>
+<span class="fc" id="L696">        }</span>
+
+        @Override
+        public void onError(Throwable t) {
+<span class="fc" id="L700">            debug(this + &quot; error &quot; + t);</span>
+<span class="pc bpc" id="L701" title="1 of 2 branches missed.">            if (done) {</span>
+<span class="nc" id="L702">                RxJavaPlugins.onError(t);</span>
+<span class="nc" id="L703">                return;</span>
+            }
+<span class="fc" id="L705">            error = t;</span>
+<span class="fc" id="L706">            done = true;</span>
+<span class="fc" id="L707">            tester.onError(t);</span>
+<span class="fc" id="L708">            drain();</span>
+<span class="fc" id="L709">        }</span>
+
+        private void drain() {
+            // this is a pretty standard drain loop
+            // default is to shortcut errors (don't delay them)
+<span class="fc bfc" id="L714" title="All 2 branches covered.">            if (wip.getAndIncrement() == 0) {</span>
+<span class="fc" id="L715">                int missed = 1;</span>
+                while (true) {
+<span class="fc" id="L717">                    long r = requested.get();</span>
+<span class="fc" id="L718">                    long e = 0;</span>
+<span class="fc" id="L719">                    boolean d = done;</span>
+<span class="fc bfc" id="L720" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc bfc" id="L721" title="All 2 branches covered.">                        if (cancelled) {</span>
+<span class="fc" id="L722">                            queue.clear();</span>
+<span class="fc" id="L723">                            return;</span>
+                        }
+<span class="fc" id="L725">                        Subscriber&lt;? super T&gt; child = requests.get().child;</span>
+<span class="pc bpc" id="L726" title="1 of 2 branches missed.">                        if (child == null) {</span>
+<span class="nc" id="L727">                            break;</span>
+                        }
+<span class="fc" id="L729">                        Throwable err = error;</span>
+<span class="pc bpc" id="L730" title="1 of 2 branches missed.">                        if (err != null) {</span>
+<span class="nc" id="L731">                            queue.clear();</span>
+<span class="nc" id="L732">                            error = null;</span>
+<span class="nc" id="L733">                            cancel();</span>
+<span class="nc" id="L734">                            chain.onError(child, err);</span>
+<span class="nc" id="L735">                            return;</span>
+                        }
+
+<span class="fc" id="L738">                        T t = queue.poll();</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="fc bfc" id="L740" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L741">                                cancel();</span>
+<span class="fc" id="L742">                                chain.onCompleted(child);</span>
+<span class="fc" id="L743">                                return;</span>
+                            } else {
+                                break;
+                            }
+                        } else {
+<span class="fc" id="L748">                            debug(this + &quot; emitting &quot; + t + &quot; to &quot; + requests.get().child + &quot;:&quot;</span>
+<span class="fc" id="L749">                                    + requests.get().child.getClass().getSimpleName());</span>
+<span class="fc" id="L750">                            chain.onNext(child, t);</span>
+<span class="fc" id="L751">                            e++;</span>
+                        }
+<span class="fc" id="L753">                        d = done;</span>
+<span class="fc" id="L754">                    }</span>
+<span class="fc bfc" id="L755" title="All 6 branches covered.">                    if (d &amp;&amp; queue.isEmpty() &amp;&amp; terminate()) {</span>
+<span class="fc" id="L756">                        return;</span>
+                    }
+<span class="fc bfc" id="L758" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L759">                        r = requested.addAndGet(-e);</span>
+                    }
+<span class="fc" id="L761">                    missed = wip.addAndGet(-missed);</span>
+<span class="fc bfc" id="L762" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L763">                        return;</span>
+                    }
+<span class="fc" id="L765">                }</span>
+            }
+<span class="fc" id="L767">        }</span>
+
+        private boolean terminate() {
+<span class="fc" id="L770">            Subscriber&lt;? super T&gt; child = requests.get().child;</span>
+<span class="fc bfc" id="L771" title="All 2 branches covered.">            if (child != null) {</span>
+<span class="fc" id="L772">                Throwable err = error;</span>
+<span class="pc bpc" id="L773" title="1 of 2 branches missed.">                if (err != null) {</span>
+<span class="nc" id="L774">                    queue.clear();</span>
+<span class="nc" id="L775">                    error = null;</span>
+<span class="nc" id="L776">                    cancel();</span>
+<span class="nc" id="L777">                    chain.onError(child, err);</span>
+<span class="nc" id="L778">                    return true;</span>
+                } else {
+<span class="fc" id="L780">                    cancel();</span>
+<span class="fc" id="L781">                    chain.onCompleted(child);</span>
+<span class="fc" id="L782">                    return true;</span>
+                }
+            }
+<span class="fc" id="L785">            return false;</span>
+        }
+
+        @Override
+        public void cancel() {
+<span class="fc bfc" id="L790" title="All 2 branches covered.">            if (!cancelled) {</span>
+<span class="fc" id="L791">                cancelled = true;</span>
+<span class="fc" id="L792">                cancelParentTryToAddSubscriberToChain();</span>
+            }
+<span class="fc" id="L794">        }</span>
+
+        private void cancelParentTryToAddSubscriberToChain() {
+<span class="fc" id="L797">            cancelParent();</span>
+<span class="fc" id="L798">            chain.completeOrCancel(this);</span>
+<span class="fc" id="L799">        }</span>
+
+        private void cancelParent() {
+<span class="fc" id="L802">            Subscription par = requests.get().parent;</span>
+<span class="fc bfc" id="L803" title="All 2 branches covered.">            if (par != null) {</span>
+<span class="fc" id="L804">                par.cancel();</span>
+            }
+<span class="fc" id="L806">        }</span>
+
+    }
+
+    private static final class MultiSubscription implements Subscription {
+
+        private final Subscription primary;
+        private final Subscription secondary;
+
+<span class="fc" id="L815">        MultiSubscription(Subscription primary, Subscription secondary) {</span>
+<span class="fc" id="L816">            this.primary = primary;</span>
+<span class="fc" id="L817">            this.secondary = secondary;</span>
+<span class="fc" id="L818">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="fc" id="L822">            primary.request(n);</span>
+<span class="fc" id="L823">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L827">            primary.cancel();</span>
+<span class="fc" id="L828">            secondary.cancel();</span>
+<span class="fc" id="L829">        }</span>
+
+    }
+
+    static void debug(String message) {
+        // System.out.println(message);
+<span class="fc" id="L835">    }</span>
+
+    static void log(String message) {
+        // System.out.println(message);
+<span class="fc" id="L839">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableMergeInterleave.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMergeInterleave.java</span></div><h1>FlowableMergeInterleave.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.util.RingBuffer;
+
+import io.reactivex.Flowable;
+import io.reactivex.internal.fuseable.SimplePlainQueue;
+import io.reactivex.internal.queue.MpscLinkedQueue;
+import io.reactivex.internal.subscriptions.SubscriptionHelper;
+import io.reactivex.internal.util.BackpressureHelper;
+
+public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
+
+    private final int maxConcurrent;
+    private final Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources;
+    private final int batchSize;
+    private boolean delayErrors;
+
+    public FlowableMergeInterleave(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,
+<span class="fc" id="L31">            int maxConcurrent, int batchSize, boolean delayErrors) {</span>
+<span class="fc" id="L32">        this.sources = sources;</span>
+<span class="fc" id="L33">        this.maxConcurrent = maxConcurrent;</span>
+<span class="fc" id="L34">        this.batchSize = batchSize;</span>
+<span class="fc" id="L35">        this.delayErrors = delayErrors;</span>
+<span class="fc" id="L36">    }</span>
+
+    @Override
+    protected void subscribeActual(Subscriber&lt;? super T&gt; s) {
+<span class="fc" id="L40">        MergeInterleaveSubscription&lt;T&gt; subscription = new MergeInterleaveSubscription&lt;T&gt;(sources,</span>
+                maxConcurrent, batchSize, delayErrors, s);
+<span class="fc" id="L42">        s.onSubscribe(subscription);</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">    private static final class MergeInterleaveSubscription&lt;T&gt; extends AtomicInteger</span>
+            implements Subscription, Subscriber&lt;Publisher&lt;? extends T&gt;&gt; {
+
+        private static final long serialVersionUID = -6416801556759306113L;
+<span class="fc" id="L49">        private static final Object SOURCES_COMPLETE = new Object();</span>
+<span class="fc" id="L50">        private final AtomicBoolean once = new AtomicBoolean();</span>
+        private final Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources;
+        private final int maxConcurrent;
+        private final int batchSize;
+        private final boolean delayErrors;
+        private Subscriber&lt;? super T&gt; subscriber;
+        private Subscription subscription;
+        private volatile boolean cancelled;
+        private Throwable error;
+        private volatile boolean finished;
+<span class="fc" id="L60">        private final AtomicLong requested = new AtomicLong();</span>
+        private long emitted;
+        private final RingBuffer&lt;BatchFinished&gt; batchFinished;
+
+        // objects on queue can be Flowable, Subscriber,
+        private final SimplePlainQueue&lt;Object&gt; queue;
+<span class="fc" id="L66">        private final List&lt;SourceSubscriber&lt;T&gt;&gt; sourceSubscribers = new ArrayList&lt;SourceSubscriber&lt;T&gt;&gt;();</span>
+        private boolean sourcesComplete;
+        private long sourcesCount;
+
+        public MergeInterleaveSubscription(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,
+                int maxConcurrent, int batchSize, boolean delayErrors,
+<span class="fc" id="L72">                Subscriber&lt;? super T&gt; subscriber) {</span>
+<span class="fc" id="L73">            this.sources = sources;</span>
+<span class="fc" id="L74">            this.maxConcurrent = maxConcurrent;</span>
+<span class="fc" id="L75">            this.batchSize = batchSize;</span>
+<span class="fc" id="L76">            this.delayErrors = delayErrors;</span>
+<span class="fc" id="L77">            this.subscriber = subscriber;</span>
+<span class="fc" id="L78">            this.queue = new MpscLinkedQueue&lt;Object&gt;();</span>
+<span class="fc" id="L79">            this.batchFinished = RingBuffer.create(maxConcurrent + 1);</span>
+<span class="fc" id="L80">        }</span>
+
+        @Override
+        public void request(long n) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L85">                BackpressureHelper.add(requested, n);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                if (once.compareAndSet(false, true)) {</span>
+<span class="fc" id="L87">                    sources.subscribe(this);</span>
+<span class="fc" id="L88">                    subscription.request(maxConcurrent);</span>
+                }
+<span class="fc" id="L90">                drain();</span>
+            }
+<span class="fc" id="L92">        }</span>
+
+        @Override
+        public void cancel() {
+<span class="fc" id="L96">            this.cancelled = true;</span>
+<span class="fc" id="L97">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription s) {
+<span class="fc" id="L101">            this.subscription = s;</span>
+<span class="fc" id="L102">            drain();</span>
+<span class="fc" id="L103">        }</span>
+
+        @Override
+        public void onNext(Publisher&lt;? extends T&gt; f) {
+<span class="fc" id="L107">            sourcesCount++;</span>
+<span class="fc" id="L108">            queue.offer(new SourceArrived&lt;T&gt;(f));</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (sourcesCount &gt;= maxConcurrent) {</span>
+<span class="fc" id="L110">                drain();</span>
+            }
+<span class="fc" id="L112">        }</span>
+
+        @Override
+        public void onError(Throwable t) {
+<span class="fc" id="L116">            error = t;</span>
+<span class="fc" id="L117">            finished = true;</span>
+<span class="fc" id="L118">            drain();</span>
+<span class="fc" id="L119">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L123">            queue.offer(SOURCES_COMPLETE);</span>
+<span class="fc" id="L124">            drain();</span>
+<span class="fc" id="L125">        }</span>
+
+        private boolean tryCancelled() {
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">            if (cancelled) {</span>
+<span class="nc" id="L129">                cleanup();</span>
+<span class="nc" id="L130">                return true;</span>
+            } else {
+<span class="fc" id="L132">                return false;</span>
+            }
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        private void drain() {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L139">                int missed = 1;</span>
+<span class="fc" id="L140">                long e = emitted;</span>
+<span class="fc" id="L141">                long r = requested.get();</span>
+                while (true) {
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                    if (tryCancelled()) {</span>
+<span class="nc" id="L144">                        return;</span>
+                    }
+<span class="fc bfc" id="L146" title="All 2 branches covered.">                    if (e == r) {</span>
+<span class="fc" id="L147">                        r = requested.get();</span>
+                    }
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc" id="L150">                        boolean d = finished;</span>
+<span class="fc bfc" id="L151" title="All 4 branches covered.">                        if (d &amp;&amp; !delayErrors) {</span>
+<span class="fc" id="L152">                            Throwable err = error;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">                            if (err != null) {</span>
+<span class="fc" id="L154">                                error = null;</span>
+<span class="fc" id="L155">                                cleanup();</span>
+<span class="fc" id="L156">                                subscriber.onError(err);</span>
+<span class="fc" id="L157">                                return;</span>
+                            }
+                        }
+<span class="fc" id="L160">                        Object o = queue.poll();</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                        if (o == null) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L163">                                Throwable err = error;</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                                if (err != null) {</span>
+<span class="fc" id="L165">                                    error = null;</span>
+<span class="fc" id="L166">                                    cleanup();</span>
+<span class="fc" id="L167">                                    subscriber.onError(err);</span>
+                                } else {
+<span class="fc" id="L169">                                    subscriber.onComplete();</span>
+                                }
+<span class="fc" id="L171">                                return;</span>
+                            } else {
+                                break;
+                            }
+                        } else {
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                            if (o instanceof BatchFinished) {</span>
+<span class="fc" id="L177">                                handleBatchFinished((BatchFinished) o);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                            } else if (o instanceof SourceArrived) {</span>
+<span class="fc" id="L179">                                handleSourceArrived((SourceArrived&lt;T&gt;) o);</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                            } else if (o instanceof SourceComplete) {</span>
+<span class="fc" id="L181">                                handleSourceComplete((SourceComplete&lt;T&gt;) o);</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">                            } else if (o == SOURCES_COMPLETE) {</span>
+<span class="fc" id="L183">                                handleSourcesComplete();</span>
+                            } else {
+<span class="fc" id="L185">                                subscriber.onNext((T) o);</span>
+<span class="fc" id="L186">                                e++;</span>
+                            }
+                        }
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">                        if (tryCancelled()) {</span>
+<span class="nc" id="L190">                            return;</span>
+                        }
+<span class="fc" id="L192">                    }</span>
+<span class="fc" id="L193">                    emitted = e;</span>
+<span class="fc" id="L194">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L196">                        return;</span>
+                    }
+                }
+            }
+<span class="fc" id="L200">        }</span>
+
+        private void handleSourcesComplete() {
+<span class="fc" id="L203">            sourcesComplete = true;</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">            if (sourceSubscribers.isEmpty()) {</span>
+<span class="fc" id="L205">                finished = true;</span>
+            }
+<span class="fc" id="L207">        }</span>
+
+        private void handleBatchFinished(BatchFinished b) {
+<span class="fc" id="L210">            Preconditions.checkNotNull(b);</span>
+<span class="fc" id="L211">            boolean ok = batchFinished.offer(b);</span>
+<span class="pc bpc" id="L212" title="2 of 4 branches missed.">            assert ok;</span>
+<span class="fc" id="L213">            batchFinished.poll().requestMore();</span>
+<span class="fc" id="L214">        }</span>
+
+        private void cleanup() {
+<span class="fc" id="L217">            subscription.cancel();</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">            for (SourceSubscriber&lt;T&gt; s : sourceSubscribers) {</span>
+<span class="fc" id="L219">                s.cancel();</span>
+<span class="fc" id="L220">            }</span>
+<span class="fc" id="L221">            sourceSubscribers.clear();</span>
+<span class="fc" id="L222">            queue.clear();</span>
+<span class="fc" id="L223">            batchFinished.clear();</span>
+<span class="fc" id="L224">        }</span>
+
+        private void handleSourceArrived(SourceArrived&lt;T&gt; event) {
+<span class="fc" id="L227">            SourceSubscriber&lt;T&gt; subscriber = new SourceSubscriber&lt;T&gt;(this);</span>
+<span class="fc" id="L228">            sourceSubscribers.add(subscriber);</span>
+<span class="fc" id="L229">            queue.offer(subscriber);</span>
+<span class="fc" id="L230">            event.publisher.subscribe(subscriber);</span>
+<span class="fc" id="L231">        }</span>
+
+        private void handleSourceComplete(SourceComplete&lt;T&gt; event) {
+<span class="fc" id="L234">            sourceSubscribers.remove(event.subscriber);</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            if (!sourcesComplete) {</span>
+<span class="fc" id="L236">                subscription.request(1);</span>
+<span class="pc bpc" id="L237" title="2 of 4 branches missed.">            } else if (sourceSubscribers.isEmpty() &amp;&amp; sourcesComplete) {</span>
+<span class="fc" id="L238">                finished = true;</span>
+            }
+<span class="fc" id="L240">        }</span>
+
+        public void sourceError(Throwable t) {
+<span class="fc" id="L243">            error = t;</span>
+<span class="fc" id="L244">            finished = true;</span>
+<span class="fc" id="L245">            drain();</span>
+<span class="fc" id="L246">        }</span>
+
+        public void sourceComplete(SourceSubscriber&lt;T&gt; sourceSubscriber) {
+<span class="fc" id="L249">            queue.offer(new SourceComplete&lt;T&gt;(sourceSubscriber));</span>
+<span class="fc" id="L250">            drain();</span>
+<span class="fc" id="L251">        }</span>
+
+        public void sourceNext(T t, SourceSubscriber&lt;T&gt; sourceSubscriber) {
+<span class="fc" id="L254">            queue.offer(t);</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">            if (sourceSubscriber != null) {</span>
+<span class="fc" id="L256">                queue.offer(sourceSubscriber);</span>
+            }
+<span class="fc" id="L258">            drain();</span>
+<span class="fc" id="L259">        }</span>
+    }
+
+    private final static class SourceSubscriber&lt;T&gt; implements Subscriber&lt;T&gt;, BatchFinished {
+
+        private final MergeInterleaveSubscription&lt;T&gt; parent;
+<span class="fc" id="L265">        private AtomicReference&lt;Subscription&gt; subscription = new AtomicReference&lt;Subscription&gt;();</span>
+<span class="fc" id="L266">        private int count = 0;</span>
+
+<span class="fc" id="L268">        SourceSubscriber(MergeInterleaveSubscription&lt;T&gt; parent) {</span>
+<span class="fc" id="L269">            this.parent = parent;</span>
+<span class="fc" id="L270">        }</span>
+
+        @Override
+        public void onSubscribe(Subscription s) {
+<span class="fc" id="L274">            SubscriptionHelper.setOnce(subscription, s);</span>
+<span class="fc" id="L275">        }</span>
+
+        @Override
+        public void onNext(T t) {
+<span class="fc" id="L279">            count++;</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            boolean batchFinished = count == parent.batchSize;</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            if (batchFinished) {</span>
+<span class="fc" id="L282">                count = 0;</span>
+            }
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            parent.sourceNext(t, batchFinished ? this : null);</span>
+<span class="fc" id="L285">        }</span>
+
+        @Override
+        public void onError(Throwable t) {
+<span class="fc" id="L289">            parent.sourceError(t);</span>
+<span class="fc" id="L290">        }</span>
+
+        @Override
+        public void onComplete() {
+<span class="fc" id="L294">            parent.sourceComplete(this);</span>
+<span class="fc" id="L295">        }</span>
+
+        @Override
+        public void requestMore() {
+<span class="fc" id="L299">            subscription.get().request(parent.batchSize);</span>
+<span class="fc" id="L300">        }</span>
+
+        void cancel() {
+            while (true) {
+<span class="fc" id="L304">                Subscription s = subscription.get();</span>
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">                if (subscription.compareAndSet(s, SubscriptionHelper.CANCELLED)) {</span>
+<span class="fc" id="L306">                    s.cancel();</span>
+<span class="fc" id="L307">                    break;</span>
+                }
+<span class="nc" id="L309">            }</span>
+<span class="fc" id="L310">        }</span>
+    }
+
+    private static final class SourceArrived&lt;T&gt; {
+        final Publisher&lt;? extends T&gt; publisher;
+
+<span class="fc" id="L316">        SourceArrived(Publisher&lt;? extends T&gt; publisher) {</span>
+<span class="fc" id="L317">            this.publisher = publisher;</span>
+<span class="fc" id="L318">        }</span>
+    }
+
+    private static final class SourceComplete&lt;T&gt; {
+        final Subscriber&lt;T&gt; subscriber;
+
+<span class="fc" id="L324">        SourceComplete(Subscriber&lt;T&gt; subscriber) {</span>
+<span class="fc" id="L325">            this.subscriber = subscriber;</span>
+<span class="fc" id="L326">        }</span>
+    }
+
+    private interface BatchFinished {
+        void requestMore();
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

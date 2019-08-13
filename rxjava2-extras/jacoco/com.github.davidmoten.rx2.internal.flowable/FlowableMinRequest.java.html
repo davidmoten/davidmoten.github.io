@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FlowableMinRequest.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMinRequest.java</span></div><h1>FlowableMinRequest.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlowableMinRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-extras</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.internal.flowable</a> &gt; <span class="el_source">FlowableMinRequest.java</span></div><h1>FlowableMinRequest.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.internal.flowable;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -9,6 +9,7 @@ import org.reactivestreams.Subscription;
 import com.github.davidmoten.guavamini.Preconditions;
 
 import io.reactivex.Flowable;
+import io.reactivex.FlowableSubscriber;
 import io.reactivex.internal.fuseable.SimplePlainQueue;
 import io.reactivex.internal.queue.SpscLinkedArrayQueue;
 import io.reactivex.internal.subscriptions.SubscriptionHelper;
@@ -19,28 +20,28 @@ public final class FlowableMinRequest&lt;T&gt; extends Flowable&lt;T&gt; {
     private final Flowable&lt;T&gt; source;
     private final int[] minRequest;
 
-<span class="fc" id="L22">    public FlowableMinRequest(Flowable&lt;T&gt; source, int[] minRequests) {</span>
-<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        Preconditions.checkArgument(minRequests.length &gt; 0, &quot;minRequests length must be &gt; 0&quot;);</span>
-<span class="fc bfc" id="L24" title="All 2 branches covered.">        for (int i = 0; i &lt; minRequests.length; i++) {</span>
-<span class="fc bfc" id="L25" title="All 2 branches covered.">            Preconditions.checkArgument(minRequests[i] &gt; 0, &quot;each item in minRequests must be &gt; 0&quot;);</span>
+<span class="fc" id="L23">    public FlowableMinRequest(Flowable&lt;T&gt; source, int[] minRequests) {</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        Preconditions.checkArgument(minRequests.length &gt; 0, &quot;minRequests length must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        for (int i = 0; i &lt; minRequests.length; i++) {</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            Preconditions.checkArgument(minRequests[i] &gt; 0, &quot;each item in minRequests must be &gt; 0&quot;);</span>
         }
-<span class="fc" id="L27">        this.source = source;</span>
-<span class="fc" id="L28">        this.minRequest = minRequests;</span>
-<span class="fc" id="L29">    }</span>
+<span class="fc" id="L28">        this.source = source;</span>
+<span class="fc" id="L29">        this.minRequest = minRequests;</span>
+<span class="fc" id="L30">    }</span>
 
     @Override
     protected void subscribeActual(Subscriber&lt;? super T&gt; child) {
-<span class="fc" id="L33">        source.subscribe(new MinRequestSubscriber&lt;T&gt;(minRequest, child));</span>
-<span class="fc" id="L34">    }</span>
+<span class="fc" id="L34">        source.subscribe(new MinRequestSubscriber&lt;T&gt;(minRequest, child));</span>
+<span class="fc" id="L35">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
-    private static final class MinRequestSubscriber&lt;T&gt; extends AtomicInteger implements Subscriber&lt;T&gt;, Subscription {
+    private static final class MinRequestSubscriber&lt;T&gt; extends AtomicInteger implements FlowableSubscriber&lt;T&gt;, Subscription {
 
         private final int[] minRequests;
         private int requestNum;
         private final Subscriber&lt;? super T&gt; child;
-<span class="fc" id="L42">        private final AtomicLong requested = new AtomicLong();</span>
-<span class="fc" id="L43">        private final SimplePlainQueue&lt;T&gt; queue = new SpscLinkedArrayQueue&lt;T&gt;(16);</span>
+<span class="fc" id="L43">        private final AtomicLong requested = new AtomicLong();</span>
+<span class="fc" id="L44">        private final SimplePlainQueue&lt;T&gt; queue = new SpscLinkedArrayQueue&lt;T&gt;(16);</span>
 
         private Subscription parent;
         private volatile boolean done;
@@ -48,117 +49,117 @@ public final class FlowableMinRequest&lt;T&gt; extends Flowable&lt;T&gt; {
         private volatile boolean cancelled;
         private long count;
 
-<span class="fc" id="L51">        MinRequestSubscriber(int[] minRequests, Subscriber&lt;? super T&gt; child) {</span>
-<span class="fc" id="L52">            this.minRequests = minRequests;</span>
-<span class="fc" id="L53">            this.child = child;</span>
-<span class="fc" id="L54">        }</span>
+<span class="fc" id="L52">        MinRequestSubscriber(int[] minRequests, Subscriber&lt;? super T&gt; child) {</span>
+<span class="fc" id="L53">            this.minRequests = minRequests;</span>
+<span class="fc" id="L54">            this.child = child;</span>
+<span class="fc" id="L55">        }</span>
 
         @Override
         public void onSubscribe(Subscription parent) {
-<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
-<span class="fc" id="L59">                this.parent = parent;</span>
-<span class="fc" id="L60">                child.onSubscribe(this);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(this.parent, parent)) {</span>
+<span class="fc" id="L60">                this.parent = parent;</span>
+<span class="fc" id="L61">                child.onSubscribe(this);</span>
             }
-<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">        }</span>
 
         @Override
         public void request(long n) {
-<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
-<span class="fc" id="L67">                BackpressureHelper.add(requested, n);</span>
-<span class="fc" id="L68">                drain();</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (SubscriptionHelper.validate(n)) {</span>
+<span class="fc" id="L68">                BackpressureHelper.add(requested, n);</span>
+<span class="fc" id="L69">                drain();</span>
             }
-<span class="fc" id="L70">        }</span>
+<span class="fc" id="L71">        }</span>
 
         @Override
         public void cancel() {
-<span class="fc" id="L74">            cancelled = true;</span>
-<span class="fc" id="L75">            parent.cancel();</span>
-<span class="fc" id="L76">        }</span>
+<span class="fc" id="L75">            cancelled = true;</span>
+<span class="fc" id="L76">            parent.cancel();</span>
+<span class="fc" id="L77">        }</span>
 
         @Override
         public void onNext(T t) {
-<span class="fc" id="L80">            queue.offer(t);</span>
-<span class="fc" id="L81">            drain();</span>
-<span class="fc" id="L82">        }</span>
+<span class="fc" id="L81">            queue.offer(t);</span>
+<span class="fc" id="L82">            drain();</span>
+<span class="fc" id="L83">        }</span>
 
         @Override
         public void onError(Throwable e) {
-<span class="fc" id="L86">            error = e;</span>
-<span class="fc" id="L87">            done = true;</span>
-<span class="fc" id="L88">            drain();</span>
-<span class="fc" id="L89">        }</span>
+<span class="fc" id="L87">            error = e;</span>
+<span class="fc" id="L88">            done = true;</span>
+<span class="fc" id="L89">            drain();</span>
+<span class="fc" id="L90">        }</span>
 
         @Override
         public void onComplete() {
-<span class="fc" id="L93">            done = true;</span>
-<span class="fc" id="L94">            drain();</span>
-<span class="fc" id="L95">        }</span>
+<span class="fc" id="L94">            done = true;</span>
+<span class="fc" id="L95">            drain();</span>
+<span class="fc" id="L96">        }</span>
 
         private void drain() {
-<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
-<span class="fc" id="L99">                int missed = 1;</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L100">                int missed = 1;</span>
                 while (true) {
-<span class="fc" id="L101">                    long r = requested.get();</span>
-<span class="fc" id="L102">                    long e = 0;</span>
-<span class="fc" id="L103">                    boolean d = done;</span>
-<span class="fc bfc" id="L104" title="All 2 branches covered.">                    while (e != r) {</span>
-<span class="fc bfc" id="L105" title="All 2 branches covered.">                        if (cancelled) {</span>
-<span class="fc" id="L106">                            queue.clear();</span>
-<span class="fc" id="L107">                            return;</span>
+<span class="fc" id="L102">                    long r = requested.get();</span>
+<span class="fc" id="L103">                    long e = 0;</span>
+<span class="fc" id="L104">                    boolean d = done;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                    while (e != r) {</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                        if (cancelled) {</span>
+<span class="fc" id="L107">                            queue.clear();</span>
+<span class="fc" id="L108">                            return;</span>
                         }
-<span class="fc" id="L109">                        T t = queue.poll();</span>
-<span class="fc bfc" id="L110" title="All 2 branches covered.">                        if (t == null) {</span>
-<span class="fc bfc" id="L111" title="All 2 branches covered.">                            if (d) {</span>
-<span class="fc" id="L112">                                terminate();</span>
-<span class="fc" id="L113">                                return;</span>
+<span class="fc" id="L110">                        T t = queue.poll();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                        if (t == null) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                            if (d) {</span>
+<span class="fc" id="L113">                                terminate();</span>
+<span class="fc" id="L114">                                return;</span>
                             } else {
                                 break;
                             }
                         } else {
-<span class="fc" id="L118">                            child.onNext(t);</span>
-<span class="fc" id="L119">                            e++;</span>
-<span class="fc bfc" id="L120" title="All 2 branches covered.">                            if (count != Long.MAX_VALUE) {</span>
-<span class="fc" id="L121">                                count--;</span>
+<span class="fc" id="L119">                            child.onNext(t);</span>
+<span class="fc" id="L120">                            e++;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                            if (count != Long.MAX_VALUE) {</span>
+<span class="fc" id="L122">                                count--;</span>
                             }
                         }
-<span class="fc" id="L124">                        d = done;</span>
-<span class="fc" id="L125">                    }</span>
-<span class="fc bfc" id="L126" title="All 4 branches covered.">                    if (d &amp;&amp; queue.isEmpty()) {</span>
-<span class="fc" id="L127">                        terminate();</span>
-<span class="fc" id="L128">                        return;</span>
+<span class="fc" id="L125">                        d = done;</span>
+<span class="fc" id="L126">                    }</span>
+<span class="fc bfc" id="L127" title="All 4 branches covered.">                    if (d &amp;&amp; queue.isEmpty()) {</span>
+<span class="fc" id="L128">                        terminate();</span>
+<span class="fc" id="L129">                        return;</span>
                     }
-<span class="fc bfc" id="L130" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
-<span class="fc" id="L131">                        r = requested.addAndGet(-e);</span>
+<span class="fc bfc" id="L131" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
+<span class="fc" id="L132">                        r = requested.addAndGet(-e);</span>
                     }
-<span class="fc bfc" id="L133" title="All 4 branches covered.">                    if (r != 0 &amp;&amp; count == 0) {</span>
+<span class="fc bfc" id="L134" title="All 4 branches covered.">                    if (r != 0 &amp;&amp; count == 0) {</span>
                         // requests from parent have arrived so request some
                         // more
-<span class="fc" id="L136">                        int min = minRequests[requestNum];</span>
-<span class="fc bfc" id="L137" title="All 2 branches covered.">                        if (requestNum != minRequests.length - 1) {</span>
-<span class="fc" id="L138">                            requestNum++;</span>
+<span class="fc" id="L137">                        int min = minRequests[requestNum];</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                        if (requestNum != minRequests.length - 1) {</span>
+<span class="fc" id="L139">                            requestNum++;</span>
                         }
-<span class="fc" id="L140">                        count = Math.max(r, min);</span>
-<span class="fc" id="L141">                        parent.request(count);</span>
+<span class="fc" id="L141">                        count = Math.max(r, min);</span>
+<span class="fc" id="L142">                        parent.request(count);</span>
                     }
-<span class="fc" id="L143">                    missed = addAndGet(-missed);</span>
-<span class="fc bfc" id="L144" title="All 2 branches covered.">                    if (missed == 0) {</span>
-<span class="fc" id="L145">                        return;</span>
+<span class="fc" id="L144">                    missed = addAndGet(-missed);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                    if (missed == 0) {</span>
+<span class="fc" id="L146">                        return;</span>
                     }
-<span class="fc" id="L147">                }</span>
+<span class="fc" id="L148">                }</span>
             }
-<span class="fc" id="L149">        }</span>
+<span class="fc" id="L150">        }</span>
 
         private void terminate() {
-<span class="fc" id="L152">            parent.cancel();</span>
-<span class="fc" id="L153">            Throwable err = error;</span>
-<span class="fc bfc" id="L154" title="All 2 branches covered.">            if (err != null) {</span>
-<span class="fc" id="L155">                error = null;</span>
-<span class="fc" id="L156">                child.onError(err);</span>
+<span class="fc" id="L153">            parent.cancel();</span>
+<span class="fc" id="L154">            Throwable err = error;</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (err != null) {</span>
+<span class="fc" id="L156">                error = null;</span>
+<span class="fc" id="L157">                child.onError(err);</span>
             } else {
-<span class="fc" id="L158">                child.onComplete();</span>
+<span class="fc" id="L159">                child.onComplete();</span>
             }
-<span class="fc" id="L160">        }</span>
+<span class="fc" id="L161">        }</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
