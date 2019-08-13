@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NonBlockingConnectionPool.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc.pool</a> &gt; <span class="el_source">NonBlockingConnectionPool.java</span></div><h1>NonBlockingConnectionPool.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc.pool;
 
 import java.sql.Connection;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -11,8 +13,10 @@ import javax.sql.DataSource;
 
 import org.davidmoten.rx.jdbc.ConnectionProvider;
 import org.davidmoten.rx.jdbc.Util;
+import org.davidmoten.rx.jdbc.internal.SingletonConnectionProvider;
 import org.davidmoten.rx.jdbc.pool.internal.HealthCheckPredicate;
 import org.davidmoten.rx.jdbc.pool.internal.PooledConnection;
+import org.davidmoten.rx.jdbc.pool.internal.SerializedConnectionListener;
 import org.davidmoten.rx.pool.Member;
 import org.davidmoten.rx.pool.NonBlockingPool;
 import org.davidmoten.rx.pool.Pool;
@@ -24,35 +28,39 @@ import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Predicate;
 import io.reactivex.internal.schedulers.ExecutorScheduler;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 
 public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
 
-<span class="fc" id="L31">    private final AtomicReference&lt;NonBlockingPool&lt;Connection&gt;&gt; pool = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L36">    private final AtomicReference&lt;NonBlockingPool&lt;Connection&gt;&gt; pool = new AtomicReference&lt;&gt;();</span>
 
-<span class="fc" id="L33">    NonBlockingConnectionPool(org.davidmoten.rx.pool.NonBlockingPool.Builder&lt;Connection&gt; builder) {</span>
-<span class="fc" id="L34">        pool.set(builder.build());</span>
-<span class="fc" id="L35">    }</span>
+<span class="fc" id="L38">    NonBlockingConnectionPool(org.davidmoten.rx.pool.NonBlockingPool.Builder&lt;Connection&gt; builder) {</span>
+<span class="fc" id="L39">        pool.set(builder.build());</span>
+<span class="fc" id="L40">    }</span>
 
     public static Builder&lt;NonBlockingConnectionPool&gt; builder() {
-<span class="fc" id="L38">        return new Builder&lt;NonBlockingConnectionPool&gt;(x -&gt; x);</span>
+<span class="fc" id="L43">        return new Builder&lt;NonBlockingConnectionPool&gt;(x -&gt; x);</span>
     }
 
     public static final class Builder&lt;T&gt; {
 
         private ConnectionProvider cp;
-<span class="pc" id="L44">        private Predicate&lt;? super Connection&gt; healthCheck = c -&gt; true;</span>
-<span class="fc" id="L45">        private int maxPoolSize = 5;</span>
-<span class="fc" id="L46">        private long idleTimeBeforeHealthCheckMs = 60000;</span>
-<span class="fc" id="L47">        private long maxIdleTimeMs = 30 * 60000;</span>
-<span class="fc" id="L48">        private long createRetryIntervalMs = 30000;</span>
-<span class="fc" id="L49">        private Consumer&lt;? super Connection&gt; disposer = Util::closeSilently;</span>
-<span class="fc" id="L50">        private Scheduler scheduler = null;</span>
+<span class="pc" id="L49">        private Predicate&lt;? super Connection&gt; healthCheck = c -&gt; true;</span>
+<span class="fc" id="L50">        private int maxPoolSize = 5;</span>
+<span class="fc" id="L51">        private long idleTimeBeforeHealthCheckMs = 60000;</span>
+<span class="fc" id="L52">        private long maxIdleTimeMs = 30 * 60000;</span>
+<span class="fc" id="L53">        private long connectionRetryIntervalMs = 30000;</span>
+<span class="fc" id="L54">        private Consumer&lt;? super Connection&gt; disposer = Util::closeSilently;</span>
+<span class="fc" id="L55">        private Scheduler scheduler = null;</span>
+<span class="fc" id="L56">        private Properties properties = new Properties();</span>
         private final Function&lt;NonBlockingConnectionPool, T&gt; transform;
+        private String url;
+        private Consumer&lt;? super Optional&lt;Throwable&gt;&gt; c;
 
-<span class="fc" id="L53">        public Builder(Function&lt;NonBlockingConnectionPool, T&gt; transform) {</span>
-<span class="fc" id="L54">            this.transform = transform;</span>
-<span class="fc" id="L55">        }</span>
+<span class="fc" id="L61">        public Builder(Function&lt;NonBlockingConnectionPool, T&gt; transform) {</span>
+<span class="fc" id="L62">            this.transform = transform;</span>
+<span class="fc" id="L63">        }</span>
 
         /**
          * Sets the provider of {@link Connection} objects to be used by the pool.
@@ -62,8 +70,12 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; connectionProvider(ConnectionProvider cp) {
-<span class="fc" id="L65">            this.cp = cp;</span>
-<span class="fc" id="L66">            return this;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            Preconditions.checkArgument(!(cp instanceof SingletonConnectionProvider), //</span>
+                    &quot;connection provider should not return a singleton connection because &quot; //
+                    + &quot;a pool needs control over the creation and closing of connections. &quot; //
+                    + &quot;Use ConnectionProvider.from(url,...) instead.&quot;);
+<span class="fc" id="L77">            this.cp = cp;</span>
+<span class="fc" id="L78">            return this;</span>
         }
 
         /**
@@ -74,7 +86,7 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; connectionProvider(DataSource ds) {
-<span class="nc" id="L77">            return connectionProvider(Util.connectionProvider(ds));</span>
+<span class="nc" id="L89">            return connectionProvider(Util.connectionProvider(ds));</span>
         }
 
         /**
@@ -85,7 +97,50 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; url(String url) {
-<span class="fc" id="L88">            return connectionProvider(Util.connectionProvider(url));</span>
+<span class="fc" id="L100">            this.url = url;</span>
+<span class="fc" id="L101">            return this;</span>
+        }
+        
+        public Builder&lt;T&gt; user(String user) {
+<span class="nc" id="L105">            properties.put(&quot;user&quot;, user);</span>
+<span class="nc" id="L106">            return this;</span>
+        }
+        
+        public Builder&lt;T&gt; password(String password) {
+<span class="nc" id="L110">            properties.put(&quot;password&quot;, password);</span>
+<span class="nc" id="L111">            return this;</span>
+        }
+        
+        
+
+        /**
+         * Sets the JDBC properties that will be passed to
+         * {@link java.sql.DriverManager#getConnection}. The properties will only be
+         * used if the {@code url} has been set in the builder.
+         * 
+         * @param properties
+         *            the jdbc properties
+         * @return this
+         */
+        public Builder&lt;T&gt; properties(Properties properties) {
+<span class="nc" id="L126">            this.properties = properties;</span>
+<span class="nc" id="L127">            return this;</span>
+        }
+
+        /**
+         * Adds the given property specified by key and value to the JDBC properties
+         * that will be passed to {@link java.sql.DriverManager#getConnection}. The
+         * properties will only be used if the {@code url} has been set in the builder.
+         * 
+         * @param key
+         *            property key
+         * @param value
+         *            property value
+         * @return this
+         */
+        public Builder&lt;T&gt; property(Object key, Object value) {
+<span class="nc" id="L142">            this.properties.put(key, value);</span>
+<span class="nc" id="L143">            return this;</span>
         }
 
         /**
@@ -100,8 +155,8 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; maxIdleTime(long duration, TimeUnit unit) {
-<span class="fc" id="L103">            this.maxIdleTimeMs = unit.toMillis(duration);</span>
-<span class="fc" id="L104">            return this;</span>
+<span class="fc" id="L158">            this.maxIdleTimeMs = unit.toMillis(duration);</span>
+<span class="fc" id="L159">            return this;</span>
         }
 
         /**
@@ -119,8 +174,8 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; idleTimeBeforeHealthCheck(long duration, TimeUnit unit) {
-<span class="fc" id="L122">            this.idleTimeBeforeHealthCheckMs = unit.toMillis(duration);</span>
-<span class="fc" id="L123">            return this;</span>
+<span class="fc" id="L177">            this.idleTimeBeforeHealthCheckMs = unit.toMillis(duration);</span>
+<span class="fc" id="L178">            return this;</span>
         }
 
         /**
@@ -133,9 +188,9 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          *            time unit
          * @return this
          */
-        public Builder&lt;T&gt; createRetryInterval(long duration, TimeUnit unit) {
-<span class="fc" id="L137">            this.createRetryIntervalMs = unit.toMillis(duration);</span>
-<span class="fc" id="L138">            return this;</span>
+        public Builder&lt;T&gt; connectionRetryInterval(long duration, TimeUnit unit) {
+<span class="fc" id="L192">            this.connectionRetryIntervalMs = unit.toMillis(duration);</span>
+<span class="fc" id="L193">            return this;</span>
         }
 
         /**
@@ -150,8 +205,8 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; healthCheck(Predicate&lt;? super Connection&gt; healthCheck) {
-<span class="fc" id="L153">            this.healthCheck = healthCheck;</span>
-<span class="fc" id="L154">            return this;</span>
+<span class="fc" id="L208">            this.healthCheck = healthCheck;</span>
+<span class="fc" id="L209">            return this;</span>
         }
 
         /**
@@ -165,7 +220,7 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; healthCheck(DatabaseType databaseType) {
-<span class="fc" id="L168">            return healthCheck(databaseType.healthCheck());</span>
+<span class="fc" id="L223">            return healthCheck(databaseType.healthCheck());</span>
         }
 
         /**
@@ -180,7 +235,23 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; healthCheck(String sql) {
-<span class="fc" id="L183">            return healthCheck(new HealthCheckPredicate(sql));</span>
+<span class="fc" id="L238">            return healthCheck(new HealthCheckPredicate(sql));</span>
+        }
+
+        /**
+         * Sets a listener for connection success and failure. Success and failure
+         * events are reported serially to the listener. If the consumer throws it will
+         * be reported to {@code RxJavaPlugins.onError}. This consumer should not block
+         * otherwise it will block the connection pool itself.
+         * 
+         * @param c
+         *            listener for connection events
+         * @return this
+         */
+        public Builder&lt;T&gt; connectionListener(Consumer&lt;? super Optional&lt;Throwable&gt;&gt; c) {
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">            Preconditions.checkArgument(c != null, &quot;listener can only be set once&quot;);</span>
+<span class="fc" id="L253">            this.c = c;</span>
+<span class="fc" id="L254">            return this;</span>
         }
 
         /**
@@ -191,8 +262,8 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; maxPoolSize(int maxPoolSize) {
-<span class="fc" id="L194">            this.maxPoolSize = maxPoolSize;</span>
-<span class="fc" id="L195">            return this;</span>
+<span class="fc" id="L265">            this.maxPoolSize = maxPoolSize;</span>
+<span class="fc" id="L266">            return this;</span>
         }
 
         /**
@@ -214,43 +285,73 @@ public final class NonBlockingConnectionPool implements Pool&lt;Connection&gt; {
          * @return this
          */
         public Builder&lt;T&gt; scheduler(Scheduler scheduler) {
-<span class="fc bfc" id="L217" title="All 2 branches covered.">            Preconditions.checkArgument(scheduler != Schedulers.trampoline(),</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">            Preconditions.checkArgument(scheduler != Schedulers.trampoline(),</span>
                     &quot;do not use trampoline scheduler because of risk of stack overflow&quot;);
-<span class="fc" id="L219">            this.scheduler = scheduler;</span>
-<span class="fc" id="L220">            return this;</span>
+<span class="fc" id="L290">            this.scheduler = scheduler;</span>
+<span class="fc" id="L291">            return this;</span>
         }
 
         public T build() {
-<span class="fc bfc" id="L224" title="All 2 branches covered.">            if (scheduler == null) {</span>
-<span class="fc" id="L225">                ExecutorService executor = Executors.newFixedThreadPool(maxPoolSize);</span>
-<span class="fc" id="L226">                scheduler = new ExecutorScheduler(executor);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (scheduler == null) {</span>
+<span class="fc" id="L296">                ExecutorService executor = Executors.newFixedThreadPool(maxPoolSize);</span>
+<span class="fc" id="L297">                scheduler = new ExecutorScheduler(executor, false);</span>
             }
-<span class="fc" id="L228">            NonBlockingConnectionPool p = new NonBlockingConnectionPool(NonBlockingPool //</span>
-<span class="fc" id="L229">                    .factory(() -&gt; cp.get()) //</span>
-<span class="fc" id="L230">                    .checkinDecorator((con, checkin) -&gt; new PooledConnection(con, checkin)) //</span>
-<span class="fc" id="L231">                    .idleTimeBeforeHealthCheck(idleTimeBeforeHealthCheckMs, TimeUnit.MILLISECONDS) //</span>
-<span class="fc" id="L232">                    .maxIdleTime(maxIdleTimeMs, TimeUnit.MILLISECONDS) //</span>
-<span class="fc" id="L233">                    .createRetryInterval(createRetryIntervalMs, TimeUnit.MILLISECONDS) //</span>
-<span class="fc" id="L234">                    .scheduler(scheduler) //</span>
-<span class="fc" id="L235">                    .disposer(disposer)//</span>
-<span class="fc" id="L236">                    .healthCheck(healthCheck) //</span>
-<span class="fc" id="L237">                    .scheduler(scheduler) //</span>
-<span class="fc" id="L238">                    .maxSize(maxPoolSize) //</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">            if (url != null) {</span>
+<span class="fc" id="L300">                cp = Util.connectionProvider(url, properties);</span>
+            }
+            Consumer&lt;Optional&lt;Throwable&gt;&gt; listener;
+<span class="fc bfc" id="L303" title="All 2 branches covered.">            if (c == null) {</span>
+<span class="fc" id="L304">                listener = null;</span>
+            } else {
+<span class="fc" id="L306">                listener = new SerializedConnectionListener(c);</span>
+            }
+<span class="fc" id="L308">            NonBlockingConnectionPool p = new NonBlockingConnectionPool(NonBlockingPool //</span>
+<span class="fc" id="L309">                    .factory(() -&gt; {</span>
+                        try {
+<span class="fc" id="L311">                            Connection con = cp.get();</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">                            if (listener != null) {</span>
+                                try {
+<span class="fc" id="L314">                                    listener.accept(Optional.empty());</span>
+<span class="nc" id="L315">                                } catch (Throwable e) {</span>
+<span class="nc" id="L316">                                    RxJavaPlugins.onError(e);</span>
+<span class="fc" id="L317">                                }</span>
+                            }
+<span class="fc" id="L319">                            return con;</span>
+<span class="fc" id="L320">                        } catch (Throwable e) {</span>
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">                            if (listener != null) {</span>
+                                try {
+<span class="nc" id="L323">                                    listener.accept(Optional.of(e));</span>
+<span class="nc" id="L324">                                } catch (Throwable e2) {</span>
+<span class="nc" id="L325">                                    RxJavaPlugins.onError(e2);</span>
+<span class="nc" id="L326">                                }</span>
+                            }
+<span class="fc" id="L328">                            throw e;</span>
+                        }
+                    }) //
+<span class="fc" id="L331">                    .checkinDecorator((con, checkin) -&gt; new PooledConnection(con, checkin)) //</span>
+<span class="fc" id="L332">                    .idleTimeBeforeHealthCheck(idleTimeBeforeHealthCheckMs, TimeUnit.MILLISECONDS) //</span>
+<span class="fc" id="L333">                    .maxIdleTime(maxIdleTimeMs, TimeUnit.MILLISECONDS) //</span>
+<span class="fc" id="L334">                    .createRetryInterval(connectionRetryIntervalMs, TimeUnit.MILLISECONDS) //</span>
+<span class="fc" id="L335">                    .scheduler(scheduler) //</span>
+<span class="fc" id="L336">                    .disposer(disposer)//</span>
+<span class="fc" id="L337">                    .healthCheck(healthCheck) //</span>
+<span class="fc" id="L338">                    .scheduler(scheduler) //</span>
+<span class="fc" id="L339">                    .maxSize(maxPoolSize) //</span>
             );
-<span class="fc" id="L240">            return transform.apply(p);</span>
+<span class="fc" id="L341">            return transform.apply(p);</span>
         }
 
     }
 
     @Override
     public Single&lt;Member&lt;Connection&gt;&gt; member() {
-<span class="fc" id="L247">        return pool.get().member();</span>
+<span class="fc" id="L348">        return pool.get().member();</span>
     }
 
     @Override
     public void close() {
-<span class="fc" id="L252">        pool.get().close();</span>
-<span class="fc" id="L253">    }</span>
+<span class="fc" id="L353">        pool.get().close();</span>
+<span class="fc" id="L354">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

@@ -19,110 +19,83 @@ import org.davidmoten.rx.jdbc.exceptions.SQLRuntimeException;
 import org.davidmoten.rx.jdbc.pool.NonBlockingConnectionPool;
 import org.davidmoten.rx.jdbc.pool.Pools;
 import org.davidmoten.rx.jdbc.pool.internal.ConnectionProviderBlockingPool;
+import org.davidmoten.rx.pool.Member;
 import org.davidmoten.rx.pool.Pool;
 
 import com.github.davidmoten.guavamini.Preconditions;
 
+import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 
 public final class Database implements AutoCloseable {
 
+    private final Pool&lt;Connection&gt; pool;
     private final Single&lt;Connection&gt; connection;
 
     private final Action onClose;
 
-<span class="fc" id="L36">    private Database(@Nonnull Single&lt;Connection&gt; connection, @Nonnull Action onClose) {</span>
-<span class="fc" id="L37">        this.connection = connection;</span>
-<span class="fc" id="L38">        this.onClose = onClose;</span>
-<span class="fc" id="L39">    }</span>
+<span class="fc" id="L41">    private Database(@Nonnull Pool&lt;Connection&gt; pool, @Nonnull Action onClose) {</span>
+<span class="fc" id="L42">        this.pool = pool;</span>
+<span class="fc" id="L43">        this.connection = pool.member().map(x -&gt; {</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (x.value() == null) {</span>
+<span class="nc" id="L45">                throw new NullPointerException(&quot;connection is null!&quot;);</span>
+            }
+<span class="fc" id="L47">            return x.value();</span>
+        });
+<span class="fc" id="L49">        this.onClose = onClose;</span>
+<span class="fc" id="L50">    }</span>
 
     public static NonBlockingConnectionPool.Builder&lt;Database&gt; nonBlocking() {
-<span class="fc" id="L42">        return new NonBlockingConnectionPool.Builder&lt;Database&gt;(</span>
-<span class="fc" id="L43">                pool -&gt; Database.from(pool, () -&gt; pool.close()));</span>
+<span class="fc" id="L53">        return new NonBlockingConnectionPool.Builder&lt;Database&gt;(pool -&gt; Database.from(pool, () -&gt; pool.close()));</span>
     }
 
-    // /**
-    // * Creates a Database instance. This is a low-level creation method that needs
-    // a
-    // * lot of care so it is recommended to use the other static factory methods on
-    // * Database that will handle pooling for you.
-    // *
-    // * @param connection
-    // * each subscription to this Single should yield a valid open
-    // * Connection to the database. Bear in mind that once a query is
-    // * completed with this connection the connection will be closed. If
-    // * you don't want the connection to be closed (pooling behaviour)
-    // * then you need to override the `close()` behaviour of the
-    // * Connection and handle the semaphore pool pattern yourself (!) or
-    // * preferrably use the other static factory methods like
-    // * {@code Database.from(url, maxPoolSize)} for instance.
-    // * @param onClose
-    // * the action that will be run when {@code Database.close()} is
-    // * called.
-    // * @return Database instance using the given connection provider
-    // */
-    // private static Database from(@Nonnull Single&lt;Connection&gt; connection, @Nonnull
-    // Action onClose) {
-    // Preconditions.checkNotNull(connection, &quot;connections cannot be null&quot;);
-    // Preconditions.checkNotNull(onClose, &quot;onClose cannot be null&quot;);
-    // return new Database(connection, onClose);
-    // }
-
     public static Database from(@Nonnull String url, int maxPoolSize) {
-<span class="fc" id="L74">        Preconditions.checkNotNull(url, &quot;url cannot be null&quot;);</span>
-<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxPoolSize &gt; 0, &quot;maxPoolSize must be greater than 0&quot;);</span>
-<span class="fc" id="L76">        NonBlockingConnectionPool pool = Pools.nonBlocking() //</span>
-<span class="fc" id="L77">                .url(url) //</span>
-<span class="fc" id="L78">                .maxPoolSize(maxPoolSize) //</span>
-<span class="fc" id="L79">                .build();</span>
-<span class="fc" id="L80">        return Database.from( //</span>
+<span class="fc" id="L57">        Preconditions.checkNotNull(url, &quot;url cannot be null&quot;);</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxPoolSize &gt; 0, &quot;maxPoolSize must be greater than 0&quot;);</span>
+<span class="fc" id="L59">        NonBlockingConnectionPool pool = Pools.nonBlocking() //</span>
+<span class="fc" id="L60">                .url(url) //</span>
+<span class="fc" id="L61">                .maxPoolSize(maxPoolSize) //</span>
+<span class="fc" id="L62">                .build();</span>
+<span class="fc" id="L63">        return Database.from( //</span>
                 pool, //
                 () -&gt; {
-<span class="nc" id="L83">                    pool.close();</span>
-<span class="nc" id="L84">                });</span>
+<span class="nc" id="L66">                    pool.close();</span>
+<span class="nc" id="L67">                });</span>
     }
 
     public static Database from(@Nonnull Pool&lt;Connection&gt; pool) {
-<span class="fc" id="L88">        Preconditions.checkNotNull(pool, &quot;pool canot be null&quot;);</span>
-<span class="fc" id="L89">        return new Database(pool.member().map(x -&gt; {</span>
-<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (x.value() == null) {</span>
-<span class="nc" id="L91">                throw new NullPointerException(&quot;connection is null!&quot;);</span>
-            }
-<span class="fc" id="L93">            return x.value();</span>
-<span class="fc" id="L94">        }), () -&gt; pool.close());</span>
+<span class="fc" id="L71">        Preconditions.checkNotNull(pool, &quot;pool canot be null&quot;);</span>
+<span class="fc" id="L72">        return new Database(pool, () -&gt; pool.close());</span>
     }
 
     public static Database from(@Nonnull Pool&lt;Connection&gt; pool, Action closeAction) {
-<span class="fc" id="L98">        Preconditions.checkNotNull(pool, &quot;pool canot be null&quot;);</span>
-<span class="fc" id="L99">        return new Database(pool.member().map(x -&gt; {</span>
-<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (x.value() == null) {</span>
-<span class="nc" id="L101">                throw new NullPointerException(&quot;connection is null!&quot;);</span>
-            }
-<span class="fc" id="L103">            return x.value();</span>
-        }), closeAction);
+<span class="fc" id="L76">        Preconditions.checkNotNull(pool, &quot;pool canot be null&quot;);</span>
+<span class="fc" id="L77">        return new Database(pool, closeAction);</span>
     }
 
     public static Database fromBlocking(@Nonnull ConnectionProvider cp) {
-<span class="fc" id="L108">        return Database.from(new ConnectionProviderBlockingPool(cp));</span>
+<span class="fc" id="L81">        return Database.from(new ConnectionProviderBlockingPool(cp));</span>
     }
 
     public static Database fromBlocking(@Nonnull DataSource dataSource) {
-<span class="nc" id="L112">        return fromBlocking(Util.connectionProvider(dataSource));</span>
+<span class="nc" id="L85">        return fromBlocking(Util.connectionProvider(dataSource));</span>
     }
 
     public static Database test(int maxPoolSize) {
-<span class="fc bfc" id="L116" title="All 2 branches covered.">        Preconditions.checkArgument(maxPoolSize &gt; 0, &quot;maxPoolSize must be greater than 0&quot;);</span>
-<span class="fc" id="L117">        return Database.from( //</span>
-<span class="fc" id="L118">                Pools.nonBlocking() //</span>
-<span class="fc" id="L119">                        .connectionProvider(testConnectionProvider()) //</span>
-<span class="fc" id="L120">                        .maxPoolSize(maxPoolSize) //</span>
-<span class="fc" id="L121">                        .build());</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        Preconditions.checkArgument(maxPoolSize &gt; 0, &quot;maxPoolSize must be greater than 0&quot;);</span>
+<span class="fc" id="L90">        return Database.from( //</span>
+<span class="fc" id="L91">                Pools.nonBlocking() //</span>
+<span class="fc" id="L92">                        .connectionProvider(testConnectionProvider()) //</span>
+<span class="fc" id="L93">                        .maxPoolSize(maxPoolSize) //</span>
+<span class="fc" id="L94">                        .build());</span>
     }
 
     static ConnectionProvider testConnectionProvider() {
-<span class="fc" id="L125">        return testConnectionProvider(nextUrl());</span>
+<span class="fc" id="L98">        return testConnectionProvider(nextUrl());</span>
     }
 
     /**
@@ -132,69 +105,68 @@ public final class Database implements AutoCloseable {
      * @return new testing Database instance
      */
     public static Database test() {
-<span class="fc" id="L135">        return test(3);</span>
+<span class="fc" id="L108">        return test(3);</span>
     }
 
     private static void createTestDatabase(@Nonnull Connection c) {
         try {
-<span class="fc" id="L140">            Sql //</span>
-<span class="fc" id="L141">                    .statements(Database.class.getResourceAsStream(&quot;/database-test.sql&quot;)) //</span>
-<span class="fc" id="L142">                    .stream() //</span>
-<span class="fc" id="L143">                    .forEach(x -&gt; {</span>
-<span class="pc" id="L144">                        try (PreparedStatement s = c.prepareStatement(x)) {</span>
-<span class="fc" id="L145">                            s.execute();</span>
-<span class="pc bpc" id="L146" title="6 of 8 branches missed.">                        } catch (SQLException e) {</span>
-<span class="nc" id="L147">                            throw new SQLRuntimeException(e);</span>
-<span class="fc" id="L148">                        }</span>
-<span class="fc" id="L149">                    });</span>
-<span class="fc" id="L150">            c.commit();</span>
-<span class="nc" id="L151">        } catch (SQLException e) {</span>
-<span class="nc" id="L152">            throw new SQLRuntimeException(e);</span>
-<span class="fc" id="L153">        }</span>
-<span class="fc" id="L154">    }</span>
+<span class="fc" id="L113">            Sql //</span>
+<span class="fc" id="L114">                    .statements(Database.class.getResourceAsStream(&quot;/database-test.sql&quot;)) //</span>
+<span class="fc" id="L115">                    .stream() //</span>
+<span class="fc" id="L116">                    .forEach(x -&gt; {</span>
+<span class="fc" id="L117">                        try (PreparedStatement s = c.prepareStatement(x)) {</span>
+<span class="fc" id="L118">                            s.execute();</span>
+<span class="nc" id="L119">                        } catch (SQLException e) {</span>
+<span class="nc" id="L120">                            throw new SQLRuntimeException(e);</span>
+<span class="fc" id="L121">                        }</span>
+<span class="fc" id="L122">                    });</span>
+<span class="fc" id="L123">            c.commit();</span>
+<span class="nc" id="L124">        } catch (SQLException e) {</span>
+<span class="nc" id="L125">            throw new SQLRuntimeException(e);</span>
+<span class="fc" id="L126">        }</span>
+<span class="fc" id="L127">    }</span>
 
     private static ConnectionProvider testConnectionProvider(@Nonnull String url) {
-<span class="fc" id="L157">        return new ConnectionProvider() {</span>
+<span class="fc" id="L130">        return new ConnectionProvider() {</span>
 
-<span class="fc" id="L159">            private final AtomicBoolean once = new AtomicBoolean();</span>
-<span class="fc" id="L160">            private final CountDownLatch latch = new CountDownLatch(1);</span>
+<span class="fc" id="L132">            private final AtomicBoolean once = new AtomicBoolean();</span>
+<span class="fc" id="L133">            private final CountDownLatch latch = new CountDownLatch(1);</span>
 
             @Override
             public Connection get() {
                 try {
-<span class="fc" id="L165">                    Connection c = DriverManager.getConnection(url);</span>
-<span class="pc bpc" id="L166" title="1 of 2 branches missed.">                    if (once.compareAndSet(false, true)) {</span>
-<span class="fc" id="L167">                        createTestDatabase(c);</span>
-<span class="fc" id="L168">                        latch.countDown();</span>
+<span class="fc" id="L138">                    Connection c = DriverManager.getConnection(url);</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">                    if (once.compareAndSet(false, true)) {</span>
+<span class="fc" id="L140">                        createTestDatabase(c);</span>
+<span class="fc" id="L141">                        latch.countDown();</span>
                     } else {
-<span class="nc bnc" id="L170" title="All 2 branches missed.">                        if (!latch.await(1, TimeUnit.MINUTES)) {</span>
-<span class="nc" id="L171">                            throw new SQLRuntimeException(</span>
-                                    &quot;waited 1 minute but test database was not created&quot;);
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                        if (!latch.await(1, TimeUnit.MINUTES)) {</span>
+<span class="nc" id="L144">                            throw new SQLRuntimeException(&quot;waited 1 minute but test database was not created&quot;);</span>
                         }
                     }
-<span class="fc" id="L175">                    return c;</span>
-<span class="nc" id="L176">                } catch (SQLException e) {</span>
-<span class="nc" id="L177">                    throw new SQLRuntimeException(e);</span>
-<span class="nc" id="L178">                } catch (InterruptedException e) {</span>
-<span class="nc" id="L179">                    throw new RuntimeException(e);</span>
+<span class="fc" id="L147">                    return c;</span>
+<span class="nc" id="L148">                } catch (SQLException e) {</span>
+<span class="nc" id="L149">                    throw new SQLRuntimeException(e);</span>
+<span class="nc" id="L150">                } catch (InterruptedException e) {</span>
+<span class="nc" id="L151">                    throw new RuntimeException(e);</span>
                 }
             }
 
             @Override
             public void close() {
                 //
-<span class="nc" id="L186">            }</span>
+<span class="nc" id="L158">            }</span>
         };
     }
 
-<span class="fc" id="L190">    private static final AtomicInteger testDbNumber = new AtomicInteger();</span>
+<span class="fc" id="L162">    private static final AtomicInteger testDbNumber = new AtomicInteger();</span>
 
     private static String nextUrl() {
-<span class="fc" id="L193">        return &quot;jdbc:derby:memory:derby&quot; + testDbNumber.incrementAndGet() + &quot;;create=true&quot;;</span>
+<span class="fc" id="L165">        return &quot;jdbc:derby:memory:derby&quot; + testDbNumber.incrementAndGet() + &quot;;create=true&quot;;</span>
     }
 
     public Single&lt;Connection&gt; connection() {
-<span class="fc" id="L197">        return connection;</span>
+<span class="fc" id="L169">        return connection;</span>
     }
 
     /**
@@ -217,49 +189,53 @@ public final class Database implements AutoCloseable {
      *         {@code close()} on a connection it is returned to the pool
      */
     public Flowable&lt;Connection&gt; connections() {
-<span class="fc" id="L220">        return new FlowableSingleDeferUntilRequest&lt;Connection&gt;(connection).repeat();</span>
+<span class="nc" id="L192">        return new FlowableSingleDeferUntilRequest&lt;Connection&gt;(connection).repeat();</span>
     }
 
     @Override
     public void close() {
         try {
-<span class="fc" id="L226">            onClose.run();</span>
-<span class="nc" id="L227">        } catch (Exception e) {</span>
-<span class="nc" id="L228">            throw new SQLRuntimeException(e);</span>
-<span class="fc" id="L229">        }</span>
-<span class="fc" id="L230">    }</span>
+<span class="fc" id="L198">            onClose.run();</span>
+<span class="nc" id="L199">        } catch (Exception e) {</span>
+<span class="nc" id="L200">            throw new SQLRuntimeException(e);</span>
+<span class="fc" id="L201">        }</span>
+<span class="fc" id="L202">    }</span>
+
+    public CallableBuilder call(@Nonnull String sql) {
+<span class="fc" id="L205">        return new CallableBuilder(sql, connection(), this);</span>
+    }
 
     public &lt;T&gt; SelectAutomappedBuilder&lt;T&gt; select(@Nonnull Class&lt;T&gt; cls) {
-<span class="fc" id="L233">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
-<span class="fc" id="L234">        return new SelectAutomappedBuilder&lt;T&gt;(cls, connection, this);</span>
+<span class="fc" id="L209">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L210">        return new SelectAutomappedBuilder&lt;T&gt;(cls, connection, this);</span>
     }
 
     public SelectBuilder select(@Nonnull String sql) {
-<span class="fc" id="L238">        Preconditions.checkNotNull(sql, &quot;sql cannot be null&quot;);</span>
-<span class="fc" id="L239">        return new SelectBuilder(sql, connection(), this);</span>
+<span class="fc" id="L214">        Preconditions.checkNotNull(sql, &quot;sql cannot be null&quot;);</span>
+<span class="fc" id="L215">        return new SelectBuilder(sql, connection(), this);</span>
     }
 
     public UpdateBuilder update(@Nonnull String sql) {
-<span class="fc" id="L243">        Preconditions.checkNotNull(sql, &quot;sql cannot be null&quot;);</span>
-<span class="fc" id="L244">        return new UpdateBuilder(sql, connection(), this);</span>
+<span class="fc" id="L219">        Preconditions.checkNotNull(sql, &quot;sql cannot be null&quot;);</span>
+<span class="fc" id="L220">        return new UpdateBuilder(sql, connection(), this);</span>
     }
 
     public TransactedBuilder tx(@Nonnull Tx&lt;?&gt; tx) {
-<span class="fc" id="L248">        Preconditions.checkNotNull(tx, &quot;tx cannot be null&quot;);</span>
-<span class="fc" id="L249">        TxImpl&lt;?&gt; t = (TxImpl&lt;?&gt;) tx;</span>
-<span class="fc" id="L250">        TransactedConnection c = t.connection().fork();</span>
-<span class="fc" id="L251">        return new TransactedBuilder(c, this);</span>
+<span class="fc" id="L224">        Preconditions.checkNotNull(tx, &quot;tx cannot be null&quot;);</span>
+<span class="fc" id="L225">        TxImpl&lt;?&gt; t = (TxImpl&lt;?&gt;) tx;</span>
+<span class="fc" id="L226">        TransactedConnection c = t.connection().fork();</span>
+<span class="fc" id="L227">        return new TransactedBuilder(c, this);</span>
     }
 
-<span class="fc" id="L254">    public static final Object NULL_CLOB = new Object();</span>
+<span class="fc" id="L230">    public static final Object NULL_CLOB = new Object();</span>
 
-<span class="fc" id="L256">    public static final Object NULL_NUMBER = new Object();</span>
+<span class="fc" id="L232">    public static final Object NULL_NUMBER = new Object();</span>
 
     public static Object toSentinelIfNull(@Nullable String s) {
-<span class="fc bfc" id="L259" title="All 2 branches covered.">        if (s == null)</span>
-<span class="fc" id="L260">            return NULL_CLOB;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (s == null)</span>
+<span class="fc" id="L236">            return NULL_CLOB;</span>
         else
-<span class="fc" id="L262">            return s;</span>
+<span class="fc" id="L238">            return s;</span>
     }
 
     /**
@@ -268,22 +244,53 @@ public final class Database implements AutoCloseable {
      * {@link PreparedStatement#setNull(int, int)} with {@link Types#CLOB}. This is
      * required by many databases for setting CLOB and BLOB fields to null.
      */
-<span class="fc" id="L271">    public static final Object NULL_BLOB = new Object();</span>
-
+<span class="fc" id="L247">    public static final Object NULL_BLOB = new Object();</span>
+    
     public static Object toSentinelIfNull(@Nullable byte[] bytes) {
-<span class="fc bfc" id="L274" title="All 2 branches covered.">        if (bytes == null)</span>
-<span class="fc" id="L275">            return NULL_BLOB;</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if (bytes == null)</span>
+<span class="fc" id="L251">            return NULL_BLOB;</span>
         else
-<span class="fc" id="L277">            return bytes;</span>
+<span class="fc" id="L253">            return bytes;</span>
     }
 
     public static Object clob(@Nullable String s) {
-<span class="fc" id="L281">        return toSentinelIfNull(s);</span>
+<span class="fc" id="L257">        return toSentinelIfNull(s);</span>
     }
 
     public static Object blob(@Nullable byte[] bytes) {
-<span class="fc" id="L285">        return toSentinelIfNull(bytes);</span>
+<span class="fc" id="L261">        return toSentinelIfNull(bytes);</span>
+    }
+    
+    /**
+     * Returns a Single of a member of the connection pool. When finished with the
+     * emitted member you must call {@code member.checkin()} to return the
+     * connection to the pool.
+     * 
+     * @return a single member of the connection pool
+     */
+    public Single&lt;Member&lt;Connection&gt;&gt; member() {
+<span class="fc" id="L272">        return pool.member();</span>
+    }
+
+    public &lt;T&gt; Single&lt;T&gt; apply(Function&lt;? super Connection, ? extends T&gt; function) {
+<span class="fc" id="L276">        return member().map(member -&gt; {</span>
+            try {
+<span class="fc" id="L278">                return function.apply(member.value());</span>
+            } finally {
+<span class="fc" id="L280">                member.checkin();</span>
+            }
+        });
+    }
+
+    public &lt;T&gt; Completable apply(Consumer&lt;? super Connection&gt; consumer) {
+<span class="fc" id="L286">        return member().doOnSuccess(member -&gt; {</span>
+            try {
+<span class="fc" id="L288">                consumer.accept(member.value());</span>
+            } finally {
+<span class="fc" id="L290">                member.checkin();</span>
+            }
+<span class="fc" id="L292">        }).toCompletable();</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

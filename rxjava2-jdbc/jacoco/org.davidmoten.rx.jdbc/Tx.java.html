@@ -7,49 +7,39 @@ import io.reactivex.Notification;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
 
-public interface Tx&lt;T&gt; {
+public interface Tx&lt;T&gt; extends TxWithoutValue {
 
     boolean isValue();
 
-    boolean isComplete();
-
-    boolean isError();
-
     T value();
 
-    Throwable throwable();
-    
-    TransactedSelectBuilder select(String sql);
-    
-    TransactedUpdateBuilder update(String sql);
-    
-    public static &lt;T&gt; Predicate&lt;Tx&lt;T&gt;&gt; valuesOnly() {
-<span class="nc" id="L27">        return tx -&gt; tx.isValue();</span>
+    static &lt;T&gt; Predicate&lt;Tx&lt;T&gt;&gt; valuesOnly() {
+<span class="nc" id="L17">        return tx -&gt; tx.isValue();</span>
     }
 
-    public static &lt;T&gt; Function&lt;Tx&lt;T&gt;, Flowable&lt;T&gt;&gt; flattenToValuesOnly() {
-<span class="fc" id="L31">        return tx -&gt; {</span>
-<span class="fc bfc" id="L32" title="All 2 branches covered.">            if (tx.isValue()) {</span>
-<span class="fc" id="L33">                return Flowable.just(tx.value());</span>
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            } else if (tx.isComplete()) {</span>
-<span class="fc" id="L35">                return Flowable.empty();</span>
+    static &lt;T&gt; Function&lt;Tx&lt;T&gt;, Flowable&lt;T&gt;&gt; flattenToValuesOnly() {
+<span class="fc" id="L21">        return tx -&gt; {</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">            if (tx.isValue()) {</span>
+<span class="fc" id="L23">                return Flowable.just(tx.value());</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">            } else if (tx.isComplete()) {</span>
+<span class="fc" id="L25">                return Flowable.empty();</span>
             } else {
-<span class="nc" id="L37">                return Flowable.error(tx.throwable());</span>
+<span class="nc" id="L27">                return Flowable.error(tx.throwable());</span>
             }
         };
     }
 
-    public static &lt;T&gt; Function&lt;Tx&lt;T&gt;, T&gt; toValue() {
-<span class="nc" id="L43">        return tx -&gt; tx.value();</span>
+    static &lt;T&gt; Function&lt;Tx&lt;T&gt;, T&gt; toValue() {
+<span class="nc" id="L33">        return tx -&gt; tx.value();</span>
     }
-    
+
     static &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; toTx(Notification&lt;T&gt; n, Connection con, Database db) {
-<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (n.isOnComplete())</span>
-<span class="fc" id="L48">            return Flowable.just(new TxImpl&lt;T&gt;(con, null, null, true, db));</span>
-<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        else if (n.isOnNext())</span>
-<span class="fc" id="L50">            return Flowable.just(new TxImpl&lt;T&gt;(con, n.getValue(), null, false, db));</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (n.isOnComplete())</span>
+<span class="fc" id="L38">            return Flowable.just(new TxImpl&lt;T&gt;(con, null, null, true, db));</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        else if (n.isOnNext())</span>
+<span class="fc" id="L40">            return Flowable.just(new TxImpl&lt;T&gt;(con, n.getValue(), null, false, db));</span>
         else
-<span class="nc" id="L52">            return Flowable.error(n.getError());</span>
+<span class="nc" id="L42">            return Flowable.error(n.getError());</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

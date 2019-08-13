@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConnectionProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">ConnectionProvider.java</span></div><h1>ConnectionProvider.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
 
 import javax.annotation.Nonnull;
+
+import org.davidmoten.rx.jdbc.exceptions.SQLRuntimeException;
+import org.davidmoten.rx.jdbc.internal.SingletonConnectionProvider;
 
 import com.github.davidmoten.guavamini.Preconditions;
 
@@ -18,32 +24,91 @@ public interface ConnectionProvider {
      * 
      * @return a new Connection to a database
      */
-    @Nonnull 
+    @Nonnull
     Connection get();
 
     /**
      * Closes the connection provider and releases its resources. For example, a
-     * connection pool may need formal closure to release its connections
-     * because connection.close() is actually just releasing a connection back
-     * to the pool for reuse. This method should be idempotent.
+     * connection pool may need formal closure to release its connections because
+     * connection.close() is actually just releasing a connection back to the pool
+     * for reuse. This method should be idempotent.
      */
     void close();
 
-    public static ConnectionProvider from(@Nonnull Connection connection) {
-<span class="nc" id="L33">        Preconditions.checkNotNull(connection, &quot;connection cannot be null&quot;);</span>
-<span class="nc" id="L34">        return new ConnectionProvider() {</span>
+    /**
+     * Warning: Don't pass one of these as a ConnectionProvider to a pool because
+     * once the pool closes the connection the pool cannot create a new one (the
+     * same closed connection is returned). Instead use a different ConnectionProvider
+     * factory method.
+     * 
+     * @param connection connection for singleton provider
+     * @return singleton connection provider (don't use with connection pools!)
+     */
+    static ConnectionProvider from(@Nonnull Connection connection) {
+<span class="fc" id="L48">        Preconditions.checkNotNull(connection, &quot;connection  cannot be null&quot;);</span>
+<span class="fc" id="L49">        return new SingletonConnectionProvider(connection);</span>
+    }
+
+    static ConnectionProvider from(@Nonnull String url) {
+<span class="nc" id="L53">        Preconditions.checkNotNull(url, &quot;url cannot be null&quot;);</span>
+<span class="nc" id="L54">        return new ConnectionProvider() {</span>
 
             @Override
             public Connection get() {
-<span class="nc" id="L38">                return connection;</span>
+                try {
+<span class="nc" id="L59">                    return DriverManager.getConnection(url);</span>
+<span class="nc" id="L60">                } catch (SQLException e) {</span>
+<span class="nc" id="L61">                    throw new SQLRuntimeException(e);</span>
+                }
             }
 
             @Override
             public void close() {
-                // do nothing as con was not created by this provider
-<span class="nc" id="L44">            }</span>
+                // do nothing as closure will be handle by pool
+<span class="nc" id="L68">            }</span>
+        };
+    }
+
+    static ConnectionProvider from(@Nonnull String url, String username, String password) {
+<span class="nc" id="L73">        Preconditions.checkNotNull(url, &quot;url cannot be null&quot;);</span>
+<span class="nc" id="L74">        return new ConnectionProvider() {</span>
+
+            @Override
+            public Connection get() {
+                try {
+<span class="nc" id="L79">                    return DriverManager.getConnection(url, username, password);</span>
+<span class="nc" id="L80">                } catch (SQLException e) {</span>
+<span class="nc" id="L81">                    throw new SQLRuntimeException(e);</span>
+                }
+            }
+
+            @Override
+            public void close() {
+                // do nothing as closure will be handle by pool
+<span class="nc" id="L88">            }</span>
+        };
+    }
+    
+    static ConnectionProvider from(@Nonnull String url, Properties properties) {
+<span class="nc" id="L93">        Preconditions.checkNotNull(url, &quot;url cannot be null&quot;);</span>
+<span class="nc" id="L94">        Preconditions.checkNotNull(properties, &quot;properties cannot be null&quot;);</span>
+<span class="nc" id="L95">        return new ConnectionProvider() {</span>
+
+            @Override
+            public Connection get() {
+                try {
+<span class="nc" id="L100">                    return DriverManager.getConnection(url, properties);</span>
+<span class="nc" id="L101">                } catch (SQLException e) {</span>
+<span class="nc" id="L102">                    throw new SQLRuntimeException(e);</span>
+                }
+            }
+
+            @Override
+            public void close() {
+                // do nothing as closure will be handle by pool
+<span class="nc" id="L109">            }</span>
         };
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

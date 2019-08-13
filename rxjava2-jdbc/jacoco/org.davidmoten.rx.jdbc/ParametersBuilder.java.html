@@ -13,72 +13,72 @@ import io.reactivex.Flowable;
 
 abstract class ParametersBuilder&lt;T&gt; {
 
-<span class="fc" id="L16">    private static final Flowable&lt;List&lt;Object&gt;&gt; SINGLE_EMPTY_LIST = Flowable</span>
-<span class="fc" id="L17">            .just(Collections.emptyList());</span>
+<span class="fc" id="L16">    private static final Flowable&lt;List&lt;Object&gt;&gt; SINGLE_EMPTY_LIST = Flowable.just(Collections.emptyList());</span>
 
-<span class="fc" id="L19">    private final List&lt;Flowable&lt;List&lt;Object&gt;&gt;&gt; parameterGroups = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L18">    private final List&lt;Flowable&lt;List&lt;Object&gt;&gt;&gt; parameterGroups = new ArrayList&lt;&gt;();</span>
     // for building up a number of parameters
-<span class="fc" id="L21">    private final List&lt;Object&gt; parameterBuffer = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L20">    private final List&lt;Object&gt; parameterBuffer = new ArrayList&lt;&gt;();</span>
     private final SqlInfo sqlInfo;
 
-<span class="fc" id="L24">    ParametersBuilder(@Nonnull String sql) {</span>
-<span class="fc" id="L25">        this.sqlInfo = SqlInfo.parse(sql);</span>
-<span class="fc" id="L26">    }</span>
+<span class="fc" id="L23">    ParametersBuilder(@Nonnull String sql) {</span>
+<span class="fc" id="L24">        this.sqlInfo = SqlInfo.parse(sql);</span>
+<span class="fc" id="L25">    }</span>
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public final T parameterStream(@Nonnull Flowable&lt;?&gt; values) {
-<span class="fc" id="L30">        Preconditions.checkNotNull(values);</span>
-<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        if (sqlInfo.numParameters() == 0) {</span>
-<span class="nc" id="L32">            parameterListStream(values.map(x -&gt; Collections.emptyList()));</span>
+<span class="fc" id="L29">        Preconditions.checkNotNull(values);</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (sqlInfo.numParameters() == 0) {</span>
+<span class="nc" id="L31">            parameterListStream(values.map(x -&gt; Collections.emptyList()));</span>
         } else {
-<span class="fc" id="L34">            parameterListStream(</span>
-<span class="fc" id="L35">                    (Flowable&lt;List&lt;?&gt;&gt;) (Flowable&lt;?&gt;) values.buffer(sqlInfo.numParameters()));</span>
+<span class="fc" id="L33">            parameterListStream((Flowable&lt;List&lt;?&gt;&gt;) (Flowable&lt;?&gt;) values.buffer(sqlInfo.numParameters()));</span>
         }
-<span class="fc" id="L37">        return (T) this;</span>
+<span class="fc" id="L35">        return (T) this;</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public final T parameterListStream(@Nonnull Flowable&lt;List&lt;?&gt;&gt; valueLists) {
-<span class="fc" id="L42">        Preconditions.checkNotNull(valueLists, &quot;valueLists cannot be null&quot;);</span>
-<span class="fc" id="L43">        useAndCloseParameterBuffer();</span>
-<span class="fc" id="L44">        parameterGroups.add((Flowable&lt;List&lt;Object&gt;&gt;) (Flowable&lt;?&gt;) valueLists);</span>
-<span class="fc" id="L45">        return (T) this;</span>
+<span class="fc" id="L40">        Preconditions.checkNotNull(valueLists, &quot;valueLists cannot be null&quot;);</span>
+<span class="fc" id="L41">        useAndCloseParameterBuffer();</span>
+<span class="fc" id="L42">        parameterGroups.add((Flowable&lt;List&lt;Object&gt;&gt;) (Flowable&lt;?&gt;) valueLists);</span>
+<span class="fc" id="L43">        return (T) this;</span>
     }
 
     public final T parameters(@Nonnull List&lt;?&gt; values) {
-<span class="fc" id="L49">        return parameterList(values.toArray());</span>
+<span class="fc" id="L47">        return parameterList(values.toArray());</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     public final T parameter(@Nonnull String name, Object value) {
-<span class="fc" id="L54">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
-<span class="fc" id="L55">        parameterBuffer.add(new Parameter(name, value));</span>
-<span class="fc" id="L56">        return (T) this;</span>
+<span class="fc" id="L52">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="fc" id="L53">        parameterBuffer.add(new Parameter(name, value));</span>
+<span class="fc" id="L54">        return (T) this;</span>
     }
 
     public final T parameter(Object value) {
-<span class="fc" id="L60">        return parameters(value);</span>
+<span class="fc" id="L58">        return parameters(value);</span>
     }
 
     public final T parameters(@Nonnull Object... values) {
-<span class="fc" id="L64">        return parameterList(values);</span>
+<span class="fc" id="L62">        return parameterList(values);</span>
     }
-    
+
     @SuppressWarnings(&quot;unchecked&quot;)
     private final T parameterList(Object[] values) {
-<span class="fc" id="L69">        Preconditions.checkNotNull(values);</span>
-<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (values.length == 0) {</span>
+<span class="fc" id="L67">        Preconditions.checkNotNull(values);</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (values.length == 0) {</span>
             // no effect
-<span class="nc" id="L72">            return (T) this;</span>
+<span class="nc" id="L70">            return (T) this;</span>
         }
-<span class="fc" id="L74">        Preconditions.checkArgument(</span>
-<span class="pc bpc" id="L75" title="1 of 4 branches missed.">                sqlInfo.numParameters() == 0 || values.length % sqlInfo.numParameters() == 0,</span>
-                &quot;number of values should be a multiple of number of parameters in sql: &quot;
-<span class="fc" id="L77">                        + sqlInfo.sql());</span>
-<span class="fc bfc" id="L78" title="All 4 branches covered.">        Preconditions.checkArgument(Arrays.stream(values).allMatch(o -&gt; sqlInfo.names().isEmpty()</span>
-<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                || (o instanceof Parameter &amp;&amp; ((Parameter) o).hasName())));</span>
-<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (Object val : values) {</span>
-<span class="fc" id="L81">            parameterBuffer.add(val);</span>
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        Preconditions.checkArgument(sqlInfo.numParameters() == 0 || values.length % sqlInfo.numParameters() == 0,</span>
+<span class="fc" id="L73">                &quot;number of values should be a multiple of number of parameters in sql: &quot; + sqlInfo.sql());</span>
+<span class="fc" id="L74">        Preconditions.checkArgument(Arrays.stream(values)</span>
+<span class="pc bpc" id="L75" title="1 of 6 branches missed.">                .allMatch(o -&gt; sqlInfo.names().isEmpty() || (o instanceof Parameter &amp;&amp; ((Parameter) o).hasName())));</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (Object val : values) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (val == null) {</span>
+<span class="fc" id="L78">                parameterBuffer.add(Parameter.NULL);</span>
+            } else {
+<span class="fc" id="L80">                parameterBuffer.add(val);</span>
+            }
         }
 <span class="fc" id="L83">        return (T) this;</span>
     }
@@ -113,4 +113,4 @@ abstract class ParametersBuilder&lt;T&gt; {
 <span class="fc" id="L113">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

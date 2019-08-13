@@ -3482,184 +3482,195 @@
 <a class="jxr_linenumber" name="L3474" href="#L3474">3474</a>                 .assertValues(1, 2) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L3475" href="#L3475">3475</a>                 .assertComplete();
 <a class="jxr_linenumber" name="L3476" href="#L3476">3476</a>     }
-<a class="jxr_linenumber" name="L3477" href="#L3477">3477</a> 
-<a class="jxr_linenumber" name="L3478" href="#L3478">3478</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Plugins</a> {
-<a class="jxr_linenumber" name="L3479" href="#L3479">3479</a> 
-<a class="jxr_linenumber" name="L3480" href="#L3480">3480</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> List&lt;Throwable&gt; list = <strong class="jxr_keyword">new</strong> CopyOnWriteArrayList&lt;Throwable&gt;();
-<a class="jxr_linenumber" name="L3481" href="#L3481">3481</a> 
-<a class="jxr_linenumber" name="L3482" href="#L3482">3482</a>         <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> reset() {
-<a class="jxr_linenumber" name="L3483" href="#L3483">3483</a>             list.clear();
-<a class="jxr_linenumber" name="L3484" href="#L3484">3484</a>             RxJavaPlugins.setErrorHandler(e -&gt; list.add(e));
-<a class="jxr_linenumber" name="L3485" href="#L3485">3485</a>         }
-<a class="jxr_linenumber" name="L3486" href="#L3486">3486</a> 
-<a class="jxr_linenumber" name="L3487" href="#L3487">3487</a>         <strong class="jxr_keyword">static</strong> Throwable getSingleError() {
-<a class="jxr_linenumber" name="L3488" href="#L3488">3488</a>             assertEquals(1, list.size());
-<a class="jxr_linenumber" name="L3489" href="#L3489">3489</a>             RxJavaPlugins.reset();
-<a class="jxr_linenumber" name="L3490" href="#L3490">3490</a>             <strong class="jxr_keyword">return</strong> list.get(0);
-<a class="jxr_linenumber" name="L3491" href="#L3491">3491</a>         }
-<a class="jxr_linenumber" name="L3492" href="#L3492">3492</a>     }
-<a class="jxr_linenumber" name="L3493" href="#L3493">3493</a> 
-<a class="jxr_linenumber" name="L3494" href="#L3494">3494</a>     @Test
-<a class="jxr_linenumber" name="L3495" href="#L3495">3495</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testIssue27ConnectionErrorReportedToRxJavaPlugins() {
-<a class="jxr_linenumber" name="L3496" href="#L3496">3496</a>         <strong class="jxr_keyword">try</strong> (Database db = Database.nonBlocking()
-<a class="jxr_linenumber" name="L3497" href="#L3497">3497</a>                 .url(<span class="jxr_string">"jdbc:driverdoesnotexist://doesnotexist:1527/notThere"</span>).build()) {
-<a class="jxr_linenumber" name="L3498" href="#L3498">3498</a>             Plugins.reset();
-<a class="jxr_linenumber" name="L3499" href="#L3499">3499</a>             db.select(<span class="jxr_string">"select count(*) from person"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3500" href="#L3500">3500</a>                     .getAs(Long.<strong class="jxr_keyword">class</strong>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3501" href="#L3501">3501</a>                     .test() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3502" href="#L3502">3502</a>                     .awaitDone(TIMEOUT_SECONDS / 5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3503" href="#L3503">3503</a>                     .assertNoValues() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3504" href="#L3504">3504</a>                     .assertNotTerminated() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3505" href="#L3505">3505</a>                     .cancel();
-<a class="jxr_linenumber" name="L3506" href="#L3506">3506</a>             Throwable e = Plugins.getSingleError();
-<a class="jxr_linenumber" name="L3507" href="#L3507">3507</a>             assertTrue(e instanceof UndeliverableException);
-<a class="jxr_linenumber" name="L3508" href="#L3508">3508</a>             assertTrue(e.getMessage().toLowerCase().contains(<span class="jxr_string">"no suitable driver"</span>));
-<a class="jxr_linenumber" name="L3509" href="#L3509">3509</a>         }
-<a class="jxr_linenumber" name="L3510" href="#L3510">3510</a>     }
-<a class="jxr_linenumber" name="L3511" href="#L3511">3511</a>     
-<a class="jxr_linenumber" name="L3512" href="#L3512">3512</a>     @Test
-<a class="jxr_linenumber" name="L3513" href="#L3513">3513</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapInTransactionIssue35() {
-<a class="jxr_linenumber" name="L3514" href="#L3514">3514</a>         <strong class="jxr_keyword">try</strong> (Database db = Database.test()) {
-<a class="jxr_linenumber" name="L3515" href="#L3515">3515</a>             db.select(Person10.<strong class="jxr_keyword">class</strong>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3516" href="#L3516">3516</a>                     .transacted() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3517" href="#L3517">3517</a>                     .valuesOnly() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3518" href="#L3518">3518</a>                     .get(x -&gt; x.name()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3519" href="#L3519">3519</a>                     .sorted() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3520" href="#L3520">3520</a>                     .test() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3521" href="#L3521">3521</a>                     .awaitDone(TIMEOUT_SECONDS, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3522" href="#L3522">3522</a>                     .assertValues(<span class="jxr_string">"FRED"</span>, <span class="jxr_string">"JOSEPH"</span>, <span class="jxr_string">"MARMADUKE"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L3523" href="#L3523">3523</a>                     .assertComplete();
-<a class="jxr_linenumber" name="L3524" href="#L3524">3524</a>         }
-<a class="jxr_linenumber" name="L3525" href="#L3525">3525</a>     }
-<a class="jxr_linenumber" name="L3526" href="#L3526">3526</a> 
-<a class="jxr_linenumber" name="L3527" href="#L3527">3527</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonWithDefaultMethod</a> {
-<a class="jxr_linenumber" name="L3528" href="#L3528">3528</a>         @Column
-<a class="jxr_linenumber" name="L3529" href="#L3529">3529</a>         String name();
-<a class="jxr_linenumber" name="L3530" href="#L3530">3530</a> 
-<a class="jxr_linenumber" name="L3531" href="#L3531">3531</a>         @Column
-<a class="jxr_linenumber" name="L3532" href="#L3532">3532</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3533" href="#L3533">3533</a> 
-<a class="jxr_linenumber" name="L3534" href="#L3534">3534</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">default</strong> String nameLower() {
-<a class="jxr_linenumber" name="L3535" href="#L3535">3535</a>             <strong class="jxr_keyword">return</strong> name().toLowerCase();
-<a class="jxr_linenumber" name="L3536" href="#L3536">3536</a>         }
-<a class="jxr_linenumber" name="L3537" href="#L3537">3537</a>     }
-<a class="jxr_linenumber" name="L3538" href="#L3538">3538</a> 
-<a class="jxr_linenumber" name="L3539" href="#L3539">3539</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonWithDefaultMethodNonPublic</a> {
-<a class="jxr_linenumber" name="L3540" href="#L3540">3540</a>         @Column
-<a class="jxr_linenumber" name="L3541" href="#L3541">3541</a>         String name();
-<a class="jxr_linenumber" name="L3542" href="#L3542">3542</a> 
-<a class="jxr_linenumber" name="L3543" href="#L3543">3543</a>         @Column
-<a class="jxr_linenumber" name="L3544" href="#L3544">3544</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3545" href="#L3545">3545</a> 
-<a class="jxr_linenumber" name="L3546" href="#L3546">3546</a>         <strong class="jxr_keyword">default</strong> String nameLower() {
-<a class="jxr_linenumber" name="L3547" href="#L3547">3547</a>             <strong class="jxr_keyword">return</strong> name().toLowerCase();
-<a class="jxr_linenumber" name="L3548" href="#L3548">3548</a>         }
-<a class="jxr_linenumber" name="L3549" href="#L3549">3549</a>     }
-<a class="jxr_linenumber" name="L3550" href="#L3550">3550</a> 
-<a class="jxr_linenumber" name="L3551" href="#L3551">3551</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonDistinct1</a> {
-<a class="jxr_linenumber" name="L3552" href="#L3552">3552</a>         @Column
-<a class="jxr_linenumber" name="L3553" href="#L3553">3553</a>         String name();
-<a class="jxr_linenumber" name="L3554" href="#L3554">3554</a> 
-<a class="jxr_linenumber" name="L3555" href="#L3555">3555</a>         @Column
-<a class="jxr_linenumber" name="L3556" href="#L3556">3556</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3557" href="#L3557">3557</a> 
-<a class="jxr_linenumber" name="L3558" href="#L3558">3558</a>     }
-<a class="jxr_linenumber" name="L3559" href="#L3559">3559</a> 
-<a class="jxr_linenumber" name="L3560" href="#L3560">3560</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonDistinct2</a> {
-<a class="jxr_linenumber" name="L3561" href="#L3561">3561</a>         @Column
-<a class="jxr_linenumber" name="L3562" href="#L3562">3562</a>         String name();
-<a class="jxr_linenumber" name="L3563" href="#L3563">3563</a> 
-<a class="jxr_linenumber" name="L3564" href="#L3564">3564</a>         @Column
-<a class="jxr_linenumber" name="L3565" href="#L3565">3565</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3566" href="#L3566">3566</a> 
-<a class="jxr_linenumber" name="L3567" href="#L3567">3567</a>     }
+<a class="jxr_linenumber" name="L3477" href="#L3477">3477</a>     
+<a class="jxr_linenumber" name="L3478" href="#L3478">3478</a>     @Test
+<a class="jxr_linenumber" name="L3479" href="#L3479">3479</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMapInTransactionIssue35() {
+<a class="jxr_linenumber" name="L3480" href="#L3480">3480</a>         Database.test() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3481" href="#L3481">3481</a>                 .select(Person10.<strong class="jxr_keyword">class</strong>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3482" href="#L3482">3482</a>                 .transacted() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3483" href="#L3483">3483</a>                 .valuesOnly() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3484" href="#L3484">3484</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3485" href="#L3485">3485</a>                 .map(p -&gt; p.name()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3486" href="#L3486">3486</a>                 .blockingForEach(System.out::println);
+<a class="jxr_linenumber" name="L3487" href="#L3487">3487</a>     }
+<a class="jxr_linenumber" name="L3488" href="#L3488">3488</a> 
+<a class="jxr_linenumber" name="L3489" href="#L3489">3489</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Plugins</a> {
+<a class="jxr_linenumber" name="L3490" href="#L3490">3490</a> 
+<a class="jxr_linenumber" name="L3491" href="#L3491">3491</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> List&lt;Throwable&gt; list = <strong class="jxr_keyword">new</strong> CopyOnWriteArrayList&lt;Throwable&gt;();
+<a class="jxr_linenumber" name="L3492" href="#L3492">3492</a> 
+<a class="jxr_linenumber" name="L3493" href="#L3493">3493</a>         <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> reset() {
+<a class="jxr_linenumber" name="L3494" href="#L3494">3494</a>             list.clear();
+<a class="jxr_linenumber" name="L3495" href="#L3495">3495</a>             RxJavaPlugins.setErrorHandler(e -&gt; list.add(e));
+<a class="jxr_linenumber" name="L3496" href="#L3496">3496</a>         }
+<a class="jxr_linenumber" name="L3497" href="#L3497">3497</a> 
+<a class="jxr_linenumber" name="L3498" href="#L3498">3498</a>         <strong class="jxr_keyword">static</strong> Throwable getSingleError() {
+<a class="jxr_linenumber" name="L3499" href="#L3499">3499</a>             assertEquals(1, list.size());
+<a class="jxr_linenumber" name="L3500" href="#L3500">3500</a>             RxJavaPlugins.reset();
+<a class="jxr_linenumber" name="L3501" href="#L3501">3501</a>             <strong class="jxr_keyword">return</strong> list.get(0);
+<a class="jxr_linenumber" name="L3502" href="#L3502">3502</a>         }
+<a class="jxr_linenumber" name="L3503" href="#L3503">3503</a>     }
+<a class="jxr_linenumber" name="L3504" href="#L3504">3504</a> 
+<a class="jxr_linenumber" name="L3505" href="#L3505">3505</a>     @Test
+<a class="jxr_linenumber" name="L3506" href="#L3506">3506</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testIssue27ConnectionErrorReportedToRxJavaPlugins() {
+<a class="jxr_linenumber" name="L3507" href="#L3507">3507</a>         <strong class="jxr_keyword">try</strong> (Database db = Database.nonBlocking()
+<a class="jxr_linenumber" name="L3508" href="#L3508">3508</a>                 .url(<span class="jxr_string">"jdbc:driverdoesnotexist://doesnotexist:1527/notThere"</span>).build()) {
+<a class="jxr_linenumber" name="L3509" href="#L3509">3509</a>             Plugins.reset();
+<a class="jxr_linenumber" name="L3510" href="#L3510">3510</a>             db.select(<span class="jxr_string">"select count(*) from person"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3511" href="#L3511">3511</a>                     .getAs(Long.<strong class="jxr_keyword">class</strong>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3512" href="#L3512">3512</a>                     .test() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3513" href="#L3513">3513</a>                     .awaitDone(TIMEOUT_SECONDS / 5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3514" href="#L3514">3514</a>                     .assertNoValues() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3515" href="#L3515">3515</a>                     .assertNotTerminated() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3516" href="#L3516">3516</a>                     .cancel();
+<a class="jxr_linenumber" name="L3517" href="#L3517">3517</a>             Throwable e = Plugins.getSingleError();
+<a class="jxr_linenumber" name="L3518" href="#L3518">3518</a>             assertTrue(e instanceof UndeliverableException);
+<a class="jxr_linenumber" name="L3519" href="#L3519">3519</a>             assertTrue(e.getMessage().toLowerCase().contains(<span class="jxr_string">"no suitable driver"</span>));
+<a class="jxr_linenumber" name="L3520" href="#L3520">3520</a>         }
+<a class="jxr_linenumber" name="L3521" href="#L3521">3521</a>     }
+<a class="jxr_linenumber" name="L3522" href="#L3522">3522</a>     
+<a class="jxr_linenumber" name="L3523" href="#L3523">3523</a>     @Test
+<a class="jxr_linenumber" name="L3524" href="#L3524">3524</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAutoMapInTransactionIssue35() {
+<a class="jxr_linenumber" name="L3525" href="#L3525">3525</a>         <strong class="jxr_keyword">try</strong> (Database db = Database.test()) {
+<a class="jxr_linenumber" name="L3526" href="#L3526">3526</a>             db.select(Person10.<strong class="jxr_keyword">class</strong>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3527" href="#L3527">3527</a>                     .transacted() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3528" href="#L3528">3528</a>                     .valuesOnly() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3529" href="#L3529">3529</a>                     .get(x -&gt; x.name()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3530" href="#L3530">3530</a>                     .sorted() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3531" href="#L3531">3531</a>                     .test() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3532" href="#L3532">3532</a>                     .awaitDone(TIMEOUT_SECONDS, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3533" href="#L3533">3533</a>                     .assertValues(<span class="jxr_string">"FRED"</span>, <span class="jxr_string">"JOSEPH"</span>, <span class="jxr_string">"MARMADUKE"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L3534" href="#L3534">3534</a>                     .assertComplete();
+<a class="jxr_linenumber" name="L3535" href="#L3535">3535</a>         }
+<a class="jxr_linenumber" name="L3536" href="#L3536">3536</a>     }
+<a class="jxr_linenumber" name="L3537" href="#L3537">3537</a> 
+<a class="jxr_linenumber" name="L3538" href="#L3538">3538</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonWithDefaultMethod</a> {
+<a class="jxr_linenumber" name="L3539" href="#L3539">3539</a>         @Column
+<a class="jxr_linenumber" name="L3540" href="#L3540">3540</a>         String name();
+<a class="jxr_linenumber" name="L3541" href="#L3541">3541</a> 
+<a class="jxr_linenumber" name="L3542" href="#L3542">3542</a>         @Column
+<a class="jxr_linenumber" name="L3543" href="#L3543">3543</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3544" href="#L3544">3544</a> 
+<a class="jxr_linenumber" name="L3545" href="#L3545">3545</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">default</strong> String nameLower() {
+<a class="jxr_linenumber" name="L3546" href="#L3546">3546</a>             <strong class="jxr_keyword">return</strong> name().toLowerCase();
+<a class="jxr_linenumber" name="L3547" href="#L3547">3547</a>         }
+<a class="jxr_linenumber" name="L3548" href="#L3548">3548</a>     }
+<a class="jxr_linenumber" name="L3549" href="#L3549">3549</a> 
+<a class="jxr_linenumber" name="L3550" href="#L3550">3550</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonWithDefaultMethodNonPublic</a> {
+<a class="jxr_linenumber" name="L3551" href="#L3551">3551</a>         @Column
+<a class="jxr_linenumber" name="L3552" href="#L3552">3552</a>         String name();
+<a class="jxr_linenumber" name="L3553" href="#L3553">3553</a> 
+<a class="jxr_linenumber" name="L3554" href="#L3554">3554</a>         @Column
+<a class="jxr_linenumber" name="L3555" href="#L3555">3555</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3556" href="#L3556">3556</a> 
+<a class="jxr_linenumber" name="L3557" href="#L3557">3557</a>         <strong class="jxr_keyword">default</strong> String nameLower() {
+<a class="jxr_linenumber" name="L3558" href="#L3558">3558</a>             <strong class="jxr_keyword">return</strong> name().toLowerCase();
+<a class="jxr_linenumber" name="L3559" href="#L3559">3559</a>         }
+<a class="jxr_linenumber" name="L3560" href="#L3560">3560</a>     }
+<a class="jxr_linenumber" name="L3561" href="#L3561">3561</a> 
+<a class="jxr_linenumber" name="L3562" href="#L3562">3562</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonDistinct1</a> {
+<a class="jxr_linenumber" name="L3563" href="#L3563">3563</a>         @Column
+<a class="jxr_linenumber" name="L3564" href="#L3564">3564</a>         String name();
+<a class="jxr_linenumber" name="L3565" href="#L3565">3565</a> 
+<a class="jxr_linenumber" name="L3566" href="#L3566">3566</a>         @Column
+<a class="jxr_linenumber" name="L3567" href="#L3567">3567</a>         <strong class="jxr_keyword">int</strong> score();
 <a class="jxr_linenumber" name="L3568" href="#L3568">3568</a> 
-<a class="jxr_linenumber" name="L3569" href="#L3569">3569</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Score</a> {
-<a class="jxr_linenumber" name="L3570" href="#L3570">3570</a>         @Column
-<a class="jxr_linenumber" name="L3571" href="#L3571">3571</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3572" href="#L3572">3572</a>     }
-<a class="jxr_linenumber" name="L3573" href="#L3573">3573</a> 
-<a class="jxr_linenumber" name="L3574" href="#L3574">3574</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person</a> {
+<a class="jxr_linenumber" name="L3569" href="#L3569">3569</a>     }
+<a class="jxr_linenumber" name="L3570" href="#L3570">3570</a> 
+<a class="jxr_linenumber" name="L3571" href="#L3571">3571</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonDistinct2</a> {
+<a class="jxr_linenumber" name="L3572" href="#L3572">3572</a>         @Column
+<a class="jxr_linenumber" name="L3573" href="#L3573">3573</a>         String name();
+<a class="jxr_linenumber" name="L3574" href="#L3574">3574</a> 
 <a class="jxr_linenumber" name="L3575" href="#L3575">3575</a>         @Column
-<a class="jxr_linenumber" name="L3576" href="#L3576">3576</a>         String name();
-<a class="jxr_linenumber" name="L3577" href="#L3577">3577</a>     }
-<a class="jxr_linenumber" name="L3578" href="#L3578">3578</a> 
-<a class="jxr_linenumber" name="L3579" href="#L3579">3579</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person2</a> {
-<a class="jxr_linenumber" name="L3580" href="#L3580">3580</a>         @Column
-<a class="jxr_linenumber" name="L3581" href="#L3581">3581</a>         String name();
-<a class="jxr_linenumber" name="L3582" href="#L3582">3582</a> 
-<a class="jxr_linenumber" name="L3583" href="#L3583">3583</a>         @Column
-<a class="jxr_linenumber" name="L3584" href="#L3584">3584</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3585" href="#L3585">3585</a>     }
-<a class="jxr_linenumber" name="L3586" href="#L3586">3586</a> 
-<a class="jxr_linenumber" name="L3587" href="#L3587">3587</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person3</a> {
-<a class="jxr_linenumber" name="L3588" href="#L3588">3588</a>         @Column(<span class="jxr_string">"name"</span>)
-<a class="jxr_linenumber" name="L3589" href="#L3589">3589</a>         String fullName();
-<a class="jxr_linenumber" name="L3590" href="#L3590">3590</a> 
-<a class="jxr_linenumber" name="L3591" href="#L3591">3591</a>         @Column(<span class="jxr_string">"score"</span>)
-<a class="jxr_linenumber" name="L3592" href="#L3592">3592</a>         <strong class="jxr_keyword">int</strong> examScore();
-<a class="jxr_linenumber" name="L3593" href="#L3593">3593</a>     }
-<a class="jxr_linenumber" name="L3594" href="#L3594">3594</a> 
-<a class="jxr_linenumber" name="L3595" href="#L3595">3595</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person4</a> {
-<a class="jxr_linenumber" name="L3596" href="#L3596">3596</a>         @Column(<span class="jxr_string">"namez"</span>)
-<a class="jxr_linenumber" name="L3597" href="#L3597">3597</a>         String fullName();
-<a class="jxr_linenumber" name="L3598" href="#L3598">3598</a> 
-<a class="jxr_linenumber" name="L3599" href="#L3599">3599</a>         @Column(<span class="jxr_string">"score"</span>)
-<a class="jxr_linenumber" name="L3600" href="#L3600">3600</a>         <strong class="jxr_keyword">int</strong> examScore();
-<a class="jxr_linenumber" name="L3601" href="#L3601">3601</a>     }
-<a class="jxr_linenumber" name="L3602" href="#L3602">3602</a> 
-<a class="jxr_linenumber" name="L3603" href="#L3603">3603</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person5</a> {
-<a class="jxr_linenumber" name="L3604" href="#L3604">3604</a>         @Index(1)
-<a class="jxr_linenumber" name="L3605" href="#L3605">3605</a>         String fullName();
-<a class="jxr_linenumber" name="L3606" href="#L3606">3606</a> 
-<a class="jxr_linenumber" name="L3607" href="#L3607">3607</a>         @Index(2)
-<a class="jxr_linenumber" name="L3608" href="#L3608">3608</a>         <strong class="jxr_keyword">int</strong> examScore();
-<a class="jxr_linenumber" name="L3609" href="#L3609">3609</a>     }
-<a class="jxr_linenumber" name="L3610" href="#L3610">3610</a> 
-<a class="jxr_linenumber" name="L3611" href="#L3611">3611</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person6</a> {
-<a class="jxr_linenumber" name="L3612" href="#L3612">3612</a>         @Index(1)
-<a class="jxr_linenumber" name="L3613" href="#L3613">3613</a>         String fullName();
-<a class="jxr_linenumber" name="L3614" href="#L3614">3614</a> 
-<a class="jxr_linenumber" name="L3615" href="#L3615">3615</a>         @Index(3)
-<a class="jxr_linenumber" name="L3616" href="#L3616">3616</a>         <strong class="jxr_keyword">int</strong> examScore();
-<a class="jxr_linenumber" name="L3617" href="#L3617">3617</a>     }
-<a class="jxr_linenumber" name="L3618" href="#L3618">3618</a> 
-<a class="jxr_linenumber" name="L3619" href="#L3619">3619</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person7</a> {
-<a class="jxr_linenumber" name="L3620" href="#L3620">3620</a>         @Index(1)
-<a class="jxr_linenumber" name="L3621" href="#L3621">3621</a>         String fullName();
-<a class="jxr_linenumber" name="L3622" href="#L3622">3622</a> 
-<a class="jxr_linenumber" name="L3623" href="#L3623">3623</a>         @Index(0)
-<a class="jxr_linenumber" name="L3624" href="#L3624">3624</a>         <strong class="jxr_keyword">int</strong> examScore();
-<a class="jxr_linenumber" name="L3625" href="#L3625">3625</a>     }
-<a class="jxr_linenumber" name="L3626" href="#L3626">3626</a> 
-<a class="jxr_linenumber" name="L3627" href="#L3627">3627</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person8</a> {
-<a class="jxr_linenumber" name="L3628" href="#L3628">3628</a>         @Column
-<a class="jxr_linenumber" name="L3629" href="#L3629">3629</a>         <strong class="jxr_keyword">int</strong> name();
-<a class="jxr_linenumber" name="L3630" href="#L3630">3630</a>     }
-<a class="jxr_linenumber" name="L3631" href="#L3631">3631</a> 
-<a class="jxr_linenumber" name="L3632" href="#L3632">3632</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person9</a> {
-<a class="jxr_linenumber" name="L3633" href="#L3633">3633</a>         @Column
-<a class="jxr_linenumber" name="L3634" href="#L3634">3634</a>         String name();
-<a class="jxr_linenumber" name="L3635" href="#L3635">3635</a> 
-<a class="jxr_linenumber" name="L3636" href="#L3636">3636</a>         @Index(2)
-<a class="jxr_linenumber" name="L3637" href="#L3637">3637</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3638" href="#L3638">3638</a>     }
-<a class="jxr_linenumber" name="L3639" href="#L3639">3639</a> 
-<a class="jxr_linenumber" name="L3640" href="#L3640">3640</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonNoAnnotation</a> {
-<a class="jxr_linenumber" name="L3641" href="#L3641">3641</a>         String name();
-<a class="jxr_linenumber" name="L3642" href="#L3642">3642</a>     }
-<a class="jxr_linenumber" name="L3643" href="#L3643">3643</a> 
-<a class="jxr_linenumber" name="L3644" href="#L3644">3644</a>     @Query(<span class="jxr_string">"select name, score from person order by name"</span>)
-<a class="jxr_linenumber" name="L3645" href="#L3645">3645</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person10</a> {
+<a class="jxr_linenumber" name="L3576" href="#L3576">3576</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3577" href="#L3577">3577</a> 
+<a class="jxr_linenumber" name="L3578" href="#L3578">3578</a>     }
+<a class="jxr_linenumber" name="L3579" href="#L3579">3579</a> 
+<a class="jxr_linenumber" name="L3580" href="#L3580">3580</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Score</a> {
+<a class="jxr_linenumber" name="L3581" href="#L3581">3581</a>         @Column
+<a class="jxr_linenumber" name="L3582" href="#L3582">3582</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3583" href="#L3583">3583</a>     }
+<a class="jxr_linenumber" name="L3584" href="#L3584">3584</a> 
+<a class="jxr_linenumber" name="L3585" href="#L3585">3585</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person</a> {
+<a class="jxr_linenumber" name="L3586" href="#L3586">3586</a>         @Column
+<a class="jxr_linenumber" name="L3587" href="#L3587">3587</a>         String name();
+<a class="jxr_linenumber" name="L3588" href="#L3588">3588</a>     }
+<a class="jxr_linenumber" name="L3589" href="#L3589">3589</a> 
+<a class="jxr_linenumber" name="L3590" href="#L3590">3590</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person2</a> {
+<a class="jxr_linenumber" name="L3591" href="#L3591">3591</a>         @Column
+<a class="jxr_linenumber" name="L3592" href="#L3592">3592</a>         String name();
+<a class="jxr_linenumber" name="L3593" href="#L3593">3593</a> 
+<a class="jxr_linenumber" name="L3594" href="#L3594">3594</a>         @Column
+<a class="jxr_linenumber" name="L3595" href="#L3595">3595</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3596" href="#L3596">3596</a>     }
+<a class="jxr_linenumber" name="L3597" href="#L3597">3597</a> 
+<a class="jxr_linenumber" name="L3598" href="#L3598">3598</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person3</a> {
+<a class="jxr_linenumber" name="L3599" href="#L3599">3599</a>         @Column(<span class="jxr_string">"name"</span>)
+<a class="jxr_linenumber" name="L3600" href="#L3600">3600</a>         String fullName();
+<a class="jxr_linenumber" name="L3601" href="#L3601">3601</a> 
+<a class="jxr_linenumber" name="L3602" href="#L3602">3602</a>         @Column(<span class="jxr_string">"score"</span>)
+<a class="jxr_linenumber" name="L3603" href="#L3603">3603</a>         <strong class="jxr_keyword">int</strong> examScore();
+<a class="jxr_linenumber" name="L3604" href="#L3604">3604</a>     }
+<a class="jxr_linenumber" name="L3605" href="#L3605">3605</a> 
+<a class="jxr_linenumber" name="L3606" href="#L3606">3606</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person4</a> {
+<a class="jxr_linenumber" name="L3607" href="#L3607">3607</a>         @Column(<span class="jxr_string">"namez"</span>)
+<a class="jxr_linenumber" name="L3608" href="#L3608">3608</a>         String fullName();
+<a class="jxr_linenumber" name="L3609" href="#L3609">3609</a> 
+<a class="jxr_linenumber" name="L3610" href="#L3610">3610</a>         @Column(<span class="jxr_string">"score"</span>)
+<a class="jxr_linenumber" name="L3611" href="#L3611">3611</a>         <strong class="jxr_keyword">int</strong> examScore();
+<a class="jxr_linenumber" name="L3612" href="#L3612">3612</a>     }
+<a class="jxr_linenumber" name="L3613" href="#L3613">3613</a> 
+<a class="jxr_linenumber" name="L3614" href="#L3614">3614</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person5</a> {
+<a class="jxr_linenumber" name="L3615" href="#L3615">3615</a>         @Index(1)
+<a class="jxr_linenumber" name="L3616" href="#L3616">3616</a>         String fullName();
+<a class="jxr_linenumber" name="L3617" href="#L3617">3617</a> 
+<a class="jxr_linenumber" name="L3618" href="#L3618">3618</a>         @Index(2)
+<a class="jxr_linenumber" name="L3619" href="#L3619">3619</a>         <strong class="jxr_keyword">int</strong> examScore();
+<a class="jxr_linenumber" name="L3620" href="#L3620">3620</a>     }
+<a class="jxr_linenumber" name="L3621" href="#L3621">3621</a> 
+<a class="jxr_linenumber" name="L3622" href="#L3622">3622</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person6</a> {
+<a class="jxr_linenumber" name="L3623" href="#L3623">3623</a>         @Index(1)
+<a class="jxr_linenumber" name="L3624" href="#L3624">3624</a>         String fullName();
+<a class="jxr_linenumber" name="L3625" href="#L3625">3625</a> 
+<a class="jxr_linenumber" name="L3626" href="#L3626">3626</a>         @Index(3)
+<a class="jxr_linenumber" name="L3627" href="#L3627">3627</a>         <strong class="jxr_keyword">int</strong> examScore();
+<a class="jxr_linenumber" name="L3628" href="#L3628">3628</a>     }
+<a class="jxr_linenumber" name="L3629" href="#L3629">3629</a> 
+<a class="jxr_linenumber" name="L3630" href="#L3630">3630</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person7</a> {
+<a class="jxr_linenumber" name="L3631" href="#L3631">3631</a>         @Index(1)
+<a class="jxr_linenumber" name="L3632" href="#L3632">3632</a>         String fullName();
+<a class="jxr_linenumber" name="L3633" href="#L3633">3633</a> 
+<a class="jxr_linenumber" name="L3634" href="#L3634">3634</a>         @Index(0)
+<a class="jxr_linenumber" name="L3635" href="#L3635">3635</a>         <strong class="jxr_keyword">int</strong> examScore();
+<a class="jxr_linenumber" name="L3636" href="#L3636">3636</a>     }
+<a class="jxr_linenumber" name="L3637" href="#L3637">3637</a> 
+<a class="jxr_linenumber" name="L3638" href="#L3638">3638</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person8</a> {
+<a class="jxr_linenumber" name="L3639" href="#L3639">3639</a>         @Column
+<a class="jxr_linenumber" name="L3640" href="#L3640">3640</a>         <strong class="jxr_keyword">int</strong> name();
+<a class="jxr_linenumber" name="L3641" href="#L3641">3641</a>     }
+<a class="jxr_linenumber" name="L3642" href="#L3642">3642</a> 
+<a class="jxr_linenumber" name="L3643" href="#L3643">3643</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person9</a> {
+<a class="jxr_linenumber" name="L3644" href="#L3644">3644</a>         @Column
+<a class="jxr_linenumber" name="L3645" href="#L3645">3645</a>         String name();
 <a class="jxr_linenumber" name="L3646" href="#L3646">3646</a> 
-<a class="jxr_linenumber" name="L3647" href="#L3647">3647</a>         @Column
-<a class="jxr_linenumber" name="L3648" href="#L3648">3648</a>         String name();
-<a class="jxr_linenumber" name="L3649" href="#L3649">3649</a> 
-<a class="jxr_linenumber" name="L3650" href="#L3650">3650</a>         @Column
-<a class="jxr_linenumber" name="L3651" href="#L3651">3651</a>         <strong class="jxr_keyword">int</strong> score();
-<a class="jxr_linenumber" name="L3652" href="#L3652">3652</a>     }
-<a class="jxr_linenumber" name="L3653" href="#L3653">3653</a> 
-<a class="jxr_linenumber" name="L3654" href="#L3654">3654</a> }
+<a class="jxr_linenumber" name="L3647" href="#L3647">3647</a>         @Index(2)
+<a class="jxr_linenumber" name="L3648" href="#L3648">3648</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3649" href="#L3649">3649</a>     }
+<a class="jxr_linenumber" name="L3650" href="#L3650">3650</a> 
+<a class="jxr_linenumber" name="L3651" href="#L3651">3651</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">PersonNoAnnotation</a> {
+<a class="jxr_linenumber" name="L3652" href="#L3652">3652</a>         String name();
+<a class="jxr_linenumber" name="L3653" href="#L3653">3653</a>     }
+<a class="jxr_linenumber" name="L3654" href="#L3654">3654</a> 
+<a class="jxr_linenumber" name="L3655" href="#L3655">3655</a>     @Query(<span class="jxr_string">"select name, score from person order by name"</span>)
+<a class="jxr_linenumber" name="L3656" href="#L3656">3656</a>     <strong class="jxr_keyword">interface</strong> <a href="../../../../org/davidmoten/rx/jdbc/DatabaseTest.html">Person10</a> {
+<a class="jxr_linenumber" name="L3657" href="#L3657">3657</a> 
+<a class="jxr_linenumber" name="L3658" href="#L3658">3658</a>         @Column
+<a class="jxr_linenumber" name="L3659" href="#L3659">3659</a>         String name();
+<a class="jxr_linenumber" name="L3660" href="#L3660">3660</a> 
+<a class="jxr_linenumber" name="L3661" href="#L3661">3661</a>         @Column
+<a class="jxr_linenumber" name="L3662" href="#L3662">3662</a>         <strong class="jxr_keyword">int</strong> score();
+<a class="jxr_linenumber" name="L3663" href="#L3663">3663</a>     }
+<a class="jxr_linenumber" name="L3664" href="#L3664">3664</a> 
+<a class="jxr_linenumber" name="L3665" href="#L3665">3665</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2016&#x2013;2019. All rights reserved.</div>

@@ -14,18 +14,18 @@ public final class SelectBuilder extends ParametersBuilder&lt;SelectBuilder&gt;
         implements Getter, DependsOn&lt;SelectBuilder&gt; {
 
     final String sql;
-    final Single&lt;Connection&gt; connections;
+    final Single&lt;Connection&gt; connection;
     private final Database db;
 
 <span class="fc" id="L20">    int fetchSize = 0; // default</span>
     private Flowable&lt;?&gt; dependsOn;
 
-    public SelectBuilder(String sql, Single&lt;Connection&gt; connections, Database db) {
+    SelectBuilder(String sql, Single&lt;Connection&gt; connection, Database db) {
 <span class="fc" id="L24">        super(sql);</span>
 <span class="fc" id="L25">        Preconditions.checkNotNull(sql);</span>
-<span class="fc" id="L26">        Preconditions.checkNotNull(connections);</span>
+<span class="fc" id="L26">        Preconditions.checkNotNull(connection);</span>
 <span class="fc" id="L27">        this.sql = sql;</span>
-<span class="fc" id="L28">        this.connections = connections;</span>
+<span class="fc" id="L28">        this.connection = connection;</span>
 <span class="fc" id="L29">        this.db = db;</span>
 <span class="fc" id="L30">    }</span>
 
@@ -55,7 +55,7 @@ public final class SelectBuilder extends ParametersBuilder&lt;SelectBuilder&gt;
     public &lt;T&gt; Flowable&lt;T&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; mapper) {
 <span class="fc" id="L56">        Preconditions.checkNotNull(mapper, &quot;mapper cannot be null&quot;);</span>
 <span class="fc" id="L57">        Flowable&lt;List&lt;Object&gt;&gt; pg = super.parameterGroupsToFlowable();</span>
-<span class="fc" id="L58">        Flowable&lt;T&gt; f = Select.&lt;T&gt;create(connections, pg, sql, fetchSize, mapper, true);</span>
+<span class="fc" id="L58">        Flowable&lt;T&gt; f = Select.&lt;T&gt;create(connection, pg, sql, fetchSize, mapper, true);</span>
 <span class="fc bfc" id="L59" title="All 2 branches covered.">        if (dependsOn != null) {</span>
 <span class="fc" id="L60">            return dependsOn.ignoreElements().andThen(f);</span>
         } else {
@@ -72,4 +72,4 @@ public final class SelectBuilder extends ParametersBuilder&lt;SelectBuilder&gt;
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

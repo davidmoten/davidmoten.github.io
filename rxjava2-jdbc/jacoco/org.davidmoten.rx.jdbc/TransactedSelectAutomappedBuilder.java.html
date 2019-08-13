@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import io.reactivex.Flowable;
+import io.reactivex.functions.Function;
 
 public final class TransactedSelectAutomappedBuilder&lt;T&gt; {
 
@@ -14,46 +15,46 @@ public final class TransactedSelectAutomappedBuilder&lt;T&gt; {
     private final Database db;
 
     // mutable
-<span class="fc" id="L17">    private boolean valuesOnly = false;</span>
+<span class="fc" id="L18">    private boolean valuesOnly = false;</span>
 
-<span class="fc" id="L19">    TransactedSelectAutomappedBuilder(SelectAutomappedBuilder&lt;T&gt; selectBuilder, Database db) {</span>
-<span class="fc" id="L20">        this.selectBuilder = selectBuilder;</span>
-<span class="fc" id="L21">        this.db = db;</span>
-<span class="fc" id="L22">    }</span>
+<span class="fc" id="L20">    TransactedSelectAutomappedBuilder(SelectAutomappedBuilder&lt;T&gt; selectBuilder, Database db) {</span>
+<span class="fc" id="L21">        this.selectBuilder = selectBuilder;</span>
+<span class="fc" id="L22">        this.db = db;</span>
+<span class="fc" id="L23">    }</span>
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(
             @Nonnull Flowable&lt;List&lt;Object&gt;&gt; parameters) {
-<span class="nc" id="L26">        selectBuilder.parameters(parameters);</span>
-<span class="nc" id="L27">        return this;</span>
+<span class="nc" id="L27">        selectBuilder.parameters(parameters);</span>
+<span class="nc" id="L28">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull List&lt;?&gt; values) {
-<span class="nc" id="L31">        selectBuilder.parameters(values);</span>
-<span class="nc" id="L32">        return this;</span>
+<span class="nc" id="L32">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L33">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; parameter(@Nonnull String name, Object value) {
-<span class="nc" id="L36">        selectBuilder.parameter(name, value);</span>
-<span class="nc" id="L37">        return this;</span>
+<span class="nc" id="L37">        selectBuilder.parameter(name, value);</span>
+<span class="nc" id="L38">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; parameters(@Nonnull Object... values) {
-<span class="nc" id="L41">        selectBuilder.parameters(values);</span>
-<span class="nc" id="L42">        return this;</span>
+<span class="nc" id="L42">        selectBuilder.parameters(values);</span>
+<span class="nc" id="L43">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; parameter(Object value) {
-<span class="nc" id="L46">        selectBuilder.parameters(value);</span>
-<span class="nc" id="L47">        return this;</span>
+<span class="nc" id="L47">        selectBuilder.parameters(value);</span>
+<span class="nc" id="L48">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilder&lt;T&gt; transactedValuesOnly() {
-<span class="nc" id="L51">        this.valuesOnly = true;</span>
-<span class="nc" id="L52">        return this;</span>
+<span class="nc" id="L52">        this.valuesOnly = true;</span>
+<span class="nc" id="L53">        return this;</span>
     }
 
     public TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt; valuesOnly() {
-<span class="fc" id="L56">        return new TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt;(this, db);</span>
+<span class="fc" id="L57">        return new TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt;(this, db);</span>
     }
 
     public static final class TransactedSelectAutomappedBuilderValuesOnly&lt;T&gt; {
@@ -61,45 +62,50 @@ public final class TransactedSelectAutomappedBuilder&lt;T&gt; {
         private final Database db;
 
         TransactedSelectAutomappedBuilderValuesOnly(TransactedSelectAutomappedBuilder&lt;T&gt; b,
-<span class="fc" id="L64">                Database db) {</span>
-<span class="fc" id="L65">            this.b = b;</span>
-<span class="fc" id="L66">            this.db = db;</span>
-<span class="fc" id="L67">        }</span>
+<span class="fc" id="L65">                Database db) {</span>
+<span class="fc" id="L66">            this.b = b;</span>
+<span class="fc" id="L67">            this.db = db;</span>
+<span class="fc" id="L68">        }</span>
 
         public Flowable&lt;T&gt; get() {
-<span class="fc" id="L70">            return createFlowable(b.selectBuilder, db) //</span>
-<span class="fc" id="L71">                    .flatMap(Tx.flattenToValuesOnly());</span>
+<span class="fc" id="L71">            return createFlowable(b.selectBuilder, db) //</span>
+<span class="fc" id="L72">                    .flatMap(Tx.flattenToValuesOnly());</span>
         }
+
+        public &lt;R&gt; Flowable&lt;R&gt; get(@Nonnull Function&lt;? super T, ? extends R&gt; function) {
+<span class="fc" id="L76">            return get().map(function);</span>
+        }
+        
     }
 
     public Flowable&lt;Tx&lt;T&gt;&gt; get() {
-<span class="nc" id="L76">        Flowable&lt;Tx&lt;T&gt;&gt; o = createFlowable(selectBuilder, db);</span>
-<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (valuesOnly) {</span>
-<span class="nc" id="L78">            return o.filter(tx -&gt; tx.isValue());</span>
+<span class="fc" id="L82">        Flowable&lt;Tx&lt;T&gt;&gt; o = createFlowable(selectBuilder, db);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (valuesOnly) {</span>
+<span class="nc" id="L84">            return o.filter(tx -&gt; tx.isValue());</span>
         } else {
-<span class="nc" id="L80">            return o;</span>
+<span class="fc" id="L86">            return o;</span>
         }
     }
-
+    
     private static &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; createFlowable(SelectAutomappedBuilder&lt;T&gt; sb, Database db) {
-<span class="fc" id="L85">        return Flowable.defer(() -&gt; {</span>
-<span class="fc" id="L86">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
-<span class="fc" id="L87">            return Select.create(sb.selectBuilder.connections //</span>
-<span class="fc" id="L88">                    .map(c -&gt; Util.toTransactedConnection(connection, c)), //</span>
-<span class="fc" id="L89">                    sb.selectBuilder.parameterGroupsToFlowable(), //</span>
+<span class="fc" id="L91">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L92">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
+<span class="fc" id="L93">            return Select.create(sb.selectBuilder.connection //</span>
+<span class="fc" id="L94">                    .map(c -&gt; Util.toTransactedConnection(connection, c)), //</span>
+<span class="fc" id="L95">                    sb.selectBuilder.parameterGroupsToFlowable(), //</span>
                     sb.selectBuilder.sql, //
                     sb.selectBuilder.fetchSize, //
-<span class="fc" id="L92">                    rs -&gt; Util.mapObject(rs, sb.cls, 1), //</span>
+<span class="fc" id="L98">                    Util.autoMap(sb.cls), //</span>
                     false) //
-<span class="fc" id="L94">                    .materialize() //</span>
-<span class="fc" id="L95">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
-<span class="fc" id="L96">                    .doOnNext(tx -&gt; {</span>
-<span class="fc bfc" id="L97" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
-<span class="fc" id="L98">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+<span class="fc" id="L100">                    .materialize() //</span>
+<span class="fc" id="L101">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L102">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L104">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
                         }
-<span class="fc" id="L100">                    });</span>
+<span class="fc" id="L106">                    });</span>
         });
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

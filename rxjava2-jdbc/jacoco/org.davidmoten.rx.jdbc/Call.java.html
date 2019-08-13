@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Call.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rx.jdbc</a> &gt; <span class="el_source">Call.java</span></div><h1>Call.java</h1><pre class="source lang-java linenums">package org.davidmoten.rx.jdbc;
+
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import org.davidmoten.rx.jdbc.callable.CallableResultSet1;
+import org.davidmoten.rx.jdbc.callable.CallableResultSet2;
+import org.davidmoten.rx.jdbc.callable.CallableResultSet3;
+import org.davidmoten.rx.jdbc.callable.CallableResultSet4;
+import org.davidmoten.rx.jdbc.callable.CallableResultSetN;
+import org.davidmoten.rx.jdbc.callable.internal.InParameterPlaceholder;
+import org.davidmoten.rx.jdbc.callable.internal.OutParameterPlaceholder;
+import org.davidmoten.rx.jdbc.callable.internal.ParameterPlaceholder;
+import org.davidmoten.rx.jdbc.tuple.Tuple2;
+import org.davidmoten.rx.jdbc.tuple.Tuple3;
+import org.davidmoten.rx.jdbc.tuple.Tuple4;
+import org.davidmoten.rx.jdbc.tuple.TupleN;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.davidmoten.guavamini.Lists;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.Notification;
+import io.reactivex.Single;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+
+final class Call {
+
+<span class="fc" id="L41">    private static final Logger log = LoggerFactory.getLogger(Call.class);</span>
+
+    private Call() {
+        // prevent instantiation
+    }
+
+    /////////////////////////
+    // No Parameters
+    /////////////////////////
+
+    static Flowable&lt;Integer&gt; createWithZeroOutParameters(Single&lt;Connection&gt; connection, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders) {
+<span class="fc" id="L53">        return connection.toFlowable()</span>
+<span class="fc" id="L54">                .flatMap(con -&gt; Call.&lt;Integer&gt;createWithParameters(con, sql, parameterGroups, parameterPlaceholders,</span>
+<span class="fc" id="L55">                        (stmt, parameters) -&gt; createWithZeroOutParameters(stmt, parameters, parameterPlaceholders)))</span>
+<span class="fc" id="L56">                .dematerialize();</span>
+    }
+
+    private static Single&lt;Integer&gt; createWithZeroOutParameters(NamedCallableStatement stmt, List&lt;Object&gt; parameters,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders) {
+<span class="fc" id="L61">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L62">            CallableStatement st = stmt.stmt;</span>
+<span class="fc" id="L63">            execute(stmt, parameters, parameterPlaceholders, 0, st);</span>
+<span class="fc" id="L64">            return 1;</span>
+        });
+    }
+
+    /////////////////////////
+    // One Out Parameter
+    /////////////////////////
+
+    static &lt;T1&gt; Flowable&lt;Notification&lt;T1&gt;&gt; createWithOneOutParameter(Single&lt;Connection&gt; connection, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls) {
+<span class="fc" id="L74">        return connection.toFlowable()</span>
+<span class="fc" id="L75">                .flatMap(con -&gt; createWithParameters(con, sql, parameterGroups, parameterPlaceholders,</span>
+<span class="fc" id="L76">                        (stmt, parameters) -&gt; createWithOneParameter(stmt, parameters, parameterPlaceholders, cls)));</span>
+    }
+
+    private static &lt;T&gt; Single&lt;T&gt; createWithOneParameter(NamedCallableStatement stmt, List&lt;Object&gt; parameters,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T&gt; cls1) {
+<span class="fc" id="L81">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L82">            CallableStatement st = stmt.stmt;</span>
+<span class="fc" id="L83">            List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, 2, st);</span>
+<span class="fc" id="L84">            return Util.mapObject(st, cls1, outs.get(0).pos, outs.get(0).type);</span>
+        });
+    }
+
+    /////////////////////////
+    // Two Out Parameters
+    /////////////////////////
+
+    static &lt;T1, T2&gt; Flowable&lt;Notification&lt;Tuple2&lt;T1, T2&gt;&gt;&gt; createWithTwoOutParameters(Single&lt;Connection&gt; connection,
+            String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2) {
+<span class="fc" id="L95">        return connection.toFlowable().flatMap(con -&gt; createWithParameters(con, sql, parameterGroups,</span>
+                parameterPlaceholders,
+<span class="fc" id="L97">                (stmt, parameters) -&gt; createWithTwoParameters(stmt, parameters, parameterPlaceholders, cls1, cls2)));</span>
+    }
+
+    private static &lt;T1, T2&gt; Single&lt;Tuple2&lt;T1, T2&gt;&gt; createWithTwoParameters(NamedCallableStatement stmt,
+            List&lt;Object&gt; parameters, List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2) {
+<span class="fc" id="L102">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L103">            CallableStatement st = stmt.stmt;</span>
+<span class="fc" id="L104">            List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, 2, st);</span>
+<span class="fc" id="L105">            T1 o1 = Util.mapObject(st, cls1, outs.get(0).pos, outs.get(0).type);</span>
+<span class="fc" id="L106">            T2 o2 = Util.mapObject(st, cls2, outs.get(1).pos, outs.get(1).type);</span>
+<span class="fc" id="L107">            return Tuple2.create(o1, o2);</span>
+        });
+    }
+
+    private static final class PlaceAndType {
+        final int pos;
+        final Type type;
+
+<span class="fc" id="L115">        PlaceAndType(int pos, Type type) {</span>
+<span class="fc" id="L116">            this.pos = pos;</span>
+<span class="fc" id="L117">            this.type = type;</span>
+<span class="fc" id="L118">        }</span>
+
+    }
+
+    /////////////////////////
+    // Three Out Parameters
+    /////////////////////////
+
+    static &lt;T1, T2, T3&gt; Flowable&lt;Notification&lt;Tuple3&lt;T1, T2, T3&gt;&gt;&gt; createWithThreeOutParameters(
+            Single&lt;Connection&gt; connection, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3) {
+<span class="fc" id="L129">        return connection.toFlowable()</span>
+<span class="fc" id="L130">                .flatMap(con -&gt; createWithParameters(con, sql, parameterGroups, parameterPlaceholders,</span>
+<span class="fc" id="L131">                        (stmt, parameters) -&gt; createWithThreeParameters(stmt, parameters, parameterPlaceholders, cls1,</span>
+                                cls2, cls3)));
+    }
+
+    private static &lt;T1, T2, T3&gt; Single&lt;Tuple3&lt;T1, T2, T3&gt;&gt; createWithThreeParameters(NamedCallableStatement stmt,
+            List&lt;Object&gt; parameters, List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2,
+            Class&lt;T3&gt; cls3) {
+<span class="fc" id="L138">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L139">            CallableStatement st = stmt.stmt;</span>
+<span class="fc" id="L140">            List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, 3, st);</span>
+<span class="fc" id="L141">            T1 o1 = Util.mapObject(st, cls1, outs.get(0).pos, outs.get(0).type);</span>
+<span class="fc" id="L142">            T2 o2 = Util.mapObject(st, cls2, outs.get(1).pos, outs.get(1).type);</span>
+<span class="fc" id="L143">            T3 o3 = Util.mapObject(st, cls3, outs.get(2).pos, outs.get(2).type);</span>
+<span class="fc" id="L144">            return Tuple3.create(o1, o2, o3);</span>
+        });
+    }
+
+    /////////////////////////
+    // Four Out Parameters
+    /////////////////////////
+
+    static &lt;T1, T2, T3, T4&gt; Flowable&lt;Notification&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt;&gt; createWithFourOutParameters(
+            Single&lt;Connection&gt; connection, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3,
+            Class&lt;T4&gt; cls4) {
+<span class="nc" id="L156">        return connection.toFlowable()</span>
+<span class="nc" id="L157">                .flatMap(con -&gt; createWithParameters(con, sql, parameterGroups, parameterPlaceholders,</span>
+<span class="nc" id="L158">                        (stmt, parameters) -&gt; createWithFourParameters(stmt, parameters, parameterPlaceholders, cls1,</span>
+                                cls2, cls3, cls4)));
+    }
+
+    private static &lt;T1, T2, T3, T4&gt; Single&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt; createWithFourParameters(NamedCallableStatement stmt,
+            List&lt;Object&gt; parameters, List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2,
+            Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4) {
+<span class="nc" id="L165">        return Single.fromCallable(() -&gt; {</span>
+<span class="nc" id="L166">            CallableStatement st = stmt.stmt;</span>
+<span class="nc" id="L167">            List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, 4, st);</span>
+<span class="nc" id="L168">            T1 o1 = Util.mapObject(st, cls1, outs.get(0).pos, outs.get(0).type);</span>
+<span class="nc" id="L169">            T2 o2 = Util.mapObject(st, cls2, outs.get(1).pos, outs.get(1).type);</span>
+<span class="nc" id="L170">            T3 o3 = Util.mapObject(st, cls3, outs.get(2).pos, outs.get(2).type);</span>
+<span class="nc" id="L171">            T4 o4 = Util.mapObject(st, cls4, outs.get(3).pos, outs.get(3).type);</span>
+<span class="nc" id="L172">            return Tuple4.create(o1, o2, o3, o4);</span>
+        });
+    }
+
+    /////////////////////////
+    // N Out Parameters
+    /////////////////////////
+
+    static Flowable&lt;Notification&lt;TupleN&lt;Object&gt;&gt;&gt; createWithNParameters( //
+            Single&lt;Connection&gt; connection, //
+            String sql, //
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, //
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, //
+            List&lt;Class&lt;?&gt;&gt; outClasses) {
+<span class="fc" id="L186">        return connection //</span>
+<span class="fc" id="L187">                .toFlowable() //</span>
+<span class="fc" id="L188">                .flatMap( //</span>
+<span class="fc" id="L189">                        con -&gt; createWithParameters( //</span>
+                                con, //
+                                sql, //
+                                parameterGroups, //
+                                parameterPlaceholders, //
+<span class="fc" id="L194">                                (stmt, parameters) -&gt; createWithNParameters(stmt, parameters, parameterPlaceholders,</span>
+                                        outClasses)));
+    }
+
+    private static Single&lt;TupleN&lt;Object&gt;&gt; createWithNParameters( //
+            NamedCallableStatement stmt, //
+            List&lt;Object&gt; parameters, //
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, //
+            List&lt;Class&lt;?&gt;&gt; outClasses) {
+<span class="fc" id="L203">        return Single.fromCallable(() -&gt; {</span>
+<span class="fc" id="L204">            CallableStatement st = stmt.stmt;</span>
+<span class="fc" id="L205">            List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, Integer.MAX_VALUE, st);</span>
+<span class="fc" id="L206">            Object[] outputs = new Object[outClasses.size()];</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            for (int i = 0; i &lt; outClasses.size(); i++) {</span>
+<span class="fc" id="L208">                outputs[i] = Util.mapObject(st, outClasses.get(i), outs.get(i).pos, outs.get(i).type);</span>
+            }
+<span class="fc" id="L210">            return TupleN.create(outputs);</span>
+        });
+    }
+
+    /////////////////////////
+    // One ResultSet
+    /////////////////////////
+
+    static &lt;T1&gt; Flowable&lt;Notification&lt;CallableResultSet1&lt;T1&gt;&gt;&gt; createWithOneResultSet(Single&lt;Connection&gt; connection,
+            String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            Function&lt;? super ResultSet, ? extends T1&gt; f1, int fetchSize) {
+<span class="fc" id="L221">        return connection.toFlowable().flatMap(</span>
+<span class="fc" id="L222">                con -&gt; createWithOneResultSet(con, sql, parameterGroups, parameterPlaceholders, f1, fetchSize));</span>
+    }
+
+    private static &lt;T1&gt; Flowable&lt;Notification&lt;CallableResultSet1&lt;T1&gt;&gt;&gt; createWithOneResultSet(Connection con,
+            String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            Function&lt;? super ResultSet, ? extends T1&gt; f1, int fetchSize) {
+<span class="fc" id="L228">        log.debug(&quot;Update.create {}&quot;, sql);</span>
+<span class="fc" id="L229">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="fc" id="L230">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;CallableResultSet1&lt;T1&gt;&gt;&gt;&gt; flowableFactory = //</span>
+<span class="fc" id="L231">                stmt -&gt; parameterGroups //</span>
+<span class="fc" id="L232">                        .flatMap(parameters -&gt; {</span>
+<span class="fc" id="L233">                            List&lt;Object&gt; outputValues = executeAndReturnOutputValues(parameterPlaceholders, stmt,</span>
+                                    parameters);
+<span class="fc" id="L235">                            Flowable&lt;T1&gt; flowable1 = createFlowable(stmt, f1);</span>
+<span class="fc" id="L236">                            return Single.just(new CallableResultSet1&lt;T1&gt;(outputValues, flowable1)).toFlowable();</span>
+                        }) //
+<span class="fc" id="L238">                        .materialize() //</span>
+<span class="fc" id="L239">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="pc" id="L240">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="fc" id="L241">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="fc" id="L242">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+
+    /////////////////////////
+    // Two ResultSets
+    /////////////////////////
+
+    static &lt;T1, T2&gt; Flowable&lt;Notification&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt; createWithTwoResultSets(
+            Single&lt;Connection&gt; connection, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+            Function&lt;? super ResultSet, ? extends T2&gt; f2, int fetchSize) {
+<span class="fc" id="L253">        return connection.toFlowable().flatMap(</span>
+<span class="fc" id="L254">                con -&gt; createWithTwoResultSets(con, sql, parameterGroups, parameterPlaceholders, f1, f2, fetchSize));</span>
+    }
+
+    private static &lt;T1, T2&gt; Flowable&lt;Notification&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt; createWithTwoResultSets(Connection con,
+            String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            Function&lt;? super ResultSet, ? extends T1&gt; f1, Function&lt;? super ResultSet, ? extends T2&gt; f2, int fetchSize) {
+<span class="fc" id="L260">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="fc" id="L261">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt;&gt; flowableFactory = //</span>
+<span class="fc" id="L262">                stmt -&gt; parameterGroups //</span>
+<span class="fc" id="L263">                        .flatMap(parameters -&gt; {</span>
+<span class="fc" id="L264">                            List&lt;Object&gt; outputValues = executeAndReturnOutputValues(parameterPlaceholders, stmt,</span>
+                                    parameters);
+<span class="fc" id="L266">                            final Flowable&lt;T1&gt; flowable1 = createFlowable(stmt, f1);</span>
+<span class="fc" id="L267">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="fc" id="L268">                            final Flowable&lt;T2&gt; flowable2 = createFlowable(stmt, f2);</span>
+<span class="fc" id="L269">                            return Single.just(new CallableResultSet2&lt;T1, T2&gt;(outputValues, flowable1, flowable2))</span>
+<span class="fc" id="L270">                                    .toFlowable();</span>
+                        }) //
+<span class="fc" id="L272">                        .materialize() //</span>
+<span class="fc" id="L273">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="pc" id="L274">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="fc" id="L275">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="fc" id="L276">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+
+    /////////////////////////
+    // Three ResultSets
+    /////////////////////////
+
+    static &lt;T1, T2, T3&gt; Flowable&lt;Notification&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt; createWithThreeResultSets(
+            Single&lt;Connection&gt; connection, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+            Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3, int fetchSize) {
+<span class="fc" id="L287">        return connection.toFlowable().flatMap(con -&gt; createWithThreeResultSets(con, sql, parameterGroups,</span>
+                parameterPlaceholders, f1, f2, f3, fetchSize));
+    }
+
+    private static &lt;T1, T2, T3&gt; Flowable&lt;Notification&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt; createWithThreeResultSets(
+            Connection con, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+            Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3, int fetchSize) {
+<span class="fc" id="L295">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="fc" id="L296">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt;&gt; flowableFactory = //</span>
+<span class="fc" id="L297">                stmt -&gt; parameterGroups //</span>
+<span class="fc" id="L298">                        .flatMap(parameters -&gt; {</span>
+<span class="fc" id="L299">                            List&lt;Object&gt; outputValues = executeAndReturnOutputValues(parameterPlaceholders, stmt,</span>
+                                    parameters);
+<span class="fc" id="L301">                            final Flowable&lt;T1&gt; flowable1 = createFlowable(stmt, f1);</span>
+<span class="fc" id="L302">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="fc" id="L303">                            final Flowable&lt;T2&gt; flowable2 = createFlowable(stmt, f2);</span>
+<span class="fc" id="L304">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="fc" id="L305">                            final Flowable&lt;T3&gt; flowable3 = createFlowable(stmt, f3);</span>
+<span class="fc" id="L306">                            return Single.just(</span>
+                                    new CallableResultSet3&lt;T1, T2, T3&gt;(outputValues, flowable1, flowable2, flowable3))
+<span class="fc" id="L308">                                    .toFlowable();</span>
+                        }) //
+<span class="fc" id="L310">                        .materialize() //</span>
+<span class="fc" id="L311">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="pc" id="L312">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="fc" id="L313">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="fc" id="L314">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+    /////////////////////////
+    // Four ResultSets
+    /////////////////////////
+
+    static &lt;T1, T2, T3, T4&gt; Flowable&lt;Notification&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt; createWithFourResultSets(
+            Single&lt;Connection&gt; connection, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+            Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3,
+            Function&lt;? super ResultSet, ? extends T4&gt; f4, int fetchSize) {
+<span class="nc" id="L325">        return connection.toFlowable().flatMap(con -&gt; createWithFourResultSets(con, sql, parameterGroups,</span>
+                parameterPlaceholders, f1, f2, f3, f4, fetchSize));
+    }
+
+    private static &lt;T1, T2, T3, T4&gt; Flowable&lt;Notification&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt; createWithFourResultSets(
+            Connection con, String sql, Flowable&lt;List&lt;Object&gt;&gt; parameterGroups,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+            Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3,
+            Function&lt;? super ResultSet, ? extends T4&gt; f4, int fetchSize) {
+<span class="nc" id="L334">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="nc" id="L335">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt;&gt; flowableFactory = //</span>
+<span class="nc" id="L336">                stmt -&gt; parameterGroups //</span>
+<span class="nc" id="L337">                        .flatMap(parameters -&gt; {</span>
+<span class="nc" id="L338">                            List&lt;Object&gt; outputValues = executeAndReturnOutputValues(parameterPlaceholders, stmt,</span>
+                                    parameters);
+<span class="nc" id="L340">                            final Flowable&lt;T1&gt; flowable1 = createFlowable(stmt, f1);</span>
+<span class="nc" id="L341">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="nc" id="L342">                            final Flowable&lt;T2&gt; flowable2 = createFlowable(stmt, f2);</span>
+<span class="nc" id="L343">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="nc" id="L344">                            final Flowable&lt;T3&gt; flowable3 = createFlowable(stmt, f3);</span>
+<span class="nc" id="L345">                            stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT);</span>
+<span class="nc" id="L346">                            final Flowable&lt;T4&gt; flowable4 = createFlowable(stmt, f4);</span>
+<span class="nc" id="L347">                            return Single.just(new CallableResultSet4&lt;T1, T2, T3, T4&gt;(outputValues, flowable1,</span>
+<span class="nc" id="L348">                                    flowable2, flowable3, flowable4)).toFlowable();</span>
+                        }) //
+<span class="nc" id="L350">                        .materialize() //</span>
+<span class="nc" id="L351">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="nc" id="L352">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="nc" id="L353">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="nc" id="L354">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+
+    /////////////////////////
+    // N ResultSets
+    /////////////////////////
+
+    static Flowable&lt;Notification&lt;CallableResultSetN&gt;&gt; createWithNResultSets(Single&lt;Connection&gt; connection, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            List&lt;Function&lt;? super ResultSet, ?&gt;&gt; functions, int fetchSize) {
+<span class="fc" id="L364">        return connection.toFlowable().flatMap(</span>
+<span class="fc" id="L365">                con -&gt; createWithNResultSets(con, sql, parameterGroups, parameterPlaceholders, functions, fetchSize));</span>
+    }
+
+    private static Flowable&lt;Notification&lt;CallableResultSetN&gt;&gt; createWithNResultSets(Connection con, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            List&lt;Function&lt;? super ResultSet, ?&gt;&gt; functions, int fetchSize) {
+<span class="fc" id="L371">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="fc" id="L372">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;CallableResultSetN&gt;&gt;&gt; flowableFactory = //</span>
+<span class="fc" id="L373">                stmt -&gt; parameterGroups //</span>
+<span class="fc" id="L374">                        .flatMap(parameters -&gt; {</span>
+<span class="fc" id="L375">                            List&lt;Object&gt; outputValues = executeAndReturnOutputValues(parameterPlaceholders, stmt,</span>
+                                    parameters);
+<span class="fc" id="L377">                            List&lt;Flowable&lt;?&gt;&gt; flowables = Lists.newArrayList();</span>
+<span class="fc" id="L378">                            int i = 0;</span>
+                            do {
+<span class="fc" id="L380">                                Function&lt;? super ResultSet, ?&gt; f = functions.get(i);</span>
+<span class="fc" id="L381">                                flowables.add(createFlowable(stmt, f));</span>
+<span class="fc" id="L382">                                i++;</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">                            } while (stmt.stmt.getMoreResults(Statement.KEEP_CURRENT_RESULT));</span>
+<span class="fc" id="L384">                            return Single.just(new CallableResultSetN(outputValues, flowables)).toFlowable();</span>
+                        }) //
+<span class="fc" id="L386">                        .materialize() //</span>
+<span class="fc" id="L387">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="pc" id="L388">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="fc" id="L389">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="fc" id="L390">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+
+    ////////////////////////////////////
+    // Utilty Methods
+    ///////////////////////////////////
+
+    private static &lt;T&gt; Flowable&lt;Notification&lt;T&gt;&gt; createWithParameters(Connection con, String sql,
+            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            BiFunction&lt;NamedCallableStatement, List&lt;Object&gt;, Single&lt;T&gt;&gt; single) {
+<span class="fc" id="L400">        Callable&lt;NamedCallableStatement&gt; resourceFactory = () -&gt; Util.prepareCall(con, sql, parameterPlaceholders);</span>
+<span class="fc" id="L401">        final Function&lt;NamedCallableStatement, Flowable&lt;Notification&lt;T&gt;&gt;&gt; flowableFactory = //</span>
+<span class="fc" id="L402">                stmt -&gt; parameterGroups //</span>
+<span class="fc" id="L403">                        .flatMap(parameters -&gt; single.apply(stmt, parameters).toFlowable()) //</span>
+<span class="fc" id="L404">                        .materialize() //</span>
+<span class="fc" id="L405">                        .doOnComplete(() -&gt; Util.commit(stmt.stmt)) //</span>
+<span class="pc" id="L406">                        .doOnError(e -&gt; Util.rollback(stmt.stmt));</span>
+<span class="fc" id="L407">        Consumer&lt;NamedCallableStatement&gt; disposer = Util::closeCallableStatementAndConnection;</span>
+<span class="fc" id="L408">        return Flowable.using(resourceFactory, flowableFactory, disposer, true);</span>
+    }
+
+    static PreparedStatement setParameters(PreparedStatement ps, List&lt;Object&gt; parameters,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, List&lt;String&gt; names) throws SQLException {
+        // TODO handle Parameter objects (named)
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        if (names.isEmpty()) {</span>
+<span class="fc" id="L415">            int i = 0;</span>
+<span class="fc bfc" id="L416" title="All 4 branches covered.">            for (int j = 0; j &lt; parameterPlaceholders.size() &amp;&amp; i &lt; parameters.size(); j++) {</span>
+<span class="fc" id="L417">                ParameterPlaceholder p = parameterPlaceholders.get(j);</span>
+<span class="fc bfc" id="L418" title="All 2 branches covered.">                if (p instanceof InParameterPlaceholder) {</span>
+<span class="fc" id="L419">                    Util.setParameter(ps, j + 1, parameters.get(i));</span>
+<span class="fc" id="L420">                    i++;</span>
+                }
+            }
+<span class="fc" id="L423">        } else {</span>
+            // TODO
+<span class="nc" id="L425">            throw new RuntimeException(&quot;named paramters not implemented yet for CallableStatement yet&quot;);</span>
+            // Util.setNamedParameters(ps, params, names);
+        }
+<span class="fc" id="L428">        return ps;</span>
+    }
+
+    private static List&lt;PlaceAndType&gt; execute(NamedCallableStatement stmt, List&lt;Object&gt; parameters,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders, int outCount, CallableStatement st) throws SQLException {
+<span class="fc" id="L433">        Util.incrementCounter(st.getConnection());</span>
+<span class="fc" id="L434">        setParameters(st, parameters, parameterPlaceholders, stmt.names);</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        int initialSize = outCount == Integer.MAX_VALUE ? 16 : outCount;</span>
+<span class="fc" id="L436">        List&lt;PlaceAndType&gt; outs = new ArrayList&lt;PlaceAndType&gt;(initialSize);</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">        for (int j = 0; j &lt; parameterPlaceholders.size(); j++) {</span>
+<span class="fc" id="L438">            ParameterPlaceholder p = parameterPlaceholders.get(j);</span>
+<span class="fc bfc" id="L439" title="All 2 branches covered.">            if (p instanceof OutParameterPlaceholder) {</span>
+<span class="fc" id="L440">                outs.add(new PlaceAndType(j + 1, ((OutParameterPlaceholder) p).type()));</span>
+<span class="fc bfc" id="L441" title="All 2 branches covered.">                if (outs.size() == outCount) {</span>
+<span class="fc" id="L442">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L446">        st.execute();</span>
+<span class="fc" id="L447">        return outs;</span>
+    }
+
+    private static &lt;T&gt; Flowable&lt;T&gt; createFlowable(NamedCallableStatement stmt,
+            Function&lt;? super ResultSet, ? extends T&gt; f) throws SQLException {
+<span class="fc" id="L452">        ResultSet rsActual = stmt.stmt.getResultSet();</span>
+<span class="fc" id="L453">        Callable&lt;ResultSet&gt; initialState = () -&gt; rsActual;</span>
+<span class="fc" id="L454">        BiConsumer&lt;ResultSet, Emitter&lt;T&gt;&gt; generator = (rs, emitter) -&gt; {</span>
+<span class="fc" id="L455">            log.debug(&quot;getting row from ps={}, rs={}&quot;, stmt.stmt, rs);</span>
+<span class="fc bfc" id="L456" title="All 2 branches covered.">            if (rs.next()) {</span>
+<span class="fc" id="L457">                T v = f.apply(rs);</span>
+<span class="fc" id="L458">                log.debug(&quot;emitting {}&quot;, v);</span>
+<span class="fc" id="L459">                emitter.onNext(v);</span>
+<span class="fc" id="L460">            } else {</span>
+<span class="fc" id="L461">                log.debug(&quot;completed&quot;);</span>
+<span class="fc" id="L462">                emitter.onComplete();</span>
+            }
+<span class="fc" id="L464">        };</span>
+<span class="fc" id="L465">        Consumer&lt;ResultSet&gt; disposeState = Util::closeSilently;</span>
+<span class="fc" id="L466">        return Flowable.generate(initialState, generator, disposeState);</span>
+    }
+
+    private static List&lt;Object&gt; executeAndReturnOutputValues(List&lt;ParameterPlaceholder&gt; parameterPlaceholders,
+            NamedCallableStatement stmt, List&lt;Object&gt; parameters) throws SQLException {
+<span class="fc" id="L471">        List&lt;PlaceAndType&gt; outs = execute(stmt, parameters, parameterPlaceholders, Integer.MAX_VALUE, stmt.stmt);</span>
+<span class="fc" id="L472">        List&lt;Object&gt; list = new ArrayList&lt;&gt;(outs.size());</span>
+<span class="fc bfc" id="L473" title="All 2 branches covered.">        for (PlaceAndType p : outs) {</span>
+            // TODO convert to a desired return type?
+<span class="fc" id="L475">            list.add(stmt.stmt.getObject(p.pos));</span>
+<span class="fc" id="L476">        }</span>
+<span class="fc" id="L477">        return list;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>
