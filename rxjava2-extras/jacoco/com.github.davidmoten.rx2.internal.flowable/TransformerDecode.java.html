@@ -45,7 +45,7 @@ public final class TransformerDecode {
         };
 
 <span class="fc" id="L47">        return com.github.davidmoten.rx2.flowable.Transformers.stateMachine(initialState, transition, completion,</span>
-                backpressureStrategy, batchSize);
+<span class="fc" id="L48">                backpressureStrategy, batchSize);</span>
     }
 
     private static final class Result {
@@ -72,13 +72,13 @@ public final class TransformerDecode {
 <span class="fc" id="L72">                bb.put(last);</span>
 <span class="fc" id="L73">                bb.put(next);</span>
 <span class="fc" id="L74">                bb.flip();</span>
-            } else { // next == null
+<span class="fc" id="L75">            } else { // next == null</span>
 <span class="fc" id="L76">                bb = last;</span>
             }
-        } else { // last == null
+<span class="fc" id="L78">        } else { // last == null</span>
 <span class="fc bfc" id="L79" title="All 2 branches covered.">            if (next != null) {</span>
 <span class="fc" id="L80">                bb = ByteBuffer.wrap(next);</span>
-            } else { // next == null
+<span class="fc" id="L81">            } else { // next == null</span>
 <span class="fc" id="L82">                return new Result(null, true);</span>
             }
         }
@@ -90,16 +90,16 @@ public final class TransformerDecode {
 <span class="fc bfc" id="L90" title="All 2 branches covered.">        if (cr.isError()) {</span>
             try {
 <span class="nc" id="L92">                cr.throwException();</span>
-<span class="fc" id="L93">            } catch (CharacterCodingException e) {</span>
+<span class="pc" id="L93">            } catch (CharacterCodingException e) {</span>
 <span class="fc" id="L94">                emitter.onError(e);</span>
 <span class="fc" id="L95">                return new Result(null, false);</span>
-<span class="nc" id="L96">            }</span>
+            }
         }
 
         ByteBuffer leftOver;
 <span class="fc bfc" id="L100" title="All 2 branches covered.">        if (bb.remaining() &gt; 0) {</span>
 <span class="fc" id="L101">            leftOver = bb;</span>
-        } else {
+<span class="fc" id="L102">        } else {</span>
 <span class="fc" id="L103">            leftOver = null;</span>
         }
 

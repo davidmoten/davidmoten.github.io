@@ -32,8 +32,8 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
     private final Function&lt;? super T, ? extends T&gt; value;
     private final Scheduler scheduler;
 
-    public FlowableInsertTimeout(Flowable&lt;T&gt; source, Function&lt;? super T, ? extends Long&gt; timeout, TimeUnit unit,
-<span class="fc" id="L36">            Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {</span>
+<span class="fc" id="L35">    public FlowableInsertTimeout(Flowable&lt;T&gt; source, Function&lt;? super T, ? extends Long&gt; timeout, TimeUnit unit,</span>
+            Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {
 <span class="fc" id="L37">        Preconditions.checkNotNull(timeout, &quot;timeout cannot be null&quot;);</span>
 <span class="fc" id="L38">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
 <span class="fc" id="L39">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
@@ -81,8 +81,8 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 
         private final Worker worker;
 
-        InsertTimeoutSubscriber(Subscriber&lt;? super T&gt; downstream, Function&lt;? super T, ? extends Long&gt; timeout,
-<span class="fc" id="L85">                TimeUnit unit, Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {</span>
+<span class="fc" id="L84">        InsertTimeoutSubscriber(Subscriber&lt;? super T&gt; downstream, Function&lt;? super T, ? extends Long&gt; timeout,</span>
+                TimeUnit unit, Function&lt;? super T, ? extends T&gt; value, Scheduler scheduler) {
 <span class="fc" id="L86">            this.downstream = downstream;</span>
 <span class="fc" id="L87">            this.timeout = timeout;</span>
 <span class="fc" id="L88">            this.unit = unit;</span>
@@ -112,14 +112,14 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
             final long waitTime;
             try {
 <span class="fc" id="L114">                waitTime = timeout.apply(t);</span>
-<span class="nc" id="L115">            } catch (Throwable e) {</span>
+<span class="pc" id="L115">            } catch (Throwable e) {</span>
 <span class="nc" id="L116">                Exceptions.throwIfFatal(e);</span>
                 // we cancel upstream ourselves because the
                 // error did not originate from source
 <span class="nc" id="L119">                upstream.cancel();</span>
 <span class="nc" id="L120">                onError(e);</span>
 <span class="nc" id="L121">                return;</span>
-<span class="fc" id="L122">            }</span>
+            }
 <span class="fc" id="L123">            TimeoutAction&lt;T&gt; action = new TimeoutAction&lt;T&gt;(this, t);</span>
 <span class="fc" id="L124">            Disposable d = worker.schedule(action, waitTime, unit);</span>
 <span class="fc" id="L125">            DisposableHelper.set(scheduled, d);</span>
@@ -136,7 +136,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (terminated.compareAndSet(null, e)) {</span>
 <span class="fc" id="L137">                dispose();</span>
 <span class="fc" id="L138">                drain();</span>
-            } else {
+<span class="fc" id="L139">            } else {</span>
 <span class="nc" id="L140">                RxJavaPlugins.onError(e);</span>
             }
 <span class="fc" id="L142">        }</span>
@@ -177,7 +177,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
                                 // don't need to dispose scheduled because already done in
                                 // onComplete
 <span class="fc" id="L179">                                downstream.onComplete();</span>
-                            } else {
+<span class="fc" id="L180">                            } else {</span>
                                 // clear the exception so can be gc'd
                                 // setting the value to TERMINATED just prevents it getting set again in a race
                                 // because the other setters which use CAS assume initial value of null
@@ -194,7 +194,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L194">                        downstream.onNext(t);</span>
 <span class="fc" id="L195">                        e++;</span>
                     }
-<span class="fc" id="L197">                }</span>
+                }
 <span class="pc bpc" id="L198" title="1 of 4 branches missed.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
 <span class="nc" id="L199">                    requested.addAndGet(-e);</span>
                 }
@@ -202,7 +202,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc bfc" id="L202" title="All 2 branches covered.">                if (missed == 0) {</span>
 <span class="fc" id="L203">                    return;</span>
                 }
-<span class="fc" id="L205">            }</span>
+            }
         }
 
         @Override
@@ -220,7 +220,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
                         }
                         break;
                     }
-<span class="nc" id="L223">                }</span>
+                }
 <span class="fc" id="L224">                drain();</span>
             }
 <span class="fc" id="L226">        }</span>
@@ -259,7 +259,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L259">                upstream.cancel();</span>
 <span class="fc" id="L260">                dispose();</span>
 <span class="fc" id="L261">                drain();</span>
-            } else {
+<span class="fc" id="L262">            } else {</span>
 <span class="nc" id="L263">                RxJavaPlugins.onError(e);</span>
             }
 <span class="fc" id="L265">        }</span>
@@ -288,7 +288,7 @@ public final class FlowableInsertTimeout&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L288">            } catch (Throwable e) {</span>
 <span class="fc" id="L289">                subscriber.insertError(e);</span>
 <span class="fc" id="L290">                return;</span>
-<span class="fc" id="L291">            }</span>
+            }
 <span class="fc" id="L292">            subscriber.insert(v);</span>
 <span class="fc" id="L293">        }</span>
 

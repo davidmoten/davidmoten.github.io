@@ -29,10 +29,10 @@ public final class FlowableServerSocket {
             final int timeoutMs, final int bufferSize, Action preAcceptAction, int acceptTimeoutMs,
             Predicate&lt;? super Socket&gt; acceptSocket) {
 <span class="fc" id="L31">        Function&lt;ServerSocket, Flowable&lt;Flowable&lt;byte[]&gt;&gt;&gt; FlowableFactory = createFlowableFactory(timeoutMs,</span>
-                bufferSize, preAcceptAction, acceptSocket);
+<span class="fc" id="L32">                bufferSize, preAcceptAction, acceptSocket);</span>
 <span class="fc" id="L33">        return Flowable.&lt;Flowable&lt;byte[]&gt;, ServerSocket&gt;using( //</span>
 <span class="fc" id="L34">                createServerSocketFactory(serverSocketFactory, acceptTimeoutMs), //</span>
-                FlowableFactory, //
+<span class="fc" id="L35">                FlowableFactory, //</span>
 <span class="fc" id="L36">                new Consumer&lt;ServerSocket&gt;() {</span>
                     // Note that in java 1.6, ServerSocket does not implement
                     // Closeable
@@ -41,7 +41,7 @@ public final class FlowableServerSocket {
 <span class="fc" id="L41">                        ss.close();</span>
 <span class="fc" id="L42">                    }</span>
                 }, //
-                true);
+<span class="fc" id="L44">                true);</span>
     }
 
     private static Callable&lt;ServerSocket&gt; createServerSocketFactory(
@@ -92,7 +92,7 @@ public final class FlowableServerSocket {
 <span class="fc" id="L92">                socket = ss.accept();</span>
 <span class="fc bfc" id="L93" title="All 2 branches covered.">                if (!acceptSocket.test(socket)) {</span>
 <span class="fc" id="L94">                    closeQuietly(socket);</span>
-                } else {
+<span class="fc" id="L95">                } else {</span>
 <span class="fc" id="L96">                    emitter.onNext(createSocketFlowable(socket, timeoutMs, bufferSize));</span>
 <span class="fc" id="L97">                    break;</span>
                 }
@@ -105,13 +105,13 @@ public final class FlowableServerSocket {
                 // console.
 <span class="pc bpc" id="L106" title="2 of 4 branches missed.">                if (e instanceof SocketException &amp;&amp; (&quot;Socket closed&quot;.equals(e.getMessage())</span>
 <span class="nc bnc" id="L107" title="All 2 branches missed.">                        || &quot;Socket operation on nonsocket: configureBlocking&quot;.equals(e.getMessage()))) {</span>
-<span class="fc" id="L108">                    break;</span>
+<span class="nc" id="L108">                    break;</span>
                 } else {
                     // unknown problem
 <span class="nc" id="L111">                    emitter.onError(e);</span>
-<span class="nc" id="L112">                    break;</span>
+                    break;
                 }
-<span class="fc" id="L114">            }</span>
+            }
         }
 <span class="fc" id="L116">    }</span>
 
@@ -119,9 +119,9 @@ public final class FlowableServerSocket {
     static void closeQuietly(Socket socket) {
         try {
 <span class="fc" id="L121">            socket.close();</span>
-<span class="nc" id="L122">        } catch (IOException e) {</span>
+<span class="pc" id="L122">        } catch (IOException e) {</span>
             // ignore exception
-<span class="fc" id="L124">        }</span>
+        }
 <span class="fc" id="L125">    }</span>
 
     private static Flowable&lt;byte[]&gt; createSocketFlowable(final Socket socket, long timeoutMs, final int bufferSize) {
@@ -140,15 +140,15 @@ public final class FlowableServerSocket {
                     }
                 }, //
 <span class="fc" id="L142">                Consumers.close(), //</span>
-                true);
+<span class="fc" id="L143">                true);</span>
     }
 
     private static void setTimeout(Socket socket, long timeoutMs) {
         try {
 <span class="fc" id="L148">            socket.setSoTimeout((int) timeoutMs);</span>
-<span class="nc" id="L149">        } catch (SocketException e) {</span>
+<span class="pc" id="L149">        } catch (SocketException e) {</span>
 <span class="nc" id="L150">            throw new RuntimeException(e);</span>
-<span class="fc" id="L151">        }</span>
+        }
 <span class="fc" id="L152">    }</span>
 
 }

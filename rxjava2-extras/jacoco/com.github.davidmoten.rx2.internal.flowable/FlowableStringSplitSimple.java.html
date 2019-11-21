@@ -41,7 +41,7 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
         private final Subscriber&lt;? super String&gt; actual;
         // queue of notifications
 <span class="fc" id="L43">        private final transient SimplePlainQueue&lt;String&gt; queue = new SpscLinkedArrayQueue&lt;String&gt;(</span>
-                16);
+<span class="fc" id="L44">                16);</span>
 <span class="fc" id="L45">        private final AtomicInteger wip = new AtomicInteger();</span>
 <span class="fc" id="L46">        private final AtomicBoolean once = new AtomicBoolean();</span>
 
@@ -78,7 +78,7 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
 <span class="fc bfc" id="L78" title="All 2 branches covered.">                    if (n == Long.MAX_VALUE) {</span>
 <span class="fc" id="L79">                        parent.request(Long.MAX_VALUE);</span>
 <span class="fc" id="L80">                        unbounded = true;</span>
-                    } else {
+<span class="fc" id="L81">                    } else {</span>
 <span class="fc" id="L82">                        parent.request(1);</span>
                     }
                 }
@@ -119,7 +119,7 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
                     }
 <span class="fc bfc" id="L120" title="All 2 branches covered.">                    if (find()) {</span>
 <span class="fc" id="L121">                        e++;</span>
-                    } else {
+<span class="fc" id="L122">                    } else {</span>
                         // must read `done` before poll occurs
 <span class="fc" id="L124">                        boolean d = done;</span>
 <span class="fc" id="L125">                        String t = queue.poll();</span>
@@ -145,7 +145,7 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
 <span class="fc" id="L145">                                        actual.onNext(&quot;&quot;);</span>
 <span class="fc" id="L146">                                        e++;</span>
 <span class="fc" id="L147">                                        checkCancelled = true;</span>
-                                    } else {
+<span class="fc" id="L148">                                    } else {</span>
 <span class="fc" id="L149">                                        checkCancelled = false;</span>
                                     }
 <span class="pc bpc" id="L151" title="1 of 4 branches missed.">                                    if (!checkCancelled || !cancelled) {</span>
@@ -156,11 +156,11 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
 <span class="fc bfc" id="L156" title="All 2 branches covered.">                            } else if (!unbounded) {</span>
 <span class="fc" id="L157">                                parent.request(1);</span>
                             }
-                            break;
+<span class="fc" id="L159">                            break;</span>
                         } else {
 <span class="fc" id="L161">                            ss.add(t);</span>
                         }
-<span class="fc" id="L163">                    }</span>
+                    }
                 }
 <span class="fc bfc" id="L165" title="All 4 branches covered.">                if (e &gt; 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
 <span class="fc" id="L166">                    this.addAndGet(-e);</span>
@@ -169,7 +169,7 @@ public final class FlowableStringSplitSimple extends Flowable&lt;String&gt; {
 <span class="fc bfc" id="L169" title="All 2 branches covered.">                if (missed == 0) {</span>
 <span class="fc" id="L170">                    return;</span>
                 }
-<span class="fc" id="L172">            }</span>
+            }
         }
 
         /**

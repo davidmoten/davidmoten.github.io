@@ -31,9 +31,9 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
     private final long maxIterations;
     private final Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; tester;
 
-    public FlowableRepeatingTransform(Flowable&lt;T&gt; source,
+<span class="fc" id="L34">    public FlowableRepeatingTransform(Flowable&lt;T&gt; source,</span>
             Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform, int maxChained,
-<span class="fc" id="L36">            long maxIterations, Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt; tester) {</span>
+            long maxIterations, Function&lt;Observable&lt;T&gt;, Observable&lt;?&gt;&gt; tester) {
 <span class="pc bpc" id="L37" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxChained &gt; 0, &quot;maxChained must be &gt; 0&quot;);</span>
 <span class="pc bpc" id="L38" title="1 of 2 branches missed.">        Preconditions.checkArgument(maxIterations &gt; 0, &quot;maxIterations must be &gt; 0&quot;);</span>
 <span class="fc" id="L39">        Preconditions.checkNotNull(transform, &quot;transform must not be null&quot;);</span>
@@ -56,10 +56,10 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L56">            child.onSubscribe(SubscriptionHelper.CANCELLED);</span>
 <span class="fc" id="L57">            child.onError(e);</span>
 <span class="fc" id="L58">            return;</span>
-<span class="fc" id="L59">        }</span>
+        }
 <span class="fc" id="L60">        AtomicReference&lt;Chain&lt;T&gt;&gt; chainRef = new AtomicReference&lt;Chain&lt;T&gt;&gt;();</span>
 <span class="fc" id="L61">        DestinationSerializedSubject&lt;T&gt; destination = new DestinationSerializedSubject&lt;T&gt;(child,</span>
-                chainRef);
+<span class="fc" id="L62">                chainRef);</span>
 <span class="fc" id="L63">        Chain&lt;T&gt; chain = new Chain&lt;T&gt;(transform, destination, maxIterations, maxChained, tester);</span>
 <span class="fc" id="L64">        chainRef.set(chain);</span>
         // destination is not initially subscribed to the chain but will be when
@@ -83,8 +83,8 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
         final T t;
         final Throwable error;
 
-        Event(EventType eventType, ChainedReplaySubject&lt;T&gt; subject,
-<span class="fc" id="L87">                Subscriber&lt;? super T&gt; subscriber, T t, Throwable error) {</span>
+<span class="fc" id="L86">        Event(EventType eventType, ChainedReplaySubject&lt;T&gt; subject,</span>
+                Subscriber&lt;? super T&gt; subscriber, T t, Throwable error) {
 <span class="fc" id="L88">            this.eventType = eventType;</span>
 <span class="fc" id="L89">            this.subject = subject;</span>
 <span class="fc" id="L90">            this.subscriber = subscriber;</span>
@@ -110,9 +110,9 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
         private boolean destinationAttached;
         private volatile boolean cancelled;
 
-        Chain(Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform,
+<span class="fc" id="L113">        Chain(Function&lt;? super Flowable&lt;T&gt;, ? extends Flowable&lt;T&gt;&gt; transform,</span>
                 DestinationSerializedSubject&lt;T&gt; destination, long maxIterations, int maxChained,
-<span class="fc" id="L115">                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {</span>
+                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {
 <span class="fc" id="L116">            this.transform = transform;</span>
 <span class="fc" id="L117">            this.destination = destination;</span>
 <span class="fc" id="L118">            this.maxIterations = maxIterations;</span>
@@ -141,7 +141,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 
         void completeOrCancel(ChainedReplaySubject&lt;T&gt; subject) {
 <span class="fc" id="L143">            queue.offer(</span>
-                    new Event&lt;T&gt;(EventType.TESTER_COMPLETE_OR_CANCEL, subject, null, null, null));
+<span class="fc" id="L144">                    new Event&lt;T&gt;(EventType.TESTER_COMPLETE_OR_CANCEL, subject, null, null, null));</span>
 <span class="fc" id="L145">            drain();</span>
 <span class="fc" id="L146">        }</span>
 
@@ -171,7 +171,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
                 }
 <span class="fc" id="L172">                int missed = 1;</span>
                 while (true) {
-                    while (true) {
+<span class="fc" id="L174">                    while (true) {</span>
 <span class="fc" id="L175">                        Event&lt;T&gt; v = queue.poll();</span>
 <span class="fc bfc" id="L176" title="All 2 branches covered.">                        if (v == null) {</span>
 <span class="fc" id="L177">                            break;</span>
@@ -185,13 +185,13 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L185">                            v.subscriber.onComplete();</span>
 <span class="pc bpc" id="L186" title="1 of 2 branches missed.">                        } else if (v.eventType == EventType.ERROR) {</span>
 <span class="nc" id="L187">                            v.subscriber.onError(v.error);</span>
-                        } else {
+<span class="nc" id="L188">                        } else {</span>
 <span class="fc" id="L189">                            handleCompleteOrCancel(v);</span>
                         }
-<span class="fc" id="L191">                    }</span>
+                    }
 <span class="fc" id="L192">                    missed = addAndGet(-missed);</span>
 <span class="fc bfc" id="L193" title="All 2 branches covered.">                    if (missed == 0) {</span>
-<span class="fc" id="L194">                        break;</span>
+                        break;
                     }
                 }
             }
@@ -199,12 +199,12 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 
         private void handleAdd(Event&lt;T&gt; v) {
 <span class="fc" id="L201">            debug(&quot;ADD &quot; + v.subject);</span>
-<span class="pc bpc" id="L202" title="1 of 8 branches missed.">            if (!destinationAttached &amp;&amp; v.subject == finalSubscriber &amp;&amp; length &lt; maxChained</span>
-                    &amp;&amp; !destinationAttached) {
+<span class="fc bfc" id="L202" title="All 6 branches covered.">            if (!destinationAttached &amp;&amp; v.subject == finalSubscriber &amp;&amp; length &lt; maxChained</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">                    &amp;&amp; !destinationAttached) {</span>
 <span class="pc bpc" id="L204" title="1 of 2 branches missed.">                if (iteration &lt;= maxIterations - 1) {</span>
                     // ok to add another subject to the chain
 <span class="fc" id="L206">                    ChainedReplaySubject&lt;T&gt; sub = ChainedReplaySubject.create(destination, this,</span>
-                            test);
+<span class="fc" id="L207">                            test);</span>
 <span class="fc bfc" id="L208" title="All 2 branches covered.">                    if (iteration == maxIterations - 1) {</span>
 <span class="fc" id="L209">                        sub.subscribe(destination);</span>
 <span class="fc" id="L210">                        debug(sub + &quot;subscribed to by destination&quot;);</span>
@@ -261,7 +261,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L261">                cancelWholeChain();</span>
 <span class="fc" id="L262">                destination.onError(e);</span>
 <span class="fc" id="L263">                return;</span>
-<span class="fc" id="L264">            }</span>
+            }
 <span class="fc" id="L265">            log(&quot;adding subscriber to &quot; + finalSubscriber);</span>
 <span class="fc" id="L266">            f.onTerminateDetach().subscribe(sub);</span>
 <span class="fc" id="L267">            debug(finalSubscriber + &quot; subscribed to by &quot; + sub);</span>
@@ -344,10 +344,10 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L344">                            d2 = Long.MAX_VALUE;</span>
                         }
 <span class="pc bpc" id="L346" title="1 of 2 branches missed.">                        if (deferredRequests.compareAndSet(d, d2)) {</span>
-<span class="fc" id="L347">                            break;</span>
+                            break;
                         }
                     }
-<span class="nc" id="L350">                }</span>
+                }
 <span class="fc" id="L351">                drain();</span>
             }
 <span class="fc" id="L353">        }</span>
@@ -410,7 +410,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L410">                            e++;</span>
                         }
 <span class="fc" id="L412">                        d = done;</span>
-<span class="fc" id="L413">                    }</span>
+                    }
 <span class="pc bpc" id="L414" title="1 of 4 branches missed.">                    if (d &amp;&amp; terminate()) {</span>
 <span class="fc" id="L415">                        return;</span>
                     }
@@ -421,7 +421,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="pc bpc" id="L421" title="1 of 2 branches missed.">                    if (missed == 0) {</span>
 <span class="fc" id="L422">                        return;</span>
                     }
-<span class="nc" id="L424">                }</span>
+                }
             }
 <span class="fc" id="L426">        }</span>
 
@@ -529,7 +529,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L529">        private final SimplePlainQueue&lt;T&gt; queue = new SpscLinkedArrayQueue&lt;T&gt;(16);</span>
 <span class="fc" id="L530">        private final AtomicLong requested = new AtomicLong();</span>
 <span class="fc" id="L531">        private final AtomicReference&lt;Requests&lt;T&gt;&gt; requests = new AtomicReference&lt;Requests&lt;T&gt;&gt;(</span>
-                new Requests&lt;T&gt;(null, 0, 0, null));
+<span class="fc" id="L532">                new Requests&lt;T&gt;(null, 0, 0, null));</span>
 <span class="fc" id="L533">        private final AtomicInteger wip = new AtomicInteger();</span>
         private final Tester&lt;T&gt; tester;
 
@@ -547,8 +547,8 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L547">            return c;</span>
         }
 
-        private ChainedReplaySubject(DestinationSerializedSubject&lt;T&gt; destination, Chain&lt;T&gt; chain,
-<span class="fc" id="L551">                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {</span>
+<span class="fc" id="L550">        private ChainedReplaySubject(DestinationSerializedSubject&lt;T&gt; destination, Chain&lt;T&gt; chain,</span>
+                Function&lt;Observable&lt;T&gt;, ? extends Observable&lt;?&gt;&gt; test) {
 <span class="fc" id="L552">            this.destination = destination;</span>
 <span class="fc" id="L553">            this.chain = chain;</span>
 <span class="fc" id="L554">            this.test = test;</span>
@@ -561,8 +561,8 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
             final long deferred;
             final Subscriber&lt;? super T&gt; child;
 
-            Requests(Subscription parent, long unreconciled, long deferred,
-<span class="fc" id="L565">                    Subscriber&lt;? super T&gt; child) {</span>
+<span class="fc" id="L564">            Requests(Subscription parent, long unreconciled, long deferred,</span>
+                    Subscriber&lt;? super T&gt; child) {
 <span class="fc" id="L566">                this.parent = parent;</span>
 <span class="fc" id="L567">                this.unreconciled = unreconciled;</span>
 <span class="fc" id="L568">                this.deferred = deferred;</span>
@@ -574,10 +574,10 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
             Observable&lt;?&gt; o;
             try {
 <span class="fc" id="L576">                o = test.apply(tester);</span>
-<span class="nc" id="L577">            } catch (Exception e) {</span>
+<span class="pc" id="L577">            } catch (Exception e) {</span>
                 // TODO
 <span class="nc" id="L579">                throw new RuntimeException(e);</span>
-<span class="fc" id="L580">            }</span>
+            }
 <span class="fc" id="L581">            o.subscribe(new TesterObserver&lt;T&gt;(chain, this));</span>
 <span class="fc" id="L582">        }</span>
 
@@ -600,10 +600,10 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L600">                    r2 = new Requests&lt;T&gt;(parent, r.unreconciled, 0, r.child);</span>
 <span class="pc bpc" id="L601" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
 <span class="fc" id="L602">                        parent.request(r.deferred);</span>
-<span class="fc" id="L603">                        break;</span>
+                        break;
                     }
                 }
-<span class="nc" id="L606">            }</span>
+            }
 <span class="fc" id="L607">            drain();</span>
 <span class="fc" id="L608">        }</span>
 
@@ -614,9 +614,9 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L614">                Requests&lt;T&gt; r = requests.get();</span>
 <span class="fc" id="L615">                Requests&lt;T&gt; r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled, r.deferred, child);</span>
 <span class="pc bpc" id="L616" title="1 of 2 branches missed.">                if (requests.compareAndSet(r, r2)) {</span>
-<span class="fc" id="L617">                    break;</span>
+                    break;
                 }
-<span class="nc" id="L619">            }</span>
+            }
 <span class="fc" id="L620">            child.onSubscribe(this);</span>
 <span class="fc" id="L621">            drain();</span>
 <span class="fc" id="L622">        }</span>
@@ -638,7 +638,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="pc bpc" id="L638" title="1 of 2 branches missed.">                        if (requests.compareAndSet(r, r2)) {</span>
 <span class="fc" id="L639">                            break;</span>
                         }
-<span class="nc" id="L641">                    } else {</span>
+                    } else {
 <span class="fc" id="L642">                        long x = n + r.deferred - r.unreconciled;</span>
 <span class="fc" id="L643">                        long u = Math.max(0, -x);</span>
 <span class="fc" id="L644">                        r2 = new Requests&lt;T&gt;(r.parent, u, 0, r.child);</span>
@@ -649,7 +649,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
                             break;
                         }
                     }
-<span class="nc" id="L652">                }</span>
+                }
 <span class="fc" id="L653">                drain();</span>
             }
 <span class="fc" id="L655">        }</span>
@@ -675,10 +675,10 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
                 } else {
 <span class="fc" id="L676">                    r2 = new Requests&lt;T&gt;(r.parent, r.unreconciled, 0, r.child);</span>
 <span class="pc bpc" id="L677" title="1 of 2 branches missed.">                    if (requests.compareAndSet(r, r2)) {</span>
-<span class="fc" id="L678">                        break;</span>
+                        break;
                     }
                 }
-<span class="nc" id="L681">            }</span>
+            }
 <span class="fc" id="L682">            drain();</span>
 <span class="fc" id="L683">        }</span>
 
@@ -751,7 +751,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc" id="L751">                            e++;</span>
                         }
 <span class="fc" id="L753">                        d = done;</span>
-<span class="fc" id="L754">                    }</span>
+                    }
 <span class="fc bfc" id="L755" title="All 6 branches covered.">                    if (d &amp;&amp; queue.isEmpty() &amp;&amp; terminate()) {</span>
 <span class="fc" id="L756">                        return;</span>
                     }
@@ -762,7 +762,7 @@ public final class FlowableRepeatingTransform&lt;T&gt; extends Flowable&lt;T&gt;
 <span class="fc bfc" id="L762" title="All 2 branches covered.">                    if (missed == 0) {</span>
 <span class="fc" id="L763">                        return;</span>
                     }
-<span class="fc" id="L765">                }</span>
+                }
             }
 <span class="fc" id="L767">        }</span>
 

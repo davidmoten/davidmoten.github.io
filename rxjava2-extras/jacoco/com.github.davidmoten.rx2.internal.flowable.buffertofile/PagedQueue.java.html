@@ -20,7 +20,7 @@ public class PagedQueue extends AtomicInteger {
     private static final int ALIGN_BYTES = 4;
     private static final int MAX_PADDING_PER_FULL_MESSAGE = 32;
     private static final int SIZE_HEADER_PRIMARY_PART = SIZE_MESSAGE_SIZE_FIELD + SIZE_MESSAGE_TYPE_FIELD
-            + SIZE_PADDING_SIZE_FIELD;
+<span class="fc" id="L23">            + SIZE_PADDING_SIZE_FIELD;</span>
 
     private final Pages pages;
 
@@ -33,8 +33,8 @@ public class PagedQueue extends AtomicInteger {
 <span class="fc" id="L33">    }</span>
 
     public void offer(byte[] bytes) {
-<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (getAndIncrement() != 0) {</span>
-<span class="fc" id="L37">            return;</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (getAndIncrement() != 0) {</span>
+<span class="nc" id="L37">            return;</span>
         }
         try {
 <span class="fc" id="L40">            int padding = padding(bytes.length);</span>
@@ -48,10 +48,10 @@ public class PagedQueue extends AtomicInteger {
 <span class="fc" id="L48">                    padding += availAfter;</span>
                 }
 <span class="fc" id="L50">                writeFullMessage(bytes, padding);</span>
-            } else {
+<span class="fc" id="L51">            } else {</span>
 <span class="fc" id="L52">                writeFragments(bytes, avail);</span>
             }
-        } finally {
+<span class="fc" id="L54">        } finally {</span>
 <span class="fc" id="L55">            decrementAndGet();</span>
 <span class="fc" id="L56">        }</span>
 <span class="fc" id="L57">    }</span>
@@ -63,7 +63,7 @@ public class PagedQueue extends AtomicInteger {
     private void writeFragments(byte[] bytes, int avail) {
 <span class="fc" id="L64">        int start = 0;</span>
 <span class="fc" id="L65">        int length = bytes.length;</span>
-        do {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        do {</span>
 <span class="fc bfc" id="L67" title="All 2 branches covered.">            int extraHeaderBytes = start == 0 ? 4 : 0;</span>
 <span class="fc" id="L68">            int count = Math.min(avail - 8 - extraHeaderBytes, length);</span>
 <span class="fc" id="L69">            int padding = padding(count);</span>
@@ -79,7 +79,7 @@ public class PagedQueue extends AtomicInteger {
 <span class="fc bfc" id="L79" title="All 2 branches covered.">            if (length &gt; 0) {</span>
 <span class="fc" id="L80">                avail = pages.avail();</span>
             }
-<span class="fc bfc" id="L82" title="All 2 branches covered.">        } while (length &gt; 0);</span>
+<span class="fc" id="L82">        } while (length &gt; 0);</span>
 <span class="fc" id="L83">    }</span>
 
     private int fullMessageSize(int payloadLength, int padding) {
@@ -91,7 +91,7 @@ public class PagedQueue extends AtomicInteger {
         int padding;
 <span class="fc bfc" id="L92" title="All 2 branches covered.">        if (rem == 0) {</span>
 <span class="fc" id="L93">            padding = 0;</span>
-        } else {
+<span class="fc" id="L94">        } else {</span>
 <span class="fc" id="L95">            padding = ALIGN_BYTES - rem;</span>
         }
 <span class="fc" id="L97">        return padding;</span>
@@ -106,7 +106,7 @@ public class PagedQueue extends AtomicInteger {
         // TODO optimize for BigEndian as well
 <span class="pc bpc" id="L107" title="1 of 4 branches missed.">        if (padding == 2 &amp;&amp; isLittleEndian) {</span>
 <span class="fc" id="L108">            pages.putInt(((messageType.value() &amp; 0xFF) &lt;&lt; 0) | (((byte) padding)) &lt;&lt; 8);</span>
-        } else {
+<span class="fc" id="L109">        } else {</span>
 <span class="fc" id="L110">            pages.putByte(messageType.value()); // message type</span>
 <span class="fc" id="L111">            pages.putByte((byte) padding);</span>
 <span class="fc bfc" id="L112" title="All 2 branches covered.">            if (padding &gt; 0) {</span>
@@ -181,13 +181,13 @@ public class PagedQueue extends AtomicInteger {
                     }
                 }
             }
-<span class="fc" id="L184">        }</span>
+        }
     }
 
     private void closeWrite() {
 <span class="fc" id="L188">        incrementAndGet();</span>
 <span class="fc bfc" id="L189" title="All 2 branches covered.">        while (!compareAndSet(1, 2))</span>
-<span class="fc" id="L190">            ;</span>
+            ;
 <span class="fc" id="L191">    }</span>
 
     public void close() {

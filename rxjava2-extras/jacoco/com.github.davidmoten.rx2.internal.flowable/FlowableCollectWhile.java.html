@@ -41,7 +41,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
     @Override
     protected void subscribeActual(Subscriber&lt;? super R&gt; child) {
 <span class="fc" id="L43">        CollectWhileSubscriber&lt;T, R&gt; subscriber = new CollectWhileSubscriber&lt;T, R&gt;(</span>
-                collectionFactory, add, condition, child, emitRemainder);
+<span class="fc" id="L44">                collectionFactory, add, condition, child, emitRemainder);</span>
 <span class="fc" id="L45">        source.subscribe(subscriber);</span>
 <span class="fc" id="L46">    }</span>
 
@@ -65,10 +65,10 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 
         private volatile boolean cancelled;
 
-        CollectWhileSubscriber(Callable&lt;R&gt; collectionFactory,
+<span class="fc" id="L68">        CollectWhileSubscriber(Callable&lt;R&gt; collectionFactory,</span>
                 BiFunction&lt;? super R, ? super T, ? extends R&gt; add,
                 BiPredicate&lt;? super R, ? super T&gt; condition, Subscriber&lt;? super R&gt; child,
-<span class="fc" id="L71">                boolean emitRemainder) {</span>
+                boolean emitRemainder) {
 <span class="fc" id="L72">            this.collectionFactory = collectionFactory;</span>
 <span class="fc" id="L73">            this.add = add;</span>
 <span class="fc" id="L74">            this.condition = condition;</span>
@@ -107,7 +107,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 <span class="fc" id="L107">                Exceptions.throwIfFatal(e);</span>
 <span class="fc" id="L108">                onError(e);</span>
 <span class="fc" id="L109">                return true;</span>
-<span class="fc" id="L110">            }</span>
+            }
 <span class="fc bfc" id="L111" title="All 2 branches covered.">            if (!collect) {</span>
 <span class="fc" id="L112">                queue.offer(collection);</span>
 <span class="pc bpc" id="L113" title="1 of 2 branches missed.">                if (!collectionCreated()) {</span>
@@ -123,7 +123,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 <span class="fc" id="L123">                Exceptions.throwIfFatal(e);</span>
 <span class="fc" id="L124">                onError(e);</span>
 <span class="fc" id="L125">                return true;</span>
-<span class="fc" id="L126">            }</span>
+            }
 <span class="fc" id="L127">            drain();</span>
 <span class="fc bfc" id="L128" title="All 2 branches covered.">            return !collect;</span>
         }
@@ -197,7 +197,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 <span class="fc bfc" id="L197" title="All 2 branches covered.">                                if (err != null) {</span>
 <span class="fc" id="L198">                                    error = null;</span>
 <span class="fc" id="L199">                                    child.onError(err);</span>
-                                } else {
+<span class="fc" id="L200">                                } else {</span>
 <span class="fc" id="L201">                                    child.onComplete();</span>
                                 }
 <span class="fc" id="L203">                                return;</span>
@@ -209,7 +209,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 <span class="fc" id="L209">                            child.onNext(c);</span>
 <span class="fc" id="L210">                            e++;</span>
                         }
-<span class="fc" id="L212">                    }</span>
+                    }
 <span class="fc bfc" id="L213" title="All 4 branches covered.">                    if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
 <span class="fc" id="L214">                        requested.addAndGet(-e);</span>
                     }
@@ -217,7 +217,7 @@ public final class FlowableCollectWhile&lt;T, R&gt; extends Flowable&lt;R&gt; {
 <span class="fc bfc" id="L217" title="All 2 branches covered.">                    if (missed == 0) {</span>
 <span class="fc" id="L218">                        return;</span>
                     }
-<span class="fc" id="L220">                }</span>
+                }
             }
 
 <span class="fc" id="L223">        }</span>

@@ -63,8 +63,8 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
         // does not need to be volatile
         private boolean finished;
 
-        InsertSubscriber(Subscriber&lt;? super T&gt; downstream,
-<span class="fc" id="L67">                Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert) {</span>
+<span class="fc" id="L66">        InsertSubscriber(Subscriber&lt;? super T&gt; downstream,</span>
+                Function&lt;? super T, ? extends Maybe&lt;? extends T&gt;&gt; valueToInsert) {
 <span class="fc" id="L68">            this.downstream = downstream;</span>
 <span class="fc" id="L69">            this.valueToInsert = valueToInsert;</span>
 <span class="fc" id="L70">            this.queue = new MpscLinkedQueue&lt;T&gt;();</span>
@@ -98,7 +98,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L98">                upstream.cancel();</span>
 <span class="fc" id="L99">                onError(e);</span>
 <span class="fc" id="L100">                return;</span>
-<span class="fc" id="L101">            }</span>
+            }
 <span class="fc" id="L102">            ValueToInsertObserver&lt;T&gt; o = new ValueToInsertObserver&lt;T&gt;(this);</span>
 <span class="pc bpc" id="L103" title="1 of 2 branches missed.">            if (DisposableHelper.set(valueToInsertObserver, o)) {</span>
                 // note that at this point we have to cover o being disposed
@@ -120,7 +120,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L120">                DisposableHelper.dispose(valueToInsertObserver);</span>
 <span class="fc" id="L121">                done = true;</span>
 <span class="fc" id="L122">                drain();</span>
-            } else {
+<span class="fc" id="L123">            } else {</span>
 <span class="nc" id="L124">                RxJavaPlugins.onError(e);</span>
             }
 <span class="fc" id="L126">        }</span>
@@ -165,7 +165,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L165">                                error.set(this);</span>
 <span class="fc" id="L166">                                DisposableHelper.dispose(valueToInsertObserver);</span>
 <span class="fc" id="L167">                                downstream.onError((Throwable) err);</span>
-                            } else {
+<span class="fc" id="L168">                            } else {</span>
                                 // don't need to dispose valueToInsertObserver because already done in
                                 // onComplete
 <span class="fc" id="L171">                                downstream.onComplete();</span>
@@ -179,7 +179,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L179">                        downstream.onNext(t);</span>
 <span class="fc" id="L180">                        e++;</span>
                     }
-<span class="fc" id="L182">                }</span>
+                }
 <span class="fc bfc" id="L183" title="All 4 branches covered.">                if (e != 0L &amp;&amp; r != Long.MAX_VALUE) {</span>
 <span class="fc" id="L184">                    requested.addAndGet(-e);</span>
                 }
@@ -187,7 +187,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="pc bpc" id="L187" title="1 of 2 branches missed.">                if (missed == 0) {</span>
 <span class="fc" id="L188">                    return;</span>
                 }
-<span class="nc" id="L190">            }</span>
+            }
         }
 
         @Override
@@ -205,7 +205,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
                         }
                         break;
                     }
-<span class="nc" id="L208">                }</span>
+                }
 <span class="fc" id="L209">                drain();</span>
             }
 <span class="fc" id="L211">        }</span>
@@ -240,7 +240,7 @@ public final class FlowableInsertMaybe&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L240">                DisposableHelper.dispose(valueToInsertObserver);</span>
 <span class="fc" id="L241">                done = true;</span>
 <span class="fc" id="L242">                drain();</span>
-            } else {
+<span class="fc" id="L243">            } else {</span>
 <span class="nc" id="L244">                RxJavaPlugins.onError(e);</span>
             }
 <span class="fc" id="L246">        }</span>

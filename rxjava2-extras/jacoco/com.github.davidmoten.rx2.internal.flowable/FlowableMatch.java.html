@@ -32,8 +32,8 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
     private final BiFunction&lt;? super A, ? super B, C&gt; combiner;
     private final long requestSize;
 
-    public FlowableMatch(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, ? extends K&gt; aKey,
-<span class="fc" id="L36">            Function&lt;? super B, ? extends K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize) {</span>
+<span class="fc" id="L35">    public FlowableMatch(Flowable&lt;A&gt; a, Flowable&lt;B&gt; b, Function&lt;? super A, ? extends K&gt; aKey,</span>
+            Function&lt;? super B, ? extends K&gt; bKey, BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize) {
 <span class="fc" id="L37">        Preconditions.checkNotNull(a, &quot;a should not be null&quot;);</span>
 <span class="fc" id="L38">        Preconditions.checkNotNull(b, &quot;b should not be null&quot;);</span>
 <span class="fc" id="L39">        Preconditions.checkNotNull(aKey, &quot;aKey cannot be null&quot;);</span>
@@ -51,7 +51,7 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
     @Override
     protected void subscribeActual(Subscriber&lt;? super C&gt; child) {
 <span class="fc" id="L53">        MatchCoordinator&lt;A, B, K, C&gt; coordinator = new MatchCoordinator&lt;A, B, K, C&gt;(aKey, bKey, combiner, requestSize,</span>
-                child);
+<span class="fc" id="L54">                child);</span>
 <span class="fc" id="L55">        child.onSubscribe(coordinator);</span>
 <span class="fc" id="L56">        coordinator.subscribe(a, b);</span>
 <span class="fc" id="L57">    }</span>
@@ -89,8 +89,8 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 
 <span class="fc" id="L90">        private volatile boolean cancelled = false;</span>
 
-        MatchCoordinator(Function&lt;? super A, ? extends K&gt; aKey, Function&lt;? super B, ? extends K&gt; bKey,
-<span class="fc" id="L93">                BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize, Subscriber&lt;? super C&gt; child) {</span>
+<span class="fc" id="L92">        MatchCoordinator(Function&lt;? super A, ? extends K&gt; aKey, Function&lt;? super B, ? extends K&gt; bKey,</span>
+                BiFunction&lt;? super A, ? super B, C&gt; combiner, long requestSize, Subscriber&lt;? super C&gt; child) {
 <span class="fc" id="L94">            this.aKey = aKey;</span>
 <span class="fc" id="L95">            this.bKey = bKey;</span>
 <span class="fc" id="L96">            this.combiner = combiner;</span>
@@ -145,12 +145,12 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
                     Object v;
                     try {
 <span class="fc" id="L147">                        v = queue.poll();</span>
-<span class="nc" id="L148">                    } catch (Exception e) {</span>
+<span class="pc" id="L148">                    } catch (Exception e) {</span>
 <span class="nc" id="L149">                        Exceptions.throwIfFatal(e);</span>
 <span class="nc" id="L150">                        clear();</span>
 <span class="nc" id="L151">                        child.onError(e);</span>
 <span class="nc" id="L152">                        return;</span>
-<span class="fc" id="L153">                    }</span>
+                    }
 <span class="fc bfc" id="L154" title="All 2 branches covered.">                    if (v == null) {</span>
                         // queue is empty
 <span class="fc" id="L156">                        break;</span>
@@ -184,14 +184,14 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc bfc" id="L184" title="All 2 branches covered.">                    if (r == emitted) {</span>
 <span class="fc" id="L185">                        break;</span>
                     }
-<span class="fc" id="L187">                }</span>
+                }
                 // reduce requested by emitted which will always be positive
 <span class="fc" id="L189">                BackpressureHelper.produced(requested, emitted);</span>
 <span class="fc" id="L190">                missed = this.addAndGet(-missed);</span>
 <span class="fc bfc" id="L191" title="All 2 branches covered.">                if (missed == 0) {</span>
 <span class="fc" id="L192">                    return;</span>
                 }
-<span class="fc" id="L194">            }</span>
+            }
         }
 
         private Emitted handleItem(Object value, Source source) {
@@ -211,23 +211,23 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc" id="L211">                    clear();</span>
 <span class="fc" id="L212">                    child.onError(e);</span>
 <span class="fc" id="L213">                    return Emitted.FINISHED;</span>
-<span class="fc" id="L214">                }</span>
+                }
 <span class="fc" id="L215">                Queue&lt;B&gt; q = bs.get(key);</span>
 <span class="fc bfc" id="L216" title="All 2 branches covered.">                if (q == null) {</span>
                     // cache value
 <span class="fc" id="L218">                    add(as, key, a);</span>
 <span class="fc" id="L219">                    result = Emitted.NONE;</span>
-                } else {
+<span class="fc" id="L220">                } else {</span>
                     // emit match
 <span class="fc" id="L222">                    B b = poll(bs, q, key);</span>
                     C c;
                     try {
 <span class="fc" id="L225">                        c = combiner.apply(a, b);</span>
-<span class="nc" id="L226">                    } catch (Throwable e) {</span>
+<span class="pc" id="L226">                    } catch (Throwable e) {</span>
 <span class="nc" id="L227">                        clear();</span>
 <span class="nc" id="L228">                        child.onError(e);</span>
 <span class="nc" id="L229">                        return Emitted.FINISHED;</span>
-<span class="fc" id="L230">                    }</span>
+                    }
 <span class="fc" id="L231">                    child.onNext(c);</span>
 <span class="fc" id="L232">                    result = Emitted.ONE;</span>
                 }
@@ -252,13 +252,13 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc" id="L252">                    clear();</span>
 <span class="fc" id="L253">                    child.onError(e);</span>
 <span class="fc" id="L254">                    return Emitted.FINISHED;</span>
-<span class="fc" id="L255">                }</span>
+                }
 <span class="fc" id="L256">                Queue&lt;A&gt; q = as.get(key);</span>
 <span class="fc bfc" id="L257" title="All 2 branches covered.">                if (q == null) {</span>
                     // cache value
 <span class="fc" id="L259">                    add(bs, key, b);</span>
 <span class="fc" id="L260">                    result = Emitted.NONE;</span>
-                } else {
+<span class="fc" id="L261">                } else {</span>
                     // emit match
 <span class="fc" id="L263">                    A a = poll(as, q, key);</span>
                     C c;
@@ -268,7 +268,7 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc" id="L268">                        clear();</span>
 <span class="fc" id="L269">                        child.onError(e);</span>
 <span class="fc" id="L270">                        return Emitted.FINISHED;</span>
-<span class="fc" id="L271">                    }</span>
+                    }
 <span class="fc" id="L272">                    child.onNext(c);</span>
 <span class="fc" id="L273">                    result = Emitted.ONE;</span>
                 }
@@ -298,7 +298,7 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc bfc" id="L298" title="All 2 branches covered.">            if (source == Source.A) {</span>
 <span class="fc" id="L299">                aSub.cancel();</span>
 <span class="pc bpc" id="L300" title="2 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_A &amp;&amp; as.isEmpty());</span>
-            } else {
+<span class="fc" id="L301">            } else {</span>
 <span class="fc" id="L302">                bSub.cancel();</span>
 <span class="pc bpc" id="L303" title="1 of 6 branches missed.">                done = (completed == COMPLETED_BOTH) || (completed == COMPLETED_B &amp;&amp; bs.isEmpty());</span>
             }
@@ -335,10 +335,10 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
 <span class="fc bfc" id="L335" title="All 2 branches covered.">            if (source == Source.A) {</span>
 <span class="pc bpc" id="L336" title="1 of 2 branches missed.">                if (completed == COMPLETED_NONE) {</span>
 <span class="fc" id="L337">                    completed = COMPLETED_A;</span>
-<span class="nc bnc" id="L338" title="All 2 branches missed.">                } else if (completed == COMPLETED_B) {</span>
+<span class="pc bnc" id="L338" title="All 2 branches missed.">                } else if (completed == COMPLETED_B) {</span>
 <span class="nc" id="L339">                    completed = COMPLETED_BOTH;</span>
                 }
-            } else {
+<span class="nc" id="L341">            } else {</span>
 <span class="fc bfc" id="L342" title="All 2 branches covered.">                if (completed == COMPLETED_NONE) {</span>
 <span class="fc" id="L343">                    completed = COMPLETED_B;</span>
 <span class="pc bpc" id="L344" title="1 of 2 branches missed.">                } else if (completed == COMPLETED_A) {</span>
@@ -414,7 +414,7 @@ public final class FlowableMatch&lt;A, B, K, C&gt; extends Flowable&lt;C&gt; {
         public void onNext(T t) {
 <span class="fc bfc" id="L415" title="All 2 branches covered.">            if (source == Source.A) {</span>
 <span class="fc" id="L416">                receiver.offer(new ItemA(t));</span>
-            } else {
+<span class="fc" id="L417">            } else {</span>
 <span class="fc" id="L418">                receiver.offer(t);</span>
             }
 <span class="fc" id="L420">        }</span>

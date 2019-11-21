@@ -56,7 +56,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L56">            bytes = t.getBytes(charset);</span>
 <span class="fc" id="L57">            synchronized (this) {</span>
 <span class="fc" id="L58">                notifyAll();</span>
-<span class="fc" id="L59">            }</span>
+            }
 <span class="fc" id="L60">        }</span>
 
         @Override
@@ -65,7 +65,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L65">            done = true;</span>
 <span class="fc" id="L66">            synchronized (this) {</span>
 <span class="fc" id="L67">                notifyAll();</span>
-<span class="fc" id="L68">            }</span>
+            }
 <span class="fc" id="L69">        }</span>
 
         @Override
@@ -73,7 +73,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L73">            done = true;</span>
 <span class="fc" id="L74">            synchronized (this) {</span>
 <span class="fc" id="L75">                notifyAll();</span>
-<span class="fc" id="L76">            }</span>
+            }
 <span class="fc" id="L77">        }</span>
 
         @Override
@@ -95,12 +95,12 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L95">                    index = 0;</span>
 <span class="fc" id="L96">                    bytes = null;</span>
 <span class="fc" id="L97">                    upstream.get().request(1);</span>
-                } else {
+<span class="fc" id="L98">                } else {</span>
 <span class="fc" id="L99">                    int result = a[idx] &amp; 0xFF;</span>
 <span class="fc" id="L100">                    index = idx + 1;</span>
 <span class="fc" id="L101">                    return result;</span>
                 }
-<span class="fc" id="L103">            }</span>
+            }
         }
 
         byte[] awaitBufferIfNecessary() throws IOException {
@@ -124,10 +124,10 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L124">                                exc.initCause(ex);</span>
 <span class="fc" id="L125">                                throw exc;</span>
                             }
-<span class="nc" id="L127">                            break;</span>
-<span class="fc" id="L128">                        }</span>
-<span class="fc" id="L129">                    } </span>
-<span class="fc" id="L130">                }</span>
+                            break;
+                        }
+                    } 
+                }
             }
 <span class="fc" id="L132">            return a;</span>
         }
@@ -154,7 +154,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L154">                    index = 0;</span>
 <span class="fc" id="L155">                    bytes = null;</span>
 <span class="fc" id="L156">                    upstream.get().request(1);</span>
-                } else {
+<span class="fc" id="L157">                } else {</span>
 <span class="fc" id="L158">                    int r = 0;</span>
 <span class="fc bfc" id="L159" title="All 4 branches covered.">                    while (idx &lt; a.length &amp;&amp; len &gt; 0) {</span>
 <span class="fc" id="L160">                        b[off] = a[idx];</span>
@@ -166,7 +166,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L166">                    index = idx;</span>
 <span class="fc" id="L167">                    return r;</span>
                 }
-<span class="fc" id="L169">            }</span>
+            }
         }
 
         @Override
@@ -181,7 +181,7 @@ public final class FlowableStringInputStream {
 <span class="fc" id="L181">            SubscriptionHelper.cancel(upstream);</span>
 <span class="fc" id="L182">            synchronized (this) {</span>
 <span class="fc" id="L183">                notifyAll();</span>
-<span class="fc" id="L184">            }</span>
+            }
 <span class="fc" id="L185">        }</span>
     }
 }

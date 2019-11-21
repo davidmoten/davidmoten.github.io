@@ -27,8 +27,8 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
     private final int batchSize;
     private boolean delayErrors;
 
-    public FlowableMergeInterleave(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,
-<span class="fc" id="L31">            int maxConcurrent, int batchSize, boolean delayErrors) {</span>
+<span class="fc" id="L30">    public FlowableMergeInterleave(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,</span>
+            int maxConcurrent, int batchSize, boolean delayErrors) {
 <span class="fc" id="L32">        this.sources = sources;</span>
 <span class="fc" id="L33">        this.maxConcurrent = maxConcurrent;</span>
 <span class="fc" id="L34">        this.batchSize = batchSize;</span>
@@ -38,7 +38,7 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
     @Override
     protected void subscribeActual(Subscriber&lt;? super T&gt; s) {
 <span class="fc" id="L40">        MergeInterleaveSubscription&lt;T&gt; subscription = new MergeInterleaveSubscription&lt;T&gt;(sources,</span>
-                maxConcurrent, batchSize, delayErrors, s);
+<span class="fc" id="L41">                maxConcurrent, batchSize, delayErrors, s);</span>
 <span class="fc" id="L42">        s.onSubscribe(subscription);</span>
 <span class="fc" id="L43">    }</span>
 
@@ -67,9 +67,9 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
         private boolean sourcesComplete;
         private long sourcesCount;
 
-        public MergeInterleaveSubscription(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,
+<span class="fc" id="L70">        public MergeInterleaveSubscription(Publisher&lt;? extends Publisher&lt;? extends T&gt;&gt; sources,</span>
                 int maxConcurrent, int batchSize, boolean delayErrors,
-<span class="fc" id="L72">                Subscriber&lt;? super T&gt; subscriber) {</span>
+                Subscriber&lt;? super T&gt; subscriber) {
 <span class="fc" id="L73">            this.sources = sources;</span>
 <span class="fc" id="L74">            this.maxConcurrent = maxConcurrent;</span>
 <span class="fc" id="L75">            this.batchSize = batchSize;</span>
@@ -165,7 +165,7 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L165">                                    error = null;</span>
 <span class="fc" id="L166">                                    cleanup();</span>
 <span class="fc" id="L167">                                    subscriber.onError(err);</span>
-                                } else {
+<span class="fc" id="L168">                                } else {</span>
 <span class="fc" id="L169">                                    subscriber.onComplete();</span>
                                 }
 <span class="fc" id="L171">                                return;</span>
@@ -181,7 +181,7 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L181">                                handleSourceComplete((SourceComplete&lt;T&gt;) o);</span>
 <span class="fc bfc" id="L182" title="All 2 branches covered.">                            } else if (o == SOURCES_COMPLETE) {</span>
 <span class="fc" id="L183">                                handleSourcesComplete();</span>
-                            } else {
+<span class="fc" id="L184">                            } else {</span>
 <span class="fc" id="L185">                                subscriber.onNext((T) o);</span>
 <span class="fc" id="L186">                                e++;</span>
                             }
@@ -189,7 +189,7 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="pc bpc" id="L189" title="1 of 2 branches missed.">                        if (tryCancelled()) {</span>
 <span class="nc" id="L190">                            return;</span>
                         }
-<span class="fc" id="L192">                    }</span>
+                    }
 <span class="fc" id="L193">                    emitted = e;</span>
 <span class="fc" id="L194">                    missed = addAndGet(-missed);</span>
 <span class="fc bfc" id="L195" title="All 2 branches covered.">                    if (missed == 0) {</span>
@@ -217,7 +217,7 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L217">            subscription.cancel();</span>
 <span class="fc bfc" id="L218" title="All 2 branches covered.">            for (SourceSubscriber&lt;T&gt; s : sourceSubscribers) {</span>
 <span class="fc" id="L219">                s.cancel();</span>
-<span class="fc" id="L220">            }</span>
+            }
 <span class="fc" id="L221">            sourceSubscribers.clear();</span>
 <span class="fc" id="L222">            queue.clear();</span>
 <span class="fc" id="L223">            batchFinished.clear();</span>
@@ -304,9 +304,9 @@ public final class FlowableMergeInterleave&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L304">                Subscription s = subscription.get();</span>
 <span class="pc bpc" id="L305" title="1 of 2 branches missed.">                if (subscription.compareAndSet(s, SubscriptionHelper.CANCELLED)) {</span>
 <span class="fc" id="L306">                    s.cancel();</span>
-<span class="fc" id="L307">                    break;</span>
+                    break;
                 }
-<span class="nc" id="L309">            }</span>
+            }
 <span class="fc" id="L310">        }</span>
     }
 
