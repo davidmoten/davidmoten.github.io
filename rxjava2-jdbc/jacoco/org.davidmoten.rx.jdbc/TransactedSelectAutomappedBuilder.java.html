@@ -96,14 +96,15 @@ public final class TransactedSelectAutomappedBuilder&lt;T&gt; {
                     sb.selectBuilder.sql, //
                     sb.selectBuilder.fetchSize, //
 <span class="fc" id="L98">                    Util.autoMap(sb.cls), //</span>
-                    false) //
-<span class="fc" id="L100">                    .materialize() //</span>
-<span class="fc" id="L101">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
-<span class="fc" id="L102">                    .doOnNext(tx -&gt; {</span>
-<span class="fc bfc" id="L103" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
-<span class="fc" id="L104">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                    false, //
+                    sb.selectBuilder.queryTimeoutSec) //
+<span class="fc" id="L101">                    .materialize() //</span>
+<span class="fc" id="L102">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L103">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L105">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
                         }
-<span class="fc" id="L106">                    });</span>
+<span class="fc" id="L107">                    });</span>
         });
     }
 

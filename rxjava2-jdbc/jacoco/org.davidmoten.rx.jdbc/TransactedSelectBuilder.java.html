@@ -105,14 +105,15 @@ public final class TransactedSelectBuilder implements DependsOn&lt;TransactedSel
                     sb.sql, //
                     sb.fetchSize, //
                     mapper, //
-                    false) //
-<span class="fc" id="L109">                    .materialize() //</span>
-<span class="fc" id="L110">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
-<span class="fc" id="L111">                    .doOnNext(tx -&gt; {</span>
-<span class="fc bfc" id="L112" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
-<span class="fc" id="L113">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                    false, //
+                    sb.queryTimeoutSec) //
+<span class="fc" id="L110">                    .materialize() //</span>
+<span class="fc" id="L111">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L112">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L114">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
                         }
-<span class="fc" id="L115">                    });</span>
+<span class="fc" id="L116">                    });</span>
         });
     }
 

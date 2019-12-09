@@ -104,18 +104,19 @@
 <a class="jxr_linenumber" name="L96" href="#L96">96</a>                      sb.selectBuilder.sql, <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L97" href="#L97">97</a>                      sb.selectBuilder.fetchSize, <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L98" href="#L98">98</a>                      Util.autoMap(sb.cls), <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L99" href="#L99">99</a>                      false) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L100" href="#L100">100</a>                     .materialize() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L101" href="#L101">101</a>                     .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L102" href="#L102">102</a>                     .doOnNext(tx -&gt; {
-<a class="jxr_linenumber" name="L103" href="#L103">103</a>                         <strong class="jxr_keyword">if</strong> (tx.isComplete()) {
-<a class="jxr_linenumber" name="L104" href="#L104">104</a>                             ((TxImpl&lt;T&gt;) tx).connection().commit();
-<a class="jxr_linenumber" name="L105" href="#L105">105</a>                         }
-<a class="jxr_linenumber" name="L106" href="#L106">106</a>                     });
-<a class="jxr_linenumber" name="L107" href="#L107">107</a>         });
-<a class="jxr_linenumber" name="L108" href="#L108">108</a>     }
-<a class="jxr_linenumber" name="L109" href="#L109">109</a> 
-<a class="jxr_linenumber" name="L110" href="#L110">110</a> }
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                      false, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                     sb.selectBuilder.queryTimeoutSec) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>                     .materialize() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                     .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>                     .doOnNext(tx -&gt; {
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                         <strong class="jxr_keyword">if</strong> (tx.isComplete()) {
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>                             ((TxImpl&lt;T&gt;) tx).connection().commit();
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                         }
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>                     });
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>         });
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>     }
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2016&#x2013;2019. All rights reserved.</div>

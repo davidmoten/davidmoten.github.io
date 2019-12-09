@@ -28,18 +28,18 @@ final class Update {
     }
 
     static Flowable&lt;Notification&lt;Integer&gt;&gt; create(Single&lt;Connection&gt; connection,
-            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int batchSize,
-            boolean eagerDispose) {
+                                                  Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int batchSize,
+                                                  boolean eagerDispose, int queryTimeoutSec) {
 <span class="fc" id="L33">        return connection //</span>
 <span class="fc" id="L34">                .toFlowable() //</span>
-<span class="fc" id="L35">                .flatMap(con -&gt; create(con, sql, parameterGroups, batchSize, eagerDispose), true,</span>
+<span class="fc" id="L35">                .flatMap(con -&gt; create(con, sql, parameterGroups, batchSize, eagerDispose, queryTimeoutSec), true,</span>
                         1);
     }
 
     private static Flowable&lt;Notification&lt;Integer&gt;&gt; create(Connection con, String sql,
-            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int batchSize, boolean eagerDispose) {
+                                                          Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int batchSize, boolean eagerDispose, int queryTimeoutSec) {
 <span class="fc" id="L41">        log.debug(&quot;Update.create {}&quot;, sql);</span>
-<span class="fc" id="L42">        Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util.prepare(con, sql);</span>
+<span class="fc" id="L42">        Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util.prepare(con, sql, queryTimeoutSec);</span>
         final Function&lt;NamedPreparedStatement, Flowable&lt;Notification&lt;Integer&gt;&gt;&gt; flowableFactory;
 <span class="fc bfc" id="L44" title="All 2 branches covered.">        if (batchSize == 0) {</span>
 <span class="fc" id="L45">            flowableFactory = ps -&gt; parameterGroups //</span>
@@ -101,7 +101,7 @@ final class Update {
 <span class="fc bfc" id="L101" title="All 2 branches covered.">                if (hasCollection) {</span>
                     // create a new prepared statement with the collection ? substituted with
                     // ?s to match the size of the collection parameter
-<span class="fc" id="L104">                    ps2 = Util.prepare(ps.ps.getConnection(), 0, sql, params);</span>
+<span class="fc" id="L104">                    ps2 = Util.prepare(ps.ps.getConnection(), 0, sql, params, ps.ps.getQueryTimeout());</span>
                 } else {
 <span class="fc" id="L106">                    ps2 = ps.ps;</span>
                 }

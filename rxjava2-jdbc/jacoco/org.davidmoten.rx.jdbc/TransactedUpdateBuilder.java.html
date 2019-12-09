@@ -137,23 +137,24 @@ public final class TransactedUpdateBuilder implements DependsOn&lt;TransactedUpd
 <span class="fc" id="L137">                            ub.parameterGroupsToFlowable(), //</span>
                             ub.sql, //
                             ub.batchSize, //
-                            false) //
-<span class="fc" id="L141">                            .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
-<span class="fc" id="L142">                            .doOnNext(tx -&gt; {</span>
-<span class="fc" id="L143">                                t[0] = ((TxImpl&lt;Integer&gt;) tx);</span>
-<span class="fc" id="L144">                            }) //</span>
-<span class="fc" id="L145">                            .doOnComplete(() -&gt; {</span>
-<span class="fc" id="L146">                                TxImpl&lt;?&gt; tx = t[0];</span>
-<span class="pc bpc" id="L147" title="1 of 2 branches missed.">                                if (tx.isComplete()) {</span>
-<span class="fc" id="L148">                                    tx.connection().commit();</span>
+                            false, //
+                            ub.queryTimeoutSec) //
+<span class="fc" id="L142">                            .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L143">                            .doOnNext(tx -&gt; {</span>
+<span class="fc" id="L144">                                t[0] = ((TxImpl&lt;Integer&gt;) tx);</span>
+<span class="fc" id="L145">                            }) //</span>
+<span class="fc" id="L146">                            .doOnComplete(() -&gt; {</span>
+<span class="fc" id="L147">                                TxImpl&lt;?&gt; tx = t[0];</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                                if (tx.isComplete()) {</span>
+<span class="fc" id="L149">                                    tx.connection().commit();</span>
                                 }
-<span class="fc" id="L150">                                Util.closeSilently(tx.connection());</span>
-<span class="fc" id="L151">                            }));</span>
+<span class="fc" id="L151">                                Util.closeSilently(tx.connection());</span>
+<span class="fc" id="L152">                            }));</span>
         });
     }
 
     public Flowable&lt;List&lt;Object&gt;&gt; parameterGroupsToFlowable() {
-<span class="fc" id="L156">        return updateBuilder.parameterGroupsToFlowable();</span>
+<span class="fc" id="L157">        return updateBuilder.parameterGroupsToFlowable();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.2.201808211720</span></div></body></html>

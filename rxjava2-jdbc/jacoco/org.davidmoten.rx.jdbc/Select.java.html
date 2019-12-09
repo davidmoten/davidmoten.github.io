@@ -25,27 +25,27 @@ final class Select {
 <span class="fc" id="L25">    private static final Logger log = LoggerFactory.getLogger(Select.class);</span>
 
     static &lt;T&gt; Flowable&lt;T&gt; create(Single&lt;Connection&gt; connections,
-            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int fetchSize,
-            Function&lt;? super ResultSet, ? extends T&gt; mapper, boolean eagerDispose) {
+                                  Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, int fetchSize,
+                                  Function&lt;? super ResultSet, ? extends T&gt; mapper, boolean eagerDispose, int queryTimeoutSec) {
 <span class="fc" id="L30">        return connections //</span>
 <span class="fc" id="L31">                .toFlowable() //</span>
-<span class="fc" id="L32">                .flatMap(con -&gt; create(con, sql, parameterGroups, fetchSize, mapper, eagerDispose));</span>
+<span class="fc" id="L32">                .flatMap(con -&gt; create(con, sql, parameterGroups, fetchSize, mapper, eagerDispose, queryTimeoutSec));</span>
     }
 
     static &lt;T&gt; Flowable&lt;T&gt; create(Connection con, String sql,
-            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int fetchSize,
-            Function&lt;? super ResultSet, T&gt; mapper, boolean eagerDispose) {
+                                  Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, int fetchSize,
+                                  Function&lt;? super ResultSet, T&gt; mapper, boolean eagerDispose, int queryTimeoutSec) {
 <span class="fc" id="L38">        log.debug(&quot;Select.create called with con={}&quot;, con);</span>
-<span class="fc" id="L39">        Callable&lt;NamedPreparedStatement&gt; initialState = () -&gt; Util.prepare(con, fetchSize, sql);</span>
+<span class="fc" id="L39">        Callable&lt;NamedPreparedStatement&gt; initialState = () -&gt; Util.prepare(con, fetchSize, sql, queryTimeoutSec);</span>
 <span class="fc" id="L40">        Function&lt;NamedPreparedStatement, Flowable&lt;T&gt;&gt; observableFactory = ps -&gt; parameterGroups</span>
-<span class="fc" id="L41">                .flatMap(parameters -&gt; create(ps.ps, parameters, mapper, ps.names, sql, fetchSize),</span>
+<span class="fc" id="L41">                .flatMap(parameters -&gt; create(ps.ps, parameters, mapper, ps.names, sql, fetchSize, queryTimeoutSec),</span>
                         true, 1);
 <span class="fc" id="L43">        Consumer&lt;NamedPreparedStatement&gt; disposer = Util::closePreparedStatementAndConnection;</span>
 <span class="fc" id="L44">        return Flowable.using(initialState, observableFactory, disposer, eagerDispose);</span>
     }
 
     private static &lt;T&gt; Flowable&lt;? extends T&gt; create(PreparedStatement ps, List&lt;Object&gt; parameters,
-            Function&lt;? super ResultSet, T&gt; mapper, List&lt;String&gt; names, String sql, int fetchSize) {
+                                                    Function&lt;? super ResultSet, T&gt; mapper, List&lt;String&gt; names, String sql, int fetchSize, int queryTimeoutSec) {
 <span class="fc" id="L49">        log.debug(&quot;parameters={}&quot;, parameters);</span>
 <span class="fc" id="L50">        log.debug(&quot;names={}&quot;, names);</span>
 
@@ -56,7 +56,7 @@ final class Select {
 <span class="fc bfc" id="L56" title="All 2 branches covered.">            if (hasCollection) {</span>
                 // create a new prepared statement with the collection ? substituted with
                 // ?s to match the size of the collection parameter
-<span class="fc" id="L59">                ps2 = Util.prepare(ps.getConnection(), fetchSize, sql, params);</span>
+<span class="fc" id="L59">                ps2 = Util.prepare(ps.getConnection(), fetchSize, sql, params, queryTimeoutSec);</span>
                 // now wrap the rs to auto close ps2 because it is single use (the next
                 // collection parameter may have a different ordinality so we need to build
                 // a new PreparedStatement with a different number of question marks

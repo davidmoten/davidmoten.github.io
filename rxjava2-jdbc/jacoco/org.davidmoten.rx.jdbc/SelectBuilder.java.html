@@ -18,16 +18,17 @@ public final class SelectBuilder extends ParametersBuilder&lt;SelectBuilder&gt;
     private final Database db;
 
 <span class="fc" id="L20">    int fetchSize = 0; // default</span>
+<span class="fc" id="L21">    int queryTimeoutSec = Util.QUERY_TIMEOUT_NOT_SET; //default</span>
     private Flowable&lt;?&gt; dependsOn;
 
     SelectBuilder(String sql, Single&lt;Connection&gt; connection, Database db) {
-<span class="fc" id="L24">        super(sql);</span>
-<span class="fc" id="L25">        Preconditions.checkNotNull(sql);</span>
-<span class="fc" id="L26">        Preconditions.checkNotNull(connection);</span>
-<span class="fc" id="L27">        this.sql = sql;</span>
-<span class="fc" id="L28">        this.connection = connection;</span>
-<span class="fc" id="L29">        this.db = db;</span>
-<span class="fc" id="L30">    }</span>
+<span class="fc" id="L25">        super(sql);</span>
+<span class="fc" id="L26">        Preconditions.checkNotNull(sql);</span>
+<span class="fc" id="L27">        Preconditions.checkNotNull(connection);</span>
+<span class="fc" id="L28">        this.sql = sql;</span>
+<span class="fc" id="L29">        this.connection = connection;</span>
+<span class="fc" id="L30">        this.db = db;</span>
+<span class="fc" id="L31">    }</span>
 
     /**
      * Sets the fetchSize for the JDBC statement. If 0 then fetchSize is not set and
@@ -38,37 +39,43 @@ public final class SelectBuilder extends ParametersBuilder&lt;SelectBuilder&gt;
      * @return this
      */
     public SelectBuilder fetchSize(int size) {
-<span class="fc bfc" id="L41" title="All 2 branches covered.">        Preconditions.checkArgument(size &gt;= 0);</span>
-<span class="fc" id="L42">        this.fetchSize = size;</span>
-<span class="fc" id="L43">        return this;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        Preconditions.checkArgument(size &gt;= 0);</span>
+<span class="fc" id="L43">        this.fetchSize = size;</span>
+<span class="fc" id="L44">        return this;</span>
+    }
+
+    public SelectBuilder queryTimeoutSec(int timeoutSec) {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        Preconditions.checkArgument(timeoutSec &gt;= 0);</span>
+<span class="nc" id="L49">        this.queryTimeoutSec = timeoutSec;</span>
+<span class="nc" id="L50">        return this;</span>
     }
 
     public TransactedSelectBuilder transacted() {
-<span class="fc" id="L47">        return new TransactedSelectBuilder(this, db);</span>
+<span class="fc" id="L54">        return new TransactedSelectBuilder(this, db);</span>
     }
 
     public TransactedSelectBuilder transactedValuesOnly() {
-<span class="fc" id="L51">        return transacted().transactedValuesOnly();</span>
+<span class="fc" id="L58">        return transacted().transactedValuesOnly();</span>
     }
 
     @Override
     public &lt;T&gt; Flowable&lt;T&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; mapper) {
-<span class="fc" id="L56">        Preconditions.checkNotNull(mapper, &quot;mapper cannot be null&quot;);</span>
-<span class="fc" id="L57">        Flowable&lt;List&lt;Object&gt;&gt; pg = super.parameterGroupsToFlowable();</span>
-<span class="fc" id="L58">        Flowable&lt;T&gt; f = Select.&lt;T&gt;create(connection, pg, sql, fetchSize, mapper, true);</span>
-<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (dependsOn != null) {</span>
-<span class="fc" id="L60">            return dependsOn.ignoreElements().andThen(f);</span>
+<span class="fc" id="L63">        Preconditions.checkNotNull(mapper, &quot;mapper cannot be null&quot;);</span>
+<span class="fc" id="L64">        Flowable&lt;List&lt;Object&gt;&gt; pg = super.parameterGroupsToFlowable();</span>
+<span class="fc" id="L65">        Flowable&lt;T&gt; f = Select.&lt;T&gt;create(connection, pg, sql, fetchSize, mapper, true, queryTimeoutSec);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (dependsOn != null) {</span>
+<span class="fc" id="L67">            return dependsOn.ignoreElements().andThen(f);</span>
         } else {
-<span class="fc" id="L62">            return f;</span>
+<span class="fc" id="L69">            return f;</span>
         }
     }
 
     @Override
     public SelectBuilder dependsOn(@Nonnull Flowable&lt;?&gt; flowable) {
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        Preconditions.checkArgument(dependsOn == null, &quot;can only set dependsOn once&quot;);</span>
-<span class="fc" id="L69">        Preconditions.checkNotNull(flowable);</span>
-<span class="fc" id="L70">        dependsOn = flowable;</span>
-<span class="fc" id="L71">        return this;</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        Preconditions.checkArgument(dependsOn == null, &quot;can only set dependsOn once&quot;);</span>
+<span class="fc" id="L76">        Preconditions.checkNotNull(flowable);</span>
+<span class="fc" id="L77">        dependsOn = flowable;</span>
+<span class="fc" id="L78">        return this;</span>
     }
 
 }

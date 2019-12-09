@@ -36,18 +36,18 @@
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>      }
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>  
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>      <strong class="jxr_keyword">static</strong> Flowable&lt;Notification&lt;Integer&gt;&gt; create(Single&lt;Connection&gt; connection,
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>              Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, <strong class="jxr_keyword">int</strong> batchSize,
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>              <strong class="jxr_keyword">boolean</strong> eagerDispose) {
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>                                                    Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, String sql, <strong class="jxr_keyword">int</strong> batchSize,
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>                                                    <strong class="jxr_keyword">boolean</strong> eagerDispose, <strong class="jxr_keyword">int</strong> queryTimeoutSec) {
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">return</strong> connection <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>                  .toFlowable() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>                  .flatMap(con -&gt; create(con, sql, parameterGroups, batchSize, eagerDispose), <strong class="jxr_keyword">true</strong>,
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>                  .flatMap(con -&gt; create(con, sql, parameterGroups, batchSize, eagerDispose, queryTimeoutSec), <strong class="jxr_keyword">true</strong>,
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>                          1);
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>      }
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>  
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Flowable&lt;Notification&lt;Integer&gt;&gt; create(Connection con, String sql,
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>              Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, <strong class="jxr_keyword">int</strong> batchSize, <strong class="jxr_keyword">boolean</strong> eagerDispose) {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>                                                            Flowable&lt;List&lt;Object&gt;&gt; parameterGroups, <strong class="jxr_keyword">int</strong> batchSize, <strong class="jxr_keyword">boolean</strong> eagerDispose, <strong class="jxr_keyword">int</strong> queryTimeoutSec) {
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>          log.debug(<span class="jxr_string">"Update.create {}"</span>, sql);
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>          Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util.prepare(con, sql);
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>          Callable&lt;NamedPreparedStatement&gt; resourceFactory = () -&gt; Util.prepare(con, sql, queryTimeoutSec);
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">final</strong> Function&lt;NamedPreparedStatement, Flowable&lt;Notification&lt;Integer&gt;&gt;&gt; flowableFactory;
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">if</strong> (batchSize == 0) {
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>              flowableFactory = ps -&gt; parameterGroups <em class="jxr_comment">//</em>
@@ -109,7 +109,7 @@
 <a class="jxr_linenumber" name="L101" href="#L101">101</a>                 <strong class="jxr_keyword">if</strong> (hasCollection) {
 <a class="jxr_linenumber" name="L102" href="#L102">102</a>                     <em class="jxr_comment">// create a new prepared statement with the collection ? substituted with</em>
 <a class="jxr_linenumber" name="L103" href="#L103">103</a>                     <em class="jxr_comment">// ?s to match the size of the collection parameter</em>
-<a class="jxr_linenumber" name="L104" href="#L104">104</a>                     ps2 = Util.prepare(ps.ps.getConnection(), 0, sql, params);
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                     ps2 = Util.prepare(ps.ps.getConnection(), 0, sql, params, ps.ps.getQueryTimeout());
 <a class="jxr_linenumber" name="L105" href="#L105">105</a>                 } <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L106" href="#L106">106</a>                     ps2 = ps.ps;
 <a class="jxr_linenumber" name="L107" href="#L107">107</a>                 }
