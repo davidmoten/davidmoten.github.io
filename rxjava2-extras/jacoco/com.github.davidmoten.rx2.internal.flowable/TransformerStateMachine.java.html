@@ -26,10 +26,10 @@ public final class TransformerStateMachine&lt;State, In, Out&gt; implements Flow
     private final BackpressureStrategy backpressureStrategy;
     private final int requestBatchSize;
 
-<span class="fc" id="L29">    private TransformerStateMachine(Callable&lt;? extends State&gt; initialState,</span>
+    private TransformerStateMachine(Callable&lt;? extends State&gt; initialState,
             Function3&lt;? super State, ? super In, ? super FlowableEmitter&lt;Out&gt;, ? extends State&gt; transition,
             BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
-            BackpressureStrategy backpressureStrategy, int requestBatchSize) {
+<span class="fc" id="L32">            BackpressureStrategy backpressureStrategy, int requestBatchSize) {</span>
 <span class="fc" id="L33">        Preconditions.checkNotNull(initialState);</span>
 <span class="fc" id="L34">        Preconditions.checkNotNull(transition);</span>
 <span class="fc" id="L35">        Preconditions.checkNotNull(completion);</span>
@@ -47,7 +47,7 @@ public final class TransformerStateMachine&lt;State, In, Out&gt; implements Flow
             BiPredicate&lt;? super State, ? super FlowableEmitter&lt;Out&gt;&gt; completion,
             BackpressureStrategy backpressureStrategy, int requestBatchSize) {
 <span class="fc" id="L49">        return new TransformerStateMachine&lt;State, In, Out&gt;(initialState, transition, completion, backpressureStrategy,</span>
-<span class="fc" id="L50">                requestBatchSize);</span>
+                requestBatchSize);
     }
 
     @Override
@@ -105,7 +105,7 @@ public final class TransformerStateMachine&lt;State, In, Out&gt; implements Flow
                         }
 <span class="fc" id="L106">                    }</span>
 
-<span class="fc" id="L108">                }, backpressureStrategy);</span>
+                }, backpressureStrategy);
             }
         };
     }
@@ -126,7 +126,7 @@ public final class TransformerStateMachine&lt;State, In, Out&gt; implements Flow
 <span class="pc bpc" id="L126" title="1 of 2 branches missed.">            return t != UnsubscribedNotificationHolder.unsubscribedNotification();</span>
         }
 
-<span class="fc" id="L129">    };</span>
+    };
 
     private static final class Mutable&lt;T&gt; {
         T value;

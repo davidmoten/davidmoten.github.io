@@ -95,7 +95,7 @@ public final class FlowableMaxRequest&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L95">                    long nr = nextRequest;</span>
 <span class="fc bfc" id="L96" title="All 2 branches covered.">                    if (nr == Long.MAX_VALUE) {</span>
 <span class="fc" id="L97">                        count = nr;</span>
-<span class="fc" id="L98">                    } else {</span>
+                    } else {
 <span class="fc" id="L99">                        count = nr - 1;</span>
                     }
                 }
@@ -120,14 +120,14 @@ public final class FlowableMaxRequest&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L120">                            break;</span>
                         } else {
 <span class="fc" id="L122">                            long req = Math.min(r, mr);</span>
-<span class="pc bpc" id="L123" title="1 of 2 branches missed.">                            if (requested.compareAndSet(r, r - req)) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                            if (requested.compareAndSet(r, r - req)) {</span>
 <span class="fc" id="L124">                                nextMaxRequest();</span>
 <span class="fc" id="L125">                                count = req;</span>
 <span class="fc" id="L126">                                parent.request(req);</span>
-                                break;
+<span class="fc" id="L127">                                break;</span>
                             }
                         }
-                    }
+<span class="fc" id="L130">                    }</span>
                 }
             }
 <span class="fc" id="L133">            child.onNext(t);</span>
@@ -161,9 +161,9 @@ public final class FlowableMaxRequest&lt;T&gt; extends Flowable&lt;T&gt; {
 <span class="fc" id="L161">                                allArrived = false;</span>
 <span class="fc" id="L162">                                nextRequest = req;</span>
 <span class="fc" id="L163">                                parent.request(req);</span>
-                                break;
+<span class="fc" id="L164">                                break;</span>
                             }
-                        }
+<span class="nc" id="L166">                        }</span>
                     }
 <span class="fc" id="L168">                    missed = addAndGet(-missed);</span>
 <span class="fc bfc" id="L169" title="All 2 branches covered.">                    if (missed == 0) {</span>

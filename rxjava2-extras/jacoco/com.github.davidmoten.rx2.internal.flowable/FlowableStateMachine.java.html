@@ -34,18 +34,18 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
     private final BackpressureStrategy backpressureStrategy;
     private final int requestBatchSize;
 
-<span class="fc" id="L37">    public FlowableStateMachine(Flowable&lt;In&gt; source, //</span>
+    public FlowableStateMachine(Flowable&lt;In&gt; source, //
             Callable&lt;? extends State&gt; initialState, //
             Function3&lt;? super State, ? super In, ? super Emitter&lt;Out&gt;, ? extends State&gt; transition, //
             BiConsumer&lt;? super State, ? super Emitter&lt;Out&gt;&gt; completionAction, //
             Consumer3&lt;? super State, ? super Throwable, ? super Emitter&lt;Out&gt;&gt; errorAction, //
             BackpressureStrategy backpressureStrategy, //
-            int requestBatchSize) {
+<span class="fc" id="L43">            int requestBatchSize) {</span>
 <span class="fc" id="L44">        Preconditions.checkNotNull(initialState);</span>
 <span class="fc" id="L45">        Preconditions.checkNotNull(transition);</span>
 <span class="fc" id="L46">        Preconditions.checkNotNull(backpressureStrategy);</span>
 <span class="fc bfc" id="L47" title="All 2 branches covered.">        Preconditions.checkArgument(requestBatchSize &gt; 0,</span>
-<span class="fc" id="L48">                &quot;initialRequest must be greater than zero&quot;);</span>
+                &quot;initialRequest must be greater than zero&quot;);
 <span class="fc" id="L49">        this.source = source;</span>
 <span class="fc" id="L50">        this.initialState = initialState;</span>
 <span class="fc" id="L51">        this.transition = transition;</span>
@@ -58,7 +58,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
     @Override
     protected void subscribeActual(Subscriber&lt;? super Out&gt; child) {
 <span class="fc" id="L60">        source.subscribe(new StateMachineSubscriber&lt;State, In, Out&gt;(initialState, transition,</span>
-<span class="fc" id="L61">                completionAction, errorAction, backpressureStrategy, requestBatchSize, child));</span>
+                completionAction, errorAction, backpressureStrategy, requestBatchSize, child));
 <span class="fc" id="L62">    }</span>
 
     @SuppressWarnings(&quot;serial&quot;)
@@ -88,14 +88,14 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
         // indicates to drain method that we can request more if needed
 <span class="fc" id="L89">        private volatile boolean requestsArrived = true;</span>
 
-<span class="fc" id="L91">        StateMachineSubscriber( //</span>
+        StateMachineSubscriber( //
                 Callable&lt;? extends State&gt; initialState,
                 Function3&lt;? super State, ? super In, ? super Emitter&lt;Out&gt;, ? extends State&gt; transition, //
                 BiConsumer&lt;? super State, ? super Emitter&lt;Out&gt;&gt; completionAction, //
                 Consumer3&lt;? super State, ? super Throwable, ? super Emitter&lt;Out&gt;&gt; errorAction, //
                 BackpressureStrategy backpressureStrategy, //
                 int requestBatchSize, //
-                Subscriber&lt;? super Out&gt; child) {
+<span class="fc" id="L98">                Subscriber&lt;? super Out&gt; child) {</span>
 <span class="fc" id="L99">            this.initialState = initialState;</span>
 <span class="fc" id="L100">            this.transition = transition;</span>
 <span class="fc" id="L101">            this.completionAction = completionAction;</span>
@@ -129,12 +129,12 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
             try {
 <span class="fc" id="L130">                drainCalled = false;</span>
 <span class="fc" id="L131">                state = ObjectHelper.requireNonNull(transition.apply(state, t, this),</span>
-<span class="fc" id="L132">                        &quot;intermediate state cannot be null&quot;);</span>
+                        &quot;intermediate state cannot be null&quot;);
 <span class="fc" id="L133">            } catch (Throwable e) {</span>
 <span class="fc" id="L134">                Exceptions.throwIfFatal(e);</span>
 <span class="fc" id="L135">                onError(e);</span>
 <span class="fc" id="L136">                return;</span>
-            }
+<span class="fc" id="L137">            }</span>
 <span class="fc bfc" id="L138" title="All 2 branches covered.">            if (!drainCalled) {</span>
 <span class="fc" id="L139">                drain();</span>
             }
@@ -144,7 +144,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc bfc" id="L144" title="All 2 branches covered.">            if (state == null) {</span>
                 try {
 <span class="fc" id="L146">                    state = ObjectHelper.requireNonNull(initialState.call(),</span>
-<span class="fc" id="L147">                            &quot;initial state cannot be null&quot;);</span>
+                            &quot;initial state cannot be null&quot;);
 <span class="fc" id="L148">                    return true;</span>
 <span class="fc" id="L149">                } catch (Throwable e) {</span>
 <span class="fc" id="L150">                    Exceptions.throwIfFatal(e);</span>
@@ -174,7 +174,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc" id="L174">                    Exceptions.throwIfFatal(e);</span>
 <span class="fc" id="L175">                    onError_(err);</span>
 <span class="fc" id="L176">                    return;</span>
-                }
+<span class="fc" id="L177">                }</span>
             } else {
 <span class="fc" id="L179">                onError_(e);</span>
             }
@@ -191,7 +191,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
             try {
 <span class="fc bfc" id="L192" title="All 2 branches covered.">                if (completionAction != null) {</span>
 <span class="fc" id="L193">                    completionAction.accept(state, this);</span>
-<span class="fc" id="L194">                } else {</span>
+                } else {
 <span class="fc" id="L195">                    onComplete_();</span>
                 }
 <span class="fc" id="L197">                done = true;</span>
@@ -199,7 +199,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc" id="L199">                Exceptions.throwIfFatal(e);</span>
 <span class="fc" id="L200">                onError(e);</span>
 <span class="fc" id="L201">                return;</span>
-            }
+<span class="fc" id="L202">            }</span>
 <span class="fc" id="L203">        }</span>
 
         @Override
@@ -271,7 +271,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc" id="L271">                                    cancel();</span>
 <span class="fc" id="L272">                                    queue.clear();</span>
 <span class="fc" id="L273">                                    child.onError(err);</span>
-<span class="fc" id="L274">                                } else {</span>
+                                } else {
 <span class="fc" id="L275">                                    cancel();</span>
 <span class="fc" id="L276">                                    queue.clear();</span>
 <span class="fc" id="L277">                                    child.onComplete();</span>
@@ -284,7 +284,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc" id="L284">                            child.onNext(t);</span>
 <span class="fc" id="L285">                            e++;</span>
                         }
-                    }
+<span class="fc" id="L287">                    }</span>
 <span class="fc bfc" id="L288" title="All 4 branches covered.">                    if (e != 0 &amp;&amp; r != Long.MAX_VALUE) {</span>
 <span class="fc" id="L289">                        requested.addAndGet(-e);</span>
                     }
@@ -296,7 +296,7 @@ public final class FlowableStateMachine&lt;State, In, Out&gt; extends Flowable&l
 <span class="fc bfc" id="L296" title="All 2 branches covered.">                    if (missed == 0) {</span>
 <span class="fc" id="L297">                        return;</span>
                     }
-                }
+<span class="fc" id="L299">                }</span>
             }
 <span class="fc" id="L301">        }</span>
     }

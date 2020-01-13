@@ -49,7 +49,7 @@ public final class Bytes {
 <span class="fc" id="L49">                    emitter.onComplete();</span>
 <span class="fc bfc" id="L50" title="All 2 branches covered.">                } else if (count &lt; bufferSize) {</span>
 <span class="fc" id="L51">                    emitter.onNext(Arrays.copyOf(buffer, count));</span>
-<span class="fc" id="L52">                } else {</span>
+                } else {
 <span class="fc" id="L53">                    emitter.onNext(buffer);</span>
                 }
 <span class="fc" id="L55">            }</span>
@@ -85,7 +85,7 @@ public final class Bytes {
             public void accept(InputStream is) throws IOException {
 <span class="fc" id="L86">                is.close();</span>
 <span class="fc" id="L87">            }</span>
-<span class="fc" id="L88">        };</span>
+        };
     }
 
     /**
@@ -125,7 +125,7 @@ public final class Bytes {
 <span class="fc" id="L125">                ZipEntry zipEntry = zis.getNextEntry();</span>
 <span class="fc bfc" id="L126" title="All 2 branches covered.">                if (zipEntry != null) {</span>
 <span class="fc" id="L127">                    emitter.onNext(new ZippedEntry(zipEntry, zis));</span>
-<span class="fc" id="L128">                } else {</span>
+                } else {
                     // end of stream so eagerly close the stream (might not be a
                     // good idea since this method did not create the zis
 <span class="fc" id="L131">                    zis.close();</span>
@@ -156,7 +156,7 @@ public final class Bytes {
             public ByteArrayOutputStream call() {
 <span class="fc" id="L157">                return new ByteArrayOutputStream();</span>
             }
-<span class="fc" id="L159">        };</span>
+        };
     }
 
 <span class="nc" id="L162">    private static final class BosCollectorHolder {</span>
@@ -166,7 +166,7 @@ public final class Bytes {
             public void accept(ByteArrayOutputStream bos, byte[] bytes) throws IOException {
 <span class="fc" id="L167">                bos.write(bytes);</span>
 <span class="fc" id="L168">            }</span>
-<span class="fc" id="L169">        };</span>
+        };
     }
 
 <span class="nc" id="L172">    private static final class BosToArrayHolder {</span>
@@ -175,7 +175,7 @@ public final class Bytes {
             public byte[] apply(ByteArrayOutputStream bos) {
 <span class="fc" id="L176">                return bos.toByteArray();</span>
             }
-<span class="fc" id="L178">        };</span>
+        };
     }
 
 <span class="nc" id="L181">    private static final class ZipHolder {</span>
@@ -191,7 +191,7 @@ public final class Bytes {
             public Flowable&lt;ZippedEntry&gt; apply(ZipInputStream zis) {
 <span class="fc" id="L192">                return unzip(zis);</span>
             }
-<span class="fc" id="L194">        };</span>
+        };
     }
 
 }
