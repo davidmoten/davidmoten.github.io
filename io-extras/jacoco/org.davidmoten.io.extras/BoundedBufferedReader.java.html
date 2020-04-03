@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoundedBufferedReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">io-extras</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.io.extras</a> &gt; <span class="el_source">BoundedBufferedReader.java</span></div><h1>BoundedBufferedReader.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+
+package org.davidmoten.io.extras;
+
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+/**
+ * Reads text from a character-input stream, buffering characters so as to
+ * provide for the efficient reading of characters, arrays, and lines.
+ * 
+ * &lt;p&gt; The buffer size may be specified, or the default size may be used.  The
+ * default is large enough for most purposes.
+ * 
+ * &lt;p&gt; A maximum line length can be specified such that characters read past 
+ * that maximum line length are discarded and not returned in a call to 
+ * {@code readLine()}.
+ *
+ * &lt;p&gt; In general, each read request made of a Reader causes a corresponding
+ * read request to be made of the underlying character or byte stream.  It is
+ * therefore advisable to wrap a BufferedReader around any Reader whose read()
+ * operations may be costly, such as FileReaders and InputStreamReaders.  For
+ * example,
+ *
+ * &lt;pre&gt;
+ * BoundedBufferedReader in
+ *   = new BoundedBufferedReader(new FileReader(&quot;foo.in&quot;), 1000);
+ * &lt;/pre&gt;
+ *
+ * will buffer the input from the specified file.  Without buffering, each
+ * invocation of read() or readLine() could cause bytes to be read from the
+ * file, converted into characters, and then returned, which can be very
+ * inefficient. Any line longer than 1000 characters will be trimmed to 1000
+ * characters.
+ *
+ * &lt;p&gt; Programs that use DataInputStreams for textual input can be localized by
+ * replacing each DataInputStream with an appropriate BufferedReader.
+ *
+ * @see FileReader
+ * @see InputStreamReader
+ * @see java.nio.file.Files#newBufferedReader
+ *
+ * @author      Mark Reinhold
+ * @since       JDK1.1
+ */
+
+public class BoundedBufferedReader extends Reader {
+
+    private Reader in;
+    
+    private final int maxLineLength;
+
+    private char cb[];
+    private int nChars, nextChar;
+
+    private static final int INVALIDATED = -2;
+    private static final int UNMARKED = -1;
+<span class="fc" id="L91">    private int markedChar = UNMARKED;</span>
+<span class="fc" id="L92">    private int readAheadLimit = 0; /* Valid only when markedChar &gt; 0 */</span>
+
+    /** If the next character is a line feed, skip it */
+<span class="fc" id="L95">    private boolean skipLF = false;</span>
+
+    /** The skipLF flag when the mark was set */
+<span class="fc" id="L98">    private boolean markedSkipLF = false;</span>
+
+<span class="fc" id="L100">    private static int defaultCharBufferSize = 8192;</span>
+<span class="fc" id="L101">    private static int defaultExpectedLineLength = 80;</span>
+
+    /**
+     * Creates a buffering character-input stream that uses an input buffer of
+     * the specified size. When a a line longer than {@code maxLineLength} is 
+     * encountered the line is trimmed to that maximum length and the rest of 
+     * the line ignored.
+     *
+     * @param  in   A Reader
+     * @param  sz   Input-buffer size
+     * @param  maxLineLength maximum size of a returned line in chars
+     *
+     * @exception  IllegalArgumentException  If {@code sz &lt;= 0}
+     */
+    public BoundedBufferedReader(Reader in, int sz, int maxLineLength) {
+<span class="fc" id="L116">        super(in);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (sz &lt;= 0)</span>
+<span class="nc" id="L118">            throw new IllegalArgumentException(&quot;Buffer size &lt;= 0&quot;);</span>
+<span class="fc" id="L119">        this.in = in;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (maxLineLength &lt; 0) {</span>
+<span class="fc" id="L121">            throw new IllegalArgumentException(&quot;maxLineLength cannot be negative&quot;);</span>
+        }
+<span class="fc" id="L123">        this.maxLineLength = maxLineLength;</span>
+<span class="fc" id="L124">        cb = new char[sz];</span>
+<span class="fc" id="L125">        nextChar = nChars = 0;</span>
+<span class="fc" id="L126">    }</span>
+
+    /**
+     * Creates a buffering character-input stream that uses a default-sized
+     * input buffer and puts no limit on line length.
+     *
+     * @param  in   A Reader
+     */
+    public BoundedBufferedReader(Reader in) {
+<span class="fc" id="L135">        this(in, defaultCharBufferSize, 0);</span>
+<span class="fc" id="L136">    }</span>
+
+    /** Checks to make sure that the stream has not been closed */
+    private void ensureOpen() throws IOException {
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        if (in == null)</span>
+<span class="nc" id="L141">            throw new IOException(&quot;Stream closed&quot;);</span>
+<span class="fc" id="L142">    }</span>
+
+    /**
+     * Fills the input buffer, taking the mark into account if it is valid.
+     */
+    private void fill() throws IOException {
+        int dst;
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (markedChar &lt;= UNMARKED) {</span>
+            /* No mark */
+<span class="fc" id="L151">            dst = 0;</span>
+        } else {
+            /* Marked */
+<span class="nc" id="L154">            int delta = nextChar - markedChar;</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (delta &gt;= readAheadLimit) {</span>
+                /* Gone past read-ahead limit: Invalidate mark */
+<span class="nc" id="L157">                markedChar = INVALIDATED;</span>
+<span class="nc" id="L158">                readAheadLimit = 0;</span>
+<span class="nc" id="L159">                dst = 0;</span>
+            } else {
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                if (readAheadLimit &lt;= cb.length) {</span>
+                    /* Shuffle in the current buffer */
+<span class="nc" id="L163">                    System.arraycopy(cb, markedChar, cb, 0, delta);</span>
+<span class="nc" id="L164">                    markedChar = 0;</span>
+<span class="nc" id="L165">                    dst = delta;</span>
+                } else {
+                    /* Reallocate buffer to accommodate read-ahead limit */
+<span class="nc" id="L168">                    char ncb[] = new char[readAheadLimit];</span>
+<span class="nc" id="L169">                    System.arraycopy(cb, markedChar, ncb, 0, delta);</span>
+<span class="nc" id="L170">                    cb = ncb;</span>
+<span class="nc" id="L171">                    markedChar = 0;</span>
+<span class="nc" id="L172">                    dst = delta;</span>
+                }
+<span class="nc" id="L174">                nextChar = nChars = delta;</span>
+            }
+        }
+
+        int n;
+        do {
+<span class="fc" id="L180">            n = in.read(cb, dst, cb.length - dst);</span>
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        } while (n == 0);</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (n &gt; 0) {</span>
+<span class="fc" id="L183">            nChars = dst + n;</span>
+<span class="fc" id="L184">            nextChar = dst;</span>
+        }
+<span class="fc" id="L186">    }</span>
+
+    /**
+     * Reads a single character.
+     *
+     * @return The character read, as an integer in the range
+     *         0 to 65535 (&lt;tt&gt;0x00-0xffff&lt;/tt&gt;), or -1 if the
+     *         end of the stream has been reached
+     * @exception  IOException  If an I/O error occurs
+     */
+    public int read() throws IOException {
+<span class="nc" id="L197">        synchronized (lock) {</span>
+<span class="nc" id="L198">            ensureOpen();</span>
+            for (;;) {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">                if (nextChar &gt;= nChars) {</span>
+<span class="nc" id="L201">                    fill();</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">                    if (nextChar &gt;= nChars)</span>
+<span class="nc" id="L203">                        return -1;</span>
+                }
+<span class="nc bnc" id="L205" title="All 2 branches missed.">                if (skipLF) {</span>
+<span class="nc" id="L206">                    skipLF = false;</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                    if (cb[nextChar] == '\n') {</span>
+<span class="nc" id="L208">                        nextChar++;</span>
+<span class="nc" id="L209">                        continue;</span>
+                    }
+                }
+<span class="nc" id="L212">                return cb[nextChar++];</span>
+            }
+<span class="nc" id="L214">        }</span>
+    }
+
+    /**
+     * Reads characters into a portion of an array, reading from the underlying
+     * stream if necessary.
+     */
+    private int read1(char[] cbuf, int off, int len) throws IOException {
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (nextChar &gt;= nChars) {</span>
+            /* If the requested length is at least as large as the buffer, and
+               if there is no mark/reset activity, and if line feeds are not
+               being skipped, do not bother to copy the characters into the
+               local buffer.  In this way buffered streams will cascade
+               harmlessly. */
+<span class="nc bnc" id="L228" title="All 6 branches missed.">            if (len &gt;= cb.length &amp;&amp; markedChar &lt;= UNMARKED &amp;&amp; !skipLF) {</span>
+<span class="nc" id="L229">                return in.read(cbuf, off, len);</span>
+            }
+<span class="nc" id="L231">            fill();</span>
+        }
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (nextChar &gt;= nChars) return -1;</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (skipLF) {</span>
+<span class="nc" id="L235">            skipLF = false;</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            if (cb[nextChar] == '\n') {</span>
+<span class="nc" id="L237">                nextChar++;</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                if (nextChar &gt;= nChars)</span>
+<span class="nc" id="L239">                    fill();</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                if (nextChar &gt;= nChars)</span>
+<span class="nc" id="L241">                    return -1;</span>
+            }
+        }
+<span class="nc" id="L244">        int n = Math.min(len, nChars - nextChar);</span>
+<span class="nc" id="L245">        System.arraycopy(cb, nextChar, cbuf, off, n);</span>
+<span class="nc" id="L246">        nextChar += n;</span>
+<span class="nc" id="L247">        return n;</span>
+    }
+
+    /**
+     * Reads characters into a portion of an array.
+     *
+     * &lt;p&gt; This method implements the general contract of the corresponding
+     * &lt;code&gt;{@link Reader#read(char[], int, int) read}&lt;/code&gt; method of the
+     * &lt;code&gt;{@link Reader}&lt;/code&gt; class.  As an additional convenience, it
+     * attempts to read as many characters as possible by repeatedly invoking
+     * the &lt;code&gt;read&lt;/code&gt; method of the underlying stream.  This iterated
+     * &lt;code&gt;read&lt;/code&gt; continues until one of the following conditions becomes
+     * true: &lt;ul&gt;
+     *
+     *   &lt;li&gt; The specified number of characters have been read,
+     *
+     *   &lt;li&gt; The &lt;code&gt;read&lt;/code&gt; method of the underlying stream returns
+     *   &lt;code&gt;-1&lt;/code&gt;, indicating end-of-file, or
+     *
+     *   &lt;li&gt; The &lt;code&gt;ready&lt;/code&gt; method of the underlying stream
+     *   returns &lt;code&gt;false&lt;/code&gt;, indicating that further input requests
+     *   would block.
+     *
+     * &lt;/ul&gt; If the first &lt;code&gt;read&lt;/code&gt; on the underlying stream returns
+     * &lt;code&gt;-1&lt;/code&gt; to indicate end-of-file then this method returns
+     * &lt;code&gt;-1&lt;/code&gt;.  Otherwise this method returns the number of characters
+     * actually read.
+     *
+     * &lt;p&gt; Subclasses of this class are encouraged, but not required, to
+     * attempt to read as many characters as possible in the same fashion.
+     *
+     * &lt;p&gt; Ordinarily this method takes characters from this stream's character
+     * buffer, filling it from the underlying stream as necessary.  If,
+     * however, the buffer is empty, the mark is not valid, and the requested
+     * length is at least as large as the buffer, then this method will read
+     * characters directly from the underlying stream into the given array.
+     * Thus redundant &lt;code&gt;BufferedReader&lt;/code&gt;s will not copy data
+     * unnecessarily.
+     *
+     * @param      cbuf  Destination buffer
+     * @param      off   Offset at which to start storing characters
+     * @param      len   Maximum number of characters to read
+     *
+     * @return     The number of characters read, or -1 if the end of the
+     *             stream has been reached
+     *
+     * @exception  IOException  If an I/O error occurs
+     */
+    public int read(char cbuf[], int off, int len) throws IOException {
+<span class="nc" id="L296">        synchronized (lock) {</span>
+<span class="nc" id="L297">            ensureOpen();</span>
+<span class="nc bnc" id="L298" title="All 10 branches missed.">            if ((off &lt; 0) || (off &gt; cbuf.length) || (len &lt; 0) ||</span>
+                ((off + len) &gt; cbuf.length) || ((off + len) &lt; 0)) {
+<span class="nc" id="L300">                throw new IndexOutOfBoundsException();</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">            } else if (len == 0) {</span>
+<span class="nc" id="L302">                return 0;</span>
+            }
+
+<span class="nc" id="L305">            int n = read1(cbuf, off, len);</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            if (n &lt;= 0) return n;</span>
+<span class="nc bnc" id="L307" title="All 4 branches missed.">            while ((n &lt; len) &amp;&amp; in.ready()) {</span>
+<span class="nc" id="L308">                int n1 = read1(cbuf, off + n, len - n);</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                if (n1 &lt;= 0) break;</span>
+<span class="nc" id="L310">                n += n1;</span>
+<span class="nc" id="L311">            }</span>
+<span class="nc" id="L312">            return n;</span>
+<span class="nc" id="L313">        }</span>
+    }
+
+    /**
+     * Reads a line of text trimmed to {@code maxLineLength} characters.  A line is considered
+     * to be terminated by any one of a line feed ('\n'), a carriage return ('\r'), 
+     * or a carriage return followed immediately by a linefeed.
+     *
+     * @param      ignoreLF  If true, the next '\n' will be skipped
+     *
+     * @return     A String containing the contents of the line, not including
+     *             any line-termination characters, or null if the end of the
+     *             stream has been reached
+     *
+     * @see        java.io.LineNumberReader#readLine()
+     *
+     * @exception  IOException  If an I/O error occurs
+     */
+    String readLine(boolean ignoreLF) throws IOException {
+<span class="fc" id="L332">        StringBuffer s = null;</span>
+        int startChar;
+
+<span class="fc" id="L335">        synchronized (lock) {</span>
+<span class="fc" id="L336">            ensureOpen();</span>
+<span class="pc bpc" id="L337" title="2 of 4 branches missed.">            boolean omitLF = ignoreLF || skipLF;</span>
+
+//        bufferLoop:
+            for (;;) {
+
+<span class="fc bfc" id="L342" title="All 2 branches covered.">                if (nextChar &gt;= nChars)</span>
+<span class="fc" id="L343">                    fill();</span>
+<span class="fc bfc" id="L344" title="All 2 branches covered.">                if (nextChar &gt;= nChars) { /* EOF */</span>
+<span class="pc bpc" id="L345" title="1 of 4 branches missed.">                    if (s != null &amp;&amp; s.length() &gt; 0)</span>
+<span class="fc" id="L346">                        return s.toString();</span>
+                    else
+<span class="fc" id="L348">                        return null;</span>
+                }
+<span class="fc" id="L350">                boolean eol = false;</span>
+<span class="fc" id="L351">                char c = 0;</span>
+                int i;
+
+                /* Skip a leftover '\n', if necessary */
+<span class="pc bpc" id="L355" title="3 of 4 branches missed.">                if (omitLF &amp;&amp; (cb[nextChar] == '\n'))</span>
+<span class="nc" id="L356">                    nextChar++;</span>
+<span class="fc" id="L357">                skipLF = false;</span>
+<span class="fc" id="L358">                omitLF = false;</span>
+
+            charLoop:
+<span class="fc bfc" id="L361" title="All 2 branches covered.">                for (i = nextChar; i &lt; nChars; i++) {</span>
+<span class="fc" id="L362">                    c = cb[i];</span>
+<span class="pc bpc" id="L363" title="1 of 4 branches missed.">                    if ((c == '\n') || (c == '\r')) {</span>
+<span class="fc" id="L364">                        eol = true;</span>
+<span class="fc" id="L365">                        break charLoop;</span>
+                    }
+                }
+
+<span class="fc" id="L369">                startChar = nextChar;</span>
+<span class="fc" id="L370">                nextChar = i;</span>
+
+<span class="fc bfc" id="L372" title="All 2 branches covered.">                if (eol) {</span>
+                    String str;
+<span class="fc bfc" id="L374" title="All 2 branches covered.">                    if (s == null) {</span>
+<span class="fc" id="L375">                        str = new String(cb, startChar, i - startChar);</span>
+                    } else {
+<span class="fc" id="L377">                        final int maxAvailable = maxAvailable(s);</span>
+<span class="fc" id="L378">                        s.append(cb, startChar, Math.min(maxAvailable, i - startChar));</span>
+<span class="fc" id="L379">                        str = s.toString();</span>
+                    }
+<span class="fc" id="L381">                    nextChar++;</span>
+<span class="pc bpc" id="L382" title="1 of 2 branches missed.">                    if (c == '\r') {</span>
+<span class="nc" id="L383">                        skipLF = true;</span>
+                    }
+<span class="fc" id="L385">                    return str;</span>
+                }
+
+<span class="fc bfc" id="L388" title="All 2 branches covered.">                if (s == null)</span>
+<span class="fc" id="L389">                    s = new StringBuffer(defaultExpectedLineLength);</span>
+<span class="fc" id="L390">                final int maxAvailable = maxAvailable(s);</span>
+<span class="fc" id="L391">                s.append(cb, startChar, Math.min(maxAvailable, i - startChar));</span>
+<span class="fc" id="L392">            }</span>
+<span class="nc" id="L393">        }</span>
+    }
+    
+    private int maxAvailable(StringBuffer s) {
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        if (maxLineLength == 0 ) {</span>
+<span class="fc" id="L398">            return Integer.MAX_VALUE;</span>
+        } else {
+<span class="fc" id="L400">            return maxLineLength - s.length();</span>
+        }
+    }
+
+    /**
+     * Reads a line of text trimmed to {@code maxLineLength} characters.  A line is 
+     * considered to be terminated by any one of a line feed ('\n'), a carriage
+     * return ('\r'), or a carriage return followed immediately by a linefeed.
+     *
+     * @return     A String containing the contents of the line, not including
+     *             any line-termination characters, or null if the end of the
+     *             stream has been reached
+     *
+     * @exception  IOException  If an I/O error occurs
+     *
+     * @see java.nio.file.Files#readAllLines
+     */
+    public String readLine() throws IOException {
+<span class="fc" id="L418">        return readLine(false);</span>
+    }
+
+    /**
+     * Skips characters.
+     *
+     * @param  n  The number of characters to skip
+     *
+     * @return    The number of characters actually skipped
+     *
+     * @exception  IllegalArgumentException  If &lt;code&gt;n&lt;/code&gt; is negative.
+     * @exception  IOException  If an I/O error occurs
+     */
+    public long skip(long n) throws IOException {
+<span class="nc bnc" id="L432" title="All 2 branches missed.">        if (n &lt; 0L) {</span>
+<span class="nc" id="L433">            throw new IllegalArgumentException(&quot;skip value is negative&quot;);</span>
+        }
+<span class="nc" id="L435">        synchronized (lock) {</span>
+<span class="nc" id="L436">            ensureOpen();</span>
+<span class="nc" id="L437">            long r = n;</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            while (r &gt; 0) {</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">                if (nextChar &gt;= nChars)</span>
+<span class="nc" id="L440">                    fill();</span>
+<span class="nc bnc" id="L441" title="All 2 branches missed.">                if (nextChar &gt;= nChars) /* EOF */</span>
+<span class="nc" id="L442">                    break;</span>
+<span class="nc bnc" id="L443" title="All 2 branches missed.">                if (skipLF) {</span>
+<span class="nc" id="L444">                    skipLF = false;</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">                    if (cb[nextChar] == '\n') {</span>
+<span class="nc" id="L446">                        nextChar++;</span>
+                    }
+                }
+<span class="nc" id="L449">                long d = nChars - nextChar;</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">                if (r &lt;= d) {</span>
+<span class="nc" id="L451">                    nextChar += r;</span>
+<span class="nc" id="L452">                    r = 0;</span>
+<span class="nc" id="L453">                    break;</span>
+                }
+                else {
+<span class="nc" id="L456">                    r -= d;</span>
+<span class="nc" id="L457">                    nextChar = nChars;</span>
+                }
+<span class="nc" id="L459">            }</span>
+<span class="nc" id="L460">            return n - r;</span>
+<span class="nc" id="L461">        }</span>
+    }
+
+    /**
+     * Tells whether this stream is ready to be read.  A buffered character
+     * stream is ready if the buffer is not empty, or if the underlying
+     * character stream is ready.
+     *
+     * @exception  IOException  If an I/O error occurs
+     */
+    public boolean ready() throws IOException {
+<span class="nc" id="L472">        synchronized (lock) {</span>
+<span class="nc" id="L473">            ensureOpen();</span>
+
+            /*
+             * If newline needs to be skipped and the next char to be read
+             * is a newline character, then just skip it right away.
+             */
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            if (skipLF) {</span>
+                /* Note that in.ready() will return true if and only if the next
+                 * read on the stream will not block.
+                 */
+<span class="nc bnc" id="L483" title="All 4 branches missed.">                if (nextChar &gt;= nChars &amp;&amp; in.ready()) {</span>
+<span class="nc" id="L484">                    fill();</span>
+                }
+<span class="nc bnc" id="L486" title="All 2 branches missed.">                if (nextChar &lt; nChars) {</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                    if (cb[nextChar] == '\n')</span>
+<span class="nc" id="L488">                        nextChar++;</span>
+<span class="nc" id="L489">                    skipLF = false;</span>
+                }
+            }
+<span class="nc bnc" id="L492" title="All 4 branches missed.">            return (nextChar &lt; nChars) || in.ready();</span>
+<span class="nc" id="L493">        }</span>
+    }
+
+    /**
+     * Tells whether this stream supports the mark() operation, which it does.
+     */
+    public boolean markSupported() {
+<span class="nc" id="L500">        return true;</span>
+    }
+
+    /**
+     * Marks the present position in the stream.  Subsequent calls to reset()
+     * will attempt to reposition the stream to this point.
+     *
+     * @param readAheadLimit   Limit on the number of characters that may be
+     *                         read while still preserving the mark. An attempt
+     *                         to reset the stream after reading characters
+     *                         up to this limit or beyond may fail.
+     *                         A limit value larger than the size of the input
+     *                         buffer will cause a new buffer to be allocated
+     *                         whose size is no smaller than limit.
+     *                         Therefore large values should be used with care.
+     *
+     * @exception  IllegalArgumentException  If {@code readAheadLimit &lt; 0}
+     * @exception  IOException  If an I/O error occurs
+     */
+    public void mark(int readAheadLimit) throws IOException {
+<span class="nc bnc" id="L520" title="All 2 branches missed.">        if (readAheadLimit &lt; 0) {</span>
+<span class="nc" id="L521">            throw new IllegalArgumentException(&quot;Read-ahead limit &lt; 0&quot;);</span>
+        }
+<span class="nc" id="L523">        synchronized (lock) {</span>
+<span class="nc" id="L524">            ensureOpen();</span>
+<span class="nc" id="L525">            this.readAheadLimit = readAheadLimit;</span>
+<span class="nc" id="L526">            markedChar = nextChar;</span>
+<span class="nc" id="L527">            markedSkipLF = skipLF;</span>
+<span class="nc" id="L528">        }</span>
+<span class="nc" id="L529">    }</span>
+
+    /**
+     * Resets the stream to the most recent mark.
+     *
+     * @exception  IOException  If the stream has never been marked,
+     *                          or if the mark has been invalidated
+     */
+    public void reset() throws IOException {
+<span class="nc" id="L538">        synchronized (lock) {</span>
+<span class="nc" id="L539">            ensureOpen();</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">            if (markedChar &lt; 0)</span>
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                throw new IOException((markedChar == INVALIDATED)</span>
+                                      ? &quot;Mark invalid&quot;
+                                      : &quot;Stream not marked&quot;);
+<span class="nc" id="L544">            nextChar = markedChar;</span>
+<span class="nc" id="L545">            skipLF = markedSkipLF;</span>
+<span class="nc" id="L546">        }</span>
+<span class="nc" id="L547">    }</span>
+
+    public void close() throws IOException {
+<span class="fc" id="L550">        synchronized (lock) {</span>
+<span class="pc bpc" id="L551" title="1 of 2 branches missed.">            if (in == null)</span>
+<span class="nc" id="L552">                return;</span>
+            try {
+<span class="fc" id="L554">                in.close();</span>
+            } finally {
+<span class="pc" id="L556">                in = null;</span>
+<span class="pc" id="L557">                cb = null;</span>
+<span class="pc" id="L558">            }</span>
+<span class="fc" id="L559">        }</span>
+<span class="fc" id="L560">    }</span>
+
+    /**
+     * Returns a {@code Stream}, the elements of which are lines read from
+     * this {@code BufferedReader}.  The {@link Stream} is lazily populated,
+     * i.e., read only occurs during the
+     * &lt;a href=&quot;../util/stream/package-summary.html#StreamOps&quot;&gt;terminal
+     * stream operation&lt;/a&gt;.
+     *
+     * &lt;p&gt; The reader must not be operated on during the execution of the
+     * terminal stream operation. Otherwise, the result of the terminal stream
+     * operation is undefined.
+     *
+     * &lt;p&gt; After execution of the terminal stream operation there are no
+     * guarantees that the reader will be at a specific position from which to
+     * read the next character or line.
+     *
+     * &lt;p&gt; If an {@link IOException} is thrown when accessing the underlying
+     * {@code BufferedReader}, it is wrapped in an {@link
+     * UncheckedIOException} which will be thrown from the {@code Stream}
+     * method that caused the read to take place. This method will return a
+     * Stream if invoked on a BufferedReader that is closed. Any operation on
+     * that stream that requires reading from the BufferedReader after it is
+     * closed, will cause an UncheckedIOException to be thrown.
+     *
+     * @return a {@code Stream&lt;String&gt;} providing the lines of text
+     *         described by this {@code BufferedReader}
+     *
+     * @since 1.8
+     */
+    public Stream&lt;String&gt; lines() {
+<span class="nc" id="L591">        Iterator&lt;String&gt; iter = new Iterator&lt;String&gt;() {</span>
+<span class="nc" id="L592">            String nextLine = null;</span>
+
+            @Override
+            public boolean hasNext() {
+<span class="nc bnc" id="L596" title="All 2 branches missed.">                if (nextLine != null) {</span>
+<span class="nc" id="L597">                    return true;</span>
+                } else {
+                    try {
+<span class="nc" id="L600">                        nextLine = readLine();</span>
+<span class="nc bnc" id="L601" title="All 2 branches missed.">                        return (nextLine != null);</span>
+<span class="nc" id="L602">                    } catch (IOException e) {</span>
+<span class="nc" id="L603">                        throw new UncheckedIOException(e);</span>
+                    }
+                }
+            }
+
+            @Override
+            public String next() {
+<span class="nc bnc" id="L610" title="All 4 branches missed.">                if (nextLine != null || hasNext()) {</span>
+<span class="nc" id="L611">                    String line = nextLine;</span>
+<span class="nc" id="L612">                    nextLine = null;</span>
+<span class="nc" id="L613">                    return line;</span>
+                } else {
+<span class="nc" id="L615">                    throw new NoSuchElementException();</span>
+                }
+            }
+        };
+<span class="nc" id="L619">        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(</span>
+                iter, Spliterator.ORDERED | Spliterator.NONNULL), false);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
