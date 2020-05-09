@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sorter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">big-sorter</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.bigsorter</a> &gt; <span class="el_source">Sorter.java</span></div><h1>Sorter.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.bigsorter;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+// NotThreadSafe
+// The class is not considered thread safe because calling the sort() method on the same Sorter object simultaneously from 
+// different threads could break things. Admittedly that would be a pretty strange thing to do! In short, create a new Sorter 
+// and sort() in one thread, don't seek to reuse the same Sorter object. 
+public final class Sorter&lt;T&gt; {
+
+    private final List&lt;Supplier&lt;? extends InputStream&gt;&gt; inputs;
+    private final Serializer&lt;T&gt; serializer;
+    private final File output;
+    private final Comparator&lt;? super T&gt; comparator;
+    private final int maxFilesPerMerge;
+    private final int maxItemsPerPart;
+    private final Consumer&lt;? super String&gt; log;
+    private final int bufferSize;
+    private final File tempDirectory;
+    private final Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; transform;
+    private final boolean unique;
+<span class="fc" id="L56">    private long count = 0;</span>
+    
+
+    Sorter(List&lt;Supplier&lt;? extends InputStream&gt;&gt; inputs, Serializer&lt;T&gt; serializer, File output,
+            Comparator&lt;? super T&gt; comparator, int maxFilesPerMerge, int maxItemsPerFile,
+            Consumer&lt;? super String&gt; log, int bufferSize, File tempDirectory,
+<span class="fc" id="L62">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; transform, boolean unique) {</span>
+<span class="fc" id="L63">        Preconditions.checkNotNull(inputs, &quot;inputs cannot be null&quot;);</span>
+<span class="fc" id="L64">        Preconditions.checkNotNull(serializer, &quot;serializer cannot be null&quot;);</span>
+<span class="fc" id="L65">        Preconditions.checkNotNull(output, &quot;output cannot be null&quot;);</span>
+<span class="fc" id="L66">        Preconditions.checkNotNull(comparator, &quot;comparator cannot be null&quot;);</span>
+<span class="fc" id="L67">        Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
+<span class="fc" id="L68">        this.inputs = inputs;</span>
+<span class="fc" id="L69">        this.serializer = serializer;</span>
+<span class="fc" id="L70">        this.output = output;</span>
+<span class="fc" id="L71">        this.comparator = comparator;</span>
+<span class="fc" id="L72">        this.maxFilesPerMerge = maxFilesPerMerge;</span>
+<span class="fc" id="L73">        this.maxItemsPerPart = maxItemsPerFile;</span>
+<span class="fc" id="L74">        this.log = log;</span>
+<span class="fc" id="L75">        this.bufferSize = bufferSize;</span>
+<span class="fc" id="L76">        this.tempDirectory = tempDirectory;</span>
+<span class="fc" id="L77">        this.transform = transform;</span>
+<span class="fc" id="L78">        this.unique = unique;</span>
+<span class="fc" id="L79">    }</span>
+
+    public static &lt;T&gt; Builder&lt;T&gt; serializer(Serializer&lt;T&gt; serializer) {
+<span class="fc" id="L82">        Preconditions.checkNotNull(serializer, &quot;serializer cannot be null&quot;);</span>
+<span class="fc" id="L83">        return new Builder&lt;T&gt;(serializer);</span>
+    }
+
+    public static &lt;T&gt; Builder&lt;String&gt; serializerLinesUtf8() {
+<span class="fc" id="L87">        return serializer(Serializer.linesUtf8());</span>
+    }
+
+    public static &lt;T&gt; Builder&lt;String&gt; serializerLines(Charset charset) {
+<span class="fc" id="L91">        return serializer(Serializer.lines(charset));</span>
+    }
+
+    public static &lt;T&gt; Builder2&lt;String&gt; lines(Charset charset) {
+<span class="fc" id="L95">        return serializer(Serializer.lines(charset)).comparator(Comparator.naturalOrder());</span>
+    }
+
+    public static &lt;T&gt; Builder2&lt;String&gt; linesUtf8() {
+<span class="fc" id="L99">        return serializer(Serializer.linesUtf8()).comparator(Comparator.naturalOrder());</span>
+    }
+
+    public static final class Builder&lt;T&gt; {
+<span class="fc" id="L103">        private static final DateTimeFormatter DATE_TIME_PATTERN = DateTimeFormatter</span>
+<span class="fc" id="L104">                .ofPattern(&quot;yyyy-MM-dd HH:mm:ss.Sxxxx&quot;);</span>
+<span class="fc" id="L105">        private List&lt;Supplier&lt;? extends InputStream&gt;&gt; inputs = Lists.newArrayList();</span>
+        private final Serializer&lt;T&gt; serializer;
+        private File output;
+        private Comparator&lt;? super T&gt; comparator;
+<span class="fc" id="L109">        private int maxFilesPerMerge = 100;</span>
+<span class="fc" id="L110">        private int maxItemsPerFile = 100000;</span>
+<span class="fc" id="L111">        private Consumer&lt;? super String&gt; logger = null;</span>
+<span class="fc" id="L112">        private int bufferSize = 8192;</span>
+<span class="fc" id="L113">        private File tempDirectory = new File(System.getProperty(&quot;java.io.tmpdir&quot;));</span>
+<span class="fc" id="L114">        private Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; transform = r -&gt; r;</span>
+        public boolean unique;
+
+<span class="fc" id="L117">        Builder(Serializer&lt;T&gt; serializer) {</span>
+<span class="fc" id="L118">            this.serializer = serializer;</span>
+<span class="fc" id="L119">        }</span>
+
+        public Builder2&lt;T&gt; comparator(Comparator&lt;? super T&gt; comparator) {
+<span class="fc" id="L122">            Preconditions.checkNotNull(comparator, &quot;comparator cannot be null&quot;);</span>
+<span class="fc" id="L123">            this.comparator = comparator;</span>
+<span class="fc" id="L124">            return new Builder2&lt;T&gt;(this);</span>
+        }
+    }
+
+    public static final class Builder2&lt;T&gt; {
+        private final Builder&lt;T&gt; b;
+
+<span class="fc" id="L131">        Builder2(Builder&lt;T&gt; b) {</span>
+<span class="fc" id="L132">            this.b = b;</span>
+<span class="fc" id="L133">        }</span>
+
+        public Builder3&lt;T&gt; input(Charset charset, String... strings) {
+<span class="fc" id="L136">            Preconditions.checkNotNull(strings, &quot;string cannot be null&quot;);</span>
+<span class="fc" id="L137">            Preconditions.checkNotNull(charset, &quot;charset cannot be null&quot;);</span>
+<span class="fc" id="L138">            List&lt;Supplier&lt;InputStream&gt;&gt; list = Arrays //</span>
+<span class="fc" id="L139">                    .asList(strings) //</span>
+<span class="fc" id="L140">                    .stream() //</span>
+<span class="fc" id="L141">                    .map(string -&gt; new ByteArrayInputStream(string.getBytes(charset))) //</span>
+<span class="fc" id="L142">                    .map(bis -&gt; (Supplier&lt;InputStream&gt;)(() -&gt; bis)) //</span>
+<span class="fc" id="L143">                    .collect(Collectors.toList());</span>
+<span class="fc" id="L144">            return inputStreams(list);</span>
+        }
+
+        public Builder3&lt;T&gt; input(String... strings) {
+<span class="fc" id="L148">            Preconditions.checkNotNull(strings);</span>
+<span class="fc" id="L149">            return input(StandardCharsets.UTF_8, strings);</span>
+        }
+        
+        public Builder3&lt;T&gt; input(InputStream... inputs) {
+<span class="fc" id="L153">            List&lt;Supplier&lt;InputStream&gt;&gt; list = Lists.newArrayList();</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            for (InputStream in:inputs) {</span>
+<span class="fc" id="L155">                list.add(() -&gt; new NonClosingInputStream(in));</span>
+            }
+<span class="fc" id="L157">            return inputStreams(list);</span>
+        }
+        
+        public Builder3&lt;T&gt; input(Supplier&lt;? extends InputStream&gt; input) {
+<span class="fc" id="L161">            Preconditions.checkNotNull(input, &quot;input cannot be null&quot;);</span>
+<span class="fc" id="L162">            return inputStreams(Collections.singletonList(input));</span>
+        }
+        
+        public Builder3&lt;T&gt; input(File... files) {
+<span class="fc" id="L166">            return input(Arrays.asList(files));</span>
+        }
+
+        public Builder3&lt;T&gt; input(List&lt;File&gt; files) {
+<span class="fc" id="L170">            Preconditions.checkNotNull(files, &quot;files cannot be null&quot;);</span>
+<span class="fc" id="L171">            return inputStreams(files //</span>
+<span class="fc" id="L172">                    .stream() //</span>
+<span class="fc" id="L173">                    .map(file -&gt; supplier(file)) //</span>
+<span class="fc" id="L174">                    .collect(Collectors.toList()));</span>
+        }
+        
+        public Builder3&lt;T&gt; inputStreams(List&lt;? extends Supplier&lt;? extends InputStream&gt;&gt; inputs) {
+<span class="fc" id="L178">            Preconditions.checkNotNull(inputs);</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            for (Supplier&lt;? extends InputStream&gt; input: inputs) {</span>
+<span class="fc" id="L180">                b.inputs.add(input);</span>
+<span class="fc" id="L181">            }</span>
+<span class="fc" id="L182">            return new Builder3&lt;T&gt;(b);</span>
+        }
+        
+        private Supplier&lt;InputStream&gt; supplier(File file) {
+<span class="fc" id="L186">            return () -&gt; {</span>
+                try {
+<span class="fc" id="L188">                    return openFile(file, b.bufferSize);</span>
+<span class="fc" id="L189">                } catch (FileNotFoundException e) {</span>
+<span class="fc" id="L190">                    throw new UncheckedIOException(e);</span>
+                }
+            };
+        }
+        
+    }
+
+    public static final class Builder3&lt;T&gt; {
+        private final Builder&lt;T&gt; b;
+
+<span class="fc" id="L200">        Builder3(Builder&lt;T&gt; b) {</span>
+<span class="fc" id="L201">            this.b = b;</span>
+<span class="fc" id="L202">        }</span>
+        
+        public Builder3&lt;T&gt; filter(Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L205">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; currentTransform = b.transform;</span>
+<span class="fc" id="L206">            return transform(r -&gt; currentTransform.apply(r).filter(predicate));</span>
+        }
+        
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder3&lt;T&gt; map(Function&lt;? super T, ? extends T&gt; mapper) {
+<span class="fc" id="L211">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; currentTransform = b.transform;</span>
+<span class="fc" id="L212">            return transform(r -&gt; ((Reader&lt;T&gt;) currentTransform.apply(r)).map(mapper));</span>
+        }
+        
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder3&lt;T&gt; flatMap(Function&lt;? super T, ? extends List&lt;? extends T&gt;&gt; mapper) {
+<span class="fc" id="L217">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; currentTransform = b.transform;</span>
+<span class="fc" id="L218">            return transform(r -&gt; ((Reader&lt;T&gt;) currentTransform.apply(r)).flatMap(mapper));</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder3&lt;T&gt; transform(
+                Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; transform) {
+<span class="fc" id="L224">            Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
+<span class="fc" id="L225">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; currentTransform = b.transform;</span>
+<span class="fc" id="L226">            b.transform = r -&gt; transform.apply((Reader&lt;T&gt;) currentTransform.apply(r));</span>
+<span class="fc" id="L227">            return this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder3&lt;T&gt; transformStream(
+                Function&lt;? super Stream&lt;T&gt;, ? extends Stream&lt;? extends T&gt;&gt; transform) {
+<span class="fc" id="L233">            Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
+<span class="fc" id="L234">            Function&lt;? super Reader&lt;T&gt;, ? extends Reader&lt;? extends T&gt;&gt; currentTransform = b.transform;</span>
+<span class="fc" id="L235">            b.transform = r -&gt; ((Reader&lt;T&gt;) currentTransform.apply(r)).transform(transform);</span>
+<span class="fc" id="L236">            return this;</span>
+        }
+
+        public Builder4&lt;T&gt; output(File output) {
+<span class="fc" id="L240">            Preconditions.checkNotNull(output, &quot;output cannot be null&quot;);</span>
+<span class="fc" id="L241">            b.output = output;</span>
+<span class="fc" id="L242">            return new Builder4&lt;T&gt;(b);</span>
+        }
+        
+        public Builder5&lt;T&gt; outputAsStream() {
+<span class="fc" id="L246">            return new Builder5&lt;T&gt;(b);</span>
+        }
+
+    }
+    
+    public static class Builder4Base&lt;T, S extends Builder4Base&lt;T, S&gt;&gt; {
+        protected final Builder&lt;T&gt; b;
+
+<span class="fc" id="L254">        Builder4Base(Builder&lt;T&gt; b) {</span>
+<span class="fc" id="L255">            this.b = b;</span>
+<span class="fc" id="L256">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S maxFilesPerMerge(int value) {
+<span class="fc bfc" id="L260" title="All 2 branches covered.">            Preconditions.checkArgument(value &gt; 1, &quot;maxFilesPerMerge must be greater than 1&quot;);</span>
+<span class="fc" id="L261">            b.maxFilesPerMerge = value;</span>
+<span class="fc" id="L262">            return (S) this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S maxItemsPerFile(int value) {
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            Preconditions.checkArgument(value &gt; 0, &quot;maxItemsPerFile must be greater than 0&quot;);</span>
+<span class="fc" id="L268">            b.maxItemsPerFile = value;</span>
+<span class="fc" id="L269">            return (S) this;</span>
+        }
+        
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S unique(boolean value) {
+<span class="fc" id="L274">            b.unique = value;</span>
+<span class="fc" id="L275">            return (S) this;</span>
+        }
+        
+        public S unique() {
+<span class="fc" id="L279">            return unique(true);</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S logger(Consumer&lt;? super String&gt; logger) {
+<span class="fc" id="L284">            Preconditions.checkNotNull(logger, &quot;logger cannot be null&quot;);</span>
+<span class="fc" id="L285">            b.logger = logger;</span>
+<span class="fc" id="L286">            return (S) this;</span>
+        }
+
+        public S loggerStdOut() {
+<span class="fc" id="L290">            return logger(new Consumer&lt;String&gt;() {</span>
+
+                @Override
+                public void accept(String msg) {
+<span class="fc" id="L294">                    System.out.println(ZonedDateTime.now().truncatedTo(ChronoUnit.MILLIS)</span>
+<span class="fc" id="L295">                            .format(Builder.DATE_TIME_PATTERN) + &quot; &quot; + msg);</span>
+<span class="fc" id="L296">                }</span>
+            });
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S bufferSize(int bufferSize) {
+<span class="fc bfc" id="L302" title="All 2 branches covered.">            Preconditions.checkArgument(bufferSize &gt; 0, &quot;bufferSize must be greater than 0&quot;);</span>
+<span class="fc" id="L303">            b.bufferSize = bufferSize;</span>
+<span class="fc" id="L304">            return (S) this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public S tempDirectory(File directory) {
+<span class="fc" id="L309">            Preconditions.checkNotNull(directory, &quot;tempDirectory cannot be null&quot;);</span>
+<span class="fc" id="L310">            b.tempDirectory = directory;</span>
+<span class="fc" id="L311">            return (S) this;</span>
+        }
+        
+    }
+
+
+    public static final class Builder4&lt;T&gt; extends Builder4Base&lt;T, Builder4&lt;T&gt;&gt; {
+
+        Builder4(Builder&lt;T&gt; b) {
+<span class="fc" id="L320">            super(b);</span>
+<span class="fc" id="L321">        }</span>
+
+        /**
+         * Sorts the input and writes the result to the given output file. If an
+         * {@link IOException} occurs then it is thrown wrapped in
+         * {@link UncheckedIOException}.
+         */
+        public void sort() {
+<span class="fc" id="L329">            Sorter&lt;T&gt; sorter = new Sorter&lt;T&gt;(b.inputs, b.serializer, b.output, b.comparator,</span>
+<span class="fc" id="L330">                    b.maxFilesPerMerge, b.maxItemsPerFile, b.logger, b.bufferSize, b.tempDirectory,</span>
+<span class="fc" id="L331">                    b.transform, b.unique);</span>
+            try {
+<span class="fc" id="L333">                sorter.sort();</span>
+<span class="fc" id="L334">            } catch (IOException e) {</span>
+<span class="fc" id="L335">                b.output.delete();</span>
+<span class="fc" id="L336">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L337">            }</span>
+<span class="fc" id="L338">        }</span>
+
+    }
+    
+    public static final class Builder5&lt;T&gt; {
+
+        private final Builder&lt;T&gt; b;
+
+<span class="fc" id="L346">        Builder5(Builder&lt;T&gt; b) {</span>
+<span class="fc" id="L347">            this.b = b;</span>
+<span class="fc" id="L348">        }</span>
+
+        /**
+         * Sorts the input and writes the result to the output file. The items in the
+         * output file are returned as a Stream. The Stream must be closed (it is
+         * AutoCloseable) to avoid consuming unnecessary disk space with many calls.
+         * When the Stream is closed the output file is deleted. When a
+         * {@link IOException} occurs it is thrown wrapped in a
+         * {@link UncheckedIOException}.
+         * 
+         * &lt;p&gt;
+         * Note that a terminal operation (like {@code .count()} for example) does NOT
+         * close the Stream. You should assign the Stream to a variable in a
+         * try-catch-with-resources block to ensure the output file is deleted.
+         */
+        public Stream&lt;T&gt; sort() {
+            try {
+<span class="fc" id="L365">                b.output = nextTempFile(b.tempDirectory);</span>
+<span class="fc" id="L366">                Sorter&lt;T&gt; sorter = new Sorter&lt;T&gt;(b.inputs, b.serializer, b.output, b.comparator,</span>
+<span class="fc" id="L367">                        b.maxFilesPerMerge, b.maxItemsPerFile, b.logger, b.bufferSize, b.tempDirectory,</span>
+<span class="fc" id="L368">                        b.transform, b.unique);</span>
+<span class="fc" id="L369">                sorter.sort();</span>
+<span class="fc" id="L370">                return b.serializer //</span>
+<span class="fc" id="L371">                        .createReader(b.output) //</span>
+<span class="fc" id="L372">                        .stream() //</span>
+<span class="fc" id="L373">                        .onClose(() -&gt; b.output.delete());</span>
+<span class="nc" id="L374">            } catch (IOException e) {</span>
+<span class="nc" id="L375">                b.output.delete();</span>
+<span class="nc" id="L376">                throw new UncheckedIOException(e);</span>
+            }
+        }
+
+    }
+    
+    static InputStream openFile(File file, int bufferSize) throws FileNotFoundException {
+<span class="fc" id="L383">        return new BufferedInputStream(new FileInputStream(file), bufferSize);</span>
+    }
+
+    private void log(String msg, Object... objects) {
+<span class="fc bfc" id="L387" title="All 2 branches covered.">        if (log != null) {</span>
+<span class="fc" id="L388">            String s = String.format(msg, objects);</span>
+<span class="fc" id="L389">            log.accept(s);</span>
+        }
+<span class="fc" id="L391">    }</span>
+
+    private File sort() throws IOException {
+
+<span class="fc" id="L395">        tempDirectory.mkdirs();</span>
+
+        // read the input into sorted small files
+<span class="fc" id="L398">        long time = System.currentTimeMillis();</span>
+<span class="fc" id="L399">        count = 0;</span>
+<span class="fc" id="L400">        List&lt;File&gt; files = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L401">        log(&quot;starting sort&quot;);</span>
+<span class="fc" id="L402">        log(&quot;unique = &quot; + unique);</span>
+        
+<span class="fc" id="L404">        int i = 0;</span>
+<span class="fc" id="L405">        ArrayList&lt;T&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">        for (Supplier&lt;? extends InputStream&gt; supplier: inputs) {</span>
+<span class="fc" id="L407">            try (InputStream in = supplier.get();</span>
+<span class="fc" id="L408">                    Reader&lt;? extends T&gt; reader = transform.apply(serializer.createReader(in))) {</span>
+                while (true) {
+<span class="fc" id="L410">                    T t = reader.read();</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">                    if (t != null) {</span>
+<span class="fc" id="L412">                        list.add(t);</span>
+<span class="fc" id="L413">                        i++;</span>
+                    }
+<span class="fc bfc" id="L415" title="All 4 branches covered.">                    if (t == null || i == maxItemsPerPart) {</span>
+<span class="fc" id="L416">                        i = 0;</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">                        if (list.size() &gt; 0) {</span>
+<span class="fc" id="L418">                            File f = sortAndWriteToFile(list);</span>
+<span class="fc" id="L419">                            files.add(f);</span>
+<span class="fc" id="L420">                            list.clear();</span>
+                        }
+                    }
+<span class="fc bfc" id="L423" title="All 2 branches covered.">                    if (t == null) {</span>
+<span class="fc" id="L424">                        break;</span>
+                    }
+<span class="fc" id="L426">                }</span>
+            }
+<span class="fc" id="L428">        }</span>
+<span class="fc" id="L429">        log(&quot;completed inital split and sort, starting merge&quot;);</span>
+<span class="fc" id="L430">        File result = merge(files);</span>
+<span class="fc" id="L431">        Files.move( //</span>
+<span class="fc" id="L432">                result.toPath(), //</span>
+<span class="fc" id="L433">                output.toPath(), //</span>
+                StandardCopyOption.ATOMIC_MOVE, //
+                StandardCopyOption.REPLACE_EXISTING);
+<span class="fc" id="L436">        log(&quot;sort of &quot; + count + &quot; records completed in &quot;</span>
+<span class="fc" id="L437">                + (System.currentTimeMillis() - time) / 1000.0 + &quot;s&quot;);</span>
+<span class="fc" id="L438">        return output;</span>
+    }
+
+    @VisibleForTesting
+    File merge(List&lt;File&gt; files) {
+        // merge the files in chunks repeatededly until only one remains
+        // TODO make a better guess at the chunk size so groups are more even
+        try {
+<span class="fc bfc" id="L446" title="All 2 branches covered.">            while (files.size() &gt; 1) {</span>
+<span class="fc" id="L447">                List&lt;File&gt; nextRound = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">                for (int i = 0; i &lt; files.size(); i += maxFilesPerMerge) {</span>
+<span class="fc" id="L449">                    File merged = mergeGroup(</span>
+<span class="fc" id="L450">                            files.subList(i, Math.min(files.size(), i + maxFilesPerMerge)));</span>
+<span class="fc" id="L451">                    nextRound.add(merged);</span>
+                }
+<span class="fc" id="L453">                files = nextRound;</span>
+<span class="fc" id="L454">            }</span>
+            File result;
+<span class="fc bfc" id="L456" title="All 2 branches covered.">            if (files.isEmpty()) {</span>
+<span class="fc" id="L457">                output.delete();</span>
+<span class="fc" id="L458">                output.createNewFile();</span>
+<span class="fc" id="L459">                result = output;</span>
+            } else {
+<span class="fc" id="L461">                result = files.get(0);</span>
+            }
+<span class="fc" id="L463">            return result;</span>
+<span class="fc" id="L464">        } catch (IOException e) {</span>
+<span class="fc" id="L465">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    private File mergeGroup(List&lt;File&gt; list) throws IOException {
+<span class="fc" id="L470">        log(&quot;merging %s files&quot;, list.size());</span>
+<span class="fc bfc" id="L471" title="All 2 branches covered.">        if (list.size() == 1) {</span>
+<span class="fc" id="L472">            return list.get(0);</span>
+        }
+<span class="fc" id="L474">        List&lt;State&lt;T&gt;&gt; states = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L475" title="All 2 branches covered.">        for (File f : list) {</span>
+<span class="fc" id="L476">            State&lt;T&gt; st = createState(f);</span>
+            // note that st.value will be present otherwise the file would be empty
+            // and an empty file would not be passed to this method
+<span class="fc" id="L479">            states.add(st);</span>
+<span class="fc" id="L480">        }</span>
+<span class="fc" id="L481">        File output = nextTempFile();</span>
+<span class="fc" id="L482">        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(output), bufferSize);</span>
+<span class="fc" id="L483">                Writer&lt;T&gt; writer = serializer.createWriter(out)) {</span>
+<span class="fc" id="L484">            PriorityQueue&lt;State&lt;T&gt;&gt; q = new PriorityQueue&lt;&gt;(</span>
+<span class="fc" id="L485">                    (x, y) -&gt; comparator.compare(x.value, y.value));</span>
+<span class="fc" id="L486">            q.addAll(states);</span>
+<span class="fc" id="L487">            T last = null;</span>
+<span class="fc bfc" id="L488" title="All 2 branches covered.">            while (!q.isEmpty()) {</span>
+<span class="fc" id="L489">                State&lt;T&gt; state = q.poll();</span>
+<span class="fc bfc" id="L490" title="All 6 branches covered.">                if (!unique || last == null || comparator.compare(state.value, last) != 0) {</span>
+<span class="fc" id="L491">                    writer.write(state.value);</span>
+<span class="fc" id="L492">                    last = state.value;</span>
+                }
+<span class="fc" id="L494">                state.value = state.reader.readAutoClosing();</span>
+<span class="fc bfc" id="L495" title="All 2 branches covered.">                if (state.value != null) {</span>
+<span class="fc" id="L496">                    q.offer(state);</span>
+                } else {
+                    // delete intermediate files
+<span class="fc" id="L499">                    state.file.delete();</span>
+                }
+<span class="fc" id="L501">            }</span>
+            // TODO if an IOException occurs then we should attempt to close and delete
+            // temporary files
+        }
+<span class="fc" id="L505">        return output;</span>
+    }
+
+    private State&lt;T&gt; createState(File f) throws IOException {
+<span class="fc" id="L509">        InputStream in = openFile(f, bufferSize);</span>
+<span class="fc" id="L510">        Reader&lt;T&gt; reader = serializer.createReader(in);</span>
+<span class="fc" id="L511">        T t = reader.readAutoClosing();</span>
+<span class="fc" id="L512">        return new State&lt;T&gt;(f, reader, t);</span>
+    }
+
+    private static final class State&lt;T&gt; {
+        final File file;
+        Reader&lt;T&gt; reader;
+        T value;
+
+<span class="fc" id="L520">        State(File file, Reader&lt;T&gt; reader, T value) {</span>
+<span class="fc" id="L521">            this.file = file;</span>
+<span class="fc" id="L522">            this.reader = reader;</span>
+<span class="fc" id="L523">            this.value = value;</span>
+<span class="fc" id="L524">        }</span>
+    }
+
+    private File sortAndWriteToFile(ArrayList&lt;T&gt; list) throws FileNotFoundException, IOException {
+<span class="fc" id="L528">        File file = nextTempFile();</span>
+<span class="fc" id="L529">        long t = System.currentTimeMillis();</span>
+<span class="fc" id="L530">        list.sort(comparator);</span>
+<span class="fc" id="L531">        writeToFile(list, file);</span>
+<span class="fc" id="L532">        DecimalFormat df = new DecimalFormat(&quot;0.000&quot;);</span>
+<span class="fc" id="L533">        count += list.size();</span>
+<span class="fc" id="L534">        log(&quot;total=%s, sorted %s records to file %s in %ss&quot;, //</span>
+<span class="fc" id="L535">                count, //</span>
+<span class="fc" id="L536">                list.size(), //</span>
+<span class="fc" id="L537">                file.getName(), //</span>
+<span class="fc" id="L538">                df.format((System.currentTimeMillis() - t) / 1000.0));</span>
+<span class="fc" id="L539">        return file;</span>
+    }
+
+    private void writeToFile(List&lt;T&gt; list, File f) throws FileNotFoundException, IOException {
+<span class="fc" id="L543">        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(f), bufferSize);</span>
+<span class="fc" id="L544">                Writer&lt;T&gt; writer = serializer.createWriter(out)) {</span>
+<span class="fc" id="L545">            T last = null;</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">            for (T t : list) {</span>
+<span class="fc bfc" id="L547" title="All 6 branches covered.">                if (!unique || last == null || comparator.compare(t, last) != 0) {</span>
+<span class="fc" id="L548">                    writer.write(t);</span>
+<span class="fc" id="L549">                    last = t;</span>
+                }
+<span class="fc" id="L551">            }</span>
+        }
+<span class="fc" id="L553">    }</span>
+
+    private File nextTempFile() throws IOException {
+<span class="fc" id="L556">        return nextTempFile(tempDirectory);</span>
+    }
+    
+    private static File nextTempFile(File tempDirectory) throws IOException {
+<span class="fc" id="L560">        return File.createTempFile(&quot;big-sorter&quot;, &quot;&quot;, tempDirectory);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

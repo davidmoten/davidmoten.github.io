@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinesSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">big-sorter</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.bigsorter</a> &gt; <span class="el_source">LinesSerializer.java</span></div><h1>LinesSerializer.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.bigsorter;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+final class LinesSerializer implements Serializer&lt;String&gt; {
+
+<span class="fc" id="L15">    static final Serializer&lt;String&gt; LINES_UTF8_LF = new LinesSerializer(StandardCharsets.UTF_8,</span>
+            LineDelimiter.LINE_FEED);
+<span class="fc" id="L17">    static final Serializer&lt;String&gt; LINES_UTF8_CR_LF = new LinesSerializer(StandardCharsets.UTF_8,</span>
+            LineDelimiter.CARRIAGE_RETURN_LINE_FEED);
+
+    private final Charset charset;
+    private final LineDelimiter delimiter;
+
+<span class="fc" id="L23">    LinesSerializer(Charset charset, LineDelimiter delimiter) {</span>
+<span class="fc" id="L24">        this.charset = charset;</span>
+<span class="fc" id="L25">        this.delimiter = delimiter;</span>
+<span class="fc" id="L26">    }</span>
+
+    @Override
+    public Reader&lt;String&gt; createReader(InputStream in) {
+<span class="fc" id="L30">        return new Reader&lt;String&gt;() {</span>
+<span class="fc" id="L31">            BufferedReader br = new BufferedReader(new InputStreamReader(in, charset));</span>
+
+            @Override
+            public String read() throws IOException {
+<span class="fc" id="L35">                return br.readLine();</span>
+            }
+
+            @Override
+            public void close() throws IOException {
+<span class="fc" id="L40">                br.close();</span>
+<span class="fc" id="L41">            }</span>
+        };
+    }
+
+    @Override
+    public Writer&lt;String&gt; createWriter(OutputStream out) {
+<span class="fc" id="L47">        return new Writer&lt;String&gt;() {</span>
+
+<span class="fc" id="L49">            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out, charset));</span>
+
+            @Override
+            public void write(String value) throws IOException {
+<span class="fc" id="L53">                bw.write(value);</span>
+<span class="fc" id="L54">                bw.write(delimiter.value());</span>
+<span class="fc" id="L55">            }</span>
+
+            @Override
+            public void close() throws IOException {
+<span class="fc" id="L59">                bw.close();</span>
+<span class="fc" id="L60">            }</span>
+
+            @Override
+            public void flush() throws IOException {
+<span class="fc" id="L64">                bw.flush();</span>
+<span class="fc" id="L65">            }</span>
+
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

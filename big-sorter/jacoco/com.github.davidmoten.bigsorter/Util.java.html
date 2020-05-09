@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">big-sorter</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.bigsorter</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.bigsorter;
+
+import java.io.IOException;
+import java.util.Comparator;
+
+public final class Util {
+
+<span class="fc" id="L8">    private Util() {</span>
+        // prevent instantiation
+<span class="fc" id="L10">    }</span>
+
+    /**
+     * Writes common entries from both readers to the writer in sorted
+     * order.{@code readerA} and {@code readerB} must be reading already sorted
+     * data.
+     * 
+     * @param &lt;T&gt;
+     *            item type
+     * @param readerA
+     *            reader of first file
+     * @param readerB
+     *            reader of second file
+     * @param comparator
+     *            comparator for item
+     * @param writer
+     *            writer to which common entries are written to
+     * @throws IOException I/O exception
+     */
+    public static &lt;T&gt; void findSame(Reader&lt;? extends T&gt; readerA, Reader&lt;? extends T&gt; readerB,
+            Comparator&lt;? super T&gt; comparator, Writer&lt;T&gt; writer) throws IOException {
+        // return A intersection B
+<span class="fc" id="L32">        T x = readerA.read();</span>
+<span class="fc" id="L33">        T y = readerB.read();</span>
+<span class="fc bfc" id="L34" title="All 4 branches covered.">        while (x != null &amp;&amp; y != null) {</span>
+<span class="fc" id="L35">            int compare = comparator.compare(x, y);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (compare == 0) {</span>
+<span class="fc" id="L37">                writer.write(x);</span>
+                // read next values
+<span class="fc" id="L39">                x = readerA.read();</span>
+<span class="fc" id="L40">                y = readerB.read();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            } else if (compare &lt; 0) {</span>
+<span class="fc" id="L42">                x = readerA.read();</span>
+            } else {
+<span class="fc" id="L44">                y = readerB.read();</span>
+            }
+<span class="fc" id="L46">        }</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * Writes different entries (only those entries that are only present in one
+     * input reader) from both readers to the writer in sorted order.
+     * {@code readerA} and {@code readerB} must be reading already sorted data.
+     * 
+     * @param &lt;T&gt;
+     *            item type
+     * @param readerA
+     *            reader of first file
+     * @param readerB
+     *            reader of second file
+     * @param comparator
+     *            comparator for item
+     * @param writer
+     *            writer to which common entries are written to
+     * @throws IOException I/O exception
+     */
+    public static &lt;T&gt; void findDifferent(Reader&lt;? extends T&gt; readerA, Reader&lt;? extends T&gt; readerB,
+            Comparator&lt;? super T&gt; comparator, Writer&lt;T&gt; writer) throws IOException {
+        // returns those elements in (A union B) \ (A intersection B)
+<span class="fc" id="L69">        T x = readerA.read();</span>
+<span class="fc" id="L70">        T y = readerB.read();</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">        while (x != null &amp;&amp; y != null) {</span>
+<span class="fc" id="L72">            int compare = comparator.compare(x, y);</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            if (compare == 0) {</span>
+<span class="fc" id="L74">                x = readerA.read();</span>
+<span class="fc" id="L75">                y = readerB.read();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            } else if (compare &lt; 0) {</span>
+<span class="fc" id="L77">                writer.write(x);</span>
+<span class="fc" id="L78">                x = readerA.read();</span>
+            } else {
+<span class="fc" id="L80">                writer.write(y);</span>
+<span class="fc" id="L81">                y = readerB.read();</span>
+            }
+<span class="fc" id="L83">        }</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        while (x != null) {</span>
+<span class="fc" id="L85">            writer.write(x);</span>
+<span class="fc" id="L86">            x = readerA.read();</span>
+        }
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        while (y != null) {</span>
+<span class="fc" id="L89">            writer.write(y);</span>
+<span class="fc" id="L90">            y = readerB.read();</span>
+        }
+<span class="fc" id="L92">    }</span>
+
+    /**
+     * Writes different entries (only those entries that are only present in one
+     * input reader) from both readers to the writer in sorted order.
+     * {@code readerA} and {@code readerB} must be reading already sorted data.
+     * 
+     * @param &lt;T&gt;
+     *            item type
+     * @param readerA
+     *            reader of first file
+     * @param readerB
+     *            reader of second file
+     * @param comparator
+     *            comparator for item
+     * @param writer
+     *            writer to which common entries are written to
+     * @throws IOException I/O exception
+     */
+    public static &lt;T&gt; void findComplement(Reader&lt;? extends T&gt; readerA, Reader&lt;? extends T&gt; readerB,
+            Comparator&lt;? super T&gt; comparator, Writer&lt;T&gt; writer) throws IOException {
+        // returns those elements in A that are not present in B
+<span class="fc" id="L114">        T x = readerA.read();</span>
+<span class="fc" id="L115">        T y = readerB.read();</span>
+<span class="fc bfc" id="L116" title="All 4 branches covered.">        while (x != null &amp;&amp; y != null) {</span>
+<span class="fc" id="L117">            int compare = comparator.compare(x, y);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            if (compare == 0) {</span>
+<span class="fc" id="L119">                x = readerA.read();</span>
+<span class="fc" id="L120">                y = readerB.read();</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">            } else if (compare &lt; 0) {</span>
+<span class="fc" id="L122">                writer.write(x);</span>
+<span class="fc" id="L123">                x = readerA.read();</span>
+            } else {
+<span class="fc" id="L125">                y = readerB.read();</span>
+            }
+<span class="fc" id="L127">        }</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        while (x != null) {</span>
+<span class="fc" id="L129">            writer.write(x);</span>
+<span class="fc" id="L130">            x = readerA.read();</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

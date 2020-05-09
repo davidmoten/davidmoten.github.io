@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JsonArraySerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">big-sorter</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.bigsorter</a> &gt; <span class="el_source">JsonArraySerializer.java</span></div><h1>JsonArraySerializer.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.bigsorter;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+final class JsonArraySerializer implements Serializer&lt;ObjectNode&gt; {
+
+<span class="fc" id="L16">    private final ObjectMapper mapper = new ObjectMapper();</span>
+
+<span class="fc" id="L18">    static final JsonArraySerializer INSTANCE = new JsonArraySerializer();</span>
+
+<span class="fc" id="L20">    private JsonArraySerializer() {</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    public Reader&lt;ObjectNode&gt; createReader(InputStream in) {
+        try {
+<span class="fc" id="L26">            JsonParser parser = mapper.getFactory().createParser(in);</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            if (parser.nextToken() != JsonToken.START_ARRAY) {</span>
+<span class="fc" id="L28">                throw new IllegalStateException(&quot;Expected an array&quot;);</span>
+            }
+<span class="fc" id="L30">            return new Reader&lt;ObjectNode&gt;() {</span>
+
+                @Override
+                public ObjectNode read() throws IOException {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                    if (parser.nextToken() == JsonToken.START_OBJECT) {</span>
+                        // read everything from this START_OBJECT to the matching END_OBJECT
+                        // and return it as a tree model ObjectNode
+<span class="fc" id="L37">                        return mapper.readTree(parser);</span>
+                    } else {
+                        // at end
+<span class="fc" id="L40">                        parser.close();</span>
+<span class="fc" id="L41">                        return null;</span>
+                    }
+                }
+
+                @Override
+                public void close() throws IOException {
+<span class="fc" id="L47">                    parser.close();</span>
+<span class="fc" id="L48">                }</span>
+            };
+<span class="fc" id="L50">        } catch (IOException e) {</span>
+<span class="fc" id="L51">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    @Override
+    public Writer&lt;ObjectNode&gt; createWriter(OutputStream out) {
+
+<span class="fc" id="L58">        java.io.Writer w = new OutputStreamWriter(out);</span>
+
+<span class="fc" id="L60">        return new Writer&lt;ObjectNode&gt;() {</span>
+
+<span class="fc" id="L62">            boolean first = true;</span>
+<span class="fc" id="L63">            boolean closed = false;</span>
+
+            @Override
+            public void write(ObjectNode node) throws IOException {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                if (first) {</span>
+<span class="fc" id="L68">                    w.write(&quot;[\n&quot;);</span>
+<span class="fc" id="L69">                    first = false;</span>
+                } else {
+<span class="fc" id="L71">                    w.write(&quot;,\n&quot;);</span>
+                }
+<span class="fc" id="L73">                w.write(mapper.writeValueAsString(node));</span>
+<span class="fc" id="L74">            }</span>
+
+            @Override
+            public void flush() throws IOException {
+<span class="fc" id="L78">                w.flush();</span>
+<span class="fc" id="L79">            }</span>
+
+            @Override
+            public void close() throws IOException {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                if (!closed) {</span>
+<span class="fc" id="L84">                    w.write(&quot;\n]&quot;);</span>
+<span class="fc" id="L85">                    w.close();</span>
+<span class="fc" id="L86">                    closed = true;</span>
+                }
+<span class="fc" id="L88">            }</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>
