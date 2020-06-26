@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>DirectoryObjectRequest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/odata/msgraph/client/entity/request/DirectoryObjectRequest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> odata.msgraph.client.entity.request;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnore;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnoreType;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Preconditions;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestReturningNonCollection;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.CollectionPageNonEntityRequest;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ContextPath;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.EntityRequest;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Action;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.ParameterMap;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.TypedObject;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.DirectoryObject;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.schema.SchemaInfo;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  @JsonIgnoreType
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> <strong class="jxr_keyword">extends</strong> EntityRequest&lt;DirectoryObject&gt; {
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(<a name="ContextPath" href="../../../../../com/github/davidmoten/odata/client/ContextPath.html#ContextPath">ContextPath</a> contextPath) {
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>          <strong class="jxr_keyword">super</strong>(DirectoryObject.<strong class="jxr_keyword">class</strong>, contextPath, SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      }
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>      @Action(name = <span class="jxr_string">"checkMemberGroups"</span>)
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;String&gt; checkMemberGroups(List&lt;String&gt; groupIds) {
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          Preconditions.checkNotNull(groupIds, <span class="jxr_string">"groupIds cannot be null"</span>);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>              .put(<span class="jxr_string">"groupIds"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, groupIds)
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>              .build();
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.checkMemberGroups"</span>), String.<strong class="jxr_keyword">class</strong>, _parameters, com.github.davidmoten.odata.client.internal.EdmSchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>      }
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      @Action(name = <span class="jxr_string">"checkMemberObjects"</span>)
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;String&gt; checkMemberObjects(List&lt;String&gt; ids) {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          Preconditions.checkNotNull(ids, <span class="jxr_string">"ids cannot be null"</span>);
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>              .put(<span class="jxr_string">"ids"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, ids)
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>              .build();
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.checkMemberObjects"</span>), String.<strong class="jxr_keyword">class</strong>, _parameters, com.github.davidmoten.odata.client.internal.EdmSchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      }
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>      @Action(name = <span class="jxr_string">"getMemberGroups"</span>)
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>      <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;String&gt; getMemberGroups(Boolean securityEnabledOnly) {
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>              .put(<span class="jxr_string">"securityEnabledOnly"</span>, <span class="jxr_string">"Edm.Boolean"</span>, securityEnabledOnly)
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>              .build();
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>          <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.getMemberGroups"</span>), String.<strong class="jxr_keyword">class</strong>, _parameters, com.github.davidmoten.odata.client.internal.EdmSchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>      }
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      @Action(name = <span class="jxr_string">"getMemberObjects"</span>)
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;String&gt; getMemberObjects(Boolean securityEnabledOnly) {
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>              .put(<span class="jxr_string">"securityEnabledOnly"</span>, <span class="jxr_string">"Edm.Boolean"</span>, securityEnabledOnly)
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>              .build();
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.getMemberObjects"</span>), String.<strong class="jxr_keyword">class</strong>, _parameters, com.github.davidmoten.odata.client.internal.EdmSchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>      }
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      @Action(name = <span class="jxr_string">"restore"</span>)
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;DirectoryObject&gt; restore() {
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>          Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;DirectoryObject&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.restore"</span>), DirectoryObject.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      }
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+</body>
+</html>

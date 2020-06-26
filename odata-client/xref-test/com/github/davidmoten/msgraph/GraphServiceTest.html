@@ -1,0 +1,584 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>GraphServiceTest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../testapidocs/com/github/davidmoten/msgraph/GraphServiceTest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.msgraph;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.assertEquals;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.assertFalse;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.assertNotNull;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.assertTrue;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> java.io.ByteArrayInputStream;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> java.io.InputStream;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> java.nio.charset.StandardCharsets;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> java.util.Collections;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> java.util.Optional;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> java.util.stream.Collectors;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> org.junit.Assert;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> org.junit.Ignore;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonProperty;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.databind.ObjectMapper;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Sets;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ClientException;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.CollectionPage;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.HttpMethod;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.PathStyle;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.RequestHeader;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.Serializer;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.TestingService.ContainerBuilder;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.Identity;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.IdentitySet;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.InvitationParticipantInfo;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.ServiceHostedMediaConfig;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.container.GraphService;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Application;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Attachment;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Call;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Contact;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.DriveItem;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.FileAttachment;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Group;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.ItemAttachment;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Message;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.User;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.enums.Importance;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.enums.Modality;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="GraphServiceTest" href="../../../../com/github/davidmoten/msgraph/GraphServiceTest.html#GraphServiceTest">GraphServiceTest</a> {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      @Test
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testFileAttachmentBuilderCompiles() {
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          FileAttachment.builderFileAttachment().build();
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      }
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      @Test
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetEntityWithComplexTypeCollection() {
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>          GraphService client = createClient(<span class="jxr_string">"/users/1"</span>, <span class="jxr_string">"/response-user.json"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>                  RequestHeader.ODATA_VERSION, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>                  RequestHeader.ACCEPT_JSON_METADATA_MINIMAL);
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          User user = client.users(<span class="jxr_string">"1"</span>).get();
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          assertEquals(<span class="jxr_string">"Conf Room Adams"</span>, user.getDisplayName().get());
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          assertEquals(1, user.getBusinessPhones().currentPage().size());
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          assertEquals(<span class="jxr_string">"+61 2 1234567"</span>, user.getBusinessPhones().currentPage().get(0));
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      }
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>      @Test
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetEntityCollectionWithoutNextPage() {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          GraphService client = createClient(<span class="jxr_string">"/users"</span>, <span class="jxr_string">"/response-users.json"</span>,
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>                  RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          assertNotNull(client.users().get());
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>          CollectionPage&lt;User&gt; c = client.users().get();
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>          assertNotNull(c);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          assertEquals(31, c.currentPage().size());
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          assertFalse(c.nextPage().isPresent());
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> MyPage&lt;T&gt; {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          @JsonProperty(value=<span class="jxr_string">"@odata.nextLink"</span>)
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          <strong class="jxr_keyword">final</strong> String nextLink;
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          @JsonProperty(value=<span class="jxr_string">"value"</span>)
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          <strong class="jxr_keyword">final</strong> List&lt;T&gt; value;
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>          MyPage( List&lt;T&gt; value, String nextLink) {
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>              <strong class="jxr_keyword">this</strong>.nextLink = nextLink;
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>              <strong class="jxr_keyword">this</strong>.value = value;
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>          }
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>      }
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>      
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>      @Test
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetEntityCollectionWithMaxPageSize() {
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <strong class="jxr_keyword">int</strong> maxPageSize = 50;
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          GraphService client = createClient(<span class="jxr_string">"/users"</span>, <span class="jxr_string">"/response-users.json"</span>,
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>                  RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>                  RequestHeader.maxPageSize(maxPageSize));
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>          CollectionPage&lt;User&gt; c = client.users().maxPageSize(maxPageSize).get();
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>          assertNotNull(c);
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>         assertEquals(31, c.currentPage().size());
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>     }
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>     @Test
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetEntityCollectionWithNextPage() {
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                 .expectResponse(<span class="jxr_string">"/me/contacts"</span>, <span class="jxr_string">"/response-contacts.json"</span>,
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>                 <em class="jxr_comment">// TODO what request header should be specified for next page?</em>
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skip=10"</span>, <span class="jxr_string">"/response-contacts-next-page.json"</span>,
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>                 .build();
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         CollectionPage&lt;Contact&gt; c = client.me().contacts().get();
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>         assertEquals(10, c.currentPage().size());
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>         assertEquals(<span class="jxr_string">"https://graph.microsoft.com/v1.0/me/contacts?$skip=10"</span>, c.nextLink().get());
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>         assertTrue(c.nextPage().isPresent());
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         Optional&lt;String&gt; nextLink = c.nextLink();
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>         c = c.nextPage().get();
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>         assertEquals(10, c.currentPage().size());
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>         assertEquals(<span class="jxr_string">"Justin"</span>, c.currentPage().get(9).getGivenName().get());
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>         assertEquals(<span class="jxr_string">"Justin"</span>, client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>                 .me() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>                 .contacts() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>                 .urlOverride(nextLink.get()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                 .currentPage() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>                 .get(9) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>                 .getGivenName() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>                 .get());
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>     }
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>     @Test
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testSerializeShouldNotIncludeNulls() {
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         User user = User.builderUser().id(<span class="jxr_string">"12345"</span>).build();
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>         String json = Serializer.INSTANCE.serialize(user);
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         assertEquals(<span class="jxr_string">"{\&quot;@odata.type\&quot;:\&quot;microsoft.graph.user\&quot;,\&quot;id\&quot;:\&quot;12345\&quot;}"</span>, json);
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>     }
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>     
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>     @Test
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testJsonMinimal() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>                 .expectResponse(<span class="jxr_string">"/me/contacts"</span>, <span class="jxr_string">"/response-contacts.json"</span>,
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>                 <em class="jxr_comment">// TODO what request header should be specified for next page?</em>
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skip=10"</span>, <span class="jxr_string">"/response-contacts-next-page.json"</span>,
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>                 .build();
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>         CollectionPage&lt;Contact&gt; c = client.me().contacts().get();
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>         ObjectMapper m = <strong class="jxr_keyword">new</strong> ObjectMapper();
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>         <strong class="jxr_keyword">try</strong> (InputStream expected = GraphServiceTest.<strong class="jxr_keyword">class</strong>.getResourceAsStream(<span class="jxr_string">"/response-contacts-minimal-json.json"</span>)) {
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>             assertEquals(m.readTree(expected), m.readTree(c.toJsonMinimal()));
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>         }
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         assertTrue(Serializer.INSTANCE.serializePrettyPrint(c).contains(<span class="jxr_string">"@odata.nextLink"</span>));
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>     }
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>     @Test
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetCollectionGetNextLink() {
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>                 .expectResponse(<span class="jxr_string">"/me/contacts"</span>, <span class="jxr_string">"/response-contacts.json"</span>,
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>                 <em class="jxr_comment">// TODO what request header should be specified for next page?</em>
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skip=10"</span>, <span class="jxr_string">"/response-contacts-next-page.json"</span>,
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>                 .build();
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>         CollectionPage&lt;Contact&gt; c = client.me().contacts().get();
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>         assertEquals(10, c.currentPage().size());
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>         assertEquals(<span class="jxr_string">"https://graph.microsoft.com/v1.0/me/contacts?$skip=10"</span>, c.nextLink().get());
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>     }
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>     
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>     @Test
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetCollectionUsingSkip() {
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skip=3&amp;$top=200"</span>, <span class="jxr_string">"/response-contacts.json"</span>,
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>                 <em class="jxr_comment">// TODO what request header should be specified for next page?</em>
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skip=10"</span>, <span class="jxr_string">"/response-contacts-next-page.json"</span>,
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>                 .build();
+<a class="jxr_linenumber" name="L181" href="#L181">181</a>         CollectionPage&lt;Contact&gt; c = client.me().contacts().top(200).skip(3).get();
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>         assertEquals(10, c.currentPage().size());
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>     }
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>     
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>     @Test
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetCollectionThrowsInformativeError() {
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>                 .expectResponse(<span class="jxr_string">"/users"</span>, <span class="jxr_string">"/response-get-collection-error.json"</span>, HttpMethod.GET,
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>                         403, RequestHeader.ACCEPT_JSON_METADATA_MINIMAL,
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>                         RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>                 .build();
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>             client.users().get().currentPage();
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>             Assert.fail();
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>         } <strong class="jxr_keyword">catch</strong> (ClientException e) {
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>             assertTrue(e.getMessage().contains(<span class="jxr_string">"Insufficient privileges"</span>));
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>             assertEquals(403, (<strong class="jxr_keyword">int</strong>) e.getStatusCode().get());
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>         }
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>     }
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>     
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>     @SuppressWarnings(<span class="jxr_string">"unused"</span>)
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>     @Test
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCollectionPageRequestIsIterable() {
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>         <em class="jxr_comment">//don't run, just check that compiles</em>
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>         <strong class="jxr_keyword">if</strong> (false) {
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>             GraphService client = clientBuilder().build();
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>             <strong class="jxr_keyword">for</strong> (Application a : client.applications()) {
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>                 <em class="jxr_comment">// do nothing</em>
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>             }
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>         }
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>     }
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>     
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>     @Test
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetCollectionUrlOverride() {
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 .expectResponse(<span class="jxr_string">"/me/contacts?$skipToken=ABC"</span>, <span class="jxr_string">"/response-contacts.json"</span>,
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L219" href="#L219">219</a>                 .build();
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>         CollectionPage&lt;Contact&gt; c = client.me().contacts().urlOverride(<span class="jxr_string">"https://graph.microsoft.com/v1.0/me/contacts?$skipToken=ABC"</span>).get();
+<a class="jxr_linenumber" name="L221" href="#L221">221</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>         assertEquals(10, c.currentPage().size());
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>     }
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>     @Test
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetCollectionWithSelect() {
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>                 .expectResponse(<span class="jxr_string">"/groups?$select=id%2CgroupTypes"</span>, <span class="jxr_string">"/response-groups-select.json"</span>,
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>                 .build();
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>         CollectionPage&lt;Group&gt; c = client.groups().select(<span class="jxr_string">"id,groupTypes"</span>).get();
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>         assertNotNull(c);
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>         assertEquals(49, c.currentPage().size());
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>         assertEquals(<span class="jxr_string">"02bd9fd6-8f93-4758-87c3-1fb73740a315"</span>, c.currentPage().get(0).getId().get());
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>     }
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>     
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>     @Test
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetEntityWithNestedComplexTypesAndEnumDeserialisationAndUnmappedFields() {
+<a class="jxr_linenumber" name="L239" href="#L239">239</a>         GraphService client = createClient(<span class="jxr_string">"/me/messages/1"</span>, <span class="jxr_string">"/response-message.json"</span>,
+<a class="jxr_linenumber" name="L240" href="#L240">240</a>                 RequestHeader.ODATA_VERSION, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L241" href="#L241">241</a>                 RequestHeader.ACCEPT_JSON_METADATA_MINIMAL);
+<a class="jxr_linenumber" name="L242" href="#L242">242</a>         Message m = client.me().messages(<span class="jxr_string">"1"</span>).get();
+<a class="jxr_linenumber" name="L243" href="#L243">243</a>         assertTrue(m.getSubject().get().startsWith(<span class="jxr_string">"MyAnalytics"</span>));
+<a class="jxr_linenumber" name="L244" href="#L244">244</a>         assertEquals(<span class="jxr_string">"MyAnalytics"</span>, m.getFrom().get().getEmailAddress().get().getName().get());
+<a class="jxr_linenumber" name="L245" href="#L245">245</a>         assertEquals(Importance.NORMAL, m.getImportance().get());
+<a class="jxr_linenumber" name="L246" href="#L246">246</a>         assertEquals(Sets.newHashSet(<span class="jxr_string">"@odata.etag"</span>, <span class="jxr_string">"@odata.context"</span>),
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>                 m.getUnmappedFields().keySet());
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>         assertEquals(<span class="jxr_string">"W/\&quot;CQAAABYAAAAiIsqMbYjsT5e/T7KzowPTAAEMTBu8\&quot;"</span>,
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>                 m.getUnmappedFields().get(<span class="jxr_string">"@odata.etag"</span>));
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>         assertEquals(
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>                 <span class="jxr_string">"https://graph.microsoft.com/v1.0/$metadata#users('48d31887-5fad-4d73-a9f5-3c356e68a038')/messages/$entity"</span>,
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>                 m.getUnmappedFields().get(<span class="jxr_string">"@odata.context"</span>));
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>     }
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>     @Test
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testEntityCollectionNotFromEntityContainer() {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>         GraphService client = createClient(<span class="jxr_string">"/me/messages/1/attachments"</span>,
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>                 <span class="jxr_string">"/response-me-messages-1-attachments.json"</span>,
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>                 RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION);
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>         List&lt;Attachment&gt; list = client.me().messages(<span class="jxr_string">"1"</span>).attachments().get().toList();
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>         assertEquals(16, list.size());
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>     }
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>     @Test
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDeserializationOfAttachmentEntityReturnsFileAttachment() {
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>         GraphService client = createClient(<span class="jxr_string">"/me/messages/1/attachments/2"</span>,
+<a class="jxr_linenumber" name="L267" href="#L267">267</a>                 <span class="jxr_string">"/response-attachment.json"</span>, RequestHeader.ODATA_VERSION, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>                 RequestHeader.ACCEPT_JSON_METADATA_MINIMAL);
+<a class="jxr_linenumber" name="L269" href="#L269">269</a>         Attachment m = client.me().messages(<span class="jxr_string">"1"</span>).attachments(<span class="jxr_string">"2"</span>).get();
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>         assertTrue(m instanceof FileAttachment);
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>         FileAttachment f = (FileAttachment) m;
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>         assertEquals(6762, f.getContentBytes().get().length);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>         assertEquals(<span class="jxr_string">"lamp_thin.png"</span>, f.getContentId().get());
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>     }
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>     
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>     @Test
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetNestedCollectionWhichTestsContextPathSetWithIdInFirstCollection() {
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages?$filter=isRead%20eq%20false&amp;$orderBy=createdDateTime"</span>,
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>                         <span class="jxr_string">"/response-messages-expand-attachments-minimal-metadata.json"</span>,
+<a class="jxr_linenumber" name="L282" href="#L282">282</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L283" href="#L283">283</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages/AAMkAGVmMDEzMTM4LTZmYWUtNDdkNC1hMDZiLTU1OGY5OTZhYmY4OABGAAAAAAAiQ8W967B7TKBjgx9rVEURBwAiIsqMbYjsT5e-T7KzowPTAAAAAAEJAAAiIsqMbYjsT5e-T7KzowPTAAAYbvZDAAA%3D/attachments"</span>,
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>                         <span class="jxr_string">"/response-message-attachments.json"</span>,
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>                 .build();
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>         Message m = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>                 .messages() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>                 .filter(<span class="jxr_string">"isRead eq false"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>                 .orderBy(<span class="jxr_string">"createdDateTime"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>                 .metadataMinimal() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>                 .iterator() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>                 .next();
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>         assertEquals(Arrays.asList(<span class="jxr_string">"lamp_thin.png"</span>), m.getAttachments().stream()
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>                 .map(x -&gt; x.getName().orElse(<span class="jxr_string">"?"</span>)).collect(Collectors.toList()));
+<a class="jxr_linenumber" name="L299" href="#L299">299</a>     }
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 
+<a class="jxr_linenumber" name="L301" href="#L301">301</a>     @Test
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testGetStreamOnItemAttachment() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L303" href="#L303">303</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L305" href="#L305">305</a>                         <span class="jxr_string">"/users/fred/mailFolders/Inbox/messages?$filter=isRead%20eq%20false&amp;$orderBy=createdDateTime"</span>,
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>                         <span class="jxr_string">"/response-messages-with-item-attachment.json"</span>,
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L308" href="#L308">308</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/Inbox/messages/86/attachments"</span>,
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>                         <span class="jxr_string">"/response-attachments.json"</span>, RequestHeader.ACCEPT_JSON_METADATA_FULL,
+<a class="jxr_linenumber" name="L310" href="#L310">310</a>                         RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L311" href="#L311">311</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>                         <span class="jxr_string">"/users/fred/mailFolders/Inbox/messages/86/attachments/123/%24value"</span>,
+<a class="jxr_linenumber" name="L313" href="#L313">313</a>                         <span class="jxr_string">"/response-item-attachment-raw.txt"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L314" href="#L314">314</a>                 .build();
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>         Message m = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>                 .mailFolders(<span class="jxr_string">"Inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>                 .messages() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L319" href="#L319">319</a>                 .filter(<span class="jxr_string">"isRead eq false"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>                 .orderBy(<span class="jxr_string">"createdDateTime"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>                 .metadataMinimal() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>                 .iterator() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>                 .next();
+<a class="jxr_linenumber" name="L324" href="#L324">324</a>         ItemAttachment a = (ItemAttachment) m <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>                 .getAttachments() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>                 .metadataFull() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L327" href="#L327">327</a>                 .stream() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>                 .findFirst() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>                 .get();
+<a class="jxr_linenumber" name="L330" href="#L330">330</a>         String s = <strong class="jxr_keyword">new</strong> String(Util.read(a.getStream().get().get()));
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>         assertEquals(60, s.length());
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>     }
+<a class="jxr_linenumber" name="L333" href="#L333">333</a>     
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>     @Test
+<a class="jxr_linenumber" name="L335" href="#L335">335</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCollectionTypesHonourInheritance() {
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L337" href="#L337">337</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1"</span>,
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>                         <span class="jxr_string">"/response-message-has-item-attachment.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L339" href="#L339">339</a>                         RequestHeader.ACCEPT_JSON_METADATA_FULL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1/attachments"</span>,
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>                         <span class="jxr_string">"/response-attachments-includes-item.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>                 .build();
+<a class="jxr_linenumber" name="L344" href="#L344">344</a>         List&lt;Attachment&gt; list = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>                 .messages(<span class="jxr_string">"1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L348" href="#L348">348</a>                 .metadataFull() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>                 .getAttachments() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>                 .toList();
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>         assertEquals(2, list.size());
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>         assertTrue(list.get(0) instanceof ItemAttachment);
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>         assertTrue(list.get(1) instanceof FileAttachment);
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>     }
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>     
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>     @Test
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCollectionWithDerivedType() {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1"</span>,
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>                         <span class="jxr_string">"/response-message-has-item-attachment.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>                         RequestHeader.ACCEPT_JSON_METADATA_FULL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1/attachments/microsoft.graph.itemAttachment"</span>,
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>                         <span class="jxr_string">"/response-attachments-one-item.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>                 .build();
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>         List&lt;ItemAttachment&gt; list = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>                 .messages(<span class="jxr_string">"1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>                 .metadataFull() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>                 .getAttachments() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>                 .filter(ItemAttachment.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>                 .toList();
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>         assertEquals(1, list.size());
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>         assertTrue(list.get(0) instanceof ItemAttachment);
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>     }
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>     
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>     @Test
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCollectionWithDerivedTypeFilterAvailableInNextBuilder() {
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1"</span>,
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>                         <span class="jxr_string">"/response-message-has-item-attachment.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>                         RequestHeader.ACCEPT_JSON_METADATA_FULL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L386" href="#L386">386</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1/attachments/microsoft.graph.itemAttachment"</span>,
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>                         <span class="jxr_string">"/response-attachments-one-item.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L388" href="#L388">388</a>                         RequestHeader.ACCEPT_JSON_METADATA_NONE) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>                 .build();
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>         List&lt;ItemAttachment&gt; list = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>                 .messages(<span class="jxr_string">"1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>                 .metadataFull() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>                 .getAttachments() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>                 .metadataNone() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L398" href="#L398">398</a>                 .filter(ItemAttachment.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>                 .toList();
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>         assertEquals(1, list.size());
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>         assertTrue(list.get(0) instanceof ItemAttachment);
+<a class="jxr_linenumber" name="L402" href="#L402">402</a>     }
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>     @Test
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testUnmappedFields() {
+<a class="jxr_linenumber" name="L406" href="#L406">406</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1"</span>,
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>                         <span class="jxr_string">"/response-message-has-item-attachment.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>                         RequestHeader.ACCEPT_JSON_METADATA_FULL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>                 .expectResponse(<span class="jxr_string">"/users/fred/mailFolders/inbox/messages/1/attachments"</span>,
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>                         <span class="jxr_string">"/response-attachments-includes-item.json"</span>, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>                 .build();
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>         Attachment a = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>                 .messages(<span class="jxr_string">"1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L418" href="#L418">418</a>                 .metadataFull() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>                 .get() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>                 .getAttachments() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>                 .stream() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>                 .findFirst() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>                 .get();
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>         String editLink = a.getUnmappedFields().get(<span class="jxr_string">"@odata.editLink"</span>).toString();
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>         assertEquals(<span class="jxr_string">"editLink1"</span>, editLink);
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>     }
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>     @Test
+<a class="jxr_linenumber" name="L429" href="#L429">429</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testFunctionBoundToCollection() {
+<a class="jxr_linenumber" name="L430" href="#L430">430</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>                 .expectRequestAndResponse(
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages/microsoft.graph.delta?$filter=receivedDateTime%2Bge%2B12345&amp;$orderBy=receivedDateTime%2Bdesc"</span>,
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>                         <span class="jxr_string">"/request-messages-delta.json"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L434" href="#L434">434</a>                         <span class="jxr_string">"/response-messages-delta.json"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>                         HttpMethod.POST, RequestHeader.ACCEPT_JSON_METADATA_MINIMAL,
+<a class="jxr_linenumber" name="L436" href="#L436">436</a>                         RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a>                 .build();
+<a class="jxr_linenumber" name="L438" href="#L438">438</a>         Message m = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L440" href="#L440">440</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L441" href="#L441">441</a>                 .messages() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a>                 .delta() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a>                 .filter(<span class="jxr_string">"receivedDateTime+ge+12345"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a>                 .orderBy(<span class="jxr_string">"receivedDateTime+desc"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>                 .metadataMinimal() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>                 .iterator() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>                 .next();
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>         assertEquals(<span class="jxr_string">"86"</span>, m.getId().get());
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>     }
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>     @Test
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMailMove() {
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>         <em class="jxr_comment">// TODO get real json to use for this test</em>
+<a class="jxr_linenumber" name="L454" href="#L454">454</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages?$filter=isRead%20eq%20false&amp;$orderBy=createdDateTime&amp;$expand=attachments"</span>,
+<a class="jxr_linenumber" name="L457" href="#L457">457</a>                         <span class="jxr_string">"/response-messages-expand-attachments-minimal-metadata.json"</span>,
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>                         RequestHeader.ODATA_VERSION, RequestHeader.ACCEPT_JSON_METADATA_MINIMAL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L459" href="#L459">459</a>                 .expectRequestAndResponse(
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages/AAMkAGVmMDEzMTM4LTZmYWUtNDdkNC1hMDZiLTU1OGY5OTZhYmY4OABGAAAAAAAiQ8W967B7TKBjgx9rVEURBwAiIsqMbYjsT5e-T7KzowPTAAAAAAEJAAAiIsqMbYjsT5e-T7KzowPTAAAYbvZDAAA%3D/microsoft.graph.move"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L461" href="#L461">461</a>                         <span class="jxr_string">"/request-post-action-move.json"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L462" href="#L462">462</a>                         <span class="jxr_string">"/response-message-move.json"</span>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>                         HttpMethod.POST, RequestHeader.ODATA_VERSION,
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>                         RequestHeader.ACCEPT_JSON_METADATA_FULL,
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>                         RequestHeader.CONTENT_TYPE_JSON_METADATA_MINIMAL) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>                 .build();
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>         Message m = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L470" href="#L470">470</a>                 .messages() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>                 .filter(<span class="jxr_string">"isRead eq false"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>                 .expand(<span class="jxr_string">"attachments"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>                 .orderBy(<span class="jxr_string">"createdDateTime"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L474" href="#L474">474</a>                 .metadataMinimal() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>                 .iterator() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>                 .next();
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>         Message m2 = m.move(<span class="jxr_string">"Archive"</span>).metadataFull().get().value();
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>         assertEquals(m.getId(), m2.getId());
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>     }
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>     @Test
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMailRead() {
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 
+<a class="jxr_linenumber" name="L484" href="#L484">484</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>                 .expectResponse(
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages?$filter=isRead%20eq%20false&amp;$orderBy=createdDateTime&amp;$expand=attachments"</span>,
+<a class="jxr_linenumber" name="L487" href="#L487">487</a>                         <span class="jxr_string">"/response-messages-expand-attachments-minimal-metadata.json"</span>,
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>                         RequestHeader.ACCEPT_JSON_METADATA_MINIMAL, RequestHeader.ODATA_VERSION) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>                 .expectRequest(
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>                         <span class="jxr_string">"/users/fred/mailFolders/inbox/messages/AAMkAGVmMDEzMTM4LTZmYWUtNDdkNC1hMDZiLTU1OGY5OTZhYmY4OABGAAAAAAAiQ8W967B7TKBjgx9rVEURBwAiIsqMbYjsT5e-T7KzowPTAAAAAAEJAAAiIsqMbYjsT5e-T7KzowPTAAAYbvZDAAA%3D"</span>,
+<a class="jxr_linenumber" name="L491" href="#L491">491</a>                         <span class="jxr_string">"/request-patch-message-is-read.json"</span>, HttpMethod.PATCH,
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>                         RequestHeader.CONTENT_TYPE_JSON_METADATA_MINIMAL,
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>                         RequestHeader.ODATA_VERSION, RequestHeader.ACCEPT_JSON) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>                 .build();
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>         Message m = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>                 .users(<span class="jxr_string">"fred"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L498" href="#L498">498</a>                 .mailFolders(<span class="jxr_string">"inbox"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>                 .messages() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>                 .filter(<span class="jxr_string">"isRead eq false"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>                 .expand(<span class="jxr_string">"attachments"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L502" href="#L502">502</a>                 .orderBy(<span class="jxr_string">"createdDateTime"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L503" href="#L503">503</a>                 .metadataMinimal() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>                 .get() <em class="jxr_comment">// ;</em>
+<a class="jxr_linenumber" name="L505" href="#L505">505</a>                 .iterator() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L506" href="#L506">506</a>                 .next();
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> 
+<a class="jxr_linenumber" name="L508" href="#L508">508</a>         System.out.println(m.getSubject());
+<a class="jxr_linenumber" name="L509" href="#L509">509</a>         <em class="jxr_comment">// mark as read</em>
+<a class="jxr_linenumber" name="L510" href="#L510">510</a>         m.withIsRead(<strong class="jxr_keyword">true</strong>).patch();
+<a class="jxr_linenumber" name="L511" href="#L511">511</a>     }
+<a class="jxr_linenumber" name="L512" href="#L512">512</a>     
+<a class="jxr_linenumber" name="L513" href="#L513">513</a>     @Test
+<a class="jxr_linenumber" name="L514" href="#L514">514</a>     @Ignore
+<a class="jxr_linenumber" name="L515" href="#L515">515</a>     <em class="jxr_comment">//TODO implement</em>
+<a class="jxr_linenumber" name="L516" href="#L516">516</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testChunkedUpload() {
+<a class="jxr_linenumber" name="L517" href="#L517">517</a>         GraphService client = clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a>                 .build();
+<a class="jxr_linenumber" name="L519" href="#L519">519</a>         DriveItem item = client.drives(<span class="jxr_string">"123"</span>).items(<span class="jxr_string">"abc"</span>).metadataNone().get();
+<a class="jxr_linenumber" name="L520" href="#L520">520</a>         byte[] bytes = <span class="jxr_string">"1234567890"</span>.getBytes(StandardCharsets.UTF_8);
+<a class="jxr_linenumber" name="L521" href="#L521">521</a>         ByteArrayInputStream in = <strong class="jxr_keyword">new</strong> ByteArrayInputStream(bytes);
+<a class="jxr_linenumber" name="L522" href="#L522">522</a>         item.putChunkedContent().get().upload(in, bytes.length, 2);
+<a class="jxr_linenumber" name="L523" href="#L523">523</a>     }
+<a class="jxr_linenumber" name="L524" href="#L524">524</a> 
+<a class="jxr_linenumber" name="L525" href="#L525">525</a>     @Test
+<a class="jxr_linenumber" name="L526" href="#L526">526</a>     @Ignore
+<a class="jxr_linenumber" name="L527" href="#L527">527</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testCallCompiles() {
+<a class="jxr_linenumber" name="L528" href="#L528">528</a>         GraphService client = clientBuilder().build();
+<a class="jxr_linenumber" name="L529" href="#L529">529</a>         Identity user = Identity <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L530" href="#L530">530</a>                 .builder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L531" href="#L531">531</a>                 .displayName(<span class="jxr_string">"John"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L532" href="#L532">532</a>                 .id(<span class="jxr_string">"blah"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L533" href="#L533">533</a>                 .build();
+<a class="jxr_linenumber" name="L534" href="#L534">534</a>         IdentitySet set = IdentitySet <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L535" href="#L535">535</a>                 .builder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L536" href="#L536">536</a>                 .user(user) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L537" href="#L537">537</a>                 .build();
+<a class="jxr_linenumber" name="L538" href="#L538">538</a>         InvitationParticipantInfo targets = InvitationParticipantInfo <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L539" href="#L539">539</a>                 .builder()<em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L540" href="#L540">540</a>                 .identity(set) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L541" href="#L541">541</a>                 .build();
+<a class="jxr_linenumber" name="L542" href="#L542">542</a>         ServiceHostedMediaConfig config = ServiceHostedMediaConfig <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L543" href="#L543">543</a>                 .builderServiceHostedMediaConfig() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L544" href="#L544">544</a>                 .build();
+<a class="jxr_linenumber" name="L545" href="#L545">545</a>         Call call = Call.builderCall() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L546" href="#L546">546</a>                 .callbackUri(<span class="jxr_string">"https://bot.contoso.com/callback"</span>) //
+<a class="jxr_linenumber" name="L547" href="#L547">547</a>                 .targets(Collections.singletonList(targets)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L548" href="#L548">548</a>                 .requestedModalities(Collections.singletonList(Modality.AUDIO)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L549" href="#L549">549</a>                 .mediaConfig(config) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L550" href="#L550">550</a>                 .build();
+<a class="jxr_linenumber" name="L551" href="#L551">551</a>         client.communications().calls().post(call);
+<a class="jxr_linenumber" name="L552" href="#L552">552</a>     }
+<a class="jxr_linenumber" name="L553" href="#L553">553</a> 
+<a class="jxr_linenumber" name="L554" href="#L554">554</a>     <em class="jxr_comment">// test paged complex type</em>
+<a class="jxr_linenumber" name="L555" href="#L555">555</a>     <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L556" href="#L556">556</a> 
+<a class="jxr_linenumber" name="L557" href="#L557">557</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> ContainerBuilder&lt;GraphService&gt; clientBuilder() {
+<a class="jxr_linenumber" name="L558" href="#L558">558</a>         <strong class="jxr_keyword">return</strong> GraphService <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L559" href="#L559">559</a>                 .test() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L560" href="#L560">560</a>                 .baseUrl(<span class="jxr_string">"https://graph.microsoft.com/v1.0"</span>) //
+<a class="jxr_linenumber" name="L561" href="#L561">561</a>                 .pathStyle(PathStyle.IDENTIFIERS_AS_SEGMENTS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L562" href="#L562">562</a>                 .addProperty(<span class="jxr_string">"modify.stream.edit.link"</span>, <span class="jxr_string">"true"</span>);
+<a class="jxr_linenumber" name="L563" href="#L563">563</a>     }
+<a class="jxr_linenumber" name="L564" href="#L564">564</a> 
+<a class="jxr_linenumber" name="L565" href="#L565">565</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> GraphService createClient(String path, String resource,
+<a class="jxr_linenumber" name="L566" href="#L566">566</a>             RequestHeader... requestHeaders) {
+<a class="jxr_linenumber" name="L567" href="#L567">567</a>         <strong class="jxr_keyword">return</strong> clientBuilder() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L568" href="#L568">568</a>                 .expectResponse(path, resource, requestHeaders) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L569" href="#L569">569</a>                 .build();
+<a class="jxr_linenumber" name="L570" href="#L570">570</a>     }
+<a class="jxr_linenumber" name="L571" href="#L571">571</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+</body>
+</html>

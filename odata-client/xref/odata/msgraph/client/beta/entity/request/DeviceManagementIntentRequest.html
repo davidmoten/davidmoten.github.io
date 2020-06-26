@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>DeviceManagementIntentRequest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../apidocs/odata/msgraph/client/beta/entity/request/DeviceManagementIntentRequest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> odata.msgraph.client.beta.entity.request;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnore;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnoreType;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Preconditions;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestNoReturn;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestReturningNonCollection;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.CollectionPageNonEntityRequest;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ContextPath;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.EntityRequest;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.NameValue;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Action;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Function;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.ParameterMap;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.TypedObject;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.complex.DeviceManagementSettingComparison;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.DeviceManagementIntent;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.DeviceManagementIntentAssignment;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.DeviceManagementSettingInstance;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementIntentAssignmentCollectionRequest;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementIntentDeviceStateCollectionRequest;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementIntentSettingCategoryCollectionRequest;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementIntentUserStateCollectionRequest;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.DeviceManagementSettingInstanceCollectionRequest;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.schema.SchemaInfo;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  @JsonIgnoreType
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="DeviceManagementIntentRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentRequest.html#DeviceManagementIntentRequest">DeviceManagementIntentRequest</a> <strong class="jxr_keyword">extends</strong> EntityRequest&lt;DeviceManagementIntent&gt; {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentRequest.html#DeviceManagementIntentRequest">DeviceManagementIntentRequest</a>(<a name="ContextPath" href="../../../../../../com/github/davidmoten/odata/client/ContextPath.html#ContextPath">ContextPath</a> contextPath) {
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          <strong class="jxr_keyword">super</strong>(DeviceManagementIntent.<strong class="jxr_keyword">class</strong>, contextPath, SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      }
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementSettingInstanceCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementSettingInstanceCollectionRequest.html#DeviceManagementSettingInstanceCollectionRequest">DeviceManagementSettingInstanceCollectionRequest</a> settings() {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementSettingInstanceCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementSettingInstanceCollectionRequest.html#DeviceManagementSettingInstanceCollectionRequest">DeviceManagementSettingInstanceCollectionRequest</a>(
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>                          contextPath.addSegment(<span class="jxr_string">"settings"</span>));
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>      }
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementSettingInstanceRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementSettingInstanceRequest.html#DeviceManagementSettingInstanceRequest">DeviceManagementSettingInstanceRequest</a> settings(String id) {
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementSettingInstanceRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementSettingInstanceRequest.html#DeviceManagementSettingInstanceRequest">DeviceManagementSettingInstanceRequest</a>(contextPath.addSegment(<span class="jxr_string">"settings"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>      }
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentSettingCategoryCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentSettingCategoryCollectionRequest.html#DeviceManagementIntentSettingCategoryCollectionRequest">DeviceManagementIntentSettingCategoryCollectionRequest</a> categories() {
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentSettingCategoryCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentSettingCategoryCollectionRequest.html#DeviceManagementIntentSettingCategoryCollectionRequest">DeviceManagementIntentSettingCategoryCollectionRequest</a>(
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>                          contextPath.addSegment(<span class="jxr_string">"categories"</span>));
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      }
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentSettingCategoryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentSettingCategoryRequest.html#DeviceManagementIntentSettingCategoryRequest">DeviceManagementIntentSettingCategoryRequest</a> categories(String id) {
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentSettingCategoryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentSettingCategoryRequest.html#DeviceManagementIntentSettingCategoryRequest">DeviceManagementIntentSettingCategoryRequest</a>(contextPath.addSegment(<span class="jxr_string">"categories"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>      }
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentAssignmentCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentAssignmentCollectionRequest.html#DeviceManagementIntentAssignmentCollectionRequest">DeviceManagementIntentAssignmentCollectionRequest</a> assignments() {
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentAssignmentCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentAssignmentCollectionRequest.html#DeviceManagementIntentAssignmentCollectionRequest">DeviceManagementIntentAssignmentCollectionRequest</a>(
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>                          contextPath.addSegment(<span class="jxr_string">"assignments"</span>));
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>      }
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentAssignmentRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentAssignmentRequest.html#DeviceManagementIntentAssignmentRequest">DeviceManagementIntentAssignmentRequest</a> assignments(String id) {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentAssignmentRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentAssignmentRequest.html#DeviceManagementIntentAssignmentRequest">DeviceManagementIntentAssignmentRequest</a>(contextPath.addSegment(<span class="jxr_string">"assignments"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>      }
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest.html#DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest">DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest</a> deviceSettingStateSummaries() {
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest.html#DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest">DeviceManagementIntentDeviceSettingStateSummaryCollectionRequest</a>(
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>                          contextPath.addSegment(<span class="jxr_string">"deviceSettingStateSummaries"</span>));
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>      }
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentDeviceSettingStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceSettingStateSummaryRequest.html#DeviceManagementIntentDeviceSettingStateSummaryRequest">DeviceManagementIntentDeviceSettingStateSummaryRequest</a> deviceSettingStateSummaries(String id) {
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentDeviceSettingStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceSettingStateSummaryRequest.html#DeviceManagementIntentDeviceSettingStateSummaryRequest">DeviceManagementIntentDeviceSettingStateSummaryRequest</a>(contextPath.addSegment(<span class="jxr_string">"deviceSettingStateSummaries"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>      }
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentDeviceStateCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentDeviceStateCollectionRequest.html#DeviceManagementIntentDeviceStateCollectionRequest">DeviceManagementIntentDeviceStateCollectionRequest</a> deviceStates() {
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentDeviceStateCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentDeviceStateCollectionRequest.html#DeviceManagementIntentDeviceStateCollectionRequest">DeviceManagementIntentDeviceStateCollectionRequest</a>(
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                          contextPath.addSegment(<span class="jxr_string">"deviceStates"</span>));
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentDeviceStateRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceStateRequest.html#DeviceManagementIntentDeviceStateRequest">DeviceManagementIntentDeviceStateRequest</a> deviceStates(String id) {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentDeviceStateRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceStateRequest.html#DeviceManagementIntentDeviceStateRequest">DeviceManagementIntentDeviceStateRequest</a>(contextPath.addSegment(<span class="jxr_string">"deviceStates"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>      }
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentUserStateCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentUserStateCollectionRequest.html#DeviceManagementIntentUserStateCollectionRequest">DeviceManagementIntentUserStateCollectionRequest</a> userStates() {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentUserStateCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/DeviceManagementIntentUserStateCollectionRequest.html#DeviceManagementIntentUserStateCollectionRequest">DeviceManagementIntentUserStateCollectionRequest</a>(
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>                          contextPath.addSegment(<span class="jxr_string">"userStates"</span>));
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>      }
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentUserStateRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentUserStateRequest.html#DeviceManagementIntentUserStateRequest">DeviceManagementIntentUserStateRequest</a> userStates(String id) {
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentUserStateRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentUserStateRequest.html#DeviceManagementIntentUserStateRequest">DeviceManagementIntentUserStateRequest</a>(contextPath.addSegment(<span class="jxr_string">"userStates"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>      }
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentDeviceStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceStateSummaryRequest.html#DeviceManagementIntentDeviceStateSummaryRequest">DeviceManagementIntentDeviceStateSummaryRequest</a> deviceStateSummary() {
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentDeviceStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentDeviceStateSummaryRequest.html#DeviceManagementIntentDeviceStateSummaryRequest">DeviceManagementIntentDeviceStateSummaryRequest</a>(contextPath.addSegment(<span class="jxr_string">"deviceStateSummary"</span>));
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>      }
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>      <strong class="jxr_keyword">public</strong> <a name="DeviceManagementIntentUserStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentUserStateSummaryRequest.html#DeviceManagementIntentUserStateSummaryRequest">DeviceManagementIntentUserStateSummaryRequest</a> userStateSummary() {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementIntentUserStateSummaryRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/DeviceManagementIntentUserStateSummaryRequest.html#DeviceManagementIntentUserStateSummaryRequest">DeviceManagementIntentUserStateSummaryRequest</a>(contextPath.addSegment(<span class="jxr_string">"userStateSummary"</span>));
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>      }
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>     @Action(name = <span class="jxr_string">"updateSettings"</span>)
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> updateSettings(List&lt;DeviceManagementSettingInstance&gt; settings) {
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>             .put(<span class="jxr_string">"settings"</span>, <span class="jxr_string">"Collection(microsoft.graph.deviceManagementSettingInstance)"</span>, settings)
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>             .build();
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.updateSettings"</span>), _parameters);
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>     }
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>     @Action(name = <span class="jxr_string">"migrateToTemplate"</span>)
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> migrateToTemplate(String newTemplateId, Boolean preserveCustomValues) {
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>         Preconditions.checkNotNull(preserveCustomValues, <span class="jxr_string">"preserveCustomValues cannot be null"</span>);
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>             .put(<span class="jxr_string">"newTemplateId"</span>, <span class="jxr_string">"Edm.String"</span>, newTemplateId)
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>             .put(<span class="jxr_string">"preserveCustomValues"</span>, <span class="jxr_string">"Edm.Boolean"</span>, preserveCustomValues)
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>             .build();
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.migrateToTemplate"</span>), _parameters);
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>     }
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>     @Action(name = <span class="jxr_string">"createCopy"</span>)
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;DeviceManagementIntent&gt; createCopy(String displayName) {
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>             .put(<span class="jxr_string">"displayName"</span>, <span class="jxr_string">"Edm.String"</span>, displayName)
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>             .build();
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;DeviceManagementIntent&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.createCopy"</span>), DeviceManagementIntent.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>     }
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>     @Action(name = <span class="jxr_string">"assign"</span>)
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> assign(List&lt;DeviceManagementIntentAssignment&gt; assignments) {
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>             .put(<span class="jxr_string">"assignments"</span>, <span class="jxr_string">"Collection(microsoft.graph.deviceManagementIntentAssignment)"</span>, assignments)
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>             .build();
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.assign"</span>), _parameters);
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>     }
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>     @Function(name = <span class="jxr_string">"compare"</span>)
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;DeviceManagementSettingComparison&gt; compare(String templateId) {
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         Preconditions.checkNotNull(templateId, <span class="jxr_string">"templateId cannot be null"</span>);
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>             .put(<span class="jxr_string">"templateId"</span>, <span class="jxr_string">"Edm.String"</span>, templateId)
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>             .build();
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.compare"</span>), DeviceManagementSettingComparison.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>     }
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+</body>
+</html>

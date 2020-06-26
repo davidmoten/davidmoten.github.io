@@ -1,0 +1,519 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>UserRequest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/odata/msgraph/client/entity/request/UserRequest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> odata.msgraph.client.entity.request;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnore;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnoreType;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Preconditions;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestNoReturn;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestReturningNonCollection;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.CollectionPageNonEntityRequest;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ContextPath;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.EntityRequest;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.NameValue;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Action;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Function;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.ParameterMap;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.TypedObject;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> java.time.Duration;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.AssignedLicense;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.AttendeeBase;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.ConvertIdResult;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.LocationConstraint;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.MailTips;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.ManagedAppDiagnosticStatus;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.MeetingTimeSuggestionsResult;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.Reminder;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.complex.TimeConstraint;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.ManagedAppPolicy;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.Message;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.User;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.AppRoleAssignmentCollectionRequest;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.CalendarCollectionRequest;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.CalendarGroupCollectionRequest;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ContactCollectionRequest;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ContactFolderCollectionRequest;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.DeviceManagementTroubleshootingEventCollectionRequest;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.DirectoryObjectCollectionRequest;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.DriveCollectionRequest;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.EventCollectionRequest;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ExtensionCollectionRequest;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.LicenseDetailsCollectionRequest;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.MailFolderCollectionRequest;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ManagedAppRegistrationCollectionRequest;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ManagedDeviceCollectionRequest;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.MessageCollectionRequest;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.OAuth2PermissionGrantCollectionRequest;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.OnlineMeetingCollectionRequest;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.PersonCollectionRequest;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.ProfilePhotoCollectionRequest;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.SiteCollectionRequest;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.TeamCollectionRequest;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.entity.collection.request.UserActivityCollectionRequest;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.enums.ExchangeIdFormat;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.enums.MailTipsType;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.schema.SchemaInfo;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  @JsonIgnoreType
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="UserRequest" href="../../../../../odata/msgraph/client/entity/request/UserRequest.html#UserRequest">UserRequest</a> <strong class="jxr_keyword">extends</strong> EntityRequest&lt;User&gt; {
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>      <strong class="jxr_keyword">public</strong> <a name="UserRequest" href="../../../../../odata/msgraph/client/entity/request/UserRequest.html#UserRequest">UserRequest</a>(<a name="ContextPath" href="../../../../../com/github/davidmoten/odata/client/ContextPath.html#ContextPath">ContextPath</a> contextPath) {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          <strong class="jxr_keyword">super</strong>(User.<strong class="jxr_keyword">class</strong>, contextPath, SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>      }
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> <a name="AppRoleAssignmentCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/AppRoleAssignmentCollectionRequest.html#AppRoleAssignmentCollectionRequest">AppRoleAssignmentCollectionRequest</a> appRoleAssignments() {
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="AppRoleAssignmentCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/AppRoleAssignmentCollectionRequest.html#AppRoleAssignmentCollectionRequest">AppRoleAssignmentCollectionRequest</a>(
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>                          contextPath.addSegment(<span class="jxr_string">"appRoleAssignments"</span>));
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>      }
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>      <strong class="jxr_keyword">public</strong> <a name="AppRoleAssignmentRequest" href="../../../../../odata/msgraph/client/entity/request/AppRoleAssignmentRequest.html#AppRoleAssignmentRequest">AppRoleAssignmentRequest</a> appRoleAssignments(String id) {
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="AppRoleAssignmentRequest" href="../../../../../odata/msgraph/client/entity/request/AppRoleAssignmentRequest.html#AppRoleAssignmentRequest">AppRoleAssignmentRequest</a>(contextPath.addSegment(<span class="jxr_string">"appRoleAssignments"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>      }
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> ownedDevices() {
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                          contextPath.addSegment(<span class="jxr_string">"ownedDevices"</span>));
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> ownedDevices(String id) {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"ownedDevices"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>      }
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> registeredDevices() {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>                          contextPath.addSegment(<span class="jxr_string">"registeredDevices"</span>));
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>      }
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> registeredDevices(String id) {
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"registeredDevices"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>      }
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> manager() {
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"manager"</span>));
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>      }
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>      <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> directReports() {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                          contextPath.addSegment(<span class="jxr_string">"directReports"</span>));
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>     }
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> directReports(String id) {
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"directReports"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>     }
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> memberOf() {
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>                         contextPath.addSegment(<span class="jxr_string">"memberOf"</span>));
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>     }
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> memberOf(String id) {
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"memberOf"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>     }
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> createdObjects() {
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>                         contextPath.addSegment(<span class="jxr_string">"createdObjects"</span>));
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     }
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> createdObjects(String id) {
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"createdObjects"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>     }
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>     <strong class="jxr_keyword">public</strong> <a name="OAuth2PermissionGrantCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/OAuth2PermissionGrantCollectionRequest.html#OAuth2PermissionGrantCollectionRequest">OAuth2PermissionGrantCollectionRequest</a> oauth2PermissionGrants() {
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OAuth2PermissionGrantCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/OAuth2PermissionGrantCollectionRequest.html#OAuth2PermissionGrantCollectionRequest">OAuth2PermissionGrantCollectionRequest</a>(
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                         contextPath.addSegment(<span class="jxr_string">"oauth2PermissionGrants"</span>));
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>     }
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>     <strong class="jxr_keyword">public</strong> <a name="OAuth2PermissionGrantRequest" href="../../../../../odata/msgraph/client/entity/request/OAuth2PermissionGrantRequest.html#OAuth2PermissionGrantRequest">OAuth2PermissionGrantRequest</a> oauth2PermissionGrants(String id) {
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OAuth2PermissionGrantRequest" href="../../../../../odata/msgraph/client/entity/request/OAuth2PermissionGrantRequest.html#OAuth2PermissionGrantRequest">OAuth2PermissionGrantRequest</a>(contextPath.addSegment(<span class="jxr_string">"oauth2PermissionGrants"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     }
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> ownedObjects() {
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>                         contextPath.addSegment(<span class="jxr_string">"ownedObjects"</span>));
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>     }
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> ownedObjects(String id) {
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"ownedObjects"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>     }
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>     <strong class="jxr_keyword">public</strong> <a name="LicenseDetailsCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/LicenseDetailsCollectionRequest.html#LicenseDetailsCollectionRequest">LicenseDetailsCollectionRequest</a> licenseDetails() {
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="LicenseDetailsCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/LicenseDetailsCollectionRequest.html#LicenseDetailsCollectionRequest">LicenseDetailsCollectionRequest</a>(
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>                         contextPath.addSegment(<span class="jxr_string">"licenseDetails"</span>));
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>     }
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>     <strong class="jxr_keyword">public</strong> <a name="LicenseDetailsRequest" href="../../../../../odata/msgraph/client/entity/request/LicenseDetailsRequest.html#LicenseDetailsRequest">LicenseDetailsRequest</a> licenseDetails(String id) {
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="LicenseDetailsRequest" href="../../../../../odata/msgraph/client/entity/request/LicenseDetailsRequest.html#LicenseDetailsRequest">LicenseDetailsRequest</a>(contextPath.addSegment(<span class="jxr_string">"licenseDetails"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>     }
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a> transitiveMemberOf() {
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DirectoryObjectCollectionRequest.html#DirectoryObjectCollectionRequest">DirectoryObjectCollectionRequest</a>(
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>                         contextPath.addSegment(<span class="jxr_string">"transitiveMemberOf"</span>));
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>     }
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>     <strong class="jxr_keyword">public</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a> transitiveMemberOf(String id) {
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DirectoryObjectRequest" href="../../../../../odata/msgraph/client/entity/request/DirectoryObjectRequest.html#DirectoryObjectRequest">DirectoryObjectRequest</a>(contextPath.addSegment(<span class="jxr_string">"transitiveMemberOf"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>     }
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>     <strong class="jxr_keyword">public</strong> <a name="OutlookUserRequest" href="../../../../../odata/msgraph/client/entity/request/OutlookUserRequest.html#OutlookUserRequest">OutlookUserRequest</a> outlook() {
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OutlookUserRequest" href="../../../../../odata/msgraph/client/entity/request/OutlookUserRequest.html#OutlookUserRequest">OutlookUserRequest</a>(contextPath.addSegment(<span class="jxr_string">"outlook"</span>));
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>     }
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>     <strong class="jxr_keyword">public</strong> <a name="MessageCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/MessageCollectionRequest.html#MessageCollectionRequest">MessageCollectionRequest</a> messages() {
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="MessageCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/MessageCollectionRequest.html#MessageCollectionRequest">MessageCollectionRequest</a>(
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>                         contextPath.addSegment(<span class="jxr_string">"messages"</span>));
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>     }
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>     <strong class="jxr_keyword">public</strong> <a name="MessageRequest" href="../../../../../odata/msgraph/client/entity/request/MessageRequest.html#MessageRequest">MessageRequest</a> messages(String id) {
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="MessageRequest" href="../../../../../odata/msgraph/client/entity/request/MessageRequest.html#MessageRequest">MessageRequest</a>(contextPath.addSegment(<span class="jxr_string">"messages"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>     }
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>     <strong class="jxr_keyword">public</strong> <a name="MailFolderCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/MailFolderCollectionRequest.html#MailFolderCollectionRequest">MailFolderCollectionRequest</a> mailFolders() {
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="MailFolderCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/MailFolderCollectionRequest.html#MailFolderCollectionRequest">MailFolderCollectionRequest</a>(
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>                         contextPath.addSegment(<span class="jxr_string">"mailFolders"</span>));
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>     }
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>     <strong class="jxr_keyword">public</strong> <a name="MailFolderRequest" href="../../../../../odata/msgraph/client/entity/request/MailFolderRequest.html#MailFolderRequest">MailFolderRequest</a> mailFolders(String id) {
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="MailFolderRequest" href="../../../../../odata/msgraph/client/entity/request/MailFolderRequest.html#MailFolderRequest">MailFolderRequest</a>(contextPath.addSegment(<span class="jxr_string">"mailFolders"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     }
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>     <strong class="jxr_keyword">public</strong> <a name="CalendarRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarRequest.html#CalendarRequest">CalendarRequest</a> calendar() {
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CalendarRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarRequest.html#CalendarRequest">CalendarRequest</a>(contextPath.addSegment(<span class="jxr_string">"calendar"</span>));
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>     }
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>     <strong class="jxr_keyword">public</strong> <a name="CalendarCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/CalendarCollectionRequest.html#CalendarCollectionRequest">CalendarCollectionRequest</a> calendars() {
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CalendarCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/CalendarCollectionRequest.html#CalendarCollectionRequest">CalendarCollectionRequest</a>(
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>                         contextPath.addSegment(<span class="jxr_string">"calendars"</span>));
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>     }
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>     <strong class="jxr_keyword">public</strong> <a name="CalendarRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarRequest.html#CalendarRequest">CalendarRequest</a> calendars(String id) {
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CalendarRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarRequest.html#CalendarRequest">CalendarRequest</a>(contextPath.addSegment(<span class="jxr_string">"calendars"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     }
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>     <strong class="jxr_keyword">public</strong> <a name="CalendarGroupCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/CalendarGroupCollectionRequest.html#CalendarGroupCollectionRequest">CalendarGroupCollectionRequest</a> calendarGroups() {
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CalendarGroupCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/CalendarGroupCollectionRequest.html#CalendarGroupCollectionRequest">CalendarGroupCollectionRequest</a>(
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>                         contextPath.addSegment(<span class="jxr_string">"calendarGroups"</span>));
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>     }
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>     <strong class="jxr_keyword">public</strong> <a name="CalendarGroupRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarGroupRequest.html#CalendarGroupRequest">CalendarGroupRequest</a> calendarGroups(String id) {
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CalendarGroupRequest" href="../../../../../odata/msgraph/client/entity/request/CalendarGroupRequest.html#CalendarGroupRequest">CalendarGroupRequest</a>(contextPath.addSegment(<span class="jxr_string">"calendarGroups"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>     }
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>     <strong class="jxr_keyword">public</strong> <a name="EventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/EventCollectionRequest.html#EventCollectionRequest">EventCollectionRequest</a> calendarView() {
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="EventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/EventCollectionRequest.html#EventCollectionRequest">EventCollectionRequest</a>(
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>                         contextPath.addSegment(<span class="jxr_string">"calendarView"</span>));
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>     }
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>     <strong class="jxr_keyword">public</strong> <a name="EventRequest" href="../../../../../odata/msgraph/client/entity/request/EventRequest.html#EventRequest">EventRequest</a> calendarView(String id) {
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="EventRequest" href="../../../../../odata/msgraph/client/entity/request/EventRequest.html#EventRequest">EventRequest</a>(contextPath.addSegment(<span class="jxr_string">"calendarView"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>     }
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> 
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>     <strong class="jxr_keyword">public</strong> <a name="EventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/EventCollectionRequest.html#EventCollectionRequest">EventCollectionRequest</a> events() {
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="EventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/EventCollectionRequest.html#EventCollectionRequest">EventCollectionRequest</a>(
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>                         contextPath.addSegment(<span class="jxr_string">"events"</span>));
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>     }
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> 
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>     <strong class="jxr_keyword">public</strong> <a name="EventRequest" href="../../../../../odata/msgraph/client/entity/request/EventRequest.html#EventRequest">EventRequest</a> events(String id) {
+<a class="jxr_linenumber" name="L219" href="#L219">219</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="EventRequest" href="../../../../../odata/msgraph/client/entity/request/EventRequest.html#EventRequest">EventRequest</a>(contextPath.addSegment(<span class="jxr_string">"events"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>     }
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>     <strong class="jxr_keyword">public</strong> <a name="PersonCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/PersonCollectionRequest.html#PersonCollectionRequest">PersonCollectionRequest</a> people() {
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="PersonCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/PersonCollectionRequest.html#PersonCollectionRequest">PersonCollectionRequest</a>(
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>                         contextPath.addSegment(<span class="jxr_string">"people"</span>));
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>     }
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>     <strong class="jxr_keyword">public</strong> <a name="PersonRequest" href="../../../../../odata/msgraph/client/entity/request/PersonRequest.html#PersonRequest">PersonRequest</a> people(String id) {
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="PersonRequest" href="../../../../../odata/msgraph/client/entity/request/PersonRequest.html#PersonRequest">PersonRequest</a>(contextPath.addSegment(<span class="jxr_string">"people"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>     }
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>     <strong class="jxr_keyword">public</strong> <a name="ContactCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ContactCollectionRequest.html#ContactCollectionRequest">ContactCollectionRequest</a> contacts() {
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ContactCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ContactCollectionRequest.html#ContactCollectionRequest">ContactCollectionRequest</a>(
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>                         contextPath.addSegment(<span class="jxr_string">"contacts"</span>));
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>     }
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>     <strong class="jxr_keyword">public</strong> <a name="ContactRequest" href="../../../../../odata/msgraph/client/entity/request/ContactRequest.html#ContactRequest">ContactRequest</a> contacts(String id) {
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ContactRequest" href="../../../../../odata/msgraph/client/entity/request/ContactRequest.html#ContactRequest">ContactRequest</a>(contextPath.addSegment(<span class="jxr_string">"contacts"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>     }
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 
+<a class="jxr_linenumber" name="L240" href="#L240">240</a>     <strong class="jxr_keyword">public</strong> <a name="ContactFolderCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ContactFolderCollectionRequest.html#ContactFolderCollectionRequest">ContactFolderCollectionRequest</a> contactFolders() {
+<a class="jxr_linenumber" name="L241" href="#L241">241</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ContactFolderCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ContactFolderCollectionRequest.html#ContactFolderCollectionRequest">ContactFolderCollectionRequest</a>(
+<a class="jxr_linenumber" name="L242" href="#L242">242</a>                         contextPath.addSegment(<span class="jxr_string">"contactFolders"</span>));
+<a class="jxr_linenumber" name="L243" href="#L243">243</a>     }
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 
+<a class="jxr_linenumber" name="L245" href="#L245">245</a>     <strong class="jxr_keyword">public</strong> <a name="ContactFolderRequest" href="../../../../../odata/msgraph/client/entity/request/ContactFolderRequest.html#ContactFolderRequest">ContactFolderRequest</a> contactFolders(String id) {
+<a class="jxr_linenumber" name="L246" href="#L246">246</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ContactFolderRequest" href="../../../../../odata/msgraph/client/entity/request/ContactFolderRequest.html#ContactFolderRequest">ContactFolderRequest</a>(contextPath.addSegment(<span class="jxr_string">"contactFolders"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>     }
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>     <strong class="jxr_keyword">public</strong> <a name="InferenceClassificationRequest" href="../../../../../odata/msgraph/client/entity/request/InferenceClassificationRequest.html#InferenceClassificationRequest">InferenceClassificationRequest</a> inferenceClassification() {
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="InferenceClassificationRequest" href="../../../../../odata/msgraph/client/entity/request/InferenceClassificationRequest.html#InferenceClassificationRequest">InferenceClassificationRequest</a>(contextPath.addSegment(<span class="jxr_string">"inferenceClassification"</span>));
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>     }
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>     <strong class="jxr_keyword">public</strong> <a name="ProfilePhotoRequest" href="../../../../../odata/msgraph/client/entity/request/ProfilePhotoRequest.html#ProfilePhotoRequest">ProfilePhotoRequest</a> photo() {
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ProfilePhotoRequest" href="../../../../../odata/msgraph/client/entity/request/ProfilePhotoRequest.html#ProfilePhotoRequest">ProfilePhotoRequest</a>(contextPath.addSegment(<span class="jxr_string">"photo"</span>));
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>     }
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>     <strong class="jxr_keyword">public</strong> <a name="ProfilePhotoCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ProfilePhotoCollectionRequest.html#ProfilePhotoCollectionRequest">ProfilePhotoCollectionRequest</a> photos() {
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ProfilePhotoCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ProfilePhotoCollectionRequest.html#ProfilePhotoCollectionRequest">ProfilePhotoCollectionRequest</a>(
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>                         contextPath.addSegment(<span class="jxr_string">"photos"</span>));
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>     }
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>     <strong class="jxr_keyword">public</strong> <a name="ProfilePhotoRequest" href="../../../../../odata/msgraph/client/entity/request/ProfilePhotoRequest.html#ProfilePhotoRequest">ProfilePhotoRequest</a> photos(String id) {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ProfilePhotoRequest" href="../../../../../odata/msgraph/client/entity/request/ProfilePhotoRequest.html#ProfilePhotoRequest">ProfilePhotoRequest</a>(contextPath.addSegment(<span class="jxr_string">"photos"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>     }
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>     <strong class="jxr_keyword">public</strong> <a name="DriveRequest" href="../../../../../odata/msgraph/client/entity/request/DriveRequest.html#DriveRequest">DriveRequest</a> drive() {
+<a class="jxr_linenumber" name="L267" href="#L267">267</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DriveRequest" href="../../../../../odata/msgraph/client/entity/request/DriveRequest.html#DriveRequest">DriveRequest</a>(contextPath.addSegment(<span class="jxr_string">"drive"</span>));
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>     }
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>     <strong class="jxr_keyword">public</strong> <a name="DriveCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DriveCollectionRequest.html#DriveCollectionRequest">DriveCollectionRequest</a> drives() {
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DriveCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DriveCollectionRequest.html#DriveCollectionRequest">DriveCollectionRequest</a>(
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>                         contextPath.addSegment(<span class="jxr_string">"drives"</span>));
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>     }
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>     <strong class="jxr_keyword">public</strong> <a name="DriveRequest" href="../../../../../odata/msgraph/client/entity/request/DriveRequest.html#DriveRequest">DriveRequest</a> drives(String id) {
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DriveRequest" href="../../../../../odata/msgraph/client/entity/request/DriveRequest.html#DriveRequest">DriveRequest</a>(contextPath.addSegment(<span class="jxr_string">"drives"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>     }
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>     <strong class="jxr_keyword">public</strong> <a name="SiteCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/SiteCollectionRequest.html#SiteCollectionRequest">SiteCollectionRequest</a> followedSites() {
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="SiteCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/SiteCollectionRequest.html#SiteCollectionRequest">SiteCollectionRequest</a>(
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>                         contextPath.addSegment(<span class="jxr_string">"followedSites"</span>));
+<a class="jxr_linenumber" name="L282" href="#L282">282</a>     }
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>     <strong class="jxr_keyword">public</strong> <a name="SiteRequest" href="../../../../../odata/msgraph/client/entity/request/SiteRequest.html#SiteRequest">SiteRequest</a> followedSites(String id) {
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="SiteRequest" href="../../../../../odata/msgraph/client/entity/request/SiteRequest.html#SiteRequest">SiteRequest</a>(contextPath.addSegment(<span class="jxr_string">"followedSites"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>     }
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>     <strong class="jxr_keyword">public</strong> <a name="ExtensionCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ExtensionCollectionRequest.html#ExtensionCollectionRequest">ExtensionCollectionRequest</a> extensions() {
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ExtensionCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ExtensionCollectionRequest.html#ExtensionCollectionRequest">ExtensionCollectionRequest</a>(
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>                         contextPath.addSegment(<span class="jxr_string">"extensions"</span>));
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>     }
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>     <strong class="jxr_keyword">public</strong> <a name="ExtensionRequest" href="../../../../../odata/msgraph/client/entity/request/ExtensionRequest.html#ExtensionRequest">ExtensionRequest</a> extensions(String id) {
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ExtensionRequest" href="../../../../../odata/msgraph/client/entity/request/ExtensionRequest.html#ExtensionRequest">ExtensionRequest</a>(contextPath.addSegment(<span class="jxr_string">"extensions"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>     }
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>     <strong class="jxr_keyword">public</strong> <a name="ManagedDeviceCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ManagedDeviceCollectionRequest.html#ManagedDeviceCollectionRequest">ManagedDeviceCollectionRequest</a> managedDevices() {
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ManagedDeviceCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ManagedDeviceCollectionRequest.html#ManagedDeviceCollectionRequest">ManagedDeviceCollectionRequest</a>(
+<a class="jxr_linenumber" name="L299" href="#L299">299</a>                         contextPath.addSegment(<span class="jxr_string">"managedDevices"</span>));
+<a class="jxr_linenumber" name="L300" href="#L300">300</a>     }
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>     <strong class="jxr_keyword">public</strong> <a name="ManagedDeviceRequest" href="../../../../../odata/msgraph/client/entity/request/ManagedDeviceRequest.html#ManagedDeviceRequest">ManagedDeviceRequest</a> managedDevices(String id) {
+<a class="jxr_linenumber" name="L303" href="#L303">303</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ManagedDeviceRequest" href="../../../../../odata/msgraph/client/entity/request/ManagedDeviceRequest.html#ManagedDeviceRequest">ManagedDeviceRequest</a>(contextPath.addSegment(<span class="jxr_string">"managedDevices"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>     }
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>     <strong class="jxr_keyword">public</strong> <a name="ManagedAppRegistrationCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ManagedAppRegistrationCollectionRequest.html#ManagedAppRegistrationCollectionRequest">ManagedAppRegistrationCollectionRequest</a> managedAppRegistrations() {
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ManagedAppRegistrationCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/ManagedAppRegistrationCollectionRequest.html#ManagedAppRegistrationCollectionRequest">ManagedAppRegistrationCollectionRequest</a>(
+<a class="jxr_linenumber" name="L308" href="#L308">308</a>                         contextPath.addSegment(<span class="jxr_string">"managedAppRegistrations"</span>));
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>     }
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a>     <strong class="jxr_keyword">public</strong> <a name="ManagedAppRegistrationRequest" href="../../../../../odata/msgraph/client/entity/request/ManagedAppRegistrationRequest.html#ManagedAppRegistrationRequest">ManagedAppRegistrationRequest</a> managedAppRegistrations(String id) {
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ManagedAppRegistrationRequest" href="../../../../../odata/msgraph/client/entity/request/ManagedAppRegistrationRequest.html#ManagedAppRegistrationRequest">ManagedAppRegistrationRequest</a>(contextPath.addSegment(<span class="jxr_string">"managedAppRegistrations"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L313" href="#L313">313</a>     }
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>     <strong class="jxr_keyword">public</strong> <a name="DeviceManagementTroubleshootingEventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DeviceManagementTroubleshootingEventCollectionRequest.html#DeviceManagementTroubleshootingEventCollectionRequest">DeviceManagementTroubleshootingEventCollectionRequest</a> deviceManagementTroubleshootingEvents() {
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementTroubleshootingEventCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/DeviceManagementTroubleshootingEventCollectionRequest.html#DeviceManagementTroubleshootingEventCollectionRequest">DeviceManagementTroubleshootingEventCollectionRequest</a>(
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>                         contextPath.addSegment(<span class="jxr_string">"deviceManagementTroubleshootingEvents"</span>));
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>     }
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>     <strong class="jxr_keyword">public</strong> <a name="DeviceManagementTroubleshootingEventRequest" href="../../../../../odata/msgraph/client/entity/request/DeviceManagementTroubleshootingEventRequest.html#DeviceManagementTroubleshootingEventRequest">DeviceManagementTroubleshootingEventRequest</a> deviceManagementTroubleshootingEvents(String id) {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="DeviceManagementTroubleshootingEventRequest" href="../../../../../odata/msgraph/client/entity/request/DeviceManagementTroubleshootingEventRequest.html#DeviceManagementTroubleshootingEventRequest">DeviceManagementTroubleshootingEventRequest</a>(contextPath.addSegment(<span class="jxr_string">"deviceManagementTroubleshootingEvents"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>     }
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 
+<a class="jxr_linenumber" name="L324" href="#L324">324</a>     <strong class="jxr_keyword">public</strong> <a name="PlannerUserRequest" href="../../../../../odata/msgraph/client/entity/request/PlannerUserRequest.html#PlannerUserRequest">PlannerUserRequest</a> planner() {
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="PlannerUserRequest" href="../../../../../odata/msgraph/client/entity/request/PlannerUserRequest.html#PlannerUserRequest">PlannerUserRequest</a>(contextPath.addSegment(<span class="jxr_string">"planner"</span>));
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>     }
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>     <strong class="jxr_keyword">public</strong> <a name="OfficeGraphInsightsRequest" href="../../../../../odata/msgraph/client/entity/request/OfficeGraphInsightsRequest.html#OfficeGraphInsightsRequest">OfficeGraphInsightsRequest</a> insights() {
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OfficeGraphInsightsRequest" href="../../../../../odata/msgraph/client/entity/request/OfficeGraphInsightsRequest.html#OfficeGraphInsightsRequest">OfficeGraphInsightsRequest</a>(contextPath.addSegment(<span class="jxr_string">"insights"</span>));
+<a class="jxr_linenumber" name="L330" href="#L330">330</a>     }
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> 
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>     <strong class="jxr_keyword">public</strong> <a name="UserSettingsRequest" href="../../../../../odata/msgraph/client/entity/request/UserSettingsRequest.html#UserSettingsRequest">UserSettingsRequest</a> settings() {
+<a class="jxr_linenumber" name="L333" href="#L333">333</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="UserSettingsRequest" href="../../../../../odata/msgraph/client/entity/request/UserSettingsRequest.html#UserSettingsRequest">UserSettingsRequest</a>(contextPath.addSegment(<span class="jxr_string">"settings"</span>));
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>     }
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>     <strong class="jxr_keyword">public</strong> <a name="OnenoteRequest" href="../../../../../odata/msgraph/client/entity/request/OnenoteRequest.html#OnenoteRequest">OnenoteRequest</a> onenote() {
+<a class="jxr_linenumber" name="L337" href="#L337">337</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OnenoteRequest" href="../../../../../odata/msgraph/client/entity/request/OnenoteRequest.html#OnenoteRequest">OnenoteRequest</a>(contextPath.addSegment(<span class="jxr_string">"onenote"</span>));
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>     }
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>     <strong class="jxr_keyword">public</strong> <a name="UserActivityCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/UserActivityCollectionRequest.html#UserActivityCollectionRequest">UserActivityCollectionRequest</a> activities() {
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="UserActivityCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/UserActivityCollectionRequest.html#UserActivityCollectionRequest">UserActivityCollectionRequest</a>(
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>                         contextPath.addSegment(<span class="jxr_string">"activities"</span>));
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>     }
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>     <strong class="jxr_keyword">public</strong> <a name="UserActivityRequest" href="../../../../../odata/msgraph/client/entity/request/UserActivityRequest.html#UserActivityRequest">UserActivityRequest</a> activities(String id) {
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="UserActivityRequest" href="../../../../../odata/msgraph/client/entity/request/UserActivityRequest.html#UserActivityRequest">UserActivityRequest</a>(contextPath.addSegment(<span class="jxr_string">"activities"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>     }
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>     <strong class="jxr_keyword">public</strong> <a name="OnlineMeetingCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/OnlineMeetingCollectionRequest.html#OnlineMeetingCollectionRequest">OnlineMeetingCollectionRequest</a> onlineMeetings() {
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OnlineMeetingCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/OnlineMeetingCollectionRequest.html#OnlineMeetingCollectionRequest">OnlineMeetingCollectionRequest</a>(
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>                         contextPath.addSegment(<span class="jxr_string">"onlineMeetings"</span>));
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>     }
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> 
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>     <strong class="jxr_keyword">public</strong> <a name="OnlineMeetingRequest" href="../../../../../odata/msgraph/client/entity/request/OnlineMeetingRequest.html#OnlineMeetingRequest">OnlineMeetingRequest</a> onlineMeetings(String id) {
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="OnlineMeetingRequest" href="../../../../../odata/msgraph/client/entity/request/OnlineMeetingRequest.html#OnlineMeetingRequest">OnlineMeetingRequest</a>(contextPath.addSegment(<span class="jxr_string">"onlineMeetings"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>     }
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> 
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>     <strong class="jxr_keyword">public</strong> <a name="TeamCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/TeamCollectionRequest.html#TeamCollectionRequest">TeamCollectionRequest</a> joinedTeams() {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="TeamCollectionRequest" href="../../../../../odata/msgraph/client/entity/collection/request/TeamCollectionRequest.html#TeamCollectionRequest">TeamCollectionRequest</a>(
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>                         contextPath.addSegment(<span class="jxr_string">"joinedTeams"</span>));
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>     }
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>     <strong class="jxr_keyword">public</strong> <a name="TeamRequest" href="../../../../../odata/msgraph/client/entity/request/TeamRequest.html#TeamRequest">TeamRequest</a> joinedTeams(String id) {
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="TeamRequest" href="../../../../../odata/msgraph/client/entity/request/TeamRequest.html#TeamRequest">TeamRequest</a>(contextPath.addSegment(<span class="jxr_string">"joinedTeams"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>     }
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>     @Action(name = <span class="jxr_string">"assignLicense"</span>)
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;User&gt; assignLicense(List&lt;AssignedLicense&gt; addLicenses, List&lt;String&gt; removeLicenses) {
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>         Preconditions.checkNotNull(addLicenses, <span class="jxr_string">"addLicenses cannot be null"</span>);
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>         Preconditions.checkNotNull(removeLicenses, <span class="jxr_string">"removeLicenses cannot be null"</span>);
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>             .put(<span class="jxr_string">"addLicenses"</span>, <span class="jxr_string">"Collection(microsoft.graph.assignedLicense)"</span>, addLicenses)
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>             .put(<span class="jxr_string">"removeLicenses"</span>, <span class="jxr_string">"Collection(Edm.Guid)"</span>, removeLicenses)
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>             .build();
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;User&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.assignLicense"</span>), User.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>     }
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>     @Action(name = <span class="jxr_string">"changePassword"</span>)
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> changePassword(String currentPassword, String newPassword) {
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a>             .put(<span class="jxr_string">"currentPassword"</span>, <span class="jxr_string">"Edm.String"</span>, currentPassword)
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>             .put(<span class="jxr_string">"newPassword"</span>, <span class="jxr_string">"Edm.String"</span>, newPassword)
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>             .build();
+<a class="jxr_linenumber" name="L386" href="#L386">386</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.changePassword"</span>), _parameters);
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>     }
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> 
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>     @Action(name = <span class="jxr_string">"revokeSignInSessions"</span>)
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;Boolean&gt; revokeSignInSessions() {
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;Boolean&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.revokeSignInSessions"</span>), Boolean.<strong class="jxr_keyword">class</strong>, _parameters, com.github.davidmoten.odata.client.internal.EdmSchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>     }
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>     @Action(name = <span class="jxr_string">"reprocessLicenseAssignment"</span>)
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L398" href="#L398">398</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;User&gt; reprocessLicenseAssignment() {
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;User&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.reprocessLicenseAssignment"</span>), User.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>     }
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 
+<a class="jxr_linenumber" name="L403" href="#L403">403</a>     @Action(name = <span class="jxr_string">"findMeetingTimes"</span>)
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;MeetingTimeSuggestionsResult&gt; findMeetingTimes(List&lt;AttendeeBase&gt; attendees, LocationConstraint locationConstraint, TimeConstraint timeConstraint, Duration meetingDuration, Integer maxCandidates, Boolean isOrganizerOptional, Boolean returnSuggestionReasons, Double minimumAttendeePercentage) {
+<a class="jxr_linenumber" name="L406" href="#L406">406</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>             .put(<span class="jxr_string">"attendees"</span>, <span class="jxr_string">"Collection(microsoft.graph.attendeeBase)"</span>, attendees)
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>             .put(<span class="jxr_string">"locationConstraint"</span>, <span class="jxr_string">"microsoft.graph.locationConstraint"</span>, locationConstraint)
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>             .put(<span class="jxr_string">"timeConstraint"</span>, <span class="jxr_string">"microsoft.graph.timeConstraint"</span>, timeConstraint)
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>             .put(<span class="jxr_string">"meetingDuration"</span>, <span class="jxr_string">"Edm.Duration"</span>, meetingDuration)
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>             .put(<span class="jxr_string">"maxCandidates"</span>, <span class="jxr_string">"Edm.Int32"</span>, maxCandidates)
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>             .put(<span class="jxr_string">"isOrganizerOptional"</span>, <span class="jxr_string">"Edm.Boolean"</span>, isOrganizerOptional)
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>             .put(<span class="jxr_string">"returnSuggestionReasons"</span>, <span class="jxr_string">"Edm.Boolean"</span>, returnSuggestionReasons)
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>             .put(<span class="jxr_string">"minimumAttendeePercentage"</span>, <span class="jxr_string">"Edm.Double"</span>, minimumAttendeePercentage)
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>             .build();
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;MeetingTimeSuggestionsResult&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.findMeetingTimes"</span>), MeetingTimeSuggestionsResult.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>     }
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>     @Action(name = <span class="jxr_string">"sendMail"</span>)
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> sendMail(Message message, Boolean saveToSentItems) {
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>         Preconditions.checkNotNull(message, <span class="jxr_string">"message cannot be null"</span>);
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>             .put(<span class="jxr_string">"Message"</span>, <span class="jxr_string">"microsoft.graph.message"</span>, message)
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>             .put(<span class="jxr_string">"SaveToSentItems"</span>, <span class="jxr_string">"Edm.Boolean"</span>, saveToSentItems)
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>             .build();
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.sendMail"</span>), _parameters);
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>     }
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 
+<a class="jxr_linenumber" name="L430" href="#L430">430</a>     @Action(name = <span class="jxr_string">"getMailTips"</span>)
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;MailTips&gt; getMailTips(List&lt;String&gt; emailAddresses, <a name="MailTipsType" href="../../../../../odata/msgraph/client/enums/MailTipsType.html#MailTipsType">MailTipsType</a> mailTipsOptions) {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>         Preconditions.checkNotNull(emailAddresses, <span class="jxr_string">"emailAddresses cannot be null"</span>);
+<a class="jxr_linenumber" name="L434" href="#L434">434</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>             .put(<span class="jxr_string">"EmailAddresses"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, emailAddresses)
+<a class="jxr_linenumber" name="L436" href="#L436">436</a>             .put(<span class="jxr_string">"MailTipsOptions"</span>, <span class="jxr_string">"microsoft.graph.mailTipsType"</span>, mailTipsOptions)
+<a class="jxr_linenumber" name="L437" href="#L437">437</a>             .build();
+<a class="jxr_linenumber" name="L438" href="#L438">438</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.getMailTips"</span>), MailTips.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L439" href="#L439">439</a>     }
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 
+<a class="jxr_linenumber" name="L441" href="#L441">441</a>     @Action(name = <span class="jxr_string">"translateExchangeIds"</span>)
+<a class="jxr_linenumber" name="L442" href="#L442">442</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L443" href="#L443">443</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;ConvertIdResult&gt; translateExchangeIds(List&lt;String&gt; inputIds, <a name="ExchangeIdFormat" href<a name="ExchangeIdFormat" href="../../../../../odata/msgraph/client/enums/ExchangeIdFormat.html#ExchangeIdFormat">ExchangeIdFormat</a>/odata/msgraph/client/enums/ExchangeIdFormat.html#ExchangeIdFormat">ExchangeIdFormat</a> targetIdType, <a name="ExchangeIdFormat" href="../../../../../odata/msgraph/client/enums/ExchangeIdFormat.html#ExchangeIdFormat">ExchangeIdFormat</a> sourceIdType) {
+<a class="jxr_linenumber" name="L444" href="#L444">444</a>         Preconditions.checkNotNull(inputIds, <span class="jxr_string">"inputIds cannot be null"</span>);
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>         Preconditions.checkNotNull(targetIdType, <span class="jxr_string">"targetIdType cannot be null"</span>);
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>         Preconditions.checkNotNull(sourceIdType, <span class="jxr_string">"sourceIdType cannot be null"</span>);
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>             .put(<span class="jxr_string">"InputIds"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, inputIds)
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>             .put(<span class="jxr_string">"TargetIdType"</span>, <span class="jxr_string">"microsoft.graph.exchangeIdFormat"</span>, targetIdType)
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>             .put(<span class="jxr_string">"SourceIdType"</span>, <span class="jxr_string">"microsoft.graph.exchangeIdFormat"</span>, sourceIdType)
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>             .build();
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.translateExchangeIds"</span>), ConvertIdResult.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>     }
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>     @Action(name = <span class="jxr_string">"removeAllDevicesFromManagement"</span>)
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L457" href="#L457">457</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> removeAllDevicesFromManagement() {
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L459" href="#L459">459</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.removeAllDevicesFromManagement"</span>), _parameters);
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>     }
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> 
+<a class="jxr_linenumber" name="L462" href="#L462">462</a>     @Action(name = <span class="jxr_string">"wipeManagedAppRegistrationsByDeviceTag"</span>)
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> wipeManagedAppRegistrationsByDeviceTag(String deviceTag) {
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>             .put(<span class="jxr_string">"deviceTag"</span>, <span class="jxr_string">"Edm.String"</span>, deviceTag)
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>             .build();
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.wipeManagedAppRegistrationsByDeviceTag"</span>), _parameters);
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>     }
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> 
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>     @Action(name = <span class="jxr_string">"exportPersonalData"</span>)
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> exportPersonalData(String storageLocation) {
+<a class="jxr_linenumber" name="L474" href="#L474">474</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>             .put(<span class="jxr_string">"storageLocation"</span>, <span class="jxr_string">"Edm.String"</span>, storageLocation)
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>             .build();
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.exportPersonalData"</span>), _parameters);
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>     }
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>     @Function(name = <span class="jxr_string">"reminderView"</span>)
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;Reminder&gt; reminderView(String startDateTime, String endDateTime) {
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>         Preconditions.checkNotNull(startDateTime, <span class="jxr_string">"startDateTime cannot be null"</span>);
+<a class="jxr_linenumber" name="L484" href="#L484">484</a>         Preconditions.checkNotNull(endDateTime, <span class="jxr_string">"endDateTime cannot be null"</span>);
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>             .put(<span class="jxr_string">"StartDateTime"</span>, <span class="jxr_string">"Edm.String"</span>, startDateTime)
+<a class="jxr_linenumber" name="L487" href="#L487">487</a>             .put(<span class="jxr_string">"EndDateTime"</span>, <span class="jxr_string">"Edm.String"</span>, endDateTime)
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>             .build();
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.reminderView"</span>), Reminder.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>     }
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> 
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>     @Function(name = <span class="jxr_string">"getManagedAppDiagnosticStatuses"</span>)
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;ManagedAppDiagnosticStatus&gt; getManagedAppDiagnosticStatuses() {
+<a class="jxr_linenumber" name="L495" href="#L495">495</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.getManagedAppDiagnosticStatuses"</span>), ManagedAppDiagnosticStatus.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>     }
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>     @Function(name = <span class="jxr_string">"getManagedAppPolicies"</span>)
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>     <strong class="jxr_keyword">public</strong> CollectionPageNonEntityRequest&lt;ManagedAppPolicy&gt; getManagedAppPolicies() {
+<a class="jxr_linenumber" name="L502" href="#L502">502</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L503" href="#L503">503</a>         <strong class="jxr_keyword">return</strong> CollectionPageNonEntityRequest.forAction(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.getManagedAppPolicies"</span>), ManagedAppPolicy.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>     }
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> 
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+</body>
+</html>

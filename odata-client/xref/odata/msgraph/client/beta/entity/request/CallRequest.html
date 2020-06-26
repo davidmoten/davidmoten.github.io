@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>CallRequest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../apidocs/odata/msgraph/client/beta/entity/request/CallRequest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> odata.msgraph.client.beta.entity.request;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnore;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> com.fasterxml.jackson.annotation.JsonIgnoreType;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Preconditions;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestNoReturn;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ActionRequestReturningNonCollection;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.ContextPath;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.EntityRequest;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.NameValue;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.annotation.Action;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.ParameterMap;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.odata.client.internal.TypedObject;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.complex.InvitationParticipantInfo;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.complex.MediaConfig;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.complex.Prompt;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.Call;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.CancelMediaProcessingOperation;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.MuteParticipantOperation;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.PlayPromptOperation;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.RecordOperation;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.SubscribeToToneOperation;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.UnmuteParticipantOperation;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.UpdateRecordingStatusOperation;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.AudioRoutingGroupCollectionRequest;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.CommsOperationCollectionRequest;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.entity.collection.request.ParticipantCollectionRequest;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.enums.CallDisposition;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.enums.Modality;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.enums.RecordingStatus;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.enums.RejectReason;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.enums.ScreenSharingRole;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> odata.msgraph.client.beta.schema.SchemaInfo;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  @JsonIgnoreType
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="CallRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/CallRequest.html#CallRequest">CallRequest</a> <strong class="jxr_keyword">extends</strong> EntityRequest&lt;Call&gt; {
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>      <strong class="jxr_keyword">public</strong> <a name="CallRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/CallRequest.html#CallRequest">CallRequest</a>(<a name="ContextPath" href="../../../../../../com/github/davidmoten/odata/client/ContextPath.html#ContextPath">ContextPath</a> contextPath) {
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">super</strong>(Call.<strong class="jxr_keyword">class</strong>, contextPath, SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      }
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>      <strong class="jxr_keyword">public</strong> <a name="ParticipantCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/ParticipantCollectionRequest.html#ParticipantCollectionRequest">ParticipantCollectionRequest</a> participants() {
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ParticipantCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/ParticipantCollectionRequest.html#ParticipantCollectionRequest">ParticipantCollectionRequest</a>(
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>                          contextPath.addSegment(<span class="jxr_string">"participants"</span>));
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>      }
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">public</strong> <a name="ParticipantRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/ParticipantRequest.html#ParticipantRequest">ParticipantRequest</a> participants(String id) {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ParticipantRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/ParticipantRequest.html#ParticipantRequest">ParticipantRequest</a>(contextPath.addSegment(<span class="jxr_string">"participants"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>      <strong class="jxr_keyword">public</strong> <a name="AudioRoutingGroupCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/AudioRoutingGroupCollectionRequest.html#AudioRoutingGroupCollectionRequest">AudioRoutingGroupCollectionRequest</a> audioRoutingGroups() {
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="AudioRoutingGroupCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/AudioRoutingGroupCollectionRequest.html#AudioRoutingGroupCollectionRequest">AudioRoutingGroupCollectionRequest</a>(
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>                          contextPath.addSegment(<span class="jxr_string">"audioRoutingGroups"</span>));
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      }
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">public</strong> <a name="AudioRoutingGroupRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/AudioRoutingGroupRequest.html#AudioRoutingGroupRequest">AudioRoutingGroupRequest</a> audioRoutingGroups(String id) {
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="AudioRoutingGroupRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/AudioRoutingGroupRequest.html#AudioRoutingGroupRequest">AudioRoutingGroupRequest</a>(contextPath.addSegment(<span class="jxr_string">"audioRoutingGroups"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>      }
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>      <strong class="jxr_keyword">public</strong> <a name="CommsOperationCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/CommsOperationCollectionRequest.html#CommsOperationCollectionRequest">CommsOperationCollectionRequest</a> operations() {
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CommsOperationCollectionRequest" href="../../../../../../odata/msgraph/client/beta/entity/collection/request/CommsOperationCollectionRequest.html#CommsOperationCollectionRequest">CommsOperationCollectionRequest</a>(
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>                          contextPath.addSegment(<span class="jxr_string">"operations"</span>));
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      }
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>      <strong class="jxr_keyword">public</strong> <a name="CommsOperationRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/CommsOperationRequest.html#CommsOperationRequest">CommsOperationRequest</a> operations(String id) {
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="CommsOperationRequest" href="../../../../../../odata/msgraph/client/beta/entity/request/CommsOperationRequest.html#CommsOperationRequest">CommsOperationRequest</a>(contextPath.addSegment(<span class="jxr_string">"operations"</span>).addKeys(<strong class="jxr_keyword">new</strong> <a name="NameValue" href="../../../../../../com/github/davidmoten/odata/client/NameValue.html#NameValue">NameValue</a>(id.toString())));
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>      }
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>      @Action(name = <span class="jxr_string">"answer"</span>)
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>      <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> answer(String callbackUri, MediaConfig mediaConfig, List&lt;Modality&gt; acceptedModalities) {
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          Preconditions.checkNotNull(callbackUri, <span class="jxr_string">"callbackUri cannot be null"</span>);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          Preconditions.checkNotNull(mediaConfig, <span class="jxr_string">"mediaConfig cannot be null"</span>);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>              .put(<span class="jxr_string">"callbackUri"</span>, <span class="jxr_string">"Edm.String"</span>, callbackUri)
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>              .put(<span class="jxr_string">"mediaConfig"</span>, <span class="jxr_string">"microsoft.graph.mediaConfig"</span>, mediaConfig)
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>              .put(<span class="jxr_string">"acceptedModalities"</span>, <span class="jxr_string">"Collection(microsoft.graph.modality)"</span>, acceptedModalities)
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>              .build();
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.answer"</span>), _parameters);
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      }
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>      @Action(name = <span class="jxr_string">"cancelMediaProcessing"</span>)
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>      <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;CancelMediaProcessingOperation&gt; cancelMediaProcessing(String clientContext) {
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>              .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>              .build();
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;CancelMediaProcessingOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.cancelMediaProcessing"</span>), CancelMediaProcessingOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      }
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>      @Action(name = <span class="jxr_string">"changeScreenSharingRole"</span>)
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>      @JsonIgnore
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>      <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> changeScreenSharingRole(<a name="ScreenSharingRole" href="../../../../../../odata/msgraph/client/beta/enums/ScreenSharingRole.html#ScreenSharingRole">ScreenSharingRole</a> role) {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>          Preconditions.checkNotNull(role, <span class="jxr_string">"role cannot be null"</span>);
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>          Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>             .put(<span class="jxr_string">"role"</span>, <span class="jxr_string">"microsoft.graph.screenSharingRole"</span>, role)
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>             .build();
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.changeScreenSharingRole"</span>), _parameters);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>     }
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>     @Action(name = <span class="jxr_string">"keepAlive"</span>)
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> keepAlive() {
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>         Map&lt;String, TypedObject&gt; _parameters = ParameterMap.empty();
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.keepAlive"</span>), _parameters);
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>     }
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>     @Action(name = <span class="jxr_string">"mute"</span>)
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;MuteParticipantOperation&gt; mute(String clientContext) {
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>             .build();
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;MuteParticipantOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.mute"</span>), MuteParticipantOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>     }
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>     @Action(name = <span class="jxr_string">"playPrompt"</span>)
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;PlayPromptOperation&gt; playPrompt(List&lt;Prompt&gt; prompts, Boolean loop, String clientContext) {
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>         Preconditions.checkNotNull(prompts, <span class="jxr_string">"prompts cannot be null"</span>);
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>             .put(<span class="jxr_string">"prompts"</span>, <span class="jxr_string">"Collection(microsoft.graph.prompt)"</span>, prompts)
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>             .put(<span class="jxr_string">"loop"</span>, <span class="jxr_string">"Edm.Boolean"</span>, loop)
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>             .build();
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;PlayPromptOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.playPrompt"</span>), PlayPromptOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     }
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>     @Action(name = <span class="jxr_string">"record"</span>)
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;RecordOperation&gt; record(List&lt;Prompt&gt; prompts, Boolean bargeInAllowed, Integer initialSilenceTimeoutInSeconds, Integer maxSilenceTimeoutInSeconds, Integer maxRecordDurationInSeconds, Boolean playBeep, Boolean streamWhileRecording, List&lt;String&gt; stopTones, String clientContext) {
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>             .put(<span class="jxr_string">"prompts"</span>, <span class="jxr_string">"Collection(microsoft.graph.prompt)"</span>, prompts)
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>             .put(<span class="jxr_string">"bargeInAllowed"</span>, <span class="jxr_string">"Edm.Boolean"</span>, bargeInAllowed)
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>             .put(<span class="jxr_string">"initialSilenceTimeoutInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, initialSilenceTimeoutInSeconds)
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>             .put(<span class="jxr_string">"maxSilenceTimeoutInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, maxSilenceTimeoutInSeconds)
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>             .put(<span class="jxr_string">"maxRecordDurationInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, maxRecordDurationInSeconds)
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>             .put(<span class="jxr_string">"playBeep"</span>, <span class="jxr_string">"Edm.Boolean"</span>, playBeep)
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>             .put(<span class="jxr_string">"streamWhileRecording"</span>, <span class="jxr_string">"Edm.Boolean"</span>, streamWhileRecording)
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>             .put(<span class="jxr_string">"stopTones"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, stopTones)
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>             .build();
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;RecordOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.record"</span>), RecordOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>     }
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>     @Action(name = <span class="jxr_string">"recordResponse"</span>)
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;RecordOperation&gt; recordResponse(List&lt;Prompt&gt; prompts, Boolean bargeInAllowed, Integer initialSilenceTimeoutInSeconds, Integer maxSilenceTimeoutInSeconds, Integer maxRecordDurationInSeconds, Boolean playBeep, Boolean streamWhileRecording, List&lt;String&gt; stopTones, String clientContext) {
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>             .put(<span class="jxr_string">"prompts"</span>, <span class="jxr_string">"Collection(microsoft.graph.prompt)"</span>, prompts)
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>             .put(<span class="jxr_string">"bargeInAllowed"</span>, <span class="jxr_string">"Edm.Boolean"</span>, bargeInAllowed)
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>             .put(<span class="jxr_string">"initialSilenceTimeoutInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, initialSilenceTimeoutInSeconds)
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>             .put(<span class="jxr_string">"maxSilenceTimeoutInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, maxSilenceTimeoutInSeconds)
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>             .put(<span class="jxr_string">"maxRecordDurationInSeconds"</span>, <span class="jxr_string">"Edm.Int32"</span>, maxRecordDurationInSeconds)
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>             .put(<span class="jxr_string">"playBeep"</span>, <span class="jxr_string">"Edm.Boolean"</span>, playBeep)
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>             .put(<span class="jxr_string">"streamWhileRecording"</span>, <span class="jxr_string">"Edm.Boolean"</span>, streamWhileRecording)
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>             .put(<span class="jxr_string">"stopTones"</span>, <span class="jxr_string">"Collection(Edm.String)"</span>, stopTones)
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>             .build();
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;RecordOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.recordResponse"</span>), RecordOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>     }
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>     @Action(name = <span class="jxr_string">"redirect"</span>)
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> redirect(List&lt;InvitationParticipantInfo&gt; targets, <a name="CallDisposition" href="../../../../../../odata/msgraph/client/beta/enums/CallDisposition.html#CallDisposition">CallDisposition</a> targetDisposition, Integer timeout, Boolean maskCallee, Boolean maskCaller, String callbackUri) {
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>         Preconditions.checkNotNull(targets, <span class="jxr_string">"targets cannot be null"</span>);
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>             .put(<span class="jxr_string">"targets"</span>, <span class="jxr_string">"Collection(microsoft.graph.invitationParticipantInfo)"</span>, targets)
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>             .put(<span class="jxr_string">"targetDisposition"</span>, <span class="jxr_string">"microsoft.graph.callDisposition"</span>, targetDisposition)
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>             .put(<span class="jxr_string">"timeout"</span>, <span class="jxr_string">"Edm.Int32"</span>, timeout)
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>             .put(<span class="jxr_string">"maskCallee"</span>, <span class="jxr_string">"Edm.Boolean"</span>, maskCallee)
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>             .put(<span class="jxr_string">"maskCaller"</span>, <span class="jxr_string">"Edm.Boolean"</span>, maskCaller)
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>             .put(<span class="jxr_string">"callbackUri"</span>, <span class="jxr_string">"Edm.String"</span>, callbackUri)
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>             .build();
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.redirect"</span>), _parameters);
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     }
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>     @Action(name = <span class="jxr_string">"reject"</span>)
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> reject(<a name="RejectReason" href="../../../../../../odata/msgraph/client/beta/enums/RejectReason.html#RejectReason">RejectReason</a> reason, String callbackUri) {
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>             .put(<span class="jxr_string">"reason"</span>, <span class="jxr_string">"microsoft.graph.rejectReason"</span>, reason)
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>             .put(<span class="jxr_string">"callbackUri"</span>, <span class="jxr_string">"Edm.String"</span>, callbackUri)
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>             .build();
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.reject"</span>), _parameters);
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>     }
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>     @Action(name = <span class="jxr_string">"subscribeToTone"</span>)
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;SubscribeToToneOperation&gt; subscribeToTone(String clientContext) {
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>             .build();
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;SubscribeToToneOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.subscribeToTone"</span>), SubscribeToToneOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>     }
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> 
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>     @Action(name = <span class="jxr_string">"transfer"</span>)
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>     <strong class="jxr_keyword">public</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a> transfer(InvitationParticipantInfo transferTarget) {
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>         Preconditions.checkNotNull(transferTarget, <span class="jxr_string">"transferTarget cannot be null"</span>);
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>             .put(<span class="jxr_string">"transferTarget"</span>, <span class="jxr_string">"microsoft.graph.invitationParticipantInfo"</span>, transferTarget)
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>             .build();
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="ActionRequestNoReturn" href="../../../../../../com/github/davidmoten/odata/client/ActionRequestNoReturn.html#ActionRequestNoReturn">ActionRequestNoReturn</a>(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.transfer"</span>), _parameters);
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>     }
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> 
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>     @Action(name = <span class="jxr_string">"unmute"</span>)
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;UnmuteParticipantOperation&gt; unmute(String clientContext) {
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>             .build();
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;UnmuteParticipantOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.unmute"</span>), UnmuteParticipantOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>     }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>     @Action(name = <span class="jxr_string">"updateRecordingStatus"</span>)
+<a class="jxr_linenumber" name="L221" href="#L221">221</a>     @JsonIgnore
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>     <strong class="jxr_keyword">public</strong> ActionRequestReturningNonCollection&lt;UpdateRecordingStatusOperation&gt; updateRecordingStatus(<a name="RecordingStatus" href="../../../../../../odata/msgraph/client/beta/enums/RecordingStatus.html#RecordingStatus">RecordingStatus</a> status, String clientContext) {
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>         Preconditions.checkNotNull(status, <span class="jxr_string">"status cannot be null"</span>);
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>         Map&lt;String, TypedObject&gt; _parameters = <a name="ParameterMap" href="../../../../../../com/github/davidmoten/odata/client/internal/ParameterMap.html#ParameterMap">ParameterMap</a>
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>             .put(<span class="jxr_string">"status"</span>, <span class="jxr_string">"microsoft.graph.recordingStatus"</span>, status)
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>             .put(<span class="jxr_string">"clientContext"</span>, <span class="jxr_string">"Edm.String"</span>, clientContext)
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>             .build();
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ActionRequestReturningNonCollection&lt;UpdateRecordingStatusOperation&gt;(<strong class="jxr_keyword">this</strong>.contextPath.addSegment(<span class="jxr_string">"microsoft.graph.updateRecordingStatus"</span>), UpdateRecordingStatusOperation.<strong class="jxr_keyword">class</strong>, _parameters, odata.msgraph.client.beta.schema.SchemaInfo.INSTANCE);
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>     }
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+</body>
+</html>
