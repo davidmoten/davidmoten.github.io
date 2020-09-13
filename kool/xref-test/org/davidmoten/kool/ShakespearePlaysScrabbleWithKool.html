@@ -68,7 +68,7 @@
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>          Function&lt;Integer, Integer&gt; scoreOfALetter = letter -&gt; letterScores[letter - 'a'];
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>  
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>          <em class="jxr_comment">// score of the same letters in a word</em>
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>          Function&lt;Entry&lt;Integer, LongWrapper&gt;, Integer&gt; letterScore = <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          Function&lt;Entry&lt;Integer, MutableLong&gt;, Integer&gt; letterScore = <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>                  entry -&gt; <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>                  letterScores[entry.getKey() - 'a'] * <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>                          Integer.min( <em class="jxr_comment">//</em>
@@ -78,98 +78,100 @@
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>          Function&lt;String, Stream&lt;Integer&gt;&gt; toIntegerStream = string -&gt; Stream.chars(string);
 <a class="jxr_linenumber" name="L71" href="#L71">71</a>  
 <a class="jxr_linenumber" name="L72" href="#L72">72</a>          <em class="jxr_comment">// Histogram of the letters in a given word</em>
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>          Function&lt;String, Map&lt;Integer, LongWrapper&gt;&gt; histoOfLetters = word -&gt; toIntegerStream <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          Function&lt;String, Map&lt;Integer, MutableLong&gt;&gt; histoOfLetters = word -&gt; toIntegerStream <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>                  .apply(word) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>                  .collect( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>                          () -&gt; <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;(), <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>                          (Map&lt;Integer, LongWrapper&gt; map, Integer value) -&gt; {
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>                              <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabble.html">LongWrapper</a> newValue = map.get(value);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                          (Map&lt;Integer, MutableLong&gt; map, Integer value) -&gt; {
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>                              <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabble.html">MutableLong</a> newValue = map.get(value);
 <a class="jxr_linenumber" name="L79" href="#L79">79</a>                              <strong class="jxr_keyword">if</strong> (newValue == <strong class="jxr_keyword">null</strong>) {
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>                                  newValue = () -&gt; 0L;
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>                              }
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>                              map.put(value, newValue.incAndSet());
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>                          })
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>                  .get();
-<a class="jxr_linenumber" name="L85" href="#L85">85</a>  
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>          <em class="jxr_comment">// number of blanks for a given letter</em>
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>          Function&lt;Entry&lt;Integer, LongWrapper&gt;, Stream&lt;Long&gt;&gt; blank = <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  entry -&gt; <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>                  Stream.of( <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>                          Long.max( <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L91" href="#L91">91</a>                                  0L, <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>                                  entry.getValue().get() - scrabbleAvailableLetters[entry.getKey() - 'a']));
-<a class="jxr_linenumber" name="L93" href="#L93">93</a>  
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>          <em class="jxr_comment">// number of blanks for a given word</em>
-<a class="jxr_linenumber" name="L95" href="#L95">95</a>          Function&lt;String, Long&gt; nBlanks = word -&gt; <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L96" href="#L96">96</a>          Stream.from(histoOfLetters.apply(word).entrySet()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L97" href="#L97">97</a>                  .flatMap(blank) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L98" href="#L98">98</a>                  .reduce(0L, Long::sum) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L99" href="#L99">99</a>                  .get();
-<a class="jxr_linenumber" name="L100" href="#L100">100</a> 
-<a class="jxr_linenumber" name="L101" href="#L101">101</a>         <em class="jxr_comment">// can a word be written with 2 blanks?</em>
-<a class="jxr_linenumber" name="L102" href="#L102">102</a>         Predicate&lt;String&gt; checkBlanks = word -&gt; nBlanks.apply(word) &lt;= 2;
-<a class="jxr_linenumber" name="L103" href="#L103">103</a> 
-<a class="jxr_linenumber" name="L104" href="#L104">104</a>         <em class="jxr_comment">// score taking blanks into account letterScore1</em>
-<a class="jxr_linenumber" name="L105" href="#L105">105</a>         Function&lt;String, Integer&gt; score2 = word -&gt; <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L106" href="#L106">106</a>         Stream.from(histoOfLetters.apply(word).entrySet()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L107" href="#L107">107</a>                 .map(letterScore) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L108" href="#L108">108</a>                 .reduce(0, Integer::sum) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L109" href="#L109">109</a>                 .get();
-<a class="jxr_linenumber" name="L110" href="#L110">110</a> 
-<a class="jxr_linenumber" name="L111" href="#L111">111</a>         <em class="jxr_comment">// Placing the word on the board</em>
-<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <em class="jxr_comment">// Building the streams of first and last letters</em>
-<a class="jxr_linenumber" name="L113" href="#L113">113</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; first3 = word -&gt; Stream.chars(word).take(3);
-<a class="jxr_linenumber" name="L114" href="#L114">114</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; last3 = word -&gt; Stream.chars(word).skip(3);
-<a class="jxr_linenumber" name="L115" href="#L115">115</a> 
-<a class="jxr_linenumber" name="L116" href="#L116">116</a>         <em class="jxr_comment">// Stream to be maxed</em>
-<a class="jxr_linenumber" name="L117" href="#L117">117</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; toBeMaxed = word -&gt; first3 <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L118" href="#L118">118</a>                 .apply(word) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L119" href="#L119">119</a>                 .concatWith(last3.apply(word));
-<a class="jxr_linenumber" name="L120" href="#L120">120</a> 
-<a class="jxr_linenumber" name="L121" href="#L121">121</a>         <em class="jxr_comment">// Bonus for double letter</em>
-<a class="jxr_linenumber" name="L122" href="#L122">122</a>         Function&lt;String, Integer&gt; bonusForDoubleLetter = word -&gt; toBeMaxed <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L123" href="#L123">123</a>                 .apply(word) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L124" href="#L124">124</a>                 .map(scoreOfALetter) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L125" href="#L125">125</a>                 .reduce(0, Integer::max).get();
-<a class="jxr_linenumber" name="L126" href="#L126">126</a> 
-<a class="jxr_linenumber" name="L127" href="#L127">127</a>         <em class="jxr_comment">// score of the word put on the board</em>
-<a class="jxr_linenumber" name="L128" href="#L128">128</a>         <em class="jxr_comment">// score of the word put on the board</em>
-<a class="jxr_linenumber" name="L129" href="#L129">129</a>         Function&lt;String, Integer&gt; score3 = word -&gt; <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L130" href="#L130">130</a>         2 * (score2.apply(word) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L131" href="#L131">131</a>                 + bonusForDoubleLetter.apply(word)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L132" href="#L132">132</a>                 + (word.length() == 7 ? 50 : 0);
-<a class="jxr_linenumber" name="L133" href="#L133">133</a> 
-<a class="jxr_linenumber" name="L134" href="#L134">134</a>         Function&lt;Function&lt;String, Integer&gt;, Single&lt;TreeMap&lt;Integer, List&lt;String&gt;&gt;&gt;&gt; buildHistoOnScore = <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L135" href="#L135">135</a>                 score -&gt; <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L136" href="#L136">136</a>                 Stream.from(shakespeareWords) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L137" href="#L137">137</a>                         .filter(scrabbleWords::contains) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L138" href="#L138">138</a>                         .filter(checkBlanks) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L139" href="#L139">139</a>                         .groupByList( <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L140" href="#L140">140</a>                                 () -&gt; <strong class="jxr_keyword">new</strong> TreeMap&lt;Integer, <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L141" href="#L141">141</a>                                         List&lt;String&gt;&gt;(Comparator.reverseOrder()), <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L142" href="#L142">142</a>                                 word -&gt; score.apply(word));
-<a class="jxr_linenumber" name="L143" href="#L143">143</a> 
-<a class="jxr_linenumber" name="L144" href="#L144">144</a>         <em class="jxr_comment">// best key / value pairs</em>
-<a class="jxr_linenumber" name="L145" href="#L145">145</a>         List&lt;Entry&lt;Integer, List&lt;String&gt;&gt;&gt; finalList = buildHistoOnScore <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L146" href="#L146">146</a>                 .applyUnchecked(score3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L147" href="#L147">147</a>                 .flatMap(map -&gt; Stream.from(map.entrySet())) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L148" href="#L148">148</a>                 .take(3) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L149" href="#L149">149</a>                 .toList() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L150" href="#L150">150</a>                 .get();
-<a class="jxr_linenumber" name="L151" href="#L151">151</a> 
-<a class="jxr_linenumber" name="L152" href="#L152">152</a>         <strong class="jxr_keyword">return</strong> finalList;
-<a class="jxr_linenumber" name="L153" href="#L153">153</a>     }
-<a class="jxr_linenumber" name="L154" href="#L154">154</a> 
-<a class="jxr_linenumber" name="L155" href="#L155">155</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) <strong class="jxr_keyword">throws</strong> Exception {
-<a class="jxr_linenumber" name="L156" href="#L156">156</a>         <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabbleWithKool.html">ShakespearePlaysScrabbleWithKool</a> s = <strong class="jxr_keyword">new</strong> <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabbleWithKool.html">ShakespearePlaysScrabbleWithKool</a>();
-<a class="jxr_linenumber" name="L157" href="#L157">157</a>         s.init();
-<a class="jxr_linenumber" name="L158" href="#L158">158</a>         <strong class="jxr_keyword">for</strong> (;;) {
-<a class="jxr_linenumber" name="L159" href="#L159">159</a>             s.measureThroughput();
-<a class="jxr_linenumber" name="L160" href="#L160">160</a>         }
-<a class="jxr_linenumber" name="L161" href="#L161">161</a>     }
-<a class="jxr_linenumber" name="L162" href="#L162">162</a> }
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>                                  map.put(value, <strong class="jxr_keyword">new</strong> <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabble.html">MutableLong</a>(1));
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>                              } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>                                  newValue.incAndSet();
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>                              }
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>                          })
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>                  .get();
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>          <em class="jxr_comment">// number of blanks for a given letter</em>
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>          Function&lt;Entry&lt;Integer, MutableLong&gt;, Stream&lt;Long&gt;&gt; blank = <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>                  entry -&gt; <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>                  Stream.of( <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>                          Long.max( <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>                                  0L, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>                                  entry.getValue().get() - scrabbleAvailableLetters[entry.getKey() - 'a']));
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          <em class="jxr_comment">// number of blanks for a given word</em>
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>          Function&lt;String, Long&gt; nBlanks = word -&gt; <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>          Stream.from(histoOfLetters.apply(word).entrySet()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>                  .flatMap(blank) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                  .reduce(0L, Long::sum) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                 .get();
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>         <em class="jxr_comment">// can a word be written with 2 blanks?</em>
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>         Predicate&lt;String&gt; checkBlanks = word -&gt; nBlanks.apply(word) &lt;= 2;
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>         <em class="jxr_comment">// score taking blanks into account letterScore1</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>         Function&lt;String, Integer&gt; score2 = word -&gt; <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         Stream.from(histoOfLetters.apply(word).entrySet()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>                 .map(letterScore) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>                 .reduce(0, Integer::sum) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>                 .get();
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <em class="jxr_comment">// Placing the word on the board</em>
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>         <em class="jxr_comment">// Building the streams of first and last letters</em>
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; first3 = word -&gt; Stream.chars(word).take(3);
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; last3 = word -&gt; Stream.chars(word).skip(3);
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         <em class="jxr_comment">// Stream to be maxed</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>         Function&lt;String, Stream&lt;Integer&gt;&gt; toBeMaxed = word -&gt; first3 <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>                 .apply(word) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>                 .concatWith(last3.apply(word));
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>         <em class="jxr_comment">// Bonus for double letter</em>
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         Function&lt;String, Integer&gt; bonusForDoubleLetter = word -&gt; toBeMaxed <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>                 .apply(word) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                 .map(scoreOfALetter) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                 .reduce(0, Integer::max) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>                 .get();
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>         <em class="jxr_comment">// score of the word put on the board</em>
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <em class="jxr_comment">// score of the word put on the board</em>
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>         Function&lt;String, Integer&gt; score3 = word -&gt; <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         2 * (score2.apply(word) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>                 + bonusForDoubleLetter.apply(word)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>                 + (word.length() == 7 ? 50 : 0);
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         Function&lt;Function&lt;String, Integer&gt;, Single&lt;TreeMap&lt;Integer, List&lt;String&gt;&gt;&gt;&gt; buildHistoOnScore = <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>                 score -&gt; <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>                 Stream.from(shakespeareWords) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>                         .filter(scrabbleWords::contains) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>                         .filter(checkBlanks) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>                         .groupByList( <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>                                 () -&gt; <strong class="jxr_keyword">new</strong> TreeMap&lt;Integer, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>                                         List&lt;String&gt;&gt;(Comparator.reverseOrder()), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>                                 word -&gt; score.apply(word));
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>         <em class="jxr_comment">// best key / value pairs</em>
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>         List&lt;Entry&lt;Integer, List&lt;String&gt;&gt;&gt; finalList = buildHistoOnScore <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>                 .applyUnchecked(score3) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>                 .flatMap(map -&gt; Stream.from(map.entrySet())) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>                 .take(3) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>                 .toList() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>                 .get();
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         <strong class="jxr_keyword">return</strong> finalList;
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>     }
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>         <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabbleWithKool.html">ShakespearePlaysScrabbleWithKool</a> s = <strong class="jxr_keyword">new</strong> <a href="../../../org/davidmoten/kool/ShakespearePlaysScrabbleWithKool.html">ShakespearePlaysScrabbleWithKool</a>();
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>         s.init();
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>         <strong class="jxr_keyword">for</strong> (;;) {
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>             s.measureThroughput();
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>         }
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>     }
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2018. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
 </body>
 </html>
