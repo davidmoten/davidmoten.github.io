@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Aws4SignerForAuthorizationHeader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.internal.auth</a> &gt; <span class="el_source">Aws4SignerForAuthorizationHeader.java</span></div><h1>Aws4SignerForAuthorizationHeader.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.internal.auth;
+
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Map;
+
+import com.github.davidmoten.aws.lw.client.internal.Clock;
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+import com.github.davidmoten.aws.lw.client.internal.util.Util;
+
+/**
+ * Sample AWS4 signer demonstrating how to sign requests to Amazon S3 using an
+ * 'Authorization' header.
+ */
+public class Aws4SignerForAuthorizationHeader extends Aws4SignerBase {
+
+    public Aws4SignerForAuthorizationHeader(URL endpointUrl, String httpMethod, String serviceName,
+            String regionName) {
+<span class="fc" id="L20">        super(endpointUrl, httpMethod, serviceName, regionName);</span>
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Computes an AWS4 signature for a request, ready for inclusion as an
+     * 'Authorization' header.
+     * 
+     * @param headers         The request headers; 'Host' and 'X-Amz-Date' will be
+     *                        added to this set.
+     * @param queryParameters Any query parameters that will be added to the
+     *                        endpoint. The parameters should be specified in
+     *                        canonical format.
+     * @param bodyHash        Precomputed SHA256 hash of the request body content;
+     *                        this value should also be set as the header
+     *                        'X-Amz-Content-SHA256' for non-streaming uploads.
+     * @param awsAccessKey    The user's AWS Access Key.
+     * @param awsSecretKey    The user's AWS Secret Key.
+     * @return The computed authorization string for the request. This value needs
+     *         to be set as the header 'Authorization' on the subsequent HTTP
+     *         request.
+     */
+    public String computeSignature(Clock clock, Map&lt;String, String&gt; headers, Map&lt;String, String&gt; queryParameters,
+            String bodyHash, String awsAccessKey, String awsSecretKey) {
+<span class="fc" id="L43">        Preconditions.checkNotNull(headers);</span>
+<span class="fc" id="L44">        Preconditions.checkNotNull(queryParameters);</span>
+        // first get the date and time for the subsequent request, and convert
+        // to ISO 8601 format for use in signature generation
+<span class="fc" id="L47">        Date now = new Date(clock.time());</span>
+<span class="fc" id="L48">        String dateTimeStamp = dateTimeFormat.format(now);</span>
+
+        // update the headers with required 'x-amz-date' and 'host' values
+<span class="fc" id="L51">        headers.put(&quot;x-amz-date&quot;, dateTimeStamp);</span>
+
+<span class="fc" id="L53">        String hostHeader = endpointUrl.getHost();</span>
+<span class="fc" id="L54">        int port = endpointUrl.getPort();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (port &gt; -1) {</span>
+<span class="fc" id="L56">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
+        }
+<span class="fc" id="L58">        headers.put(&quot;Host&quot;, hostHeader);</span>
+
+        // canonicalize the headers; we need the set of header names as well as the
+        // names and values to go into the signature process
+<span class="fc" id="L62">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
+<span class="fc" id="L63">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
+
+        // if any query string parameters have been supplied, canonicalize them
+<span class="fc" id="L66">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
+
+        // canonicalize the various components of the request
+<span class="fc" id="L69">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
+                canonicalizedQueryParameters, canonicalizedHeaderNames, canonicalizedHeaders,
+                bodyHash);
+//        System.out.println(&quot;--------- Canonical request --------&quot;);
+//        System.out.println(canonicalRequest);
+//        System.out.println(&quot;------------------------------------&quot;);
+
+        // construct the string to be signed
+<span class="fc" id="L77">        String dateStamp = dateStampFormat.format(now);</span>
+<span class="fc" id="L78">        String scope = dateStamp + &quot;/&quot; + regionName + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
+<span class="fc" id="L79">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
+                canonicalRequest);
+//        System.out.println(&quot;--------- String to sign -----------&quot;);
+//        System.out.println(stringToSign);
+//        System.out.println(&quot;------------------------------------&quot;);
+
+        // compute the signing key
+<span class="fc" id="L86">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L87">        byte[] kDate = sign(dateStamp, kSecret);</span>
+<span class="fc" id="L88">        byte[] kRegion = sign(regionName, kDate);</span>
+<span class="fc" id="L89">        byte[] kService = sign(serviceName, kRegion);</span>
+<span class="fc" id="L90">        byte[] kSigning = sign(TERMINATOR, kService);</span>
+<span class="fc" id="L91">        byte[] signature = sign(stringToSign, kSigning);</span>
+
+<span class="fc" id="L93">        String credentialsAuthorizationHeader = &quot;Credential=&quot; + awsAccessKey + &quot;/&quot; + scope;</span>
+<span class="fc" id="L94">        String signedHeadersAuthorizationHeader = &quot;SignedHeaders=&quot; + canonicalizedHeaderNames;</span>
+<span class="fc" id="L95">        String signatureAuthorizationHeader = &quot;Signature=&quot; + Util.toHex(signature);</span>
+
+<span class="fc" id="L97">        String authorizationHeader = SCHEME + &quot;-&quot; + ALGORITHM + &quot; &quot; + credentialsAuthorizationHeader</span>
+                + &quot;, &quot; + signedHeadersAuthorizationHeader + &quot;, &quot; + signatureAuthorizationHeader;
+
+<span class="fc" id="L100">        return authorizationHeader;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

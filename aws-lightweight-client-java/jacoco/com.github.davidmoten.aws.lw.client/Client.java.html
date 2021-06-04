@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import com.github.davidmoten.aws.lw.client.internal.Clock;
+import com.github.davidmoten.aws.lw.client.internal.Environment;
+import com.github.davidmoten.aws.lw.client.internal.ExceptionFactoryExtended;
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+
+public final class Client {
+
+    private final Clock clock;
+    private final String serviceName;
+    private final String regionName;
+    private final Credentials credentials;
+    private final HttpClient httpClient;
+    private final int connectTimeoutMs;
+    private final int readTimeoutMs;
+    private final ExceptionFactory exceptionFactory;
+
+    private Client(Clock clock, String serviceName, String regionName, Credentials credentials,
+            HttpClient httpClient, int connectTimeoutMs, int readTimeoutMs,
+<span class="fc" id="L25">            ExceptionFactory exceptionFactory) {</span>
+<span class="fc" id="L26">        this.clock = clock;</span>
+<span class="fc" id="L27">        this.serviceName = serviceName;</span>
+<span class="fc" id="L28">        this.regionName = regionName;</span>
+<span class="fc" id="L29">        this.credentials = credentials;</span>
+<span class="fc" id="L30">        this.httpClient = httpClient;</span>
+<span class="fc" id="L31">        this.connectTimeoutMs = connectTimeoutMs;</span>
+<span class="fc" id="L32">        this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L33">        this.exceptionFactory = exceptionFactory;</span>
+<span class="fc" id="L34">    }</span>
+
+    public static Builder service(String serviceName) {
+<span class="fc" id="L37">        Preconditions.checkNotNull(serviceName);</span>
+<span class="fc" id="L38">        return new Builder(serviceName);</span>
+    }
+
+    ///////////////////////////////////////////////////
+    //
+    // Convenience methods for a few common services
+    // Use service(serviceName) method for the rest
+    //
+    ///////////////////////////////////////////////////
+
+    public static Builder s3() {
+<span class="fc" id="L49">        return service(&quot;s3&quot;);</span>
+    }
+
+    public static Builder sqs() {
+<span class="fc" id="L53">        return service(&quot;sqs&quot;);</span>
+    }
+
+    public static Builder iam() {
+<span class="fc" id="L57">        return service(&quot;iam&quot;);</span>
+    }
+
+    public static Builder ec2() {
+<span class="fc" id="L61">        return service(&quot;ec2&quot;);</span>
+    }
+
+    public static Builder sns() {
+<span class="fc" id="L65">        return service(&quot;sns&quot;);</span>
+    }
+
+    public static Builder lambda() {
+<span class="fc" id="L69">        return service(&quot;lambda&quot;);</span>
+    }
+
+    ///////////////////////////////////////////////////
+
+    String serviceName() {
+<span class="fc" id="L75">        return serviceName;</span>
+    }
+
+    public String regionName() {
+<span class="fc" id="L79">        return regionName;</span>
+    }
+
+    Credentials credentials() {
+<span class="fc" id="L83">        return credentials;</span>
+    }
+
+    HttpClient httpClient() {
+<span class="fc" id="L87">        return httpClient;</span>
+    }
+
+    Clock clock() {
+<span class="fc" id="L91">        return clock;</span>
+    }
+
+    ExceptionFactory exceptionFactory() {
+<span class="fc" id="L95">        return exceptionFactory;</span>
+    }
+
+    int connectTimeoutMs() {
+<span class="fc" id="L99">        return connectTimeoutMs;</span>
+    }
+
+    int readTimeoutMs() {
+<span class="fc" id="L103">        return readTimeoutMs;</span>
+    }
+
+    public Request url(String url) {
+<span class="fc" id="L107">        Preconditions.checkNotNull(url);</span>
+<span class="fc" id="L108">        return new Request(this, url);</span>
+    }
+
+    /**
+     * Specify the path (can include query starting with ? at end of final segment).
+     * 
+     * @param segments that will be joined together with the '/' character
+     * @return request
+     */
+    public Request path(String... segments) {
+<span class="fc" id="L118">        Preconditions.checkNotNull(segments);</span>
+<span class="fc" id="L119">        return new Request(this, null, segments);</span>
+    }
+
+    public Request query(String name, String value) {
+<span class="fc" id="L123">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L124">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L125">        return path(&quot;&quot;).query(name, value);</span>
+    }
+
+    public Request attributePrefix(String attributePrefix) {
+<span class="fc" id="L129">        return path(&quot;&quot;).attributePrefix(attributePrefix);</span>
+    }
+
+    public Request attribute(String name, String value) {
+<span class="fc" id="L133">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L134">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L135">        return path(&quot;&quot;).attribute(name, value);</span>
+    }
+
+    public static final class Builder {
+
+        private final String serviceName;
+        private String regionName;
+        private String accessKey;
+        private Credentials credentials;
+<span class="fc" id="L144">        private HttpClient httpClient = HttpClient.defaultClient();</span>
+<span class="fc" id="L145">        private int connectTimeoutMs = 30000;</span>
+<span class="fc" id="L146">        private int readTimeoutMs = 300000;</span>
+<span class="fc" id="L147">        private ExceptionFactory exceptionFactory = ExceptionFactory.DEFAULT;</span>
+<span class="fc" id="L148">        private Clock clock = Clock.DEFAULT;</span>
+<span class="fc" id="L149">        private Environment environment = Environment.DEFAULT;</span>
+
+<span class="fc" id="L151">        private Builder(String serviceName) {</span>
+<span class="fc" id="L152">            this.serviceName = serviceName;</span>
+<span class="fc" id="L153">        }</span>
+
+        // VisibleForTesting
+        Builder environment(Environment environment) {
+<span class="fc" id="L157">            this.environment = environment;</span>
+<span class="fc" id="L158">            return this;</span>
+        }
+
+        public Builder4 defaultClient() {
+<span class="fc" id="L162">            return regionFromEnvironment().credentialsFromEnvironment();</span>
+        }
+
+        public Builder4 from(Client client) {
+<span class="fc" id="L166">            Preconditions.checkNotNull(client);</span>
+<span class="fc" id="L167">            this.regionName = client.regionName;</span>
+<span class="fc" id="L168">            this.credentials = client.credentials;</span>
+<span class="fc" id="L169">            this.httpClient = client.httpClient;</span>
+<span class="fc" id="L170">            this.connectTimeoutMs = client.connectTimeoutMs;</span>
+<span class="fc" id="L171">            this.readTimeoutMs = client.readTimeoutMs;</span>
+<span class="fc" id="L172">            this.exceptionFactory = client.exceptionFactory;</span>
+<span class="fc" id="L173">            return new Builder4(this);</span>
+        }
+
+        public Builder2 regionFromEnvironment() {
+<span class="fc" id="L177">            return regionName(environment.get(&quot;AWS_REGION&quot;));</span>
+        }
+
+        public Builder2 regionName(String regionName) {
+<span class="fc" id="L181">            Preconditions.checkNotNull(regionName);</span>
+<span class="fc" id="L182">            this.regionName = regionName;</span>
+<span class="fc" id="L183">            return new Builder2(this);</span>
+        }
+    }
+
+    public static final class Builder2 {
+        private final Builder b;
+
+<span class="fc" id="L190">        private Builder2(Builder b) {</span>
+<span class="fc" id="L191">            this.b = b;</span>
+<span class="fc" id="L192">        }</span>
+
+        public Builder4 credentialsFromEnvironment() {
+<span class="fc" id="L195">            b.credentials = b.environment.credentials();</span>
+<span class="fc" id="L196">            return new Builder4(b);</span>
+        }
+
+        public Builder4 credentialsFromSystemProperties() {
+<span class="fc" id="L200">            return credentials(Credentials.fromSystemProperties());</span>
+        }
+
+        public Builder3 accessKey(String accessKey) {
+<span class="fc" id="L204">            Preconditions.checkNotNull(accessKey);</span>
+<span class="fc" id="L205">            b.accessKey = accessKey;</span>
+<span class="fc" id="L206">            return new Builder3(b);</span>
+        }
+
+        public Builder4 credentials(Credentials credentials) {
+<span class="fc" id="L210">            Preconditions.checkNotNull(credentials);</span>
+<span class="fc" id="L211">            b.credentials = credentials;</span>
+<span class="fc" id="L212">            return new Builder4(b);</span>
+        }
+    }
+
+    public static final class Builder3 {
+        private final Builder b;
+
+<span class="fc" id="L219">        private Builder3(Builder b) {</span>
+<span class="fc" id="L220">            this.b = b;</span>
+<span class="fc" id="L221">        }</span>
+
+        public Builder4 secretKey(String secretKey) {
+<span class="fc" id="L224">            Preconditions.checkNotNull(secretKey);</span>
+<span class="fc" id="L225">            b.credentials = Credentials.of(b.accessKey, secretKey);</span>
+<span class="fc" id="L226">            return new Builder4(b);</span>
+        }
+    }
+
+    public static final class Builder4 {
+        private final Builder b;
+
+<span class="fc" id="L233">        private Builder4(Builder b) {</span>
+<span class="fc" id="L234">            this.b = b;</span>
+<span class="fc" id="L235">        }</span>
+
+        public Builder4 httpClient(HttpClient httpClient) {
+<span class="fc" id="L238">            b.httpClient = httpClient;</span>
+<span class="fc" id="L239">            return this;</span>
+        }
+
+        public Builder4 connectTimeout(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L243" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L244">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L245">            b.connectTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L246">            return this;</span>
+        }
+
+        public Builder4 readTimeout(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L250" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L251">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L252">            b.readTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L253">            return this;</span>
+        }
+
+        public Builder4 exceptionFactory(ExceptionFactory exceptionFactory) {
+<span class="fc" id="L257">            b.exceptionFactory = exceptionFactory;</span>
+<span class="fc" id="L258">            return this;</span>
+        }
+
+        public Builder4 exception(Predicate&lt;? super Response&gt; predicate,
+                Function&lt;? super Response, ? extends RuntimeException&gt; factory) {
+<span class="fc" id="L263">            b.exceptionFactory = new ExceptionFactoryExtended(b.exceptionFactory, predicate,</span>
+                    factory);
+<span class="fc" id="L265">            return this;</span>
+        }
+
+        public Builder4 clock(Clock clock) {
+<span class="fc" id="L269">            b.clock = clock;</span>
+<span class="fc" id="L270">            return this;</span>
+        }
+
+        public Client build() {
+<span class="fc" id="L274">            return new Client(b.clock, b.serviceName, b.regionName, b.credentials, b.httpClient,</span>
+<span class="fc" id="L275">                    b.connectTimeoutMs, b.readTimeoutMs, b.exceptionFactory);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

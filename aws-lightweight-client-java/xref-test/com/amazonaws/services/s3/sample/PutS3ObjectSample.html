@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>PutS3ObjectSample xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../testapidocs/com/amazonaws/services/s3/sample/PutS3ObjectSample.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.amazonaws.services.s3.sample;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.net.URL;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.HashMap;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.Clock;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerBase;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerForAuthorizationHeader;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.util.Util;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_javadoccomment"> * Sample code showing how to PUT objects to Amazon S3 with Signature V4</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_javadoccomment"> * authorization</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="PutS3ObjectSample" href="../../../../../com/amazonaws/services/s3/sample/PutS3ObjectSample.html#PutS3ObjectSample">PutS3ObjectSample</a> {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String objectContent = <span class="jxr_string">"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tortor metus, sagittis eget augue ut,\n"</span>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>              + <span class="jxr_string">"feugiat vehicula risus. Integer tortor mauris, vehicula nec mollis et, consectetur eget tortor. In ut\n"</span>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>              + <span class="jxr_string">"elit sagittis, ultrices est ut, iaculis turpis. In hac habitasse platea dictumst. Donec laoreet tellus\n"</span>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>              + <span class="jxr_string">"at auctor tempus. Praesent nec diam sed urna sollicitudin vehicula eget id est. Vivamus sed laoreet\n"</span>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>              + <span class="jxr_string">"lectus. Aliquam convallis condimentum risus, vitae porta justo venenatis vitae. Phasellus vitae nunc\n"</span>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>              + <span class="jxr_string">"varius, volutpat quam nec, mollis urna. Donec tempus, nisi vitae gravida facilisis, sapien sem malesuada\n"</span>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>              + <span class="jxr_string">"purus, id semper libero ipsum condimentum nulla. Suspendisse vel mi leo. Morbi pellentesque placerat congue.\n"</span>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>              + <span class="jxr_string">"Nunc sollicitudin nunc diam, nec hendrerit dui commodo sed. Duis dapibus commodo elit, id commodo erat\n"</span>
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>              + <span class="jxr_string">"congue id. Aliquam erat volutpat.\n"</span>;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment">     * Uploads content to an Amazon S3 object in a single call using Signature V4</em>
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <em class="jxr_javadoccomment">     * authorization.</em>
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> putS3Object(String bucketName, String regionName, String awsAccessKey,
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>              String awsSecretKey) {
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          System.out.println(<span class="jxr_string">"************************************************"</span>);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          System.out.println(<span class="jxr_string">"*        Executing sample 'PutS3Object'        *"</span>);
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          System.out.println(<span class="jxr_string">"************************************************"</span>);
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          <strong class="jxr_keyword">final</strong> URL endpointUrl;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <strong class="jxr_keyword">if</strong> (regionName.equals(<span class="jxr_string">"us-east-1"</span>)) {
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>              endpointUrl = Util
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>                      .toUrl(<span class="jxr_string">"https://s3.amazonaws.com/"</span> + bucketName + <span class="jxr_string">"/ExampleObject.txt"</span>);
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>          } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>              endpointUrl = Util.toUrl(<span class="jxr_string">"https://s3."</span> + regionName + <span class="jxr_string">".amazonaws.com/"</span> + bucketName
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>                      + <span class="jxr_string">"/ExampleObject.txt"</span>);
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>          }
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <em class="jxr_comment">// precompute hash of the body content</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          byte[] contentHash = Util.sha256(objectContent);
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          String contentHashString = Util.toHex(contentHash);
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          Map&lt;String, String&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;String, String&gt;();
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          headers.put(<span class="jxr_string">"x-amz-content-sha256"</span>, contentHashString);
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>          headers.put(<span class="jxr_string">"content-length"</span>, <span class="jxr_string">""</span> + objectContent.length());
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>          headers.put(<span class="jxr_string">"x-amz-storage-class"</span>, <span class="jxr_string">"REDUCED_REDUNDANCY"</span>);
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>          Aws4SignerForAuthorizationHeader signer = <strong class="jxr_keyword">new</strong> Aws4SignerForAuthorizationHeader(endpointUrl,
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>                  <span class="jxr_string">"PUT"</span>, <span class="jxr_string">"s3"</span>, regionName);
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>          String authorization = signer.computeSignature(Clock.DEFAULT, headers, <strong class="jxr_keyword">null</strong>, <em class="jxr_comment">// no query</em>
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>                                                                                       <em class="jxr_comment">// parameters</em>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>                  contentHashString, awsAccessKey, awsSecretKey);
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          <em class="jxr_comment">// express authorization for this as a header</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          headers.put(<span class="jxr_string">"Authorization"</span>, authorization);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          <em class="jxr_comment">// make the call to Amazon S3</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          String response = HttpUtils.invokeHttpRequest(endpointUrl, <span class="jxr_string">"PUT"</span>, headers, objectContent);
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          System.out.println(<span class="jxr_string">"--------- Response content ---------"</span>);
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>          System.out.println(response);
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          System.out.println(<span class="jxr_string">"------------------------------------"</span>);
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      }
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+</body>
+</html>

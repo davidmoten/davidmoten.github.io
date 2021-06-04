@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Aws4SignerForQueryParameterAuth.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.internal.auth</a> &gt; <span class="el_source">Aws4SignerForQueryParameterAuth.java</span></div><h1>Aws4SignerForQueryParameterAuth.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.internal.auth;
+
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Map;
+
+import com.github.davidmoten.aws.lw.client.internal.Clock;
+import com.github.davidmoten.aws.lw.client.internal.util.Util;
+
+/**
+ * Sample AWS4 signer demonstrating how to sign requests to Amazon S3 using
+ * query string parameters.
+ */
+public class Aws4SignerForQueryParameterAuth extends Aws4SignerBase {
+
+    public Aws4SignerForQueryParameterAuth(URL endpointUrl, String httpMethod, String serviceName,
+            String regionName) {
+<span class="fc" id="L19">        super(endpointUrl, httpMethod, serviceName, regionName);</span>
+<span class="fc" id="L20">    }</span>
+
+    /**
+     * Computes an AWS4 authorization for a request, suitable for embedding in query
+     * parameters.
+     * 
+     * @param headers         The request headers; 'Host' and 'X-Amz-Date' will be
+     *                        added to this set.
+     * @param queryParameters Any query parameters that will be added to the
+     *                        endpoint. The parameters should be specified in
+     *                        canonical format.
+     * @param bodyHash        Precomputed SHA256 hash of the request body content;
+     *                        this value should also be set as the header
+     *                        'X-Amz-Content-SHA256' for non-streaming uploads.
+     * @param awsAccessKey    The user's AWS Access Key.
+     * @param awsSecretKey    The user's AWS Secret Key.
+     * @return The computed authorization string for the request. This value needs
+     *         to be set as the header 'Authorization' on the subsequent HTTP
+     *         request.
+     */
+    public String computeSignature(Clock clock, Map&lt;String, String&gt; headers, Map&lt;String, String&gt; queryParameters,
+            String bodyHash, String awsAccessKey, String awsSecretKey) {
+        // first get the date and time for the subsequent request, and convert
+        // to ISO 8601 format
+        // for use in signature generation
+<span class="fc" id="L45">        Date now = new Date(clock.time());</span>
+<span class="fc" id="L46">        String dateTimeStamp = dateTimeFormat.format(now);</span>
+
+        // make sure &quot;Host&quot; header is added
+<span class="fc" id="L49">        String hostHeader = endpointUrl.getHost();</span>
+<span class="fc" id="L50">        int port = endpointUrl.getPort();</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (port &gt; -1) {</span>
+<span class="fc" id="L52">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
+        }
+<span class="fc" id="L54">        headers.put(&quot;Host&quot;, hostHeader);</span>
+
+        // canonicalized headers need to be expressed in the query
+        // parameters processed in the signature
+<span class="fc" id="L58">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
+<span class="fc" id="L59">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
+
+        // we need scope as part of the query parameters
+<span class="fc" id="L62">        String dateStamp = dateStampFormat.format(now);</span>
+<span class="fc" id="L63">        String scope = dateStamp + &quot;/&quot; + regionName + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
+
+        // add the fixed authorization params required by Signature V4
+<span class="fc" id="L66">        queryParameters.put(&quot;X-Amz-Algorithm&quot;, SCHEME + &quot;-&quot; + ALGORITHM);</span>
+<span class="fc" id="L67">        queryParameters.put(&quot;X-Amz-Credential&quot;, awsAccessKey + &quot;/&quot; + scope);</span>
+
+        // x-amz-date is now added as a query parameter, but still need to be in ISO8601
+        // basic form
+<span class="fc" id="L71">        queryParameters.put(&quot;X-Amz-Date&quot;, dateTimeStamp);</span>
+
+<span class="fc" id="L73">        queryParameters.put(&quot;X-Amz-SignedHeaders&quot;, canonicalizedHeaderNames);</span>
+
+        // build the expanded canonical query parameter string that will go into the
+        // signature computation
+<span class="fc" id="L77">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
+
+        // express all the header and query parameter data as a canonical request string
+<span class="fc" id="L80">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
+                canonicalizedQueryParameters, canonicalizedHeaderNames, canonicalizedHeaders,
+                bodyHash);
+//        System.out.println(&quot;--------- Canonical request --------&quot;);
+//        System.out.println(canonicalRequest);
+//        System.out.println(&quot;------------------------------------&quot;);
+
+        // construct the string to be signed
+<span class="fc" id="L88">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
+                canonicalRequest);
+//        System.out.println(&quot;--------- String to sign -----------&quot;);
+//        System.out.println(stringToSign);
+//        System.out.println(&quot;------------------------------------&quot;);
+
+        // compute the signing key
+<span class="fc" id="L95">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L96">        byte[] kDate = sign(dateStamp, kSecret);</span>
+<span class="fc" id="L97">        byte[] kRegion = sign(regionName, kDate);</span>
+<span class="fc" id="L98">        byte[] kService = sign(serviceName, kRegion);</span>
+<span class="fc" id="L99">        byte[] kSigning = sign(TERMINATOR, kService);</span>
+<span class="fc" id="L100">        byte[] signature = sign(stringToSign, kSigning);</span>
+
+        // form up the authorization parameters for the caller to place in the query
+        // string
+<span class="fc" id="L104">        StringBuilder authString = new StringBuilder();</span>
+
+<span class="fc" id="L106">        authString.append(&quot;X-Amz-Algorithm=&quot; + queryParameters.get(&quot;X-Amz-Algorithm&quot;));</span>
+<span class="fc" id="L107">        authString.append(&quot;&amp;X-Amz-Credential=&quot; + queryParameters.get(&quot;X-Amz-Credential&quot;));</span>
+<span class="fc" id="L108">        authString.append(&quot;&amp;X-Amz-Date=&quot; + queryParameters.get(&quot;X-Amz-Date&quot;));</span>
+<span class="fc" id="L109">        authString.append(&quot;&amp;X-Amz-Expires=&quot; + queryParameters.get(&quot;X-Amz-Expires&quot;));</span>
+<span class="fc" id="L110">        authString.append(&quot;&amp;X-Amz-SignedHeaders=&quot; + queryParameters.get(&quot;X-Amz-SignedHeaders&quot;));</span>
+<span class="fc" id="L111">        authString.append(&quot;&amp;X-Amz-Signature=&quot; + Util.toHex(signature));</span>
+
+<span class="fc" id="L113">        return authString.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

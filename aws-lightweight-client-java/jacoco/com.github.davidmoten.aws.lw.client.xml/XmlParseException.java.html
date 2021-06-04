@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlParseException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.xml</a> &gt; <span class="el_source">XmlParseException.java</span></div><h1>XmlParseException.java</h1><pre class="source lang-java linenums">/* 
+ * The NanoXML 2 Lite licence blurb is included here. The classes have been 
+ * completely butchered but the core xml parsing routines are thanks to 
+ * the NanoXML authors.
+ *  
+ **/
+
+/* XMLParseException.java
+ *
+ * $Revision: 1.4 $
+ * $Date: 2002/03/24 10:27:59 $
+ * $Name: RELEASE_2_2_1 $
+ *
+ * This file is part of NanoXML 2 Lite.
+ * Copyright (C) 2000-2002 Marc De Scheemaecker, All Rights Reserved.
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the
+ * use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software in
+ *     a product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ *
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ *
+ *  3. This notice may not be removed or altered from any source distribution.
+ *****************************************************************************/
+
+
+package com.github.davidmoten.aws.lw.client.xml;
+
+/**
+ * An XMLParseException is thrown when an error occures while parsing an XML
+ * string.
+ * &lt;P&gt;
+ * $Revision: 1.4 $&lt;BR&gt;
+ * $Date: 2002/03/24 10:27:59 $&lt;P&gt;
+ *
+ * @see com.github.davidmoten.aws.lw.client.xml.XmlElement
+ *
+ * @author Marc De Scheemaecker
+ * @version $Name: RELEASE_2_2_1 $, $Revision: 1.4 $
+ */
+public class XmlParseException
+    extends RuntimeException
+{
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2719032602966457493L;
+
+
+    /**
+     * Indicates that no line number has been associated with this exception.
+     */
+    public static final int NO_LINE = -1;
+
+
+    /**
+     * The line number in the source code where the error occurred, or
+     * &lt;code&gt;NO_LINE&lt;/code&gt; if the line number is unknown.
+     *
+     * &lt;dl&gt;&lt;dt&gt;&lt;b&gt;Invariants:&lt;/b&gt;&lt;/dt&gt;&lt;dd&gt;
+     * &lt;ul&gt;&lt;li&gt;&lt;code&gt;lineNumber &amp;gt 0 || lineNumber == NO_LINE&lt;/code&gt;
+     * &lt;/ul&gt;&lt;/dd&gt;&lt;/dl&gt;
+     */
+    private int lineNumber;
+
+    /**
+     * Creates an exception.
+     *
+     * @param name    The name of the element where the error is located.
+     * @param lineNumber  The number of the line in the input.
+     * @param message A message describing what went wrong.
+     *
+     * &lt;/dl&gt;&lt;dl&gt;&lt;dt&gt;&lt;b&gt;Preconditions:&lt;/b&gt;&lt;/dt&gt;&lt;dd&gt;
+     * &lt;ul&gt;&lt;li&gt;&lt;code&gt;message != null&lt;/code&gt;
+     *     &lt;li&gt;&lt;code&gt;lineNumber &amp;gt; 0&lt;/code&gt;
+     * &lt;/ul&gt;&lt;/dd&gt;&lt;/dl&gt;
+     *
+     * &lt;dl&gt;&lt;dt&gt;&lt;b&gt;Postconditions:&lt;/b&gt;&lt;/dt&gt;&lt;dd&gt;
+     * &lt;ul&gt;&lt;li&gt;getLineNumber() =&gt; lineNr
+     * &lt;/ul&gt;&lt;/dd&gt;&lt;/dl&gt;&lt;dl&gt;
+     */
+    public XmlParseException(String name,
+                             int    lineNumber,
+                             String message)
+    {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        super(&quot;Problem parsing &quot;</span>
+              + ((name == null) ? &quot;the XML definition&quot;
+                                : (&quot;a &quot; + name + &quot; element&quot;))
+              + &quot; at line &quot; + lineNumber + &quot;: &quot; + message);
+<span class="fc" id="L101">        this.lineNumber = lineNumber;</span>
+<span class="fc" id="L102">    }</span>
+
+
+    /**
+     * Where the error occurred, or &lt;code&gt;NO_LINE&lt;/code&gt; if the line number is
+     * unknown.
+     *
+     */
+    public int lineNumber()
+    {
+<span class="nc" id="L112">        return this.lineNumber;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Request.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">Request.java</span></div><h1>Request.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+import com.github.davidmoten.aws.lw.client.internal.util.Util;
+import com.github.davidmoten.aws.lw.client.xml.XmlElement;
+
+public final class Request {
+
+    private final Client client;
+    private String regionName;
+    private String url;
+<span class="fc" id="L22">    private HttpMethod method = HttpMethod.GET;</span>
+<span class="fc" id="L23">    private final Map&lt;String, List&lt;String&gt;&gt; headers = new HashMap&lt;&gt;();</span>
+    private byte[] requestBody;
+    private int connectTimeoutMs;
+    private int readTimeoutMs;
+<span class="fc" id="L27">    private int attributeNumber = 1;</span>
+<span class="fc" id="L28">    private String attributePrefix = &quot;Attribute&quot;;</span>
+    private String[] pathSegments;
+<span class="fc" id="L30">    private final List&lt;NameValue&gt; queries = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L32">    Request(Client client, String url, String... pathSegments) {</span>
+<span class="fc" id="L33">        this.client = client;</span>
+<span class="fc" id="L34">        this.url = url;</span>
+<span class="fc" id="L35">        this.pathSegments = pathSegments;</span>
+<span class="fc" id="L36">        this.regionName = client.regionName();</span>
+<span class="fc" id="L37">        this.connectTimeoutMs = client.connectTimeoutMs();</span>
+<span class="fc" id="L38">        this.readTimeoutMs = client.readTimeoutMs();</span>
+<span class="fc" id="L39">    }</span>
+
+    public Request method(HttpMethod method) {
+<span class="fc" id="L42">        Preconditions.checkNotNull(method);</span>
+<span class="fc" id="L43">        this.method = method;</span>
+<span class="fc" id="L44">        return this;</span>
+    }
+
+    public Request query(String name, String value) {
+<span class="fc" id="L48">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L49">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L50">        queries.add(new NameValue(name, value));</span>
+<span class="fc" id="L51">        return this;</span>
+    }
+
+    public Request attributePrefix(String attributePrefix) {
+<span class="fc" id="L55">        this.attributePrefix = attributePrefix;</span>
+<span class="fc" id="L56">        this.attributeNumber = 1;</span>
+<span class="fc" id="L57">        return this;</span>
+    }
+
+    public Request attribute(String name, String value) {
+<span class="fc" id="L61">        int i = attributeNumber;</span>
+<span class="fc" id="L62">        attributeNumber++;</span>
+<span class="fc" id="L63">        return query(attributePrefix + &quot;.&quot; + i + &quot;.Name&quot;, name) //</span>
+<span class="fc" id="L64">                .query(attributePrefix + &quot;.&quot; + i + &quot;.Value&quot;, value);</span>
+    }
+
+    public Request header(String name, String value) {
+<span class="fc" id="L68">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L69">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L70">        RequestHelper.put(headers, name, value);</span>
+<span class="fc" id="L71">        return this;</span>
+    }
+
+    /**
+     * Adds the header {@code x-amz-meta-KEY:value}. {@code KEY} is obtained from
+     * {@code key} by converting to lower-case (headers are case-insensitive) and
+     * only retaining alphabetical and digit characters.
+     * 
+     * @param key   metadata key
+     * @param value metadata value
+     * @return request builder
+     */
+    public Request metadata(String key, String value) {
+<span class="fc" id="L84">        Preconditions.checkNotNull(key);</span>
+<span class="fc" id="L85">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L86">        return header(&quot;x-amz-meta-&quot; + Util.canonicalMetadataKey(key), value);</span>
+    }
+
+    public Request requestBody(byte[] requestBody) {
+<span class="fc" id="L90">        Preconditions.checkNotNull(requestBody);</span>
+<span class="fc" id="L91">        this.requestBody = requestBody;</span>
+<span class="fc" id="L92">        return this;</span>
+    }
+
+    public Request requestBody(String requestBody) {
+<span class="fc" id="L96">        Preconditions.checkNotNull(requestBody);</span>
+<span class="fc" id="L97">        return requestBody(requestBody.getBytes(StandardCharsets.UTF_8));</span>
+    }
+
+    public Request regionName(String regionName) {
+<span class="fc" id="L101">        Preconditions.checkNotNull(regionName);</span>
+<span class="fc" id="L102">        this.regionName = regionName;</span>
+<span class="fc" id="L103">        return this;</span>
+    }
+
+    public Request connectTimeout(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0);</span>
+<span class="fc" id="L108">        this.connectTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L109">        return this;</span>
+    }
+
+    public Request readTimeout(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0);</span>
+<span class="fc" id="L114">        this.readTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L115">        return this;</span>
+    }
+
+    /**
+     * Opens a connection and makes the request. This method returns all the
+     * response information including headers, status code, request body. If an
+     * error status code is encountered (outside 200-299) then an exception is
+     * &lt;b&gt;not&lt;/b&gt; thrown (unlike the other methods .response*).
+     * 
+     * @return all response information
+     */
+    public Response response() {
+<span class="fc" id="L127">        String u = calculateUrl(url, client.serviceName(), regionName, queries,</span>
+<span class="fc" id="L128">                Arrays.asList(pathSegments));</span>
+<span class="fc" id="L129">        return RequestHelper.request(client.clock(), client.httpClient(), u, method.toString(),</span>
+<span class="fc" id="L130">                RequestHelper.combineHeaders(headers), requestBody, client.serviceName(),</span>
+<span class="fc" id="L131">                regionName, client.credentials(), connectTimeoutMs, readTimeoutMs);</span>
+    }
+
+    private static String calculateUrl(String url, String serviceName, String regionName,
+            List&lt;NameValue&gt; queries, List&lt;String&gt; pathSegments) {
+<span class="fc" id="L136">        String u = url;</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (u == null) {</span>
+<span class="fc" id="L138">            u = &quot;https://&quot; //</span>
+                    + serviceName //
+                    + &quot;.&quot; //
+                    + regionName //
+                    + &quot;.amazonaws.com/&quot; //
+                    + pathSegments //
+<span class="fc" id="L144">                            .stream() //</span>
+<span class="fc" id="L145">                            .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) //</span>
+<span class="fc" id="L146">                            .collect(Collectors.joining(&quot;/&quot;));</span>
+        }
+        // add queries
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (NameValue nv : queries) {</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (!u.contains(&quot;?&quot;)) {</span>
+<span class="fc" id="L151">                u += &quot;?&quot;;</span>
+            }
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (!u.endsWith(&quot;?&quot;)) {</span>
+<span class="fc" id="L154">                u += &quot;&amp;&quot;;</span>
+            }
+<span class="fc" id="L156">            u += Util.urlEncode(nv.name, false) + &quot;=&quot; + Util.urlEncode(nv.value, false);</span>
+<span class="fc" id="L157">        }</span>
+<span class="fc" id="L158">        return u;</span>
+    }
+
+    public byte[] responseAsBytes() {
+<span class="fc" id="L162">        Response r = response();</span>
+<span class="fc" id="L163">        Optional&lt;? extends RuntimeException&gt; exception = client.exceptionFactory().create(r);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        if (!exception.isPresent()) {</span>
+<span class="fc" id="L165">            return r.content();</span>
+        } else {
+<span class="fc" id="L167">            throw exception.get();</span>
+        }
+    }
+
+    public void execute() {
+<span class="fc" id="L172">        responseAsBytes();</span>
+<span class="fc" id="L173">    }</span>
+
+    public String responseAsUtf8() {
+<span class="fc" id="L176">        return new String(responseAsBytes(), StandardCharsets.UTF_8);</span>
+    }
+
+    public XmlElement responseAsXml() {
+<span class="fc" id="L180">        return XmlElement.parse(responseAsUtf8());</span>
+    }
+
+    public String presignedUrl(long expiryDuration, TimeUnit unit) {
+<span class="fc" id="L184">        String u = calculateUrl(url, client.serviceName(), regionName, queries,</span>
+<span class="fc" id="L185">                Arrays.asList(pathSegments));</span>
+<span class="fc" id="L186">        return RequestHelper.presignedUrl(client.clock(), u, method.toString(),</span>
+<span class="fc" id="L187">                RequestHelper.combineHeaders(headers), requestBody, client.serviceName(),</span>
+<span class="fc" id="L188">                regionName, client.credentials(), connectTimeoutMs, readTimeoutMs,</span>
+<span class="fc" id="L189">                unit.toSeconds(expiryDuration));</span>
+    }
+
+    // VisibleForTesting
+    static String trimAndRemoveLeadingAndTrailingSlashes(String s) {
+<span class="fc" id="L194">        Preconditions.checkNotNull(s);</span>
+<span class="fc" id="L195">        s = s.trim();</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (s.startsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L197">            s = s.substring(1);</span>
+        }
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (s.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L200">            s = s.substring(0, s.length() - 1);</span>
+        }
+<span class="fc" id="L202">        return s;</span>
+    }
+
+    private static final class NameValue {
+        final String name;
+        final String value;
+
+<span class="fc" id="L209">        NameValue(String name, String value) {</span>
+<span class="fc" id="L210">            this.name = name;</span>
+<span class="fc" id="L211">            this.value = value;</span>
+<span class="fc" id="L212">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

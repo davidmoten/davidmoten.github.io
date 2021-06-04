@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequestHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">RequestHelper.java</span></div><h1>RequestHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.aws.lw.client.internal.Clock;
+import com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerBase;
+import com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerForAuthorizationHeader;
+import com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerForQueryParameterAuth;
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+import com.github.davidmoten.aws.lw.client.internal.util.Util;
+
+final class RequestHelper {
+
+    private RequestHelper() {
+        // prevent instantiation
+    }
+
+    static void put(Map&lt;String, List&lt;String&gt;&gt; map, String name, String value) {
+<span class="fc" id="L27">        Preconditions.checkNotNull(map);</span>
+<span class="fc" id="L28">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L29">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L30">        List&lt;String&gt; list = map.get(name);</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        if (list == null) {</span>
+<span class="fc" id="L32">            list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">            map.put(name, list);</span>
+        }
+<span class="fc" id="L35">        list.add(value);</span>
+<span class="fc" id="L36">    }</span>
+
+    static Map&lt;String, String&gt; combineHeaders(Map&lt;String, List&lt;String&gt;&gt; headers) {
+<span class="fc" id="L39">        Preconditions.checkNotNull(headers);</span>
+<span class="fc" id="L40">        return headers.entrySet().stream().collect(Collectors.toMap(x -&gt; x.getKey(),</span>
+<span class="fc" id="L41">                x -&gt; x.getValue().stream().collect(Collectors.joining(&quot;,&quot;))));</span>
+    }
+
+    static String presignedUrl(Clock clock, String url, String method, Map&lt;String, String&gt; headers,
+            byte[] requestBody, String serviceName, String regionName, Credentials credentials,
+            int connectTimeoutMs, int readTimeoutMs, long expirySeconds) {
+
+        // the region-specific endpoint to the target object expressed in path style
+<span class="fc" id="L49">        URL endpointUrl = Util.toUrl(url);</span>
+
+<span class="fc" id="L51">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;(headers);</span>
+        final String contentHashString;
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (isEmpty(requestBody)) {</span>
+<span class="fc" id="L54">            contentHashString = Aws4SignerBase.UNSIGNED_PAYLOAD;</span>
+<span class="fc" id="L55">            h.put(&quot;x-amz-content-sha256&quot;, &quot;&quot;);</span>
+        } else {
+            // compute hash of the body content
+<span class="fc" id="L58">            byte[] contentHash = Util.sha256(requestBody);</span>
+<span class="fc" id="L59">            contentHashString = Util.toHex(contentHash);</span>
+<span class="fc" id="L60">            h.put(&quot;content-length&quot;, &quot;&quot; + requestBody.length);</span>
+<span class="fc" id="L61">            h.put(&quot;x-amz-content-sha256&quot;, contentHashString);</span>
+        }
+
+//        if (credentials.sessionToken().isPresent()) {
+//            h.put(&quot;x-amz-security-token&quot;, credentials.sessionToken().get());
+//        }
+
+<span class="fc" id="L68">        List&lt;Parameter&gt; parameters = extractQueryParameters(endpointUrl);</span>
+<span class="fc" id="L69">        Map&lt;String, String&gt; q = parameters.stream()</span>
+<span class="fc" id="L70">                .collect(Collectors.toMap(p -&gt; p.name, p -&gt; p.value));</span>
+        // construct the query parameter string to accompany the url
+
+        // for SignatureV4, the max expiry for a presigned url is 7 days,
+        // expressed in seconds
+<span class="fc" id="L75">        q.put(&quot;X-Amz-Expires&quot;, &quot;&quot; + expirySeconds);</span>
+
+<span class="fc" id="L77">        Aws4SignerForQueryParameterAuth signer = new Aws4SignerForQueryParameterAuth(endpointUrl,</span>
+                method, serviceName, regionName);
+<span class="fc" id="L79">        String authorizationQueryParameters = signer.computeSignature(clock, h, q,</span>
+<span class="fc" id="L80">                contentHashString, credentials.accessKey(), credentials.secretKey());</span>
+
+        // build the presigned url to incorporate the authorization elements as query
+        // parameters
+<span class="fc" id="L84">        String u = endpointUrl.toString();</span>
+        final String presignedUrl;
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (u.contains(&quot;?&quot;)) {</span>
+<span class="fc" id="L87">            presignedUrl = u + &quot;&amp;&quot; + authorizationQueryParameters;</span>
+        } else {
+<span class="fc" id="L89">            presignedUrl = u + &quot;?&quot; + authorizationQueryParameters;</span>
+        }
+<span class="fc" id="L91">        return presignedUrl;</span>
+    }
+
+    static Response request(Clock clock, HttpClient httpClient, String url, String method,
+            Map&lt;String, String&gt; headers, byte[] requestBody, String serviceName, String regionName,
+            Credentials credentials, int connectTimeoutMs, int readTimeoutMs) {
+
+        // the region-specific endpoint to the target object expressed in path style
+<span class="fc" id="L99">        URL endpointUrl = Util.toUrl(url);</span>
+
+<span class="fc" id="L101">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;(headers);</span>
+        final String contentHashString;
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (isEmpty(requestBody)) {</span>
+<span class="fc" id="L104">            contentHashString = Aws4SignerBase.EMPTY_BODY_SHA256;</span>
+        } else {
+            // compute hash of the body content
+<span class="fc" id="L107">            byte[] contentHash = Util.sha256(requestBody);</span>
+<span class="fc" id="L108">            contentHashString = Util.toHex(contentHash);</span>
+<span class="fc" id="L109">            h.put(&quot;content-length&quot;, &quot;&quot; + requestBody.length);</span>
+        }
+<span class="fc" id="L111">        h.put(&quot;x-amz-content-sha256&quot;, contentHashString);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (credentials.sessionToken().isPresent()) {</span>
+<span class="nc" id="L113">            h.put(&quot;x-amz-security-token&quot;, credentials.sessionToken().get());</span>
+        }
+
+<span class="fc" id="L116">        List&lt;Parameter&gt; parameters = extractQueryParameters(endpointUrl);</span>
+<span class="fc" id="L117">        Map&lt;String, String&gt; q = parameters.stream()</span>
+<span class="fc" id="L118">                .collect(Collectors.toMap(p -&gt; p.name, p -&gt; p.value));</span>
+<span class="fc" id="L119">        Aws4SignerForAuthorizationHeader signer = new Aws4SignerForAuthorizationHeader(endpointUrl,</span>
+                method, serviceName, regionName);
+<span class="fc" id="L121">        String authorization = signer.computeSignature(clock, h, q, contentHashString,</span>
+<span class="fc" id="L122">                credentials.accessKey(), credentials.secretKey());</span>
+
+        // place the computed signature into a formatted 'Authorization' header
+        // and call S3
+<span class="fc" id="L126">        h.put(&quot;Authorization&quot;, authorization);</span>
+<span class="fc" id="L127">        return httpClient.request(endpointUrl, method, h, requestBody, connectTimeoutMs,</span>
+                readTimeoutMs);
+    }
+
+    private static List&lt;Parameter&gt; extractQueryParameters(URL endpointUrl) {
+<span class="fc" id="L132">        String query = endpointUrl.getQuery();</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (query == null) {</span>
+<span class="fc" id="L134">            return Collections.emptyList();</span>
+        } else {
+<span class="fc" id="L136">            return extractQueryParameters(query);</span>
+        }
+    }
+
+    private static final char QUERY_PARAMETER_SEPARATOR = '&amp;';
+    private static final char QUERY_PARAMETER_VALUE_SEPARATOR = '=';
+
+    /**
+     * Extract parameters from a query string, preserving encoding.
+     * &lt;p&gt;
+     * We can't use Apache HTTP Client's URLEncodedUtils.parse, mainly because we
+     * don't want to decode names/values.
+     *
+     * @param rawQuery the query to parse
+     * @return The list of parameters, in the order they were found.
+     */
+    // VisibleForTesting
+    static List&lt;Parameter&gt; extractQueryParameters(String rawQuery) {
+<span class="fc" id="L154">        List&lt;Parameter&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L155">        int endIndex = rawQuery.length() - 1;</span>
+<span class="fc" id="L156">        int index = 0;</span>
+<span class="pc bpc" id="L157" title="1 of 4 branches missed.">        while (0 &lt;= index &amp;&amp; index &lt;= endIndex) {</span>
+            /*
+             * Ideally we should first look for '&amp;', then look for '=' before the '&amp;', but
+             * obviously that's not how AWS understand query parsing; see the test
+             * &quot;post-vanilla-query-nonunreserved&quot; in the test suite. A string such as
+             * &quot;?foo&amp;bar=qux&quot; will be understood as one parameter with name &quot;foo&amp;bar&quot; and
+             * value &quot;qux&quot;. Don't ask me why.
+             */
+            String name;
+            String value;
+<span class="fc" id="L167">            int nameValueSeparatorIndex = rawQuery.indexOf(QUERY_PARAMETER_VALUE_SEPARATOR, index);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            if (nameValueSeparatorIndex &lt; 0) {</span>
+                // No value
+<span class="fc" id="L170">                name = rawQuery.substring(index);</span>
+<span class="fc" id="L171">                value = null;</span>
+
+<span class="fc" id="L173">                index = endIndex + 1;</span>
+            } else {
+<span class="fc" id="L175">                int parameterSeparatorIndex = rawQuery.indexOf(QUERY_PARAMETER_SEPARATOR,</span>
+                        nameValueSeparatorIndex);
+<span class="fc bfc" id="L177" title="All 2 branches covered.">                if (parameterSeparatorIndex &lt; 0) {</span>
+<span class="fc" id="L178">                    parameterSeparatorIndex = endIndex + 1;</span>
+                }
+<span class="fc" id="L180">                name = rawQuery.substring(index, nameValueSeparatorIndex);</span>
+<span class="fc" id="L181">                value = rawQuery.substring(nameValueSeparatorIndex + 1, parameterSeparatorIndex);</span>
+
+<span class="fc" id="L183">                index = parameterSeparatorIndex + 1;</span>
+            }
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (value != null) {</span>
+                try {
+<span class="fc" id="L187">                    results.add(new Parameter(URLDecoder.decode(name, &quot;UTF-8&quot;),</span>
+<span class="fc" id="L188">                            URLDecoder.decode(value, &quot;UTF-8&quot;)));</span>
+<span class="nc" id="L189">                } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L190">                    throw new RuntimeException(e);</span>
+<span class="fc" id="L191">                }</span>
+            }
+<span class="fc" id="L193">        }</span>
+<span class="fc" id="L194">        return results;</span>
+    }
+
+    // VisibleForTesting
+    static final class Parameter {
+        final String name;
+        final String value;
+
+<span class="fc" id="L202">        Parameter(String name, String value) {</span>
+<span class="fc" id="L203">            this.name = name;</span>
+<span class="fc" id="L204">            this.value = value;</span>
+<span class="fc" id="L205">        }</span>
+    }
+
+    static boolean isEmpty(byte[] array) {
+<span class="fc bfc" id="L209" title="All 4 branches covered.">        return array == null || array.length == 0;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

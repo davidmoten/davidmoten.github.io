@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>GetS3ObjectSample xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../testapidocs/com/amazonaws/services/s3/sample/GetS3ObjectSample.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.amazonaws.services.s3.sample;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.net.URL;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.HashMap;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.Clock;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerBase;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.auth.Aws4SignerForAuthorizationHeader;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.util.Util;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_javadoccomment"> * Samples showing how to GET an object from Amazon S3 using Signature V4</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_javadoccomment"> * authorization.</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="GetS3ObjectSample" href="../../../../../com/amazonaws/services/s3/sample/GetS3ObjectSample.html#GetS3ObjectSample">GetS3ObjectSample</a> {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>      
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) {
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>          getS3Object(<span class="jxr_string">"amsa-xml-in"</span>, <span class="jxr_string">"ap-southeast-2"</span>, System.getProperty(<span class="jxr_string">"accessKey"</span>), System.getProperty(<span class="jxr_string">"secretKey"</span>));
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      }
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>      
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment">     * Request the content of the object '/ExampleObject.txt' from the given</em>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <em class="jxr_javadoccomment">     * bucket in the given region using virtual hosted-style object addressing.</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> getS3Object(String bucketName, String regionName, String awsAccessKey, String awsSecretKey) {
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>          System.out.println(<span class="jxr_string">"*******************************************************"</span>);
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>          System.out.println(<span class="jxr_string">"*  Executing sample 'GetObjectUsingHostedAddressing'  *"</span>);
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>          System.out.println(<span class="jxr_string">"*******************************************************"</span>);
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <em class="jxr_comment">// the region-specific endpoint to the target object expressed in path style</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          URL endpointUrl = Util.toUrl(<span class="jxr_string">"https://"</span> + bucketName + <span class="jxr_string">".s3.amazonaws.com/driveItem.txt"</span>);
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <em class="jxr_comment">// for a simple GET, we have no body so supply the precomputed 'empty' hash</em>
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          Map&lt;String, String&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;String, String&gt;();
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          headers.put(<span class="jxr_string">"x-amz-content-sha256"</span>, Aws4SignerBase.EMPTY_BODY_SHA256);
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>          
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          Aws4SignerForAuthorizationHeader signer = <strong class="jxr_keyword">new</strong> Aws4SignerForAuthorizationHeader(
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>                  endpointUrl, <span class="jxr_string">"GET"</span>, <span class="jxr_string">"s3"</span>, regionName);
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          String authorization = signer.computeSignature(Clock.DEFAULT, headers, 
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>                                                         <strong class="jxr_keyword">null</strong>, <em class="jxr_comment">// no query parameters</em>
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>                                                         Aws4SignerBase.EMPTY_BODY_SHA256, 
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>                                                         awsAccessKey, 
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>                                                         awsSecretKey);
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>                  
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>          <em class="jxr_comment">// place the computed signature into a formatted 'Authorization' header</em>
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <em class="jxr_comment">// and call S3</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          headers.put(<span class="jxr_string">"Authorization"</span>, authorization);
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          String response = HttpUtils.invokeHttpRequest(endpointUrl, <span class="jxr_string">"GET"</span>, headers, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          System.out.println(<span class="jxr_string">"--------- Response content ---------"</span>);
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          System.out.println(response);
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          System.out.println(<span class="jxr_string">"------------------------------------"</span>);
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+</body>
+</html>

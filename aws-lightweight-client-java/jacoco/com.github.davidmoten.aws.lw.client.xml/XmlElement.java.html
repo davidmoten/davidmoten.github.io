@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlElement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.xml</a> &gt; <span class="el_source">XmlElement.java</span></div><h1>XmlElement.java</h1><pre class="source lang-java linenums">/* XMLElement.java
+ *
+ * $Revision: 1.4 $
+ * $Date: 2002/03/24 10:27:59 $
+ * $Name: RELEASE_2_2_1 $
+ *
+ * This file is part of NanoXML 2 Lite.
+ * Copyright (C) 2000-2002 Marc De Scheemaecker, All Rights Reserved.
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the
+ * use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software in
+ *     a product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ *
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ *
+ *  3. This notice may not be removed or altered from any source distribution.
+ *****************************************************************************/
+
+// ALTERED greatly by Dave Moten May 2021
+
+package com.github.davidmoten.aws.lw.client.xml;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+
+/* 
+ * The NanoXML 2 Lite licence blurb is included here. The class has been 
+ * completely butchered but the core xml parsing routines are thanks to 
+ * the NanoXML authors.
+ *  
+ **/
+
+/* XmlElement.java
+*
+* $Revision: 1.4 $
+* $Date: 2002/03/24 10:27:59 $
+* $Name: RELEASE_2_2_1 $
+*
+* This file is part of NanoXML 2 Lite.
+* Copyright (C) 2000-2002 Marc De Scheemaecker, All Rights Reserved.
+*
+* This software is provided 'as-is', without any express or implied warranty.
+* In no event will the authors be held liable for any damages arising from the
+* use of this software.
+*
+* Permission is granted to anyone to use this software for any purpose,
+* including commercial applications, and to alter it and redistribute it
+* freely, subject to the following restrictions:
+*
+*  1. The origin of this software must not be misrepresented; you must not
+*     claim that you wrote the original software. If you use this software in
+*     a product, an acknowledgment in the product documentation would be
+*     appreciated but is not required.
+*
+*  2. Altered source versions must be plainly marked as such, and must not be
+*     misrepresented as being the original software.
+*
+*  3. This notice may not be removed or altered from any source distribution.
+*****************************************************************************/
+
+public final class XmlElement {
+
+    private List&lt;XmlElement&gt; children;
+    private Map&lt;String, String&gt; attributes;
+    private String name;
+
+    /**
+     * The #PCDATA content of the object. null if no #PCDATA, can be empty string
+     */
+    private String content;
+
+    private Map&lt;String, char[]&gt; entities;
+
+    /**
+     * The line number where the element starts.
+     *
+     */
+    private int lineNr;
+
+    /**
+     * &lt;code&gt;true&lt;/code&gt; if the leading and trailing whitespace of #PCDATA sections
+     * have to be ignored.
+     */
+    private boolean ignoreLeadingAndTrailingWhitespace;
+
+    /**
+     * Character read too much. This character provides push-back functionality to
+     * the input reader without having to use a PushbackReader. If there is no such
+     * character, this field is '\0'.
+     */
+    private char charReadTooMuch;
+
+    /**
+     * The reader provided by the caller of the parse method.
+     */
+    private Reader reader;
+
+    /**
+     * The current line number in the source content.
+     */
+    private int parserLineNr;
+
+    public XmlElement() {
+<span class="fc" id="L131">        this(new HashMap&lt;&gt;(), true, true);</span>
+<span class="fc" id="L132">    }</span>
+
+    private XmlElement(Map&lt;String, char[]&gt; entities, boolean ignoreLeadingAndTrailingWhitespace,
+<span class="fc" id="L135">            boolean fillBasicConversionTable) {</span>
+<span class="fc" id="L136">        this.ignoreLeadingAndTrailingWhitespace = ignoreLeadingAndTrailingWhitespace;</span>
+<span class="fc" id="L137">        this.name = null;</span>
+<span class="fc" id="L138">        this.content = &quot;&quot;;</span>
+<span class="fc" id="L139">        this.attributes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L140">        this.children = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L141">        this.entities = entities;</span>
+<span class="fc" id="L142">        this.lineNr = 0;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (fillBasicConversionTable) {</span>
+<span class="fc" id="L144">            this.entities.put(&quot;amp&quot;, new char[] {'&amp;'});</span>
+<span class="fc" id="L145">            this.entities.put(&quot;quot&quot;, new char[] {'&quot;'});</span>
+<span class="fc" id="L146">            this.entities.put(&quot;apos&quot;, new char[] {'\''});</span>
+<span class="fc" id="L147">            this.entities.put(&quot;lt&quot;, new char[] {'&lt;'});</span>
+<span class="fc" id="L148">            this.entities.put(&quot;gt&quot;, new char[] {'&gt;'});</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    public void addChild(XmlElement child) {
+<span class="fc" id="L153">        children.add(child);</span>
+<span class="fc" id="L154">    }</span>
+
+    public int countChildren() {
+<span class="fc" id="L157">        return children.size();</span>
+    }
+
+    public boolean hasChildren() {
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        return !children.isEmpty();</span>
+    }
+
+    public Set&lt;String&gt; attributeNames() {
+<span class="fc" id="L165">        return attributes.keySet();</span>
+    }
+
+    public List&lt;XmlElement&gt; children() {
+<span class="fc" id="L169">        return children;</span>
+    }
+
+    public List&lt;XmlElement&gt; childrenWithName(String name) {
+<span class="fc" id="L173">        return children.stream().filter(x -&gt; name.equals(x.name())).collect(Collectors.toList());</span>
+    }
+
+    public XmlElement firstChild() {
+<span class="fc" id="L177">        return children.get(0);</span>
+    }
+
+    public XmlElement child(int index) {
+<span class="fc" id="L181">        return children.get(index);</span>
+    }
+
+    public XmlElement child(String... names) {
+<span class="fc" id="L185">        XmlElement x = this;</span>
+<span class="fc" id="L186">        XmlElement y = null;</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        for (String name : names) {</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            for (XmlElement child : x.children) {</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                if (child.name().equals(name)) {</span>
+<span class="fc" id="L190">                    y = child;</span>
+                }
+<span class="fc" id="L192">            }</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">            if (y == null) {</span>
+<span class="fc" id="L194">                throw new NoSuchElementException(&quot;child not found with name: &quot; + name);</span>
+            } else {
+<span class="fc" id="L196">                x = y;</span>
+            }
+        }
+<span class="fc" id="L199">        return y;</span>
+    }
+
+    public String content(String... names) {
+<span class="fc" id="L203">        return child(names).content();</span>
+    }
+
+    /**
+     * Returns the PCDATA content of the object. If there is no such content,
+     * &lt;CODE&gt;null&lt;/CODE&gt; is returned.
+     */
+    public String content() {
+<span class="fc" id="L211">        return this.content;</span>
+    }
+
+    /**
+     * Returns the line nr in the source data on which the element is found. This
+     * method returns &lt;code&gt;0&lt;/code&gt; there is no associated source data.
+     */
+    public int lineNumber() {
+<span class="fc" id="L219">        return this.lineNr;</span>
+    }
+
+    /**
+     * Returns an attribute of the element. If the attribute doesn't exist,
+     * &lt;code&gt;null&lt;/code&gt; is returned.
+     *
+     * @param name The name of the attribute.
+     */
+    public String attribute(String name) {
+<span class="fc" id="L229">        return this.attribute(name, null);</span>
+    }
+
+    /**
+     * Returns an attribute of the element. If the attribute doesn't exist,
+     * &lt;code&gt;defaultValue&lt;/code&gt; is returned.
+     *
+     * @param name         The name of the attribute.
+     * @param defaultValue Key to use if the attribute is missing.
+     */
+    public String attribute(String name, String defaultValue) {
+<span class="fc" id="L240">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L241">        return this.attributes.getOrDefault(name, defaultValue);</span>
+    }
+
+    /**
+     * Returns the name of the element.
+     */
+    public String name() {
+<span class="fc" id="L248">        return this.name;</span>
+    }
+
+    public static XmlElement parse(Reader reader) throws IOException, XmlParseException {
+<span class="fc" id="L252">        Preconditions.checkNotNull(reader);</span>
+<span class="fc" id="L253">        XmlElement x = new XmlElement();</span>
+<span class="fc" id="L254">        x.parseFromReader(reader);</span>
+<span class="fc" id="L255">        return x;</span>
+    }
+
+    private void parseFromReader(Reader reader) throws IOException, XmlParseException {
+<span class="fc" id="L259">        Preconditions.checkNotNull(reader);</span>
+<span class="fc" id="L260">        this.name = null;</span>
+<span class="fc" id="L261">        this.content = &quot;&quot;;</span>
+<span class="fc" id="L262">        this.attributes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L263">        this.children = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L264">        this.charReadTooMuch = '\0';</span>
+<span class="fc" id="L265">        this.reader = reader;</span>
+<span class="fc" id="L266">        this.parserLineNr = 1;</span>
+
+        for (;;) {
+<span class="fc" id="L269">            char ch = this.scanWhitespace();</span>
+
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if (ch != '&lt;') {</span>
+<span class="fc" id="L272">                throw this.createUnexpectedInputException(&quot;&lt;&quot;);</span>
+            }
+
+<span class="fc" id="L275">            ch = this.readChar();</span>
+
+<span class="fc bfc" id="L277" title="All 4 branches covered.">            if ((ch == '!') || (ch == '?')) {</span>
+<span class="fc" id="L278">                this.skipSpecialTag(0);</span>
+            } else {
+<span class="fc" id="L280">                this.unreadChar(ch);</span>
+<span class="fc" id="L281">                this.scanElement(this);</span>
+<span class="fc" id="L282">                return;</span>
+            }
+<span class="fc" id="L284">        }</span>
+    }
+
+    public static XmlElement parse(String string) throws XmlParseException {
+<span class="fc" id="L288">        Preconditions.checkNotNull(string);</span>
+<span class="fc" id="L289">        return parseUnchecked(new StringReader(string));</span>
+    }
+
+    // VisibleForTesting
+    static XmlElement parseUnchecked(Reader reader) throws XmlParseException {
+        try {
+<span class="fc" id="L295">            return parse(reader);</span>
+<span class="fc" id="L296">        } catch (IOException e) {</span>
+<span class="fc" id="L297">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    private XmlElement createAnotherElement() {
+<span class="fc" id="L302">        return new XmlElement(this.entities, this.ignoreLeadingAndTrailingWhitespace, false);</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L306">        ByteArrayOutputStream out = new ByteArrayOutputStream();</span>
+<span class="fc" id="L307">        try (OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {</span>
+<span class="fc" id="L308">            this.write(writer);</span>
+<span class="nc" id="L309">        } catch (IOException e) {</span>
+<span class="nc" id="L310">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L311">        }</span>
+<span class="fc" id="L312">        return new String(out.toByteArray(), StandardCharsets.UTF_8);</span>
+    }
+
+    public void write(Writer writer) throws IOException {
+<span class="fc" id="L316">        Preconditions.checkNotNull(writer);</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">        if (this.name == null) {</span>
+<span class="nc" id="L318">            writeEncoded(writer, this.content);</span>
+<span class="nc" id="L319">            return;</span>
+        }
+<span class="fc" id="L321">        writer.write('&lt;');</span>
+<span class="fc" id="L322">        writer.write(this.name);</span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">        if (!this.attributes.isEmpty()) {</span>
+<span class="fc" id="L324">            Enumeration&lt;String&gt; en = Collections.enumeration(this.attributes.keySet());</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">            while (en.hasMoreElements()) {</span>
+<span class="fc" id="L326">                writer.write(' ');</span>
+<span class="fc" id="L327">                String key = (String) en.nextElement();</span>
+<span class="fc" id="L328">                String value = (String) this.attributes.get(key);</span>
+<span class="fc" id="L329">                writer.write(key);</span>
+<span class="fc" id="L330">                writer.write('=');</span>
+<span class="fc" id="L331">                writer.write('&quot;');</span>
+<span class="fc" id="L332">                writeEncoded(writer, value);</span>
+<span class="fc" id="L333">                writer.write('&quot;');</span>
+<span class="fc" id="L334">            }</span>
+        }
+<span class="pc bpc" id="L336" title="1 of 4 branches missed.">        if ((this.content != null) &amp;&amp; (this.content.length() &gt; 0)) {</span>
+<span class="fc" id="L337">            writer.write('&gt;');</span>
+<span class="fc" id="L338">            writeEncoded(writer, this.content);</span>
+<span class="fc" id="L339">            writer.write('&lt;');</span>
+<span class="fc" id="L340">            writer.write('/');</span>
+<span class="fc" id="L341">            writer.write(this.name);</span>
+<span class="fc" id="L342">            writer.write('&gt;');</span>
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">        } else if (children.isEmpty()) {</span>
+<span class="nc" id="L344">            writer.write('/');</span>
+<span class="nc" id="L345">            writer.write('&gt;');</span>
+        } else {
+<span class="fc" id="L347">            writer.write('&gt;');</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">            for (XmlElement child : children) {</span>
+<span class="fc" id="L349">                child.write(writer);</span>
+<span class="fc" id="L350">            }</span>
+<span class="fc" id="L351">            writer.write('&lt;');</span>
+<span class="fc" id="L352">            writer.write('/');</span>
+<span class="fc" id="L353">            writer.write(this.name);</span>
+<span class="fc" id="L354">            writer.write('&gt;');</span>
+        }
+<span class="fc" id="L356">    }</span>
+
+    private static void writeEncoded(Writer writer, String str) throws IOException {
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        for (int i = 0; i &lt; str.length(); i += 1) {</span>
+<span class="fc" id="L360">            char ch = str.charAt(i);</span>
+<span class="fc bfc" id="L361" title="All 6 branches covered.">            switch (ch) {</span>
+            case '&lt;':
+<span class="fc" id="L363">                writer.write('&amp;');</span>
+<span class="fc" id="L364">                writer.write('l');</span>
+<span class="fc" id="L365">                writer.write('t');</span>
+<span class="fc" id="L366">                writer.write(';');</span>
+<span class="fc" id="L367">                break;</span>
+            case '&gt;':
+<span class="fc" id="L369">                writer.write('&amp;');</span>
+<span class="fc" id="L370">                writer.write('g');</span>
+<span class="fc" id="L371">                writer.write('t');</span>
+<span class="fc" id="L372">                writer.write(';');</span>
+<span class="fc" id="L373">                break;</span>
+            case '&amp;':
+<span class="fc" id="L375">                writer.write('&amp;');</span>
+<span class="fc" id="L376">                writer.write('a');</span>
+<span class="fc" id="L377">                writer.write('m');</span>
+<span class="fc" id="L378">                writer.write('p');</span>
+<span class="fc" id="L379">                writer.write(';');</span>
+<span class="fc" id="L380">                break;</span>
+            case '&quot;':
+<span class="fc" id="L382">                writer.write('&amp;');</span>
+<span class="fc" id="L383">                writer.write('q');</span>
+<span class="fc" id="L384">                writer.write('u');</span>
+<span class="fc" id="L385">                writer.write('o');</span>
+<span class="fc" id="L386">                writer.write('t');</span>
+<span class="fc" id="L387">                writer.write(';');</span>
+<span class="fc" id="L388">                break;</span>
+            case '\'':
+<span class="fc" id="L390">                writer.write('&amp;');</span>
+<span class="fc" id="L391">                writer.write('a');</span>
+<span class="fc" id="L392">                writer.write('p');</span>
+<span class="fc" id="L393">                writer.write('o');</span>
+<span class="fc" id="L394">                writer.write('s');</span>
+<span class="fc" id="L395">                writer.write(';');</span>
+<span class="fc" id="L396">                break;</span>
+            default:
+<span class="fc" id="L398">                int unicode = (int) ch;</span>
+<span class="fc bfc" id="L399" title="All 4 branches covered.">                if ((unicode &lt; 32) || (unicode &gt; 126)) {</span>
+<span class="fc" id="L400">                    writer.write('&amp;');</span>
+<span class="fc" id="L401">                    writer.write('#');</span>
+<span class="fc" id="L402">                    writer.write('x');</span>
+<span class="fc" id="L403">                    writer.write(Integer.toString(unicode, 16));</span>
+<span class="fc" id="L404">                    writer.write(';');</span>
+                } else {
+<span class="fc" id="L406">                    writer.write(ch);</span>
+                }
+            }
+        }
+<span class="fc" id="L410">    }</span>
+
+    /**
+     * Scans an identifier from the current reader. The scanned identifier is
+     * appended to &lt;code&gt;result&lt;/code&gt;.
+     *
+     * @param result The buffer in which the scanned identifier will be put.
+     */
+    private void scanIdentifier(StringBuilder result) throws IOException {
+        for (;;) {
+<span class="fc" id="L420">            char ch = this.readChar();</span>
+<span class="pc bpc" id="L421" title="7 of 22 branches missed.">            if (((ch &lt; 'A') || (ch &gt; 'Z')) &amp;&amp; ((ch &lt; 'a') || (ch &gt; 'z'))</span>
+                    &amp;&amp; ((ch &lt; '0') || (ch &gt; '9')) &amp;&amp; (ch != '_') &amp;&amp; (ch != '.') &amp;&amp; (ch != ':')
+                    &amp;&amp; (ch != '-') &amp;&amp; (ch &lt;= '\u007E')) {
+<span class="fc" id="L424">                this.unreadChar(ch);</span>
+<span class="fc" id="L425">                return;</span>
+            }
+<span class="fc" id="L427">            result.append(ch);</span>
+<span class="fc" id="L428">        }</span>
+    }
+
+    /**
+     * This method scans an identifier from the current reader.
+     *
+     * @return the next character following the whitespace.
+     */
+    private char scanWhitespace() throws IOException {
+        for (;;) {
+<span class="fc" id="L438">            char ch = this.readChar();</span>
+<span class="fc bfc" id="L439" title="All 2 branches covered.">            switch (ch) {</span>
+            case ' ':
+            case '\t':
+            case '\n':
+            case '\r':
+<span class="fc" id="L444">                break;</span>
+            default:
+<span class="fc" id="L446">                return ch;</span>
+            }
+<span class="fc" id="L448">        }</span>
+    }
+
+    /**
+     * This method scans an identifier from the current reader. The scanned
+     * whitespace is appended to &lt;code&gt;result&lt;/code&gt;.
+     *
+     * @return the next character following the whitespace.
+     */
+    private char scanWhitespace(StringBuilder result) throws IOException {
+        for (;;) {
+<span class="fc" id="L459">            char ch = this.readChar();</span>
+<span class="pc bpc" id="L460" title="1 of 3 branches missed.">            switch (ch) {</span>
+            case ' ':
+            case '\t':
+            case '\n':
+<span class="fc" id="L464">                result.append(ch);</span>
+            case '\r':
+<span class="fc" id="L466">                break;</span>
+            default:
+<span class="fc" id="L468">                return ch;</span>
+            }
+<span class="fc" id="L470">        }</span>
+    }
+
+    /**
+     * This method scans a delimited string from the current reader. The scanned
+     * string without delimiters is appended to &lt;code&gt;string&lt;/code&gt;.
+     */
+    private void scanString(StringBuilder string) throws IOException {
+<span class="fc" id="L478">        char delimiter = this.readChar();</span>
+<span class="pc bpc" id="L479" title="2 of 4 branches missed.">        if ((delimiter != '\'') &amp;&amp; (delimiter != '&quot;')) {</span>
+<span class="nc" id="L480">            throw this.createUnexpectedInputException(&quot;' or \&quot;&quot;);</span>
+        }
+        for (;;) {
+<span class="fc" id="L483">            char ch = this.readChar();</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">            if (ch == delimiter) {</span>
+<span class="fc" id="L485">                return;</span>
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">            } else if (ch == '&amp;') {</span>
+<span class="nc" id="L487">                this.resolveEntity(string);</span>
+            } else {
+<span class="fc" id="L489">                string.append(ch);</span>
+            }
+<span class="fc" id="L491">        }</span>
+    }
+
+    /**
+     * Scans a #PCDATA element. CDATA sections and entities are resolved. The next
+     * &amp;lt; char is skipped. The scanned data is appended to &lt;code&gt;data&lt;/code&gt;.
+     */
+    private void scanPCData(StringBuilder data) throws IOException {
+        for (;;) {
+<span class="fc" id="L500">            char ch = this.readChar();</span>
+<span class="fc bfc" id="L501" title="All 2 branches covered.">            if (ch == '&lt;') {</span>
+<span class="fc" id="L502">                ch = this.readChar();</span>
+<span class="pc bpc" id="L503" title="1 of 2 branches missed.">                if (ch == '!') {</span>
+<span class="nc" id="L504">                    this.checkCDATA(data);</span>
+                } else {
+<span class="fc" id="L506">                    this.unreadChar(ch);</span>
+<span class="fc" id="L507">                    return;</span>
+                }
+<span class="fc bfc" id="L509" title="All 2 branches covered.">            } else if (ch == '&amp;') {</span>
+<span class="fc" id="L510">                this.resolveEntity(data);</span>
+            } else {
+<span class="fc" id="L512">                data.append(ch);</span>
+            }
+<span class="fc" id="L514">        }</span>
+    }
+
+    /**
+     * Scans a special tag and if the tag is a CDATA section, append its content to
+     * &lt;code&gt;buf&lt;/code&gt;.
+     */
+    private boolean checkCDATA(StringBuilder buf) throws IOException {
+<span class="fc" id="L522">        char ch = this.readChar();</span>
+<span class="fc bfc" id="L523" title="All 2 branches covered.">        if (ch != '[') {</span>
+<span class="fc" id="L524">            this.unreadChar(ch);</span>
+<span class="fc" id="L525">            this.skipSpecialTag(0);</span>
+<span class="fc" id="L526">            return false;</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">        } else if (!this.checkLiteral(&quot;CDATA[&quot;)) {</span>
+<span class="nc" id="L528">            this.skipSpecialTag(1); // one [ has already been read</span>
+<span class="nc" id="L529">            return false;</span>
+        } else {
+<span class="fc" id="L531">            int delimiterCharsSkipped = 0;</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">            while (delimiterCharsSkipped &lt; 3) {</span>
+<span class="fc" id="L533">                ch = this.readChar();</span>
+<span class="fc bfc" id="L534" title="All 3 branches covered.">                switch (ch) {</span>
+                case ']':
+<span class="pc bpc" id="L536" title="1 of 2 branches missed.">                    if (delimiterCharsSkipped &lt; 2) {</span>
+<span class="fc" id="L537">                        delimiterCharsSkipped += 1;</span>
+                    } else {
+<span class="nc" id="L539">                        buf.append(']');</span>
+<span class="nc" id="L540">                        buf.append(']');</span>
+<span class="nc" id="L541">                        delimiterCharsSkipped = 0;</span>
+                    }
+<span class="nc" id="L543">                    break;</span>
+                case '&gt;':
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">                    if (delimiterCharsSkipped &lt; 2) {</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">                        for (int i = 0; i &lt; delimiterCharsSkipped; i++) {</span>
+<span class="nc" id="L547">                            buf.append(']');</span>
+                        }
+<span class="nc" id="L549">                        delimiterCharsSkipped = 0;</span>
+<span class="nc" id="L550">                        buf.append('&gt;');</span>
+                    } else {
+<span class="fc" id="L552">                        delimiterCharsSkipped = 3;</span>
+                    }
+<span class="fc" id="L554">                    break;</span>
+                default:
+<span class="pc bpc" id="L556" title="1 of 2 branches missed.">                    for (int i = 0; i &lt; delimiterCharsSkipped; i += 1) {</span>
+<span class="nc" id="L557">                        buf.append(']');</span>
+                    }
+<span class="fc" id="L559">                    buf.append(ch);</span>
+<span class="fc" id="L560">                    delimiterCharsSkipped = 0;</span>
+                }
+            }
+<span class="fc" id="L563">            return true;</span>
+        }
+    }
+
+    /**
+     * Skips a comment.
+     */
+    private void skipComment() throws IOException {
+<span class="fc" id="L571">        int dashesToRead = 2;</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        while (dashesToRead &gt; 0) {</span>
+<span class="fc" id="L573">            char ch = this.readChar();</span>
+<span class="fc bfc" id="L574" title="All 2 branches covered.">            if (ch == '-') {</span>
+<span class="fc" id="L575">                dashesToRead -= 1;</span>
+            } else {
+<span class="fc" id="L577">                dashesToRead = 2;</span>
+            }
+<span class="fc" id="L579">        }</span>
+<span class="pc bpc" id="L580" title="1 of 2 branches missed.">        if (this.readChar() != '&gt;') {</span>
+<span class="nc" id="L581">            throw this.createUnexpectedInputException(&quot;&gt;&quot;);</span>
+        }
+<span class="fc" id="L583">    }</span>
+
+    /**
+     * Skips a special tag or comment.
+     *
+     * @param bracketLevel The number of open square brackets ([) that have already
+     *                     been read.
+     */
+    private void skipSpecialTag(int bracketLevel) throws IOException {
+<span class="fc" id="L592">        int tagLevel = 1; // &lt;</span>
+<span class="fc" id="L593">        char stringDelimiter = '\0';</span>
+<span class="pc bpc" id="L594" title="1 of 2 branches missed.">        if (bracketLevel == 0) {</span>
+<span class="fc" id="L595">            char ch = this.readChar();</span>
+//            System.out.println(&quot;ch=&quot;+ ch + &quot;, rest=&quot;+ readAll());
+//            if (true) throw new RuntimeException();
+<span class="fc bfc" id="L598" title="All 2 branches covered.">            if (ch == '[') {</span>
+<span class="fc" id="L599">                bracketLevel += 1;</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">            } else if (ch == '-') {</span>
+<span class="fc" id="L601">                ch = this.readChar();</span>
+<span class="fc bfc" id="L602" title="All 2 branches covered.">                if (ch == '[') {</span>
+<span class="fc" id="L603">                    bracketLevel += 1;</span>
+<span class="fc bfc" id="L604" title="All 2 branches covered.">                } else if (ch == ']') {</span>
+<span class="fc" id="L605">                    bracketLevel -= 1;</span>
+<span class="fc bfc" id="L606" title="All 2 branches covered.">                } else if (ch == '-') {</span>
+<span class="fc" id="L607">                    this.skipComment();</span>
+<span class="fc" id="L608">                    return;</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L612" title="All 2 branches covered.">        while (tagLevel &gt; 0) {</span>
+<span class="fc" id="L613">            char ch = this.readChar();</span>
+<span class="fc bfc" id="L614" title="All 2 branches covered.">            if (stringDelimiter == '\0') {</span>
+<span class="pc bpc" id="L615" title="1 of 4 branches missed.">                if ((ch == '&quot;') || (ch == '\'')) {</span>
+<span class="fc" id="L616">                    stringDelimiter = ch;</span>
+<span class="fc bfc" id="L617" title="All 2 branches covered.">                } else if (bracketLevel &lt;= 0) {</span>
+<span class="pc bpc" id="L618" title="1 of 2 branches missed.">                    if (ch == '&lt;') {</span>
+<span class="nc" id="L619">                        tagLevel += 1;</span>
+<span class="fc bfc" id="L620" title="All 2 branches covered.">                    } else if (ch == '&gt;') {</span>
+<span class="fc" id="L621">                        tagLevel -= 1;</span>
+                    }
+                }
+<span class="fc bfc" id="L624" title="All 2 branches covered.">                if (ch == '[') {</span>
+<span class="fc" id="L625">                    bracketLevel += 1;</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">                } else if (ch == ']') {</span>
+<span class="fc" id="L627">                    bracketLevel -= 1;</span>
+                }
+            } else {
+<span class="fc bfc" id="L630" title="All 2 branches covered.">                if (ch == stringDelimiter) {</span>
+<span class="fc" id="L631">                    stringDelimiter = '\0';</span>
+                }
+            }
+<span class="fc" id="L634">        }</span>
+<span class="fc" id="L635">    }</span>
+
+    /**
+     * Scans the data for literal text. Scanning stops when a character does not
+     * match or after the complete text has been checked, whichever comes first.
+     *
+     * @param literal the literal to check.
+     */
+    private boolean checkLiteral(String literal) throws IOException {
+<span class="fc" id="L644">        int length = literal.length();</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i += 1) {</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">            if (this.readChar() != literal.charAt(i)) {</span>
+<span class="fc" id="L647">                return false;</span>
+            }
+        }
+<span class="fc" id="L650">        return true;</span>
+    }
+
+    /**
+     * Reads a character from a reader.
+     */
+    private char readChar() throws IOException {
+<span class="fc bfc" id="L657" title="All 2 branches covered.">        if (this.charReadTooMuch != '\0') {</span>
+<span class="fc" id="L658">            char ch = this.charReadTooMuch;</span>
+<span class="fc" id="L659">            this.charReadTooMuch = '\0';</span>
+<span class="fc" id="L660">            return ch;</span>
+        } else {
+<span class="fc" id="L662">            int i = this.reader.read();</span>
+<span class="fc bfc" id="L663" title="All 2 branches covered.">            if (i &lt; 0) {</span>
+<span class="fc" id="L664">                throw this.createExceptionUnexpectedEndOfData();</span>
+<span class="fc bfc" id="L665" title="All 2 branches covered.">            } else if (i == 10) {</span>
+<span class="fc" id="L666">                this.parserLineNr += 1;</span>
+<span class="fc" id="L667">                return '\n';</span>
+            } else {
+<span class="fc" id="L669">                return (char) i;</span>
+            }
+        }
+    }
+
+    private void scanElement(XmlElement elt) throws IOException {
+<span class="fc" id="L675">        StringBuilder buf = new StringBuilder();</span>
+<span class="fc" id="L676">        this.scanIdentifier(buf);</span>
+<span class="fc" id="L677">        String name = buf.toString();</span>
+<span class="fc" id="L678">        elt.name = name;</span>
+<span class="fc" id="L679">        char ch = this.scanWhitespace();</span>
+<span class="fc bfc" id="L680" title="All 4 branches covered.">        while ((ch != '&gt;') &amp;&amp; (ch != '/')) {</span>
+<span class="fc" id="L681">            buf.setLength(0);</span>
+<span class="fc" id="L682">            this.unreadChar(ch);</span>
+<span class="fc" id="L683">            this.scanIdentifier(buf);</span>
+<span class="fc" id="L684">            String key = buf.toString();</span>
+<span class="fc" id="L685">            ch = this.scanWhitespace();</span>
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            if (ch != '=') {</span>
+<span class="fc" id="L687">                throw this.createUnexpectedInputException(&quot;=&quot;);</span>
+            }
+<span class="fc" id="L689">            this.unreadChar(this.scanWhitespace());</span>
+<span class="fc" id="L690">            buf.setLength(0);</span>
+<span class="fc" id="L691">            this.scanString(buf);</span>
+<span class="fc" id="L692">            elt.attributes.put(key, buf.toString());</span>
+<span class="fc" id="L693">            ch = this.scanWhitespace();</span>
+<span class="fc" id="L694">        }</span>
+<span class="fc bfc" id="L695" title="All 2 branches covered.">        if (ch == '/') {</span>
+<span class="fc" id="L696">            ch = this.readChar();</span>
+<span class="fc bfc" id="L697" title="All 2 branches covered.">            if (ch != '&gt;') {</span>
+<span class="fc" id="L698">                throw this.createUnexpectedInputException(&quot;&gt;&quot;);</span>
+            }
+<span class="fc" id="L700">            return;</span>
+        }
+<span class="fc" id="L702">        buf.setLength(0);</span>
+<span class="fc" id="L703">        ch = this.scanWhitespace(buf);</span>
+<span class="fc bfc" id="L704" title="All 2 branches covered.">        if (ch != '&lt;') {</span>
+<span class="fc" id="L705">            this.unreadChar(ch);</span>
+<span class="fc" id="L706">            this.scanPCData(buf);</span>
+        } else {
+            for (;;) {
+<span class="fc" id="L709">                ch = this.readChar();</span>
+<span class="fc bfc" id="L710" title="All 2 branches covered.">                if (ch == '!') {</span>
+<span class="fc bfc" id="L711" title="All 2 branches covered.">                    if (this.checkCDATA(buf)) {</span>
+<span class="fc" id="L712">                        this.scanPCData(buf);</span>
+<span class="fc" id="L713">                        break;</span>
+                    } else {
+<span class="fc" id="L715">                        ch = this.scanWhitespace(buf);</span>
+<span class="pc bpc" id="L716" title="1 of 2 branches missed.">                        if (ch != '&lt;') {</span>
+<span class="fc" id="L717">                            this.unreadChar(ch);</span>
+<span class="fc" id="L718">                            this.scanPCData(buf);</span>
+<span class="fc" id="L719">                            break;</span>
+                        }
+                    }
+                } else {
+<span class="pc bpc" id="L723" title="1 of 4 branches missed.">                    if ((ch != '/') || this.ignoreLeadingAndTrailingWhitespace) {</span>
+<span class="fc" id="L724">                        buf.setLength(0);</span>
+                    }
+<span class="fc bfc" id="L726" title="All 2 branches covered.">                    if (ch == '/') {</span>
+<span class="fc" id="L727">                        this.unreadChar(ch);</span>
+                    }
+                    break;
+                }
+            }
+        }
+<span class="fc bfc" id="L733" title="All 2 branches covered.">        if (buf.length() == 0) {</span>
+<span class="fc bfc" id="L734" title="All 2 branches covered.">            while (ch != '/') {</span>
+<span class="fc bfc" id="L735" title="All 2 branches covered.">                if (ch == '!') {</span>
+<span class="fc" id="L736">                    ch = this.readChar();</span>
+<span class="fc bfc" id="L737" title="All 2 branches covered.">                    if (ch != '-') {</span>
+<span class="fc" id="L738">                        throw this.createUnexpectedInputException(&quot;Comment or Element&quot;);</span>
+                    }
+<span class="fc" id="L740">                    ch = this.readChar();</span>
+<span class="fc bfc" id="L741" title="All 2 branches covered.">                    if (ch != '-') {</span>
+<span class="fc" id="L742">                        throw this.createUnexpectedInputException(&quot;Comment or Element&quot;);</span>
+                    }
+<span class="fc" id="L744">                    this.skipComment();</span>
+                } else {
+<span class="fc" id="L746">                    this.unreadChar(ch);</span>
+<span class="fc" id="L747">                    XmlElement child = this.createAnotherElement();</span>
+<span class="fc" id="L748">                    this.scanElement(child);</span>
+<span class="fc" id="L749">                    elt.addChild(child);</span>
+                }
+<span class="fc" id="L751">                ch = this.scanWhitespace();</span>
+<span class="fc bfc" id="L752" title="All 2 branches covered.">                if (ch != '&lt;') {</span>
+<span class="fc" id="L753">                    throw this.createUnexpectedInputException(&quot;&lt;&quot;);</span>
+                }
+<span class="fc" id="L755">                ch = this.readChar();</span>
+            }
+<span class="fc" id="L757">            this.unreadChar(ch);</span>
+        } else {
+<span class="pc bpc" id="L759" title="1 of 2 branches missed.">            if (this.ignoreLeadingAndTrailingWhitespace) {</span>
+<span class="fc" id="L760">                elt.content = buf.toString().trim();</span>
+            } else {
+<span class="nc" id="L762">                elt.content = buf.toString();</span>
+            }
+        }
+<span class="fc" id="L765">        ch = this.readChar();</span>
+<span class="fc bfc" id="L766" title="All 2 branches covered.">        if (ch != '/') {</span>
+<span class="fc" id="L767">            throw this.createUnexpectedInputException(&quot;/&quot;);</span>
+        }
+<span class="fc" id="L769">        this.unreadChar(this.scanWhitespace());</span>
+
+<span class="fc bfc" id="L771" title="All 2 branches covered.">        if (!this.checkLiteral(name)) {</span>
+<span class="fc" id="L772">            throw this.createUnexpectedInputException(name);</span>
+        }
+<span class="fc bfc" id="L774" title="All 2 branches covered.">        if (this.scanWhitespace() != '&gt;') {</span>
+<span class="fc" id="L775">            throw this.createUnexpectedInputException(&quot;&gt;&quot;);</span>
+        }
+<span class="fc" id="L777">    }</span>
+
+    // for debugging
+//    private String readAll() {
+//        StringBuilder b = new StringBuilder();
+//        int c;
+//        try {
+//            while ((c = reader.read()) != -1) {
+//                b.append((char) c);
+//            }
+//        } catch (IOException e) {
+//            throw new UncheckedIOException(e);
+//        }
+//        return b.toString();
+//    }
+
+    /**
+     * Resolves an entity. The name of the entity is read from the reader. The value
+     * of the entity is appended to &lt;code&gt;buf&lt;/code&gt;.
+     *
+     * @param buf Where to put the entity value.
+     */
+    private void resolveEntity(StringBuilder buf) throws IOException {
+<span class="fc" id="L800">        char ch = '\0';</span>
+<span class="fc" id="L801">        StringBuilder keyBuf = new StringBuilder();</span>
+        for (;;) {
+<span class="fc" id="L803">            ch = this.readChar();</span>
+<span class="fc bfc" id="L804" title="All 2 branches covered.">            if (ch == ';') {</span>
+<span class="fc" id="L805">                break;</span>
+            }
+<span class="fc" id="L807">            keyBuf.append(ch);</span>
+        }
+<span class="fc" id="L809">        String key = keyBuf.toString();</span>
+<span class="fc bfc" id="L810" title="All 2 branches covered.">        if (key.charAt(0) == '#') {</span>
+            try {
+<span class="fc bfc" id="L812" title="All 2 branches covered.">                if (key.charAt(1) == 'x') {</span>
+<span class="fc" id="L813">                    ch = (char) Integer.parseInt(key.substring(2), 16);</span>
+                } else {
+<span class="fc" id="L815">                    ch = (char) Integer.parseInt(key.substring(1), 10);</span>
+                }
+<span class="fc" id="L817">            } catch (NumberFormatException e) {</span>
+<span class="fc" id="L818">                throw this.createExceptionUnknownEntity(key);</span>
+<span class="fc" id="L819">            }</span>
+<span class="fc" id="L820">            buf.append(ch);</span>
+        } else {
+<span class="fc" id="L822">            char[] value = (char[]) this.entities.get(key);</span>
+<span class="fc bfc" id="L823" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L824">                throw this.createExceptionUnknownEntity(key);</span>
+            }
+<span class="fc" id="L826">            buf.append(value);</span>
+        }
+<span class="fc" id="L828">    }</span>
+
+    /**
+     * Pushes a character back to the read-back buffer.
+     *
+     * @param ch The character to push back.
+     */
+    private void unreadChar(char ch) {
+<span class="fc" id="L836">        this.charReadTooMuch = ch;</span>
+<span class="fc" id="L837">    }</span>
+
+    /**
+     * Creates a parse exception for when the end of the data input has been
+     * reached.
+     */
+    private XmlParseException createExceptionUnexpectedEndOfData() {
+<span class="fc" id="L844">        String msg = &quot;Unexpected end of data reached&quot;;</span>
+<span class="fc" id="L845">        return new XmlParseException(this.name(), this.parserLineNr, msg);</span>
+    }
+
+    /**
+     * Creates a parse exception for when the next character read is not the
+     * character that was expected.
+     *
+     * @param charSet The set of characters (in human readable form) that was
+     *                expected.
+     */
+    private XmlParseException createUnexpectedInputException(String charSet) {
+<span class="fc" id="L856">        String msg = &quot;Expected: &quot; + charSet;</span>
+<span class="fc" id="L857">        return new XmlParseException(this.name(), this.parserLineNr, msg);</span>
+    }
+
+    private XmlParseException createExceptionUnknownEntity(String name) {
+<span class="fc" id="L861">        String msg = &quot;Unknown or invalid entity: &amp;&quot; + name + &quot;;&quot;;</span>
+<span class="fc" id="L862">        return new XmlParseException(this.name(), this.parserLineNr, msg);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

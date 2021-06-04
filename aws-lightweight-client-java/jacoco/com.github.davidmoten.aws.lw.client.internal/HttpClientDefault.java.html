@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpClientDefault.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.internal</a> &gt; <span class="el_source">HttpClientDefault.java</span></div><h1>HttpClientDefault.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.internal;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+
+import com.github.davidmoten.aws.lw.client.HttpClient;
+import com.github.davidmoten.aws.lw.client.Response;
+import com.github.davidmoten.aws.lw.client.internal.util.Util;
+
+public final class HttpClientDefault implements HttpClient {
+
+<span class="fc" id="L19">    public static final HttpClientDefault INSTANCE = new HttpClientDefault();</span>
+
+    private HttpClientDefault() {
+    }
+
+    @Override
+    public Response request(URL endpointUrl, String httpMethod, Map&lt;String, String&gt; headers,
+            byte[] requestBody, int connectTimeoutMs, int readTimeoutMs) {
+<span class="fc" id="L27">        HttpURLConnection connection = Util.createHttpConnection(endpointUrl, httpMethod, headers,</span>
+                connectTimeoutMs, readTimeoutMs);
+        try {
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            if (requestBody != null) {</span>
+<span class="fc" id="L31">                OutputStream out = connection.getOutputStream();</span>
+<span class="fc" id="L32">                out.write(requestBody);</span>
+<span class="fc" id="L33">                out.flush();</span>
+            }
+<span class="fc" id="L35">            Map&lt;String, List&lt;String&gt;&gt; responseHeaders = connection.getHeaderFields();</span>
+<span class="fc" id="L36">            int responseCode = connection.getResponseCode();</span>
+<span class="fc" id="L37">            boolean ok = isOk(responseCode);</span>
+            InputStream is;
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            if (ok) {</span>
+<span class="fc" id="L40">                is = connection.getInputStream();</span>
+            } else {
+<span class="fc" id="L42">                is = connection.getErrorStream();</span>
+            }
+            final byte[] bytes;
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if (is == null) {</span>
+<span class="nc" id="L46">                bytes = new byte[0];</span>
+            } else {
+<span class="fc" id="L48">                bytes = readBytes(is);</span>
+            }
+<span class="fc" id="L50">            return new Response(responseHeaders, bytes, responseCode);</span>
+<span class="nc" id="L51">        } catch (IOException e) {</span>
+<span class="nc" id="L52">            throw new UncheckedIOException(e);</span>
+        } finally {
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (connection != null) {</span>
+<span class="fc" id="L55">                connection.disconnect();</span>
+            }
+        }
+    }
+
+    private static boolean isOk(int responseCode) {
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">        return responseCode &gt;= 200 &amp;&amp; responseCode &lt;= 299;</span>
+    }
+
+    private static byte[] readBytes(InputStream in) throws IOException {
+<span class="fc" id="L65">        byte[] buffer = new byte[8192];</span>
+        int n;
+<span class="fc" id="L67">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="fc" id="L69">            bytes.write(buffer, 0, n);</span>
+        }
+<span class="fc" id="L71">        return bytes.toByteArray();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
