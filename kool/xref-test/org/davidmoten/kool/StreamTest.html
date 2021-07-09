@@ -53,7 +53,7 @@
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Lists;
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.guavamini.Sets;
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>  
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/davidmoten/kool/StreamTest.html">StreamTest</a> {
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="StreamTest" href="../../../org/davidmoten/kool/StreamTest.html#StreamTest">StreamTest</a> {
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>      @Test
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMapFilter() {
@@ -1858,24 +1858,48 @@
 <a class="jxr_linenumber" name="L1850" href="#L1850">1850</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testStatisticsForReadme() {
 <a class="jxr_linenumber" name="L1851" href="#L1851">1851</a>         System.out.println(Stream.of(1,2,3,4).statistics(x -&gt; x).get().toString(<span class="jxr_string">""</span>, <span class="jxr_string">"\n"</span>));
 <a class="jxr_linenumber" name="L1852" href="#L1852">1852</a>     }
-<a class="jxr_linenumber" name="L1853" href="#L1853">1853</a> 
-<a class="jxr_linenumber" name="L1854" href="#L1854">1854</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) <strong class="jxr_keyword">throws</strong> MalformedURLException {
-<a class="jxr_linenumber" name="L1855" href="#L1855">1855</a>         URL url = <strong class="jxr_keyword">new</strong> URL(<span class="jxr_string">"https://doesnotexist.zz"</span>);
-<a class="jxr_linenumber" name="L1856" href="#L1856">1856</a>         Stream.using(() -&gt; url.openStream(), in -&gt; Stream.bytes(in))
-<a class="jxr_linenumber" name="L1857" href="#L1857">1857</a>                 .doOnStart(() -&gt; System.out.println(<span class="jxr_string">"connecting at "</span> + System.currentTimeMillis())) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1858" href="#L1858">1858</a>                 .reduce(0, (n, bytes) -&gt; n + bytes.length) <em class="jxr_comment">// count bytes</em>
-<a class="jxr_linenumber" name="L1859" href="#L1859">1859</a>                 .retryWhen() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1860" href="#L1860">1860</a>                 .delays(Stream.of(1L, 2L, 4L), TimeUnit.SECONDS) <em class="jxr_comment">// uses Thread.sleep!</em>
-<a class="jxr_linenumber" name="L1861" href="#L1861">1861</a>                 .build() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1862" href="#L1862">1862</a>                 .doOnError(e -&gt; System.out.println(e.getMessage())) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1863" href="#L1863">1863</a>                 .doOnValue(n -&gt; System.out.println(<span class="jxr_string">"bytes read="</span> + n)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1864" href="#L1864">1864</a>                 .switchOnError(e -&gt; Single.of(-1)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L1865" href="#L1865">1865</a>                 .forEach();
-<a class="jxr_linenumber" name="L1866" href="#L1866">1866</a>     }
-<a class="jxr_linenumber" name="L1867" href="#L1867">1867</a> 
-<a class="jxr_linenumber" name="L1868" href="#L1868">1868</a> }
+<a class="jxr_linenumber" name="L1853" href="#L1853">1853</a>     
+<a class="jxr_linenumber" name="L1854" href="#L1854">1854</a>     @Test
+<a class="jxr_linenumber" name="L1855" href="#L1855">1855</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testJavaStreamEarlyClosure() {
+<a class="jxr_linenumber" name="L1856" href="#L1856">1856</a>         AtomicBoolean disposed = <strong class="jxr_keyword">new</strong> AtomicBoolean();
+<a class="jxr_linenumber" name="L1857" href="#L1857">1857</a>         java.util.stream.Stream&lt;Integer&gt; s = Stream <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1858" href="#L1858">1858</a>                 .of(1, 2, 3) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1859" href="#L1859">1859</a>                 .doOnDispose(() -&gt; disposed.set(<strong class="jxr_keyword">true</strong>)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1860" href="#L1860">1860</a>                 .toStreamJava();
+<a class="jxr_linenumber" name="L1861" href="#L1861">1861</a>         assertEquals(1, (<strong class="jxr_keyword">int</strong>) s.findFirst().get());
+<a class="jxr_linenumber" name="L1862" href="#L1862">1862</a>         s.close();
+<a class="jxr_linenumber" name="L1863" href="#L1863">1863</a>         assertTrue(disposed.get());
+<a class="jxr_linenumber" name="L1864" href="#L1864">1864</a>     }
+<a class="jxr_linenumber" name="L1865" href="#L1865">1865</a>     
+<a class="jxr_linenumber" name="L1866" href="#L1866">1866</a> 	@Test
+<a class="jxr_linenumber" name="L1867" href="#L1867">1867</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDoWithIndex() {
+<a class="jxr_linenumber" name="L1868" href="#L1868">1868</a> 		AtomicInteger count = <strong class="jxr_keyword">new</strong> AtomicInteger();
+<a class="jxr_linenumber" name="L1869" href="#L1869">1869</a> 		List&lt;Long&gt; list = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;();
+<a class="jxr_linenumber" name="L1870" href="#L1870">1870</a> 		Stream.of(1, 1, 1, 1, 1, 1, 1).doWithIndex((i, x) -&gt; {
+<a class="jxr_linenumber" name="L1871" href="#L1871">1871</a> 			<strong class="jxr_keyword">if</strong> (i % 3 == 0)
+<a class="jxr_linenumber" name="L1872" href="#L1872">1872</a> 				count.incrementAndGet();
+<a class="jxr_linenumber" name="L1873" href="#L1873">1873</a> 			list.add(i);
+<a class="jxr_linenumber" name="L1874" href="#L1874">1874</a> 		}).go();
+<a class="jxr_linenumber" name="L1875" href="#L1875">1875</a> 		assertEquals(Lists.newArrayList(0L, 1L, 2L, 3L, 4L, 5L, 6L), list);
+<a class="jxr_linenumber" name="L1876" href="#L1876">1876</a> 		assertEquals(3, count.get());
+<a class="jxr_linenumber" name="L1877" href="#L1877">1877</a> 	}
+<a class="jxr_linenumber" name="L1878" href="#L1878">1878</a> 
+<a class="jxr_linenumber" name="L1879" href="#L1879">1879</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) <strong class="jxr_keyword">throws</strong> MalformedURLException {
+<a class="jxr_linenumber" name="L1880" href="#L1880">1880</a>         URL url = <strong class="jxr_keyword">new</strong> URL(<span class="jxr_string">"https://doesnotexist.zz"</span>);
+<a class="jxr_linenumber" name="L1881" href="#L1881">1881</a>         Stream.using(() -&gt; url.openStream(), in -&gt; Stream.bytes(in))
+<a class="jxr_linenumber" name="L1882" href="#L1882">1882</a>                 .doOnStart(() -&gt; System.out.println(<span class="jxr_string">"connecting at "</span> + System.currentTimeMillis())) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1883" href="#L1883">1883</a>                 .reduce(0, (n, bytes) -&gt; n + bytes.length) <em class="jxr_comment">// count bytes</em>
+<a class="jxr_linenumber" name="L1884" href="#L1884">1884</a>                 .retryWhen() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1885" href="#L1885">1885</a>                 .delays(Stream.of(1L, 2L, 4L), TimeUnit.SECONDS) <em class="jxr_comment">// uses Thread.sleep!</em>
+<a class="jxr_linenumber" name="L1886" href="#L1886">1886</a>                 .build() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1887" href="#L1887">1887</a>                 .doOnError(e -&gt; System.out.println(e.getMessage())) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1888" href="#L1888">1888</a>                 .doOnValue(n -&gt; System.out.println(<span class="jxr_string">"bytes read="</span> + n)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1889" href="#L1889">1889</a>                 .switchOnError(e -&gt; Single.of(-1)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L1890" href="#L1890">1890</a>                 .forEach();
+<a class="jxr_linenumber" name="L1891" href="#L1891">1891</a>     }
+<a class="jxr_linenumber" name="L1892" href="#L1892">1892</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2018&#x2013;2020. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2018&#x2013;2021. All rights reserved.</div>
 </body>
 </html>
