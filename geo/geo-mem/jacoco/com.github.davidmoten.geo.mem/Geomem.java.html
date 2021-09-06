@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Geomem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">geo-mem</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.geo.mem</a> &gt; <span class="el_source">Geomem.java</span></div><h1>Geomem.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.geo.mem;
+
+import static com.google.common.base.Optional.of;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
+import com.github.davidmoten.geo.Base32;
+import com.github.davidmoten.geo.Coverage;
+import com.github.davidmoten.geo.GeoHash;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+
+/**
+ * Provides fast concurrent querying using in memory
+ * {@link ConcurrentSkipListMap}s and geohash to store data with time and
+ * position. Depends on guava library.
+ * 
+ * @param &lt;T&gt;
+ *            The type of the record with position and time.
+ * @param &lt;R&gt;
+ *            The type of the id of the record with position and time.
+ */
+<span class="fc" id="L29">public class Geomem&lt;T, R&gt; {</span>
+
+    /**
+     * Maps from base32 geohash (long) to a map of time in epoch ms to
+     * {@link Info}.
+     */
+<span class="fc" id="L35">    private final Map&lt;Long, SortedMap&lt;Long, Info&lt;T, R&gt;&gt;&gt; mapByGeoHash = Maps.newConcurrentMap();</span>
+
+    /**
+     * Records a mapByGeoHash as above for each id of type R.
+     */
+<span class="fc" id="L40">    private final Map&lt;R, Map&lt;Long, SortedMap&lt;Long, Info&lt;T, R&gt;&gt;&gt;&gt; mapById = Maps.newConcurrentMap();</span>
+    
+<span class="fc" id="L42">    private final Object lock = new Object();</span>
+
+    /**
+     * Returns as an {@link Iterable} the results of a search within the
+     * bounding box given and where start &amp;lt;=time &amp;lt; finish.
+     * 
+     * @param topLeftLat
+     *            latitude of top left point (north west)
+     * @param topLeftLon
+     *            longitude of top left point (north west)
+     * @param bottomRightLat
+     *            latitude of bottom right point (south east)
+     * @param bottomRightLon
+     *            longitude of bottom right point (south east)
+     * @param start
+     *            start time inclusive
+     * @param finish
+     *            finish time exclusive
+     * @return info records
+     */
+    public Iterable&lt;Info&lt;T, R&gt;&gt; find(double topLeftLat, double topLeftLon, double bottomRightLat,
+            double bottomRightLon, long start, long finish) {
+
+<span class="fc" id="L65">        Coverage cover = GeoHash.coverBoundingBox(topLeftLat, topLeftLon, bottomRightLat,</span>
+                bottomRightLon);
+<span class="fc" id="L67">        Iterable&lt;Info&lt;T, R&gt;&gt; it = Collections.emptyList();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (String hash : cover.getHashes()) {</span>
+<span class="fc" id="L69">            it = Iterables.concat(it, find(topLeftLat, topLeftLon, bottomRightLat, bottomRightLon,</span>
+                    start, finish, hash));
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">        return it;</span>
+    }
+
+    /**
+     * Returns an {@link Iterable} of {@link Info} being those records within
+     * the bounding box, start&lt;=time &lt; finish and inside the geoHash withinHash.
+     * 
+     * Filters first on withinHash, then time, then bounding box.
+     * 
+     * @param topLeftLat
+     *            latitude of top left point (north west)
+     * @param topLeftLon
+     *            longitude of top left point (north west)
+     * @param bottomRightLat
+     *            latitude of bottom right point (south east)
+     * @param bottomRightLon
+     *            longitude of bottom right point (south east)
+     * @param start
+     *            start time inclusive
+     * @param finish
+     *            finish time exclusive
+     * @param withinHash
+     *            items returned are within this hash
+     * @return Info records
+     */
+    private Iterable&lt;Info&lt;T, R&gt;&gt; find(final double topLeftLat, final double topLeftLon,
+            final double bottomRightLat, final double bottomRightLon, long start, long finish,
+            String withinHash) {
+
+<span class="fc" id="L101">        Iterable&lt;Info&lt;T, R&gt;&gt; it = find(start, finish, withinHash);</span>
+<span class="fc" id="L102">        return Iterables.filter(it,</span>
+<span class="fc" id="L103">                createRegionFilter(topLeftLat, topLeftLon, bottomRightLat, bottomRightLon));</span>
+    }
+
+    /**
+     * Returns a {@link Predicate} that returns true if and only if a point is
+     * within the bounding box, exclusive of the top (north) and left (west)
+     * edges.
+     * 
+     * @param topLeftLat
+     *            latitude of top left point (north west)
+     * @param topLeftLon
+     *            longitude of top left point (north west)
+     * @param bottomRightLat
+     *            latitude of bottom right point (south east)
+     * @param bottomRightLon
+     *            longitude of bottom right point (south east)
+     * @return predicate
+     */
+    @VisibleForTesting
+    Predicate&lt;Info&lt;T, R&gt;&gt; createRegionFilter(final double topLeftLat, final double topLeftLon,
+            final double bottomRightLat, final double bottomRightLon) {
+<span class="fc" id="L124">        return new Predicate&lt;Info&lt;T, R&gt;&gt;() {</span>
+
+            @Override
+            public boolean apply(Info&lt;T, R&gt; info) {
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">                if (info == null) {</span>
+<span class="nc" id="L129">                    throw new IllegalArgumentException(&quot;info cannot be null&quot;);</span>
+                } else {
+<span class="fc bfc" id="L131" title="All 4 branches covered.">                    return info.lat() &gt;= bottomRightLat &amp;&amp; info.lat() &lt; topLeftLat</span>
+<span class="fc bfc" id="L132" title="All 4 branches covered.">                            &amp;&amp; info.lon() &gt; topLeftLon &amp;&amp; info.lon() &lt;= bottomRightLon;</span>
+                }
+            }
+        };
+    }
+
+    /**
+     * Returns the {@link Info}s where start&lt;=time &lt;finish and position is
+     * inside the geohash withinHash.
+     * 
+     * @param start
+     *            start time inclusive
+     * @param finish
+     *            finish time exclusive
+     * @param withinHash
+     *            returned records are within hash
+     * @return iterable
+     */
+    private Iterable&lt;Info&lt;T, R&gt;&gt; find(long start, long finish, String withinHash) {
+<span class="fc" id="L151">        long key = Base32.decodeBase32(withinHash);</span>
+<span class="fc" id="L152">        SortedMap&lt;Long, Info&lt;T, R&gt;&gt; sortedByTime = mapByGeoHash.get(key);</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (sortedByTime == null)</span>
+<span class="fc" id="L154">            return Collections.emptyList();</span>
+        else
+<span class="fc" id="L156">            return sortedByTime.subMap(start, finish).values();</span>
+    }
+
+    /**
+     * Adds a record to the in-memory store with the given position and time. Id
+     * is same as t.
+     * 
+     * @param lat
+     *            latitiude
+     * @param lon
+     *            longitude
+     * @param time
+     *            time in epoch ms
+     * @param t
+     *            object
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void add(double lat, double lon, long time, T t) {
+<span class="fc" id="L174">        add(lat, lon, time, t, of((R) t));</span>
+<span class="fc" id="L175">    }</span>
+
+    /**
+     * * Adds a record to the in-memory store with the given position and time
+     * and id.
+     * 
+     * @param lat
+     *            latitude
+     * @param lon
+     *            longitude
+     * @param time
+     *            time in epoch ms
+     * @param t
+     *            object
+     * @param id
+     *            identifier
+     */
+    public void add(double lat, double lon, long time, T t, R id) {
+<span class="fc" id="L193">        add(lat, lon, time, t, of(id));</span>
+<span class="fc" id="L194">    }</span>
+
+    /**
+     * Adds a record to the in-memory store with the given position and time and
+     * id.
+     * 
+     * @param lat
+     *            latitude
+     * @param lon
+     *            longitude
+     * @param time
+     *            time in epoch ms
+     * @param t
+     *            object
+     * @param id
+     *            identifier
+     */
+    public void add(double lat, double lon, long time, T t, Optional&lt;R&gt; id) {
+<span class="fc" id="L212">        Info&lt;T, R&gt; info = new Info&lt;T, R&gt;(lat, lon, time, t, id);</span>
+<span class="fc" id="L213">        add(info);</span>
+<span class="fc" id="L214">    }</span>
+
+    /**
+     * Adds a record to the in-memory store with the given position, time and
+     * id.
+     * 
+     * @param info
+     *            info record to add
+     */
+    public void add(Info&lt;T, R&gt; info) {
+<span class="fc" id="L224">        String hash = GeoHash.encodeHash(info.lat(), info.lon());</span>
+
+<span class="fc" id="L226">        addToMap(mapByGeoHash, info, hash);</span>
+<span class="fc" id="L227">        addToMapById(mapById, info, hash);</span>
+<span class="fc" id="L228">    }</span>
+
+    private void addToMapById(Map&lt;R, Map&lt;Long, SortedMap&lt;Long, Info&lt;T, R&gt;&gt;&gt;&gt; mapById,
+            Info&lt;T, R&gt; info, String hash) {
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        if (info.id().isPresent()) {</span>
+<span class="fc" id="L233">            Map&lt;Long, SortedMap&lt;Long, Info&lt;T, R&gt;&gt;&gt; m = mapById.get(info.id().get());</span>
+<span class="fc" id="L234">            synchronized (lock) {</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                if (m == null) {</span>
+<span class="fc" id="L236">                    m = Maps.newConcurrentMap();</span>
+<span class="fc" id="L237">                    mapById.put(info.id().get(), m);</span>
+                }
+<span class="fc" id="L239">            }</span>
+<span class="fc" id="L240">            addToMap(m, info, hash);</span>
+        }
+<span class="fc" id="L242">    }</span>
+
+    private void addToMap(Map&lt;Long, SortedMap&lt;Long, Info&lt;T, R&gt;&gt;&gt; map, Info&lt;T, R&gt; info,
+            String hash) {
+
+        // full hash length is 12 so this will insert 12 entries
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        for (int i = 1; i &lt;= hash.length(); i++) {</span>
+<span class="fc" id="L249">            long key = Base32.decodeBase32(hash.substring(0, i));</span>
+<span class="fc" id="L250">            synchronized (lock) {</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">                if (map.get(key) == null) {</span>
+<span class="fc" id="L252">                    map.put(key, new ConcurrentSkipListMap&lt;Long, Info&lt;T, R&gt;&gt;());</span>
+                }
+<span class="fc" id="L254">            }</span>
+<span class="fc" id="L255">            map.get(key).put(info.time(), info);</span>
+        }
+<span class="fc" id="L257">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
