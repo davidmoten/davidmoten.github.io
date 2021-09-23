@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AwsSdkV2Main xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../testapidocs/com/github/davidmoten/aws/lw/client/AwsSdkV2Main.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.aws.lw.client;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Collection;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> software.amazon.awssdk.awscore.exception.AwsServiceException;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> software.amazon.awssdk.core.exception.SdkClientException;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.regions.Region;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.S3Client;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.CompletedPart;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.GetObjectRequest;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.InvalidObjectStateException;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.services.s3.model.S3Exception;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> software.amazon.awssdk.utils.IoUtils;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="AwsSdkV2Main" href="../../../../../../com/github/davidmoten/aws/lw/client/AwsSdkV2Main.html#AwsSdkV2Main">AwsSdkV2Main</a> {
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>      
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> main(String[] args) <strong class="jxr_keyword">throws</strong> NoSuchKeyException, InvalidObjectStateException, S3Exception, AwsServiceException, SdkClientException, IOException {
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>          S3Client client = S3Client.builder()
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>                  .region(Region.AP_SOUTHEAST_2)
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>                  .credentialsProvider(SystemPropertyCredentialsProvider.create()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>                  .httpClient(UrlConnectionHttpClient.builder().build())
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>                  .build();
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          String r = IoUtils.toUtf8String(client.getObject(GetObjectRequest.builder().bucket(<span class="jxr_string">"amsa-xml-in"</span>).key(<span class="jxr_string">"ExampleObject.txt"</span>).build()));
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          System.out.println(r);
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          CompletedPart part = CompletedPart.builder().eTag(<span class="jxr_string">"et123"</span>).partNumber(1).build();
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          Collection&lt;CompletedPart&gt; parts = Arrays.asList(part);
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          CompletedMultipartUpload m = CompletedMultipartUpload.builder().parts(parts).build();
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <em class="jxr_comment">//        client.putObject(PutObjectRequest.builder().bucket("amsa-xml-in").key("ExampleObject.txt").build(), //</em>
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <em class="jxr_comment">//                RequestBody.fromString("hi there"));</em>
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>          CompleteMultipartUploadRequest request = CompleteMultipartUploadRequest.builder().bucket(<span class="jxr_string">"amsa-xml-in"</span>).key(<span class="jxr_string">"mykey"</span>).uploadId(<span class="jxr_string">"abc"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>                  .multipartUpload(m).build();
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          client.completeMultipartUpload(request);
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>      }
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+</body>
+</html>

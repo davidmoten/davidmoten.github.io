@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Xml.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.xml.builder</a> &gt; <span class="el_source">Xml.java</span></div><h1>Xml.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.xml.builder;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+
+public final class Xml {
+
+    private final String name;
+    private final Xml parent;
+<span class="fc" id="L15">    private Map&lt;String, String&gt; attributes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L16">    private List&lt;Xml&gt; children = new ArrayList&lt;&gt;();</span>
+    private String content;
+<span class="fc" id="L18">    private boolean prelude = true;</span>
+
+    private Xml(String name) {
+<span class="fc" id="L21">        this(name, null);</span>
+<span class="fc" id="L22">    }</span>
+
+<span class="fc" id="L24">    private Xml(String name, Xml parent) {</span>
+<span class="fc" id="L25">        checkPresent(name, &quot;name&quot;);</span>
+<span class="fc" id="L26">        this.name = name;</span>
+<span class="fc" id="L27">        this.parent = parent;</span>
+<span class="fc" id="L28">    }</span>
+
+    public static Xml create(String name) {
+<span class="fc" id="L31">        return new Xml(name);</span>
+    }
+
+    public Xml excludePrelude() {
+<span class="fc" id="L35">        Xml xml = this;</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        while (xml.parent != null) {</span>
+<span class="fc" id="L37">            xml = xml.parent;</span>
+        }
+<span class="fc" id="L39">        xml.prelude = false;</span>
+<span class="fc" id="L40">        return this;</span>
+    }
+
+    public Xml element(String name) {
+<span class="fc" id="L44">        checkPresent(name, &quot;name&quot;);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        Preconditions.checkArgument(content == null,</span>
+                &quot;content cannot be already specified if starting a child element&quot;);
+<span class="fc" id="L47">        Xml xml = new Xml(name, this);</span>
+<span class="fc" id="L48">        this.children.add(xml);</span>
+<span class="fc" id="L49">        return xml;</span>
+    }
+
+    public Xml e(String name) {
+<span class="fc" id="L53">        return element(name);</span>
+    }
+
+    public Xml attribute(String name, String value) {
+<span class="fc" id="L57">        checkPresent(name, &quot;name&quot;);</span>
+<span class="fc" id="L58">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L59">        this.attributes.put(name, value);</span>
+<span class="fc" id="L60">        return this;</span>
+    }
+
+    public Xml a(String name, String value) {
+<span class="fc" id="L64">        return attribute(name, value);</span>
+    }
+
+    public Xml content(String content) {
+<span class="fc" id="L68">        Preconditions.checkArgument(children.isEmpty());</span>
+<span class="fc" id="L69">        this.content = content;</span>
+<span class="fc" id="L70">        return this;</span>
+    }
+
+    public Xml up() {
+<span class="fc" id="L74">        return parent;</span>
+    }
+
+    private static void checkPresent(String s, String name) {
+<span class="fc bfc" id="L78" title="All 4 branches covered.">        if (s == null || s.trim().isEmpty()) {</span>
+<span class="fc" id="L79">            throw new IllegalArgumentException(name + &quot; must be non-null and non-blank&quot;);</span>
+        }
+<span class="fc" id="L81">    }</span>
+
+    private String toString(String indent) {
+<span class="fc" id="L84">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L85" title="All 4 branches covered.">        if (indent.length() == 0 &amp;&amp; prelude) {</span>
+<span class="fc" id="L86">            b.append(&quot;&lt;?xml version=\&quot;1.0\&quot; encoding=\&quot;UTF-8\&quot;?&gt;\n&quot;);</span>
+        }
+        // TODO encode attributes and content for xml
+<span class="fc" id="L89">        String atts = attributes.entrySet().stream().map(</span>
+<span class="fc" id="L90">                entry -&gt; &quot; &quot; + entry.getKey() + &quot;=\&quot;&quot; + encodeXml(entry.getValue(), true) + &quot;\&quot;&quot;)</span>
+<span class="fc" id="L91">                .collect(Collectors.joining());</span>
+<span class="fc" id="L92">        b.append(String.format(&quot;%s&lt;%s%s&gt;&quot;, indent, name, atts));</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (content != null) {</span>
+<span class="fc" id="L94">            b.append(encodeXml(content, false));</span>
+<span class="fc" id="L95">            b.append(String.format(&quot;&lt;/%s&gt;&quot;, name));</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (parent != null) {</span>
+<span class="fc" id="L97">                b.append(&quot;\n&quot;);</span>
+            }
+        } else {
+<span class="fc" id="L100">            b.append(&quot;\n&quot;);</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            for (Xml xml : children) {</span>
+<span class="fc" id="L102">                b.append(xml.toString(indent + &quot;  &quot;));</span>
+<span class="fc" id="L103">            }</span>
+<span class="fc" id="L104">            b.append(String.format(&quot;%s&lt;/%s&gt;&quot;, indent, name));</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            if (parent != null) {</span>
+<span class="fc" id="L106">                b.append(&quot;\n&quot;);</span>
+            }
+        }
+<span class="fc" id="L109">        return b.toString();</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L113">        Xml xml = this;</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        while (xml.parent != null) {</span>
+<span class="fc" id="L115">            xml = xml.parent;</span>
+        }
+<span class="fc" id="L117">        return xml.toString(&quot;&quot;);</span>
+    }
+
+<span class="fc" id="L120">    private static final Map&lt;Integer, String&gt; CONTENT_CHARACTER_MAP = createContentCharacterMap();</span>
+<span class="fc" id="L121">    private static final Map&lt;Integer, String&gt; ATTRIBUTE_CHARACTER_MAP = createAttributeCharacterMap();</span>
+
+    private static Map&lt;Integer, String&gt; createContentCharacterMap() {
+<span class="fc" id="L124">        Map&lt;Integer, String&gt; m = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L125">        m.put((int) '&amp;', &quot;&amp;amp;&quot;);</span>
+<span class="fc" id="L126">        m.put((int) '&gt;', &quot;&amp;gt;&quot;);</span>
+<span class="fc" id="L127">        m.put((int) '&lt;', &quot;&amp;lt;&quot;);</span>
+<span class="fc" id="L128">        return m;</span>
+    }
+
+    private static Map&lt;Integer, String&gt; createAttributeCharacterMap() {
+<span class="fc" id="L132">        Map&lt;Integer, String&gt; m = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L133">        m.put((int) '\'', &quot;&amp;apos;&quot;);</span>
+<span class="fc" id="L134">        m.put((int) '\&quot;', &quot;&amp;quot;&quot;);</span>
+<span class="fc" id="L135">        return m;</span>
+    }
+
+    private static String encodeXml(CharSequence s, boolean isAttribute) {
+<span class="fc" id="L139">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L140">        int len = s.length();</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc" id="L142">            int c = s.charAt(i);</span>
+<span class="fc bfc" id="L143" title="All 6 branches covered.">            if (c &gt;= 0xd800 &amp;&amp; c &lt;= 0xdbff &amp;&amp; i + 1 &lt; len) {</span>
+<span class="fc" id="L144">                c = ((c - 0xd7c0) &lt;&lt; 10) | (s.charAt(++i) &amp; 0x3ff); // UTF16 decode</span>
+            }
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (c &lt; 0x80) { // ASCII range: test most common case first</span>
+<span class="fc bfc" id="L147" title="All 8 branches covered.">                if (c &lt; 0x20 &amp;&amp; (c != '\t' &amp;&amp; c != '\r' &amp;&amp; c != '\n')) {</span>
+                    // Illegal XML character, even encoded. Skip or substitute
+<span class="fc" id="L149">                    b.append(&quot;&amp;#xfffd;&quot;); // Unicode replacement character</span>
+                } else {
+<span class="fc" id="L151">                    String r = CONTENT_CHARACTER_MAP.get(c);</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                    if (r != null) {</span>
+<span class="fc" id="L153">                        b.append(r);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                    } else if (isAttribute) {</span>
+<span class="fc" id="L155">                        String r2 = ATTRIBUTE_CHARACTER_MAP.get(c);</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                        if (r2 != null) {</span>
+<span class="fc" id="L157">                            b.append(r2);</span>
+                        } else {
+<span class="fc" id="L159">                            b.append((char) c);</span>
+                        }
+<span class="fc" id="L161">                    } else {</span>
+<span class="fc" id="L162">                        b.append((char) c);</span>
+                    }
+
+<span class="fc" id="L165">                }</span>
+<span class="fc bfc" id="L166" title="All 8 branches covered.">            } else if ((c &gt;= 0xd800 &amp;&amp; c &lt;= 0xdfff) || c == 0xfffe || c == 0xffff) {</span>
+                // Illegal XML character, even encoded. Skip or substitute
+<span class="fc" id="L168">                b.append(&quot;&amp;#xfffd;&quot;); // Unicode replacement character</span>
+            } else {
+<span class="fc" id="L170">                b.append(&quot;&amp;#x&quot;);</span>
+<span class="fc" id="L171">                b.append(Integer.toHexString(c));</span>
+<span class="fc" id="L172">                b.append(';');</span>
+            }
+        }
+<span class="fc" id="L175">        return b.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

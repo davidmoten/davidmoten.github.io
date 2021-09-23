@@ -8,46 +8,62 @@
 <div id="overview"><a href="../../../../../../../testapidocs/com/github/davidmoten/aws/lw/client/HttpClientTesting.html">View Javadoc</a></div><pre>
 <a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.aws.lw.client;
 <a class="jxr_linenumber" name="L2" href="#L2">2</a>   
-<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.net.URL;
-<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.nio.charset.StandardCharsets;
-<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Collections;
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a> <strong class="jxr_keyword">implements</strong> HttpClient {
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>       
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a> INSTANCE = <strong class="jxr_keyword">new</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a>();
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">public</strong> URL endpointUrl;
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>      <strong class="jxr_keyword">public</strong> String httpMethod;
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>      <strong class="jxr_keyword">public</strong> Map&lt;String, String&gt; headers;
-<a class="jxr_linenumber" name="L15" href="#L15">15</a>      <strong class="jxr_keyword">public</strong> byte[] requestBody;
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> connectTimeoutMs;
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> readTimeoutMs;
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>      @Override
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">public</strong> Response request(URL endpointUrl, String httpMethod, Map&lt;String, String&gt; headers, byte[] requestBody,
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>              <strong class="jxr_keyword">int</strong> connectTimeoutMs, <strong class="jxr_keyword">int</strong> readTimeoutMs) {
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>          <strong class="jxr_keyword">this</strong>.endpointUrl = endpointUrl;
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>          <strong class="jxr_keyword">this</strong>.httpMethod = httpMethod;
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>          <strong class="jxr_keyword">this</strong>.headers = headers;
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>          <strong class="jxr_keyword">this</strong>.requestBody = requestBody;
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>          <strong class="jxr_keyword">this</strong>.connectTimeoutMs = connectTimeoutMs;
-<a class="jxr_linenumber" name="L27" href="#L27">27</a>          <strong class="jxr_keyword">this</strong>.readTimeoutMs = readTimeoutMs;
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> Response(Collections.emptyMap(), <strong class="jxr_keyword">new</strong> byte[0], 200);
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>      }
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>  
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>      @Override
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">public</strong> String toString() {
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">return</strong> <span class="jxr_string">"HttpClientTesting [\n  endpointUrl="</span> + endpointUrl + <span class="jxr_string">"\n  httpMethod="</span> + httpMethod + <span class="jxr_string">"\n  headers="</span> + headers
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>                  + <span class="jxr_string">"\n  requestBody="</span> + <strong class="jxr_keyword">new</strong> String(requestBody, StandardCharsets.UTF_8) + <span class="jxr_string">"\n  connectTimeoutMs="</span>
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>                  + connectTimeoutMs + <span class="jxr_string">"\n  readTimeoutMs="</span> + readTimeoutMs + <span class="jxr_string">"\n]"</span>;
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>      }
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>      <strong class="jxr_keyword">public</strong> String requestBodyString() {
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> String(requestBody, StandardCharsets.UTF_8);
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>      }
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>  }
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.net.URL;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.nio.charset.StandardCharsets;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.Collections;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.util.Util;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a> <strong class="jxr_keyword">implements</strong> HttpClient {
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a> INSTANCE = <strong class="jxr_keyword">new</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a>(false);
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a> THROWING = <strong class="jxr_keyword">new</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a>(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> throwing;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">public</strong> URL endpointUrl;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">public</strong> String httpMethod;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>      <strong class="jxr_keyword">public</strong> Map&lt;String, String&gt; headers;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">public</strong> byte[] requestBody;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> connectTimeoutMs;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> readTimeoutMs;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">private</strong> <a name="HttpClientTesting" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpClientTesting.html#HttpClientTesting">HttpClientTesting</a>(<strong class="jxr_keyword">boolean</strong> throwing) {
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>          <strong class="jxr_keyword">this</strong>.throwing = throwing;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>      }
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      @Override
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">public</strong> ResponseInputStream request(URL endpointUrl, String httpMethod,
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>              Map&lt;String, String&gt; headers, byte[] requestBody, <strong class="jxr_keyword">int</strong> connectTimeoutMs,
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>              <strong class="jxr_keyword">int</strong> readTimeoutMs) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">this</strong>.endpointUrl = endpointUrl;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">this</strong>.httpMethod = httpMethod;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          <strong class="jxr_keyword">this</strong>.headers = headers;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <strong class="jxr_keyword">this</strong>.requestBody = requestBody;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          <strong class="jxr_keyword">this</strong>.connectTimeoutMs = connectTimeoutMs;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>          <strong class="jxr_keyword">this</strong>.readTimeoutMs = readTimeoutMs;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          <strong class="jxr_keyword">if</strong> (throwing) {
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>              <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IOException(<span class="jxr_string">"bingo"</span>);
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>              <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ResponseInputStream(<strong class="jxr_keyword">null</strong>, 200, Collections.emptyMap(),
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>                      Util.EMPTY_INPUT_STREAM);
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          }
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      }
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>      @Override
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>      <strong class="jxr_keyword">public</strong> String toString() {
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          <strong class="jxr_keyword">return</strong> <span class="jxr_string">"HttpClientTesting [\n  endpointUrl="</span> + endpointUrl + <span class="jxr_string">"\n  httpMethod="</span> + httpMethod
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>                  + <span class="jxr_string">"\n  headers="</span> + headers + <span class="jxr_string">"\n  requestBody="</span>
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>                  + <strong class="jxr_keyword">new</strong> String(requestBody, StandardCharsets.UTF_8) + <span class="jxr_string">"\n  connectTimeoutMs="</span>
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>                  + connectTimeoutMs + <span class="jxr_string">"\n  readTimeoutMs="</span> + readTimeoutMs + <span class="jxr_string">"\n]"</span>;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      }
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>      <strong class="jxr_keyword">public</strong> String requestBodyString() {
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> String(requestBody, StandardCharsets.UTF_8);
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      }
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2021. All rights reserved.</div>

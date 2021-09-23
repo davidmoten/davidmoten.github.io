@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.internal.util</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.internal.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -24,36 +26,32 @@ public final class Util {
     }
 
     public static HttpURLConnection createHttpConnection(URL endpointUrl, String httpMethod,
-            Map&lt;String, String&gt; headers, int connectTimeoutMs, int readTimeoutMs) {
-<span class="fc" id="L28">        Preconditions.checkNotNull(headers);</span>
-        try {
-<span class="fc" id="L30">            HttpURLConnection connection = (HttpURLConnection) endpointUrl.openConnection();</span>
-<span class="fc" id="L31">            connection.setRequestMethod(httpMethod);</span>
+            Map&lt;String, String&gt; headers, int connectTimeoutMs, int readTimeoutMs) throws IOException {
+<span class="fc" id="L30">        Preconditions.checkNotNull(headers);</span>
+<span class="fc" id="L31">        HttpURLConnection connection = (HttpURLConnection) endpointUrl.openConnection();</span>
+<span class="fc" id="L32">        connection.setRequestMethod(httpMethod);</span>
 
-<span class="fc bfc" id="L33" title="All 2 branches covered.">            for (Entry&lt;String, String&gt; entry : headers.entrySet()) {</span>
-<span class="fc" id="L34">                connection.setRequestProperty(entry.getKey(), entry.getValue());</span>
-<span class="fc" id="L35">            }</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        for (Entry&lt;String, String&gt; entry : headers.entrySet()) {</span>
+<span class="fc" id="L35">            connection.setRequestProperty(entry.getKey(), entry.getValue());</span>
+<span class="fc" id="L36">        }</span>
 
-<span class="fc" id="L37">            connection.setUseCaches(false);</span>
-<span class="fc" id="L38">            connection.setDoInput(true);</span>
-<span class="fc" id="L39">            connection.setDoOutput(true);</span>
-<span class="fc" id="L40">            connection.setConnectTimeout(connectTimeoutMs);</span>
-<span class="fc" id="L41">            connection.setReadTimeout(readTimeoutMs);</span>
-<span class="fc" id="L42">            return connection;</span>
-<span class="nc" id="L43">        } catch (IOException e) {</span>
-<span class="nc" id="L44">            throw new UncheckedIOException(e);</span>
-        }
+<span class="fc" id="L38">        connection.setUseCaches(false);</span>
+<span class="fc" id="L39">        connection.setDoInput(true);</span>
+<span class="fc" id="L40">        connection.setDoOutput(true);</span>
+<span class="fc" id="L41">        connection.setConnectTimeout(connectTimeoutMs);</span>
+<span class="fc" id="L42">        connection.setReadTimeout(readTimeoutMs);</span>
+<span class="fc" id="L43">        return connection;</span>
     }
 
     public static String canonicalMetadataKey(String meta) {
-<span class="fc" id="L49">        StringBuilder b = new StringBuilder();</span>
-<span class="fc" id="L50">        String s = meta.toLowerCase(Locale.ENGLISH);</span>
-<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (int ch : s.toCharArray()) {</span>
-<span class="pc bpc" id="L52" title="2 of 4 branches missed.">            if (Character.isDigit(ch) || Character.isAlphabetic(ch)) {</span>
-<span class="fc" id="L53">                b.append((char) ch);</span>
+<span class="fc" id="L47">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L48">        String s = meta.toLowerCase(Locale.ENGLISH);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (int ch : s.toCharArray()) {</span>
+<span class="fc bfc" id="L50" title="All 4 branches covered.">            if (Character.isDigit(ch) || Character.isAlphabetic(ch)) {</span>
+<span class="fc" id="L51">                b.append((char) ch);</span>
             }
         }
-<span class="fc" id="L56">        return b.toString();</span>
+<span class="fc" id="L54">        return b.toString();</span>
     }
 
     /**
@@ -64,45 +62,45 @@ public final class Util {
      * @return hex-encoded string.
      */
     public static String toHex(byte[] data) {
-<span class="fc" id="L67">        StringBuilder sb = new StringBuilder(data.length * 2);</span>
-<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (int i = 0; i &lt; data.length; i++) {</span>
-<span class="fc" id="L69">            String hex = Integer.toHexString(data[i]);</span>
-<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (hex.length() == 1) {</span>
+<span class="fc" id="L65">        StringBuilder sb = new StringBuilder(data.length * 2);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (int i = 0; i &lt; data.length; i++) {</span>
+<span class="fc" id="L67">            String hex = Integer.toHexString(data[i]);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (hex.length() == 1) {</span>
                 // Append leading zero.
-<span class="fc" id="L72">                sb.append(&quot;0&quot;);</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">            } else if (hex.length() == 8) {</span>
+<span class="fc" id="L70">                sb.append(&quot;0&quot;);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            } else if (hex.length() == 8) {</span>
                 // Remove ff prefix from negative numbers.
-<span class="fc" id="L75">                hex = hex.substring(6);</span>
+<span class="fc" id="L73">                hex = hex.substring(6);</span>
             }
-<span class="fc" id="L77">            sb.append(hex);</span>
+<span class="fc" id="L75">            sb.append(hex);</span>
         }
-<span class="fc" id="L79">        return sb.toString().toLowerCase(Locale.getDefault());</span>
+<span class="fc" id="L77">        return sb.toString().toLowerCase(Locale.getDefault());</span>
     }
 
     public static URL toUrl(String url) {
         try {
-<span class="fc" id="L84">            return new URL(url);</span>
-<span class="fc" id="L85">        } catch (MalformedURLException e) {</span>
-<span class="fc" id="L86">            throw new RuntimeException(e);</span>
+<span class="fc" id="L82">            return new URL(url);</span>
+<span class="fc" id="L83">        } catch (MalformedURLException e) {</span>
+<span class="fc" id="L84">            throw new RuntimeException(e);</span>
         }
     }
 
     public static String urlEncode(String url, boolean keepPathSlash) {
-<span class="fc" id="L91">        return urlEncode(url, keepPathSlash, &quot;UTF-8&quot;);</span>
+<span class="fc" id="L89">        return urlEncode(url, keepPathSlash, &quot;UTF-8&quot;);</span>
     }
 
     // VisibleForTesting
     static String urlEncode(String url, boolean keepPathSlash, String charset) {
         String encoded;
         try {
-<span class="fc" id="L98">            encoded = URLEncoder.encode(url, charset).replace(&quot;+&quot;, &quot;%20&quot;);</span>
-<span class="fc" id="L99">        } catch (UnsupportedEncodingException e) {</span>
-<span class="fc" id="L100">            throw new RuntimeException(e);</span>
-<span class="fc" id="L101">        }</span>
-<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (keepPathSlash) {</span>
-<span class="fc" id="L103">            return encoded.replace(&quot;%2F&quot;, &quot;/&quot;);</span>
+<span class="fc" id="L96">            encoded = URLEncoder.encode(url, charset).replace(&quot;+&quot;, &quot;%20&quot;);</span>
+<span class="fc" id="L97">        } catch (UnsupportedEncodingException e) {</span>
+<span class="fc" id="L98">            throw new RuntimeException(e);</span>
+<span class="fc" id="L99">        }</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (keepPathSlash) {</span>
+<span class="fc" id="L101">            return encoded.replace(&quot;%2F&quot;, &quot;/&quot;);</span>
         } else {
-<span class="fc" id="L105">            return encoded;</span>
+<span class="fc" id="L103">            return encoded;</span>
         }
     }
 
@@ -110,23 +108,50 @@ public final class Util {
      * Hashes the string contents (assumed to be UTF-8) using the SHA-256 algorithm.
      */
     public static byte[] sha256(String text) {
-<span class="fc" id="L113">        return sha256(text.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L111">        return sha256(text.getBytes(StandardCharsets.UTF_8));</span>
     }
 
     public static byte[] sha256(byte[] data) {
-<span class="fc" id="L117">        return hash(data, &quot;SHA-256&quot;);</span>
+<span class="fc" id="L115">        return hash(data, &quot;SHA-256&quot;);</span>
     }
 
     // VisibleForTesting
     static byte[] hash(byte[] data, String algorithm) {
         try {
-<span class="fc" id="L123">            MessageDigest md = MessageDigest.getInstance(algorithm);</span>
-<span class="fc" id="L124">            md.update(data);</span>
-<span class="fc" id="L125">            return md.digest();</span>
-<span class="fc" id="L126">        } catch (NoSuchAlgorithmException e) {</span>
-<span class="fc" id="L127">            throw new RuntimeException(e);</span>
+<span class="fc" id="L121">            MessageDigest md = MessageDigest.getInstance(algorithm);</span>
+<span class="fc" id="L122">            md.update(data);</span>
+<span class="fc" id="L123">            return md.digest();</span>
+<span class="fc" id="L124">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="fc" id="L125">            throw new RuntimeException(e);</span>
         }
     }
+
+    public static byte[] readBytesAndClose(InputStream in) {
+        try {
+<span class="fc" id="L131">            byte[] buffer = new byte[8192];</span>
+            int n;
+<span class="fc" id="L133">            ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            while ((n = in.read(buffer)) != -1) {</span>
+<span class="fc" id="L135">                bytes.write(buffer, 0, n);</span>
+            }
+<span class="fc" id="L137">            return bytes.toByteArray();</span>
+<span class="fc" id="L138">        } catch (IOException e) {</span>
+<span class="fc" id="L139">            throw new UncheckedIOException(e);</span>
+        } finally {
+            try {
+<span class="fc" id="L142">                in.close();</span>
+<span class="fc" id="L143">            } catch (IOException e) {</span>
+<span class="fc" id="L144">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L145">            }</span>
+        }
+    }
+
+<span class="fc" id="L149">    public static final InputStream EMPTY_INPUT_STREAM = new InputStream() {</span>
+        @Override
+        public int read() throws IOException {
+<span class="fc" id="L152">            return -1;</span>
+        }
+    };
 
 //    /**
 //     * Converts a Hex-encoded data string to the original byte data.

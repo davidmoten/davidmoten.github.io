@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>PutS3ObjectChunkedSample xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../testapidocs/com/github/davidmoten/aws/lw/client/internal/auth/PutS3ObjectChunkedSample.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> com.github.davidmoten.aws.lw.client.internal.auth;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.io.ByteArrayInputStream;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.io.DataOutputStream;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.net.HttpURLConnection;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.net.URL;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> java.util.HashMap;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.aws.lw.client.internal.util.Util;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_javadoccomment"> * Sample code showing how to PUT objects to Amazon S3 using chunked uploading</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_javadoccomment"> * with Signature V4 authorization</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="PutS3ObjectChunkedSample" href="../../../../../../../../com/github/davidmoten/aws/lw/client/internal/auth/PutS3ObjectChunkedSample.html#PutS3ObjectChunkedSample">PutS3ObjectChunkedSample</a> {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>      
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String contentSeed = 
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>              <span class="jxr_string">"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc tortor metus, sagittis eget augue ut,\n"</span>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>              + <span class="jxr_string">"feugiat vehicula risus. Integer tortor mauris, vehicula nec mollis et, consectetur eget tortor. In ut\n"</span>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>              + <span class="jxr_string">"elit sagittis, ultrices est ut, iaculis turpis. In hac habitasse platea dictumst. Donec laoreet tellus\n"</span>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>              + <span class="jxr_string">"at auctor tempus. Praesent nec diam sed urna sollicitudin vehicula eget id est. Vivamus sed laoreet\n"</span>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>              + <span class="jxr_string">"lectus. Aliquam convallis condimentum risus, vitae porta justo venenatis vitae. Phasellus vitae nunc\n"</span>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>              + <span class="jxr_string">"varius, volutpat quam nec, mollis urna. Donec tempus, nisi vitae gravida facilisis, sapien sem malesuada\n"</span>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>              + <span class="jxr_string">"purus, id semper libero ipsum condimentum nulla. Suspendisse vel mi leo. Morbi pellentesque placerat congue.\n"</span>
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>              + <span class="jxr_string">"Nunc sollicitudin nunc diam, nec hendrerit dui commodo sed. Duis dapibus commodo elit, id commodo erat\n"</span>
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>              + <span class="jxr_string">"congue id. Aliquam erat volutpat.\n"</span>;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <em class="jxr_javadoccomment">     * Uploads content to an Amazon S3 object in a series of signed 'chunks' using Signature V4 authorization.</em>
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> putS3ObjectChunked(String bucketName, String regionName, String awsAccessKey, String awsSecretKey) {
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          System.out.println(<span class="jxr_string">"***************************************************"</span>);
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          System.out.println(<span class="jxr_string">"*      Executing sample 'PutS3ObjectChunked'      *"</span>);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          System.out.println(<span class="jxr_string">"***************************************************"</span>);
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>          <em class="jxr_comment">// this sample uses a chunk data length of 64K; this should yield one</em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          <em class="jxr_comment">// 64K chunk, one partial chunk and the final 0 byte payload terminator chunk</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> userDataBlockSize = 64 * 1024;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>          String sampleContent = make65KPayload();
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>          
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>          URL endpointUrl;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>              <strong class="jxr_keyword">if</strong> (regionName.equals(<span class="jxr_string">"us-east-1"</span>)) {
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>                  endpointUrl = Util.toUrl(<span class="jxr_string">"https://s3.amazonaws.com/"</span> + bucketName + <span class="jxr_string">"/ExampleChunkedObject.txt"</span>);
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>              } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>                  endpointUrl = Util.toUrl(<span class="jxr_string">"https://s3-"</span> + regionName + <span class="jxr_string">".amazonaws.com/"</span> + bucketName + <span class="jxr_string">"/ExampleChunkedObject.txt"</span>);
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>              }
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          <em class="jxr_comment">// set the markers indicating we're going to send the upload as a series </em>
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          <em class="jxr_comment">// of chunks:</em>
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          <em class="jxr_comment">//   -- 'x-amz-content-sha256' is the fixed marker indicating chunked</em>
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <em class="jxr_comment">//      upload</em>
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>          <em class="jxr_comment">//   -- 'content-length' becomes the total size in bytes of the upload </em>
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>          <em class="jxr_comment">//      (including chunk headers), </em>
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          <em class="jxr_comment">//   -- 'x-amz-decoded-content-length' is used to transmit the actual </em>
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>          <em class="jxr_comment">//      length of the data payload, less chunk headers</em>
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>          
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>          Map&lt;String, String&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;String, String&gt;();
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>          headers.put(<span class="jxr_string">"x-amz-storage-class"</span>, <span class="jxr_string">"REDUCED_REDUNDANCY"</span>);
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>          headers.put(<span class="jxr_string">"x-amz-content-sha256"</span>, Aws4SignerForChunkedUpload.STREAMING_BODY_SHA256);
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          headers.put(<span class="jxr_string">"content-encoding"</span>, <span class="jxr_string">""</span> + <span class="jxr_string">"aws-chunked"</span>);
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          headers.put(<span class="jxr_string">"x-amz-decoded-content-length"</span>, <span class="jxr_string">""</span> + sampleContent.length());
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          <a name="Aws4SignerForChunkedUpload" href="../../../../../../../../com/github/davidmoten/aws/lw/client/internal/auth/Aws4SignerForChunkedUpload.html#Aws4SignerForChunkedUpload">Aws4SignerForChunkedUpload</a> signer = <strong class="jxr_keyword">new</strong> <a name="Aws4SignerForChunkedUpload" href="../../../../../../../../com/github/davidmoten/aws/lw/client/internal/auth/Aws4SignerForChunkedUpload.html#Aws4SignerForChunkedUpload">Aws4SignerForChunkedUpload</a>(
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>                  endpointUrl, <span class="jxr_string">"PUT"</span>, <span class="jxr_string">"s3"</span>, regionName);
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          <em class="jxr_comment">// how big is the overall request stream going to be once we add the signature </em>
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>          <em class="jxr_comment">// 'headers' to each chunk?</em>
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          <strong class="jxr_keyword">long</strong> totalLength = Aws4SignerForChunkedUpload.calculateChunkedContentLength(sampleContent.length(), userDataBlockSize);
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          headers.put(<span class="jxr_string">"content-length"</span>, <span class="jxr_string">""</span> + totalLength);
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          String authorization = signer.computeSignature(headers, 
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>                                                         <strong class="jxr_keyword">null</strong>, <em class="jxr_comment">// no query parameters</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                                                         Aws4SignerForChunkedUpload.STREAMING_BODY_SHA256, 
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>                                                         awsAccessKey, 
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>                                                         awsSecretKey);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                  
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>          <em class="jxr_comment">// place the computed signature into a formatted 'Authorization' header </em>
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>          <em class="jxr_comment">// and call S3</em>
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          headers.put(<span class="jxr_string">"Authorization"</span>, authorization);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          <em class="jxr_comment">// start consuming the data payload in blocks which we subsequently chunk; this prefixes</em>
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          <em class="jxr_comment">// the data with a 'chunk header' containing signature data from the prior chunk (or header</em>
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          <em class="jxr_comment">// signing, if the first chunk) plus length and other data. Each completed chunk is</em>
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <em class="jxr_comment">// written to the request stream and to complete the upload, we send a final chunk with</em>
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>          <em class="jxr_comment">// a zero-length data payload.</em>
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>          
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>              <em class="jxr_comment">// first set up the connection</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>              HttpURLConnection connection = HttpUtils.createHttpConnection(endpointUrl, <span class="jxr_string">"PUT"</span>, headers);
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>              
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>              <em class="jxr_comment">// get the request stream and start writing the user data as chunks, as outlined</em>
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>              <em class="jxr_comment">// above;</em>
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>              byte[] buffer = <strong class="jxr_keyword">new</strong> byte[userDataBlockSize];
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>              DataOutputStream outputStream = <strong class="jxr_keyword">new</strong> DataOutputStream(connection.getOutputStream());
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>              
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>              <em class="jxr_comment">// get the data stream</em>
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>              ByteArrayInputStream inputStream = <strong class="jxr_keyword">new</strong> ByteArrayInputStream(sampleContent.getBytes(<span class="jxr_string">"UTF-8"</span>));
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>              
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>             <strong class="jxr_keyword">int</strong> bytesRead = 0;
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>             <strong class="jxr_keyword">while</strong> ( (bytesRead = inputStream.read(buffer, 0, buffer.length)) != -1 ) {
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                 <em class="jxr_comment">// process into a chunk</em>
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>                 byte[] chunk = signer.constructSignedChunk(bytesRead, buffer);
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                 
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>                 <em class="jxr_comment">// send the chunk</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                 outputStream.write(chunk);
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>                 outputStream.flush();
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>             }
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>             
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>             <em class="jxr_comment">// last step is to send a signed zero-length chunk to complete the upload</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>             byte[] finalChunk = signer.constructSignedChunk(0, buffer);
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>             outputStream.write(finalChunk);
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>             outputStream.flush();
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>             outputStream.close();
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>             
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>             <em class="jxr_comment">// make the call to Amazon S3</em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>             String response = HttpUtils.executeHttpRequest(connection);
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>             System.out.println(<span class="jxr_string">"--------- Response content ---------"</span>);
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>             System.out.println(response);
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>             System.out.println(<span class="jxr_string">"------------------------------------"</span>);
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>         } <strong class="jxr_keyword">catch</strong> (Exception e) {
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(<span class="jxr_string">"Error when sending chunked upload request. "</span> + e.getMessage(), e);
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         }
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>     }
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> <em class="jxr_javadoccomment">     * Want sample to upload 3 chunks for our selected chunk size of 64K; one</em>
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> <em class="jxr_javadoccomment">     * full size chunk, one partial chunk and then the 0-byte terminator chunk.</em>
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> <em class="jxr_javadoccomment">     * This routine just takes 1K of seed text and turns it into a 65K-or-so</em>
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> <em class="jxr_javadoccomment">     * string for sample use.</em>
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String make65KPayload() {
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         StringBuilder oneKSeed = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">while</strong> ( oneKSeed.length() &lt; 1024 ) {
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>             oneKSeed.append(contentSeed);
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         }
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>         
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>         <em class="jxr_comment">// now scale up to meet/exceed our requirement</em>
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         StringBuilder output = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 66; i++) {
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>             output.append(oneKSeed);
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         }
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         <strong class="jxr_keyword">return</strong> output.toString();
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>     }
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+</body>
+</html>

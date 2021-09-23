@@ -7,13 +7,16 @@ import com.github.davidmoten.aws.lw.client.Credentials;
 @FunctionalInterface
 public interface Environment {
 
-<span class="fc" id="L10">    Environment DEFAULT = EnvironmentDefault.INSTANCE;</span>
-
     String get(String name);
 
     default Credentials credentials() {
-<span class="fc" id="L15">        return new CredentialsImpl(get(&quot;AWS_ACCESS_KEY_ID&quot;), get(&quot;AWS_SECRET_ACCESS_KEY&quot;),</span>
-<span class="fc" id="L16">                Optional.ofNullable(get(&quot;AWS_SESSION_TOKEN&quot;)));</span>
+<span class="fc" id="L13">        return new CredentialsImpl(get(&quot;AWS_ACCESS_KEY_ID&quot;), get(&quot;AWS_SECRET_ACCESS_KEY&quot;),</span>
+<span class="fc" id="L14">                Optional.ofNullable(get(&quot;AWS_SESSION_TOKEN&quot;)));</span>
     }
+
+    static Environment instance() {
+<span class="fc" id="L18">        return EnvironmentDefault.INSTANCE;</span>
+    }
+
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
