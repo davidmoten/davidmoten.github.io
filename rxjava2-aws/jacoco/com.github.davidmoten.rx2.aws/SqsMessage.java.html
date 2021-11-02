@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqsMessage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-aws</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.aws</a> &gt; <span class="el_source">SqsMessage.java</span></div><h1>SqsMessage.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.aws;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.github.davidmoten.guavamini.Preconditions;
+
+public final class SqsMessage {
+
+    private final String messageReceiptHandle;
+    private final byte[] bytes;
+    private final long timestamp;
+    private final Optional&lt;String&gt; s3Id;
+    private final Service service;
+
+<span class="fc" id="L20">    SqsMessage(String messageReceiptHandle, byte[] bytes, long timestamp, Optional&lt;String&gt; s3Id, Service service) {</span>
+<span class="fc" id="L21">        this.messageReceiptHandle = messageReceiptHandle;</span>
+<span class="fc" id="L22">        this.bytes = bytes;</span>
+<span class="fc" id="L23">        this.timestamp = timestamp;</span>
+<span class="fc" id="L24">        this.s3Id = s3Id;</span>
+<span class="fc" id="L25">        this.service = service;</span>
+<span class="fc" id="L26">    }</span>
+    
+    public String messageReceiptHandle() {
+<span class="fc" id="L29">        return messageReceiptHandle;</span>
+    }
+    
+    public Optional&lt;String&gt; s3Id() {
+<span class="fc" id="L33">        return s3Id;</span>
+    }
+
+    public byte[] bytes() {
+<span class="fc" id="L37">        return bytes;</span>
+    }
+
+    public String message() {
+<span class="fc" id="L41">        return new String(bytes(), StandardCharsets.UTF_8);</span>
+    }
+
+    public long lastModifiedTime() {
+<span class="fc" id="L45">        return timestamp;</span>
+    }
+
+    public void deleteMessage() {
+        try {
+<span class="fc" id="L50">            deleteMessage(Client.FROM_SOURCE);</span>
+<span class="fc" id="L51">        } catch (final RuntimeException e) {</span>
+<span class="fc" id="L52">            deleteMessage(Client.FROM_FACTORY);</span>
+<span class="fc" id="L53">        }</span>
+<span class="fc" id="L54">    }</span>
+
+    public void deleteMessage(Client client) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (client == Client.FROM_SOURCE) {</span>
+<span class="fc" id="L58">            deleteMessage(service.s3, service.sqs);</span>
+        } else {
+<span class="fc" id="L60">            deleteMessageUsingFactory(service.s3Factory, service.sqsFactory);</span>
+        }
+<span class="fc" id="L62">    }</span>
+
+    private void deleteMessageUsingFactory(Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory, Callable&lt;AmazonSQS&gt; sqsFactory) {
+<span class="fc" id="L65">        final Optional&lt;AmazonS3&gt; s3 = s3Factory.map(Util::uncheckedCall);</span>
+<span class="fc" id="L66">        AmazonSQS sqs = Util.uncheckedCall(sqsFactory);</span>
+        try {
+<span class="fc" id="L68">            deleteMessage(s3, sqs);</span>
+        } finally {
+<span class="fc" id="L70">            s3.ifPresent(Util::shutdown);</span>
+<span class="fc" id="L71">            Util.shutdown(sqs);</span>
+        }
+<span class="fc" id="L73">    }</span>
+
+    public void deleteMessage(Optional&lt;AmazonS3&gt; s3, AmazonSQS sqs) {
+<span class="fc bfc" id="L76" title="All 4 branches covered.">        Preconditions.checkArgument(!s3.isPresent() || s3Id.isPresent(), &quot;s3Id must be present&quot;);</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (s3Id.isPresent()) {</span>
+<span class="fc" id="L78">            s3.get().deleteObject(service.bucketName.get(), s3Id.get());</span>
+        }
+<span class="fc" id="L80">        sqs.deleteMessage(service.queueUrl, messageReceiptHandle);</span>
+<span class="fc" id="L81">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L85">        return &quot;MessageAndBytes [messageReceiptHandle=&quot; + messageReceiptHandle + &quot;, bytes=&quot; + Arrays.toString(bytes)</span>
+                + &quot;, timestamp=&quot; + timestamp + &quot;, s3Id=&quot; + s3Id + &quot;, bucketName=&quot; + service.bucketName + &quot;, queueName=&quot;
+                + service.queueUrl + &quot;]&quot;;
+    }
+
+<span class="fc" id="L90">    public enum Client {</span>
+<span class="fc" id="L91">        FROM_SOURCE, FROM_FACTORY;</span>
+    }
+
+    static class Service {
+
+        final Callable&lt;AmazonSQS&gt; sqsFactory;
+        final Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory;
+        final Optional&lt;AmazonS3&gt; s3;
+        final AmazonSQS sqs;
+        final String queueUrl;
+        final Optional&lt;String&gt; bucketName;
+
+        Service(Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory, Callable&lt;AmazonSQS&gt; sqsFactory, Optional&lt;AmazonS3&gt; s3,
+<span class="fc" id="L104">                AmazonSQS sqs, String queueUrl, Optional&lt;String&gt; bucketName) {</span>
+<span class="fc" id="L105">            Preconditions.checkNotNull(s3Factory);</span>
+<span class="fc" id="L106">            Preconditions.checkNotNull(sqsFactory);</span>
+<span class="fc" id="L107">            Preconditions.checkNotNull(s3);</span>
+<span class="fc" id="L108">            Preconditions.checkNotNull(sqs);</span>
+<span class="fc" id="L109">            Preconditions.checkNotNull(queueUrl);</span>
+<span class="fc" id="L110">            Preconditions.checkNotNull(bucketName);</span>
+<span class="fc" id="L111">            this.s3Factory = s3Factory;</span>
+<span class="fc" id="L112">            this.sqsFactory = sqsFactory;</span>
+<span class="fc" id="L113">            this.s3 = s3;</span>
+<span class="fc" id="L114">            this.sqs = sqs;</span>
+<span class="fc" id="L115">            this.queueUrl = queueUrl;</span>
+<span class="fc" id="L116">            this.bucketName = bucketName;</span>
+<span class="fc" id="L117">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

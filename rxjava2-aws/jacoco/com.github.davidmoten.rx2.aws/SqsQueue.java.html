@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqsQueue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-aws</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.aws</a> &gt; <span class="el_source">SqsQueue.java</span></div><h1>SqsQueue.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.aws;
+
+import java.util.Optional;
+
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.GetQueueUrlRequest;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+final class SqsQueue {
+
+    private final Optional&lt;String&gt; queueUrl;
+
+    private final Optional&lt;GetQueueUrlRequest&gt; request;
+
+    static SqsQueue fromQueueName(String queueName) {
+<span class="fc" id="L17">        return new SqsQueue(Optional.of(queueName), Optional.empty(), Optional.empty());</span>
+    }
+
+    static SqsQueue fromQueueNameAndOwnerAccountId(String queueName, String ownerAccountId) {
+<span class="fc" id="L21">        return new SqsQueue(Optional.of(queueName), Optional.of(ownerAccountId), Optional.empty());</span>
+    }
+
+    static SqsQueue fromQueueUrl(String queueUrl) {
+<span class="fc" id="L25">        return new SqsQueue(Optional.empty(), Optional.empty(), Optional.of(queueUrl));</span>
+    }
+
+    @VisibleForTesting
+    SqsQueue(Optional&lt;String&gt; queueName, Optional&lt;String&gt; ownerAccountId,
+<span class="fc" id="L30">            Optional&lt;String&gt; queueUrl) {</span>
+<span class="fc" id="L31">        Preconditions.checkNotNull(queueName);</span>
+<span class="fc" id="L32">        Preconditions.checkNotNull(queueUrl);</span>
+<span class="fc" id="L33">        Preconditions.checkNotNull(ownerAccountId);</span>
+<span class="fc bfc" id="L34" title="All 4 branches covered.">        Preconditions.checkArgument(queueUrl.isPresent() || queueName.isPresent());</span>
+<span class="fc bfc" id="L35" title="All 4 branches covered.">        Preconditions.checkArgument(!queueUrl.isPresent() || !queueName.isPresent());</span>
+<span class="fc bfc" id="L36" title="All 4 branches covered.">        Preconditions.checkArgument(queueName.isPresent() || !ownerAccountId.isPresent());</span>
+<span class="fc" id="L37">        this.queueUrl = queueUrl;</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        this.request = queueUrl.isPresent() ? Optional.empty()</span>
+<span class="fc" id="L39">                : Optional.of(createRequest(queueName.get(), ownerAccountId));</span>
+<span class="fc" id="L40">    }</span>
+
+    private static GetQueueUrlRequest createRequest(String queueName,
+            Optional&lt;String&gt; ownerAccountId) {
+<span class="fc" id="L44">        Preconditions.checkNotNull(queueName);</span>
+<span class="fc" id="L45">        GetQueueUrlRequest r = new GetQueueUrlRequest(queueName);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (ownerAccountId.isPresent()) {</span>
+<span class="fc" id="L47">            r = r.withQueueOwnerAWSAccountId(ownerAccountId.get());</span>
+        }
+<span class="fc" id="L49">        return r;</span>
+    }
+
+    public String getQueueUrl(AmazonSQS sqs) {
+<span class="fc" id="L53">        return queueUrl.orElseGet(() -&gt; sqs.getQueueUrl(request.get()).getQueueUrl());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

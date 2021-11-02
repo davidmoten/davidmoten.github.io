@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sqs.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava2-aws</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rx2.aws</a> &gt; <span class="el_source">Sqs.java</span></div><h1>Sqs.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rx2.aws;
+
+import static com.github.davidmoten.rx2.aws.Util.uncheckedCall;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rx2.aws.SqsMessage.Service;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.functions.BiConsumer;
+import io.reactivex.schedulers.Schedulers;
+
+public final class Sqs {
+
+    private static final String HTTPS = &quot;https://&quot;;
+
+    private Sqs() {
+        // prevent instantiation
+    }
+
+    public static SqsBuilder queueName(String queueName) {
+<span class="fc" id="L48">        return new SqsBuilder(SqsQueue.fromQueueName(queueName));</span>
+    }
+
+    public static BuilderWithOwnerAccountId ownerAccountId(String ownerAccountId) {
+<span class="fc" id="L52">        return new BuilderWithOwnerAccountId(ownerAccountId);</span>
+    }
+
+    public static final class BuilderWithOwnerAccountId {
+        private final String ownerAccountId;
+
+<span class="fc" id="L58">        BuilderWithOwnerAccountId(String ownerAccountId) {</span>
+<span class="fc" id="L59">            this.ownerAccountId = ownerAccountId;</span>
+<span class="fc" id="L60">        }</span>
+
+        SqsBuilder queueName(String queueName) {
+<span class="fc" id="L63">            return new SqsBuilder(SqsQueue.fromQueueNameAndOwnerAccountId(queueName, ownerAccountId));</span>
+        }
+    }
+
+    public static SqsBuilder queueUrl(String queueUrl) {
+<span class="fc" id="L68">        Preconditions.checkArgument(queueUrl.startsWith(HTTPS), &quot;queueUrl must be an https url: &quot; + queueUrl);</span>
+<span class="fc" id="L69">        return new SqsBuilder(SqsQueue.fromQueueUrl(queueUrl));</span>
+    }
+
+    public static String sendToQueueUsingS3(AmazonSQS sqs, String queueUrl, AmazonS3 s3, String bucketName,
+            Map&lt;String, String&gt; headers, byte[] message, Callable&lt;String&gt; s3IdFactory) {
+<span class="fc" id="L74">        Preconditions.checkNotNull(sqs);</span>
+<span class="fc" id="L75">        Preconditions.checkNotNull(s3);</span>
+<span class="fc" id="L76">        Preconditions.checkNotNull(queueUrl);</span>
+<span class="fc" id="L77">        Preconditions.checkNotNull(bucketName);</span>
+<span class="fc" id="L78">        Preconditions.checkNotNull(message);</span>
+<span class="fc" id="L79">        String s3Id = uncheckedCall(s3IdFactory);</span>
+<span class="fc" id="L80">        final ObjectMetadata metadata = new ObjectMetadata();</span>
+<span class="fc" id="L81">        metadata.setContentLength(message.length);</span>
+<span class="fc" id="L82">        headers //</span>
+<span class="fc" id="L83">                .entrySet() //</span>
+<span class="fc" id="L84">                .forEach(h -&gt; metadata.setHeader(h.getKey(), h.getValue()));</span>
+<span class="fc" id="L85">        s3.putObject(bucketName, s3Id, new ByteArrayInputStream(message), metadata);</span>
+        try {
+<span class="fc" id="L87">            sqs.sendMessage(queueUrl, s3Id);</span>
+<span class="fc" id="L88">        } catch (final RuntimeException e) {</span>
+            try {
+<span class="fc" id="L90">                s3.deleteObject(bucketName, s3Id);</span>
+<span class="fc" id="L91">                throw e;</span>
+<span class="fc" id="L92">            } catch (final RuntimeException e2) {</span>
+<span class="fc" id="L93">                throw new io.reactivex.exceptions.CompositeException(e, e2);</span>
+            }
+<span class="fc" id="L95">        }</span>
+<span class="fc" id="L96">        return s3Id;</span>
+    }
+
+    public static String sendToQueueUsingS3(AmazonSQS sqs, String queueUrl, AmazonS3 s3, String bucketName,
+            byte[] message, Callable&lt;String&gt; s3IdFactory) {
+<span class="fc" id="L101">        return sendToQueueUsingS3(sqs, queueUrl, s3, bucketName, Collections.emptyMap(), message, s3IdFactory);</span>
+    }
+
+    public static String sendToQueueUsingS3(AmazonSQS sqs, String queueUrl, AmazonS3 s3, String bucketName,
+            byte[] message) {
+<span class="fc" id="L106">        return sendToQueueUsingS3(sqs, queueUrl, s3, bucketName, message,</span>
+<span class="fc" id="L107">                () -&gt; UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;));</span>
+    }
+
+    public static String sendToQueueUsingS3(AmazonSQS sqs, String queueUrl, AmazonS3 s3, String bucketName,
+            Map&lt;String, String&gt; headers, byte[] message) {
+<span class="fc" id="L112">        return sendToQueueUsingS3(sqs, queueUrl, s3, bucketName, headers, message,</span>
+<span class="fc" id="L113">                () -&gt; UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;));</span>
+    }
+
+    public static final class SqsBuilder {
+        private final SqsQueue queue;
+<span class="fc" id="L118">        private Callable&lt;AmazonSQS&gt; sqs = null;</span>
+<span class="fc" id="L119">        private Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3 = Optional.empty();</span>
+<span class="fc" id="L120">        private Optional&lt;String&gt; bucketName = Optional.empty();</span>
+<span class="fc" id="L121">        private Optional&lt;Flowable&lt;Integer&gt;&gt; waitTimesSeconds = Optional.empty();</span>
+<span class="fc" id="L122">        private Consumer&lt;? super String&gt; logger = x -&gt; { };</span>
+<span class="fc" id="L123">        private Runnable prePoll = () -&gt; { };</span>
+<span class="fc" id="L124">        private Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll = x -&gt; { };</span>
+
+<span class="fc" id="L126">        SqsBuilder(SqsQueue queue) {</span>
+<span class="fc" id="L127">            Preconditions.checkNotNull(queue);</span>
+<span class="fc" id="L128">            this.queue = queue;</span>
+<span class="fc" id="L129">        }</span>
+
+        public ViaS3Builder bucketName(String bucketName) {
+<span class="fc" id="L132">            this.bucketName = Optional.of(bucketName);</span>
+<span class="fc" id="L133">            return new ViaS3Builder(this);</span>
+        }
+
+        public SqsBuilder sqsFactory(Callable&lt;AmazonSQS&gt; sqsFactory) {
+<span class="fc" id="L137">            this.sqs = sqsFactory;</span>
+<span class="fc" id="L138">            return this;</span>
+        }
+
+        public SqsBuilder waitTimes(Flowable&lt;? extends Number&gt; waitTimesSeconds, TimeUnit unit) {
+<span class="fc" id="L142">            this.waitTimesSeconds = Optional</span>
+<span class="fc" id="L143">                    .of(waitTimesSeconds.map(x -&gt; (int) unit.toSeconds(Math.round(x.doubleValue()))));</span>
+<span class="fc" id="L144">            return this;</span>
+        }
+
+        public SqsBuilder interval(int interval, TimeUnit unit, Scheduler scheduler) {
+<span class="fc" id="L148">            return waitTimes(</span>
+<span class="fc" id="L149">                    Flowable.just(0) //</span>
+<span class="fc" id="L150">                            .concatWith(Flowable.interval(interval, unit, scheduler).map(x -&gt; 0)),</span>
+                    TimeUnit.SECONDS);
+        }
+
+        public SqsBuilder interval(int interval, TimeUnit unit) {
+<span class="fc" id="L155">            return interval(interval, unit, Schedulers.io());</span>
+        }
+
+        public SqsBuilder logger(Consumer&lt;? super String&gt; logger) {
+<span class="fc" id="L159">            this.logger = logger;</span>
+<span class="fc" id="L160">            return this;</span>
+        }
+        
+        public SqsBuilder prePoll(Runnable prePoll) {
+<span class="fc" id="L164">            this.prePoll = prePoll;</span>
+<span class="fc" id="L165">            return this;</span>
+        }
+        
+        public SqsBuilder postPoll(Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L169">            this.postPoll = postPoll;</span>
+<span class="fc" id="L170">            return this;</span>
+        }
+
+        public Flowable&lt;SqsMessage&gt; messages() {
+<span class="fc" id="L174">            return Sqs.messages(sqs, s3, queue, bucketName, waitTimesSeconds, logger, prePoll, postPoll);</span>
+        }
+
+    }
+
+    public static final class ViaS3Builder {
+
+        private final SqsBuilder sqsBuilder;
+
+<span class="fc" id="L183">        public ViaS3Builder(SqsBuilder sqsBuilder) {</span>
+<span class="fc" id="L184">            this.sqsBuilder = sqsBuilder;</span>
+<span class="fc" id="L185">        }</span>
+
+        public SqsBuilder s3Factory(Callable&lt;AmazonS3&gt; s3Factory) {
+<span class="fc" id="L188">            sqsBuilder.s3 = Optional.of(s3Factory);</span>
+<span class="fc" id="L189">            return sqsBuilder;</span>
+        }
+
+    }
+
+    static Flowable&lt;SqsMessage&gt; messages(Callable&lt;AmazonSQS&gt; sqsFactory, Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory,
+            SqsQueue queue, Optional&lt;String&gt; bucketName, Optional&lt;Flowable&lt;Integer&gt;&gt; waitTimesSeconds,
+            Consumer&lt;? super String&gt; logger, Runnable prePoll, Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L197">        Preconditions.checkNotNull(sqsFactory);</span>
+<span class="fc" id="L198">        Preconditions.checkNotNull(s3Factory);</span>
+<span class="fc" id="L199">        Preconditions.checkNotNull(queue);</span>
+<span class="fc" id="L200">        Preconditions.checkNotNull(bucketName);</span>
+<span class="fc" id="L201">        Preconditions.checkNotNull(waitTimesSeconds);</span>
+<span class="fc" id="L202">        Preconditions.checkNotNull(logger);</span>
+<span class="fc" id="L203">        Preconditions.checkNotNull(prePoll);</span>
+<span class="fc" id="L204">        Preconditions.checkNotNull(postPoll);</span>
+<span class="fc" id="L205">        return Flowable.using(sqsFactory,</span>
+<span class="fc" id="L206">                sqs -&gt; createFlowableWithSqs(sqs, s3Factory, sqsFactory, queue, bucketName,</span>
+                        waitTimesSeconds, logger, prePoll, postPoll),
+<span class="fc" id="L208">                sqs -&gt; sqs.shutdown());</span>
+    }
+
+    private static Flowable&lt;SqsMessage&gt; createFlowableWithSqs(AmazonSQS sqs, Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory,
+            Callable&lt;AmazonSQS&gt; sqsFactory, SqsQueue queue, Optional&lt;String&gt; bucketName,
+            Optional&lt;Flowable&lt;Integer&gt;&gt; waitTimesSeconds, Consumer&lt;? super String&gt; logger,
+            Runnable prePoll, Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+
+<span class="fc" id="L216">        return Flowable.using(() -&gt; s3Factory.map(x -&gt; uncheckedCall(x)), //</span>
+<span class="fc" id="L217">                s3 -&gt; createFlowableWithS3(sqs, s3Factory, sqsFactory, queue, bucketName, s3,</span>
+                        waitTimesSeconds, logger, prePoll, postPoll),
+<span class="fc" id="L219">                s3 -&gt; s3.ifPresent(Util::shutdown));</span>
+    }
+    
+    private static Flowable&lt;SqsMessage&gt; createFlowableWithS3(AmazonSQS sqs, Optional&lt;Callable&lt;AmazonS3&gt;&gt; s3Factory,
+            Callable&lt;AmazonSQS&gt; sqsFactory, SqsQueue queue, Optional&lt;String&gt; bucketName, Optional&lt;AmazonS3&gt; s3,
+            Optional&lt;Flowable&lt;Integer&gt;&gt; waitTimesSeconds, Consumer&lt;? super String&gt; logger, Runnable prePoll,
+            Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L226">        final Service service = new Service(s3Factory, sqsFactory, s3, sqs, queue.getQueueUrl(sqs), bucketName);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (waitTimesSeconds.isPresent()) {</span>
+<span class="fc" id="L228">            return createFlowablePolling(waitTimesSeconds.get(), service, logger, prePoll, postPoll);</span>
+        } else {
+<span class="fc" id="L230">            return createFlowableContinousLongPolling(service, logger, prePoll, postPoll);</span>
+        }
+    }
+
+    private static Flowable&lt;SqsMessage&gt; createFlowablePolling(Flowable&lt;Integer&gt; waitTimesSeconds, Service service,
+            Consumer&lt;? super String&gt; logger, Runnable prePoll, Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L236">        return waitTimesSeconds.flatMap(n -&gt; get(n, service, logger, prePoll, postPoll), 1);</span>
+    }
+
+    private static Flowable&lt;SqsMessage&gt; get(int waitTimeSeconds, Service service,
+            Consumer&lt;? super String&gt; logger, Runnable prePoll,
+            Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L242">        return Flowable.fromCallable(() -&gt; {</span>
+<span class="fc" id="L243">            logger.accept(&quot;polling for messages&quot;);</span>
+<span class="fc" id="L244">            return sqsMessages(service, waitTimeSeconds, prePoll, postPoll);</span>
+        }) //
+<span class="fc" id="L246">                .concatWith(//</span>
+<span class="fc" id="L247">                        Flowable.fromCallable(() -&gt; sqsMessages(service, 0, prePoll, postPoll)) //</span>
+<span class="fc" id="L248">                                .repeat()) //</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                .takeWhile(x -&gt; !x.isEmpty()) //</span>
+<span class="fc" id="L250">                .flatMapIterable(x -&gt; x) //</span>
+<span class="fc" id="L251">                .filter(Optional::isPresent) //</span>
+<span class="fc" id="L252">                .map(Optional::get);</span>
+    }
+    
+    private static List&lt;Message&gt; messages(Service service, int waitTimeSeconds, Runnable prePoll,
+            Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L257">        return messages(() -&gt; service.sqs.receiveMessage(request(service.queueUrl, waitTimeSeconds)) //</span>
+<span class="fc" id="L258">                    .getMessages(), prePoll, postPoll);</span>
+    }
+    
+    @VisibleForTesting
+    static List&lt;Message&gt; messages(Supplier&lt;? extends List&lt;Message&gt;&gt; supplier, Runnable prePoll,
+            Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L264">        prePoll.run();</span>
+        List&lt;Message&gt; list;
+        try {
+<span class="fc" id="L267">            list = supplier.get();</span>
+<span class="fc" id="L268">        } catch (Throwable t) {</span>
+<span class="fc" id="L269">            postPoll.accept(Optional.of(t));</span>
+<span class="fc" id="L270">            throw t;</span>
+<span class="fc" id="L271">        }</span>
+<span class="fc" id="L272">        postPoll.accept(Optional.empty());</span>
+<span class="fc" id="L273">        return list;</span>
+    }
+    
+    private static List&lt;Optional&lt;SqsMessage&gt;&gt; sqsMessages(Service service, int waitTimeSeconds,
+            Runnable prePoll, Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L278">        return messages(service, waitTimeSeconds, prePoll, postPoll) //</span>
+<span class="fc" id="L279">                .stream() //</span>
+<span class="fc" id="L280">                .map(m -&gt; Sqs.getNextMessage(m, service)) //</span>
+<span class="fc" id="L281">                .collect(Collectors.toList());</span>
+    }
+
+    private static Flowable&lt;SqsMessage&gt; createFlowableContinousLongPolling(Service service,
+            Consumer&lt;? super String&gt; logger,
+            Runnable prePoll,
+            Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {
+<span class="fc" id="L288">        final ContinuousLongPollingSyncOnSubscribe c = new ContinuousLongPollingSyncOnSubscribe(</span>
+                service, logger, prePoll, postPoll);
+<span class="fc" id="L290">        return Flowable.generate(c, c);</span>
+    }
+
+    private static final class ContinuousLongPollingSyncOnSubscribe
+            implements Callable&lt;State&gt;, BiConsumer&lt;State, Emitter&lt;SqsMessage&gt;&gt; {
+
+        private final Service service;
+
+        private ReceiveMessageRequest request;
+        private Consumer&lt;? super String&gt; logger;
+        private Runnable prePoll;
+        private Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll;
+
+        ContinuousLongPollingSyncOnSubscribe(Service service, Consumer&lt;? super String&gt; logger, Runnable prePoll,
+<span class="fc" id="L304">                                                    Consumer&lt;? super Optional&lt;Throwable&gt;&gt; postPoll) {</span>
+<span class="fc" id="L305">            this.service = service;</span>
+<span class="fc" id="L306">            this.logger = logger;</span>
+<span class="fc" id="L307">            this.prePoll = prePoll;</span>
+<span class="fc" id="L308">            this.postPoll = postPoll;</span>
+<span class="fc" id="L309">        }</span>
+
+        @Override
+        public State call() {
+<span class="fc" id="L313">            request = new ReceiveMessageRequest(service.queueUrl) //</span>
+<span class="fc" id="L314">                    .withWaitTimeSeconds(20) //</span>
+<span class="fc" id="L315">                    .withMaxNumberOfMessages(10);</span>
+<span class="fc" id="L316">            return new State(new LinkedList&lt;&gt;());</span>
+        }
+
+        @Override
+        public void accept(State state, Emitter&lt;SqsMessage&gt; emitter) throws Exception {
+<span class="fc" id="L321">            final Queue&lt;Message&gt; q = state.queue;</span>
+<span class="fc" id="L322">            Optional&lt;SqsMessage&gt; next = Optional.empty();</span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">            while (!next.isPresent()) {</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                while (q.isEmpty()) {</span>
+<span class="fc" id="L325">                    logger.accept(&quot;long polling for messages on queue=&quot; + service.queueUrl);</span>
+<span class="fc" id="L326">                    List&lt;Message&gt; list = messages(//</span>
+<span class="fc" id="L327">                            () -&gt; service.sqs.receiveMessage(request).getMessages(), //</span>
+                            prePoll, // 
+                            postPoll);
+<span class="fc" id="L330">                    q.addAll(list);</span>
+<span class="fc" id="L331">                }</span>
+<span class="fc" id="L332">                final Message message = q.poll();</span>
+<span class="fc" id="L333">                next = getNextMessage(message, service);</span>
+<span class="fc" id="L334">            }</span>
+<span class="fc" id="L335">            emitter.onNext(next.get());</span>
+<span class="fc" id="L336">        }</span>
+    }
+
+    static Optional&lt;SqsMessage&gt; getNextMessage(Message message, Service service) {
+<span class="fc bfc" id="L340" title="All 2 branches covered.">        if (service.bucketName.isPresent()) {</span>
+<span class="fc" id="L341">            final String s3Id = message.getBody();</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">            if (!service.s3.get().doesObjectExist(service.bucketName.get(), s3Id)) {</span>
+<span class="fc" id="L343">                service.sqs.deleteMessage(service.queueUrl, message.getReceiptHandle());</span>
+<span class="fc" id="L344">                return Optional.empty();</span>
+            } else {
+<span class="fc" id="L346">                final S3Object object = service.s3.get().getObject(service.bucketName.get(), s3Id);</span>
+<span class="fc" id="L347">                final byte[] content = readAndClose(object.getObjectContent());</span>
+<span class="fc" id="L348">                final long timestamp = object.getObjectMetadata().getLastModified().getTime();</span>
+<span class="fc" id="L349">                final SqsMessage mb = new SqsMessage(message.getReceiptHandle(), content, timestamp, Optional.of(s3Id),</span>
+                        service);
+<span class="fc" id="L351">                return Optional.of(mb);</span>
+            }
+        } else {
+<span class="fc" id="L354">            final SqsMessage mb = new SqsMessage(message.getReceiptHandle(),</span>
+<span class="fc" id="L355">                    message.getBody().getBytes(StandardCharsets.UTF_8), System.currentTimeMillis(), Optional.empty(),</span>
+                    service);
+<span class="fc" id="L357">            return Optional.of(mb);</span>
+        }
+    }
+
+    private static final class State {
+
+        final Queue&lt;Message&gt; queue;
+
+<span class="fc" id="L365">        State(Queue&lt;Message&gt; queue) {</span>
+<span class="fc" id="L366">            this.queue = queue;</span>
+<span class="fc" id="L367">        }</span>
+
+    }
+
+    private static ReceiveMessageRequest request(String queueUrl, int waitTimeSeconds) {
+<span class="fc" id="L372">        return new ReceiveMessageRequest(queueUrl).withMaxNumberOfMessages(20).withWaitTimeSeconds(waitTimeSeconds);</span>
+    }
+
+    @VisibleForTesting
+    static byte[] readAndClose(InputStream is) {
+<span class="fc" id="L377">        Preconditions.checkNotNull(is);</span>
+        try {
+<span class="fc" id="L379">            final ByteArrayOutputStream bos = new ByteArrayOutputStream();</span>
+<span class="fc" id="L380">            final byte[] bytes = new byte[8192];</span>
+            int n;
+<span class="fc bfc" id="L382" title="All 2 branches covered.">            while ((n = is.read(bytes)) != -1) {</span>
+<span class="fc" id="L383">                bos.write(bytes, 0, n);</span>
+            }
+<span class="fc" id="L385">            return bos.toByteArray();</span>
+<span class="fc" id="L386">        } catch (final IOException e) {</span>
+<span class="fc" id="L387">            throw new RuntimeException(e);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
