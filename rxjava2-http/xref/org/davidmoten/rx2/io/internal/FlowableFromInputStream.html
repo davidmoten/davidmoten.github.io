@@ -29,14 +29,14 @@
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> io.reactivex.internal.subscriptions.SubscriptionHelper;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> io.reactivex.plugins.RxJavaPlugins;
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FlowableFromInputStream</a> <strong class="jxr_keyword">extends</strong> Flowable&lt;ByteBuffer&gt; {
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="FlowableFromInputStream" href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html#FlowableFromInputStream">FlowableFromInputStream</a> <strong class="jxr_keyword">extends</strong> Flowable&lt;ByteBuffer&gt; {
 <a class="jxr_linenumber" name="L25" href="#L25">25</a>  
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(FlowableFromInputStream.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>      
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> InputStream in;
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> BiConsumer&lt;Long, Long&gt; requester;
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>  
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FlowableFromInputStream</a>(InputStream in, BiConsumer&lt;Long, Long&gt; requester) {
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>      <strong class="jxr_keyword">public</strong> <a name="FlowableFromInputStream" href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html#FlowableFromInputStream">FlowableFromInputStream</a>(InputStream in, BiConsumer&lt;Long, Long&gt; requester) {
 <a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">this</strong>.in = in;
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">this</strong>.requester = requester;
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>      }
@@ -44,12 +44,12 @@
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>      @Override
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> subscribeActual(Subscriber&lt;? <strong class="jxr_keyword">super</strong> ByteBuffer&gt; subscriber) {
 <a class="jxr_linenumber" name="L38" href="#L38">38</a>          log.debug(<span class="jxr_string">"subscribeActual"</span>);
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FromStreamSubscription</a> subscription = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FromStreamSubscription</a>(in, requester, subscriber);
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          FromStreamSubscription subscription = <strong class="jxr_keyword">new</strong> FromStreamSubscription(in, requester, subscriber);
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>          subscription.start();
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>      }
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>  
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>      @VisibleForTesting
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>      <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FromStreamSubscription</a> <strong class="jxr_keyword">extends</strong> AtomicInteger <strong class="jxr_keyword">implements</strong> Subscription {
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> FromStreamSubscription <strong class="jxr_keyword">extends</strong> AtomicInteger <strong class="jxr_keyword">implements</strong> Subscription {
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>  
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(FromStreamSubscription.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>  
@@ -69,9 +69,9 @@
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>          <strong class="jxr_keyword">private</strong> byte[] buffer;
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">int</strong> bufferIndex;
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">volatile</strong> Throwable error;
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> HAVE_NOT_READ_ID = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a>(0, 0);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> IdRequested HAVE_NOT_READ_ID = <strong class="jxr_keyword">new</strong> IdRequested(0, 0);
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>  
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>          <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">FromStreamSubscription</a>(InputStream in, BiConsumer&lt;Long, Long&gt; requester,
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          FromStreamSubscription(InputStream in, BiConsumer&lt;Long, Long&gt; requester,
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>                  Subscriber&lt;? <strong class="jxr_keyword">super</strong> ByteBuffer&gt; child) {
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>              <strong class="jxr_keyword">this</strong>.in = in;
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>              <strong class="jxr_keyword">this</strong>.requester = requester;
@@ -97,7 +97,7 @@
 <a class="jxr_linenumber" name="L89" href="#L89">89</a>              }
 <a class="jxr_linenumber" name="L90" href="#L90">90</a>              log.debug(<span class="jxr_string">"id={}"</span>, id);
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>              <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>                  <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> idr = requested.get();
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>                  IdRequested idr = requested.get();
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>                  <strong class="jxr_keyword">if</strong> (idr == <strong class="jxr_keyword">null</strong>) {
 <a class="jxr_linenumber" name="L94" href="#L94">94</a>                      <em class="jxr_comment">// cancel occured while reading id</em>
 <a class="jxr_linenumber" name="L95" href="#L95">95</a>                      <em class="jxr_comment">// we must endeavour to cancel the server side of the connection explicitly</em>
@@ -130,7 +130,7 @@
 <a class="jxr_linenumber" name="L122" href="#L122">122</a>                     <strong class="jxr_keyword">return</strong>;
 <a class="jxr_linenumber" name="L123" href="#L123">123</a>                 }
 <a class="jxr_linenumber" name="L124" href="#L124">124</a>                 <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L125" href="#L125">125</a>                     <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> idr = requested.get();
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                     IdRequested idr = requested.get();
 <a class="jxr_linenumber" name="L126" href="#L126">126</a>                     <strong class="jxr_keyword">if</strong> (idr == <strong class="jxr_keyword">null</strong>) {
 <a class="jxr_linenumber" name="L127" href="#L127">127</a>                         <em class="jxr_comment">// cancelled</em>
 <a class="jxr_linenumber" name="L128" href="#L128">128</a>                         <strong class="jxr_keyword">break</strong>;
@@ -164,7 +164,7 @@
 <a class="jxr_linenumber" name="L156" href="#L156">156</a>             <strong class="jxr_keyword">if</strong> (getAndIncrement() == 0) {
 <a class="jxr_linenumber" name="L157" href="#L157">157</a>                 <strong class="jxr_keyword">int</strong> missed = 1;
 <a class="jxr_linenumber" name="L158" href="#L158">158</a>                 <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> idr = requested.get();
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     IdRequested idr = requested.get();
 <a class="jxr_linenumber" name="L160" href="#L160">160</a>                     <strong class="jxr_keyword">long</strong> r;
 <a class="jxr_linenumber" name="L161" href="#L161">161</a>                     <strong class="jxr_keyword">if</strong> (idr == <strong class="jxr_keyword">null</strong>) {
 <a class="jxr_linenumber" name="L162" href="#L162">162</a>                         r = 0;
@@ -269,7 +269,7 @@
 <a class="jxr_linenumber" name="L261" href="#L261">261</a>         @Override
 <a class="jxr_linenumber" name="L262" href="#L262">262</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> cancel() {
 <a class="jxr_linenumber" name="L263" href="#L263">263</a>             <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
-<a class="jxr_linenumber" name="L264" href="#L264">264</a>                 <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> idr = requested.get();
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>                 IdRequested idr = requested.get();
 <a class="jxr_linenumber" name="L265" href="#L265">265</a>                 <strong class="jxr_keyword">if</strong> (idr == <strong class="jxr_keyword">null</strong>) {
 <a class="jxr_linenumber" name="L266" href="#L266">266</a>                     <em class="jxr_comment">// already cancelled</em>
 <a class="jxr_linenumber" name="L267" href="#L267">267</a>                     <strong class="jxr_keyword">break</strong>;
@@ -301,7 +301,7 @@
 <a class="jxr_linenumber" name="L293" href="#L293">293</a> 
 <a class="jxr_linenumber" name="L294" href="#L294">294</a>     @VisibleForTesting
 <a class="jxr_linenumber" name="L295" href="#L295">295</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> produced(AtomicReference&lt;IdRequested&gt; requested, <strong class="jxr_keyword">long</strong> e) {
-<a class="jxr_linenumber" name="L296" href="#L296">296</a>         <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> idr;
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>         IdRequested idr;
 <a class="jxr_linenumber" name="L297" href="#L297">297</a>         <strong class="jxr_keyword">while</strong> (<strong class="jxr_keyword">true</strong>) {
 <a class="jxr_linenumber" name="L298" href="#L298">298</a>             idr = requested.get();
 <a class="jxr_linenumber" name="L299" href="#L299">299</a>             <strong class="jxr_keyword">if</strong> (idr == <strong class="jxr_keyword">null</strong>) {
@@ -321,11 +321,11 @@
 <a class="jxr_linenumber" name="L313" href="#L313">313</a>     }
 <a class="jxr_linenumber" name="L314" href="#L314">314</a> 
 <a class="jxr_linenumber" name="L315" href="#L315">315</a>     @VisibleForTesting
-<a class="jxr_linenumber" name="L316" href="#L316">316</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a> {
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> IdRequested {
 <a class="jxr_linenumber" name="L317" href="#L317">317</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> id;
 <a class="jxr_linenumber" name="L318" href="#L318">318</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> requested;
 <a class="jxr_linenumber" name="L319" href="#L319">319</a> 
-<a class="jxr_linenumber" name="L320" href="#L320">320</a>         <a href="../../../../../org/davidmoten/rx2/io/internal/FlowableFromInputStream.html">IdRequested</a>(<strong class="jxr_keyword">long</strong> id, <strong class="jxr_keyword">long</strong> requested) {
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>         IdRequested(<strong class="jxr_keyword">long</strong> id, <strong class="jxr_keyword">long</strong> requested) {
 <a class="jxr_linenumber" name="L321" href="#L321">321</a>             <strong class="jxr_keyword">this</strong>.id = id;
 <a class="jxr_linenumber" name="L322" href="#L322">322</a>             <strong class="jxr_keyword">this</strong>.requested = requested;
 <a class="jxr_linenumber" name="L323" href="#L323">323</a>         }
@@ -334,6 +334,6 @@
 <a class="jxr_linenumber" name="L326" href="#L326">326</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2018&#x2013;2019. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2018&#x2013;2021. All rights reserved.</div>
 </body>
 </html>
