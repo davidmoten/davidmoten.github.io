@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Multipart.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">Multipart.java</span></div><h1>Multipart.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+
+public final class Multipart {
+
+    private Multipart() {
+        // prevent instantiation
+    }
+
+    public static Builder s3(Client s3) {
+<span class="fc" id="L25">        Preconditions.checkNotNull(s3);</span>
+<span class="fc" id="L26">        return new Builder(s3);</span>
+    }
+
+    public static final class Builder {
+
+        private final Client s3;
+        private String bucket;
+        public String key;
+        public ExecutorService executor;
+<span class="fc" id="L35">        public long timeoutMs = TimeUnit.HOURS.toMillis(1);</span>
+<span class="fc" id="L36">        public Function&lt;? super Request, ? extends Request&gt; transform = x -&gt; x;</span>
+<span class="fc" id="L37">        public int maxAttempts = 3;</span>
+<span class="fc" id="L38">        public long retryIntervalMs = 10000;</span>
+<span class="fc" id="L39">        public int partSize = 5 * 1024 * 1024;</span>
+
+<span class="fc" id="L41">        Builder(Client s3) {</span>
+<span class="fc" id="L42">            this.s3 = s3;</span>
+<span class="fc" id="L43">        }</span>
+
+        public Builder2 bucket(String bucket) {
+<span class="fc" id="L46">            Preconditions.checkNotNull(bucket, &quot;bucket cannot be null&quot;);</span>
+<span class="fc" id="L47">            this.bucket = bucket;</span>
+<span class="fc" id="L48">            return new Builder2(this);</span>
+        }
+    }
+
+    public static final class Builder2 {
+
+        private final Builder b;
+
+<span class="fc" id="L56">        Builder2(Builder b) {</span>
+<span class="fc" id="L57">            this.b = b;</span>
+<span class="fc" id="L58">        }</span>
+
+        public Builder3 key(String key) {
+<span class="fc" id="L61">            Preconditions.checkNotNull(key, &quot;key cannot be null&quot;);</span>
+<span class="fc" id="L62">            b.key = key;</span>
+<span class="fc" id="L63">            return new Builder3(b);</span>
+        }
+    }
+
+    public static final class Builder3 {
+
+        private final Builder b;
+
+<span class="fc" id="L71">        Builder3(Builder b) {</span>
+<span class="fc" id="L72">            this.b = b;</span>
+<span class="fc" id="L73">        }</span>
+
+        public Builder3 executor(ExecutorService executor) {
+<span class="fc" id="L76">            Preconditions.checkNotNull(executor, &quot;executor cannot be null&quot;);</span>
+<span class="fc" id="L77">            b.executor = executor;</span>
+<span class="fc" id="L78">            return this;</span>
+        }
+
+        public Builder3 partTimeout(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt; 0);</span>
+<span class="fc" id="L83">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L84">            b.timeoutMs = unit.toMillis(duration);</span>
+<span class="fc" id="L85">            return this;</span>
+        }
+
+        public Builder3 partSize(int partSize) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            Preconditions.checkArgument(partSize &gt;= 5 * 1024 * 1024);</span>
+<span class="fc" id="L90">            b.partSize = partSize;</span>
+<span class="fc" id="L91">            return this;</span>
+        }
+
+        public Builder3 partSizeMb(int partSizeMb) {
+<span class="fc" id="L95">            return partSize(partSizeMb * 1024 * 1024);</span>
+        }
+
+        public Builder3 maxAttemptsPerAction(int maxAttempts) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            Preconditions.checkArgument(maxAttempts &gt;= 1);</span>
+<span class="fc" id="L100">            b.maxAttempts = maxAttempts;</span>
+<span class="fc" id="L101">            return this;</span>
+        }
+
+        public Builder3 retryIntervalMs(long retryIntervalMs) {
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            Preconditions.checkArgument(retryIntervalMs &gt;= 0);</span>
+<span class="fc" id="L106">            b.retryIntervalMs = retryIntervalMs;</span>
+<span class="fc" id="L107">            return this;</span>
+        }
+
+        public Builder3 transformCreateRequest(
+                Function&lt;? super Request, ? extends Request&gt; transform) {
+<span class="fc" id="L112">            Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
+<span class="fc" id="L113">            b.transform = transform;</span>
+<span class="fc" id="L114">            return this;</span>
+        }
+
+        public void upload(byte[] bytes, int offset, int length) {
+<span class="fc" id="L118">            Preconditions.checkNotNull(bytes, &quot;bytes cannot be null&quot;);</span>
+<span class="fc" id="L119">            try (OutputStream out = outputStream()) {</span>
+<span class="fc" id="L120">                out.write(bytes, offset, length);</span>
+<span class="nc" id="L121">            } catch (IOException e) {</span>
+<span class="nc" id="L122">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L123">            }</span>
+<span class="fc" id="L124">        }</span>
+
+        public void upload(byte[] bytes) {
+<span class="fc" id="L127">            upload(bytes, 0, bytes.length);</span>
+<span class="fc" id="L128">        }</span>
+
+        public void upload(File file) {
+<span class="fc" id="L131">            Preconditions.checkNotNull(file, &quot;file cannot be null&quot;);</span>
+<span class="fc" id="L132">            upload(() -&gt; new BufferedInputStream(new FileInputStream(file)));</span>
+<span class="fc" id="L133">        }</span>
+
+        public void upload(Callable&lt;? extends InputStream&gt; factory) {
+<span class="fc" id="L136">            Preconditions.checkNotNull(factory, &quot;factory cannot be null&quot;);</span>
+<span class="fc" id="L137">            try (InputStream in = factory.call(); MultipartOutputStream out = outputStream()) {</span>
+<span class="fc" id="L138">                copy(in, out);</span>
+<span class="fc" id="L139">            } catch (IOException e) {</span>
+<span class="fc" id="L140">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L141">            } catch (Exception e) {</span>
+<span class="fc" id="L142">                throw new RuntimeException(e);</span>
+<span class="fc" id="L143">            }</span>
+<span class="fc" id="L144">        }</span>
+
+        public MultipartOutputStream outputStream() {
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (b.executor == null) {</span>
+<span class="fc" id="L148">                b.executor = Executors.newCachedThreadPool();</span>
+            }
+<span class="fc" id="L150">            return new MultipartOutputStream(b.s3, b.bucket, b.key, b.transform, b.executor,</span>
+                    b.timeoutMs, b.maxAttempts, b.retryIntervalMs, b.partSize);
+        }
+    }
+
+    private static void copy(InputStream in, OutputStream out) throws IOException {
+<span class="fc" id="L156">        byte[] buffer = new byte[8192];</span>
+        int n;
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="fc" id="L159">            out.write(buffer, 0, n);</span>
+        }
+<span class="fc" id="L161">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

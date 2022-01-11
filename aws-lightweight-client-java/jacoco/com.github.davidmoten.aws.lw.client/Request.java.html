@@ -19,7 +19,7 @@ import com.github.davidmoten.aws.lw.client.xml.XmlElement;
 public final class Request {
 
     private final Client client;
-    private String region;
+    private Optional&lt;String&gt; region;
     private String url;
 <span class="fc" id="L24">    private HttpMethod method = HttpMethod.GET;</span>
 <span class="fc" id="L25">    private final Map&lt;String, List&lt;String&gt;&gt; headers = new HashMap&lt;&gt;();</span>
@@ -76,12 +76,12 @@ public final class Request {
 <span class="fc" id="L76">        RequestHelper.put(headers, name, value);</span>
 <span class="fc" id="L77">        return this;</span>
     }
-    
+
     public Request signPayload(boolean signPayload) {
-<span class="fc" id="L81">        this.signPayload= signPayload;</span>
+<span class="fc" id="L81">        this.signPayload = signPayload;</span>
 <span class="fc" id="L82">        return this;</span>
     }
-    
+
     public Request unsignedPayload() {
 <span class="fc" id="L86">        return signPayload(false);</span>
     }
@@ -114,7 +114,7 @@ public final class Request {
 
     public Request region(String region) {
 <span class="fc" id="L116">        Preconditions.checkNotNull(region);</span>
-<span class="fc" id="L117">        this.region = region;</span>
+<span class="fc" id="L117">        this.region = Optional.of(region);</span>
 <span class="fc" id="L118">        return this;</span>
     }
 
@@ -171,95 +171,124 @@ public final class Request {
 <span class="fc" id="L171">        return new Response(r.headers(), bytes, r.statusCode());</span>
     }
 
-    // VisibleForTesting
-    static boolean hasBody(ResponseInputStream r) {
-<span class="fc bfc" id="L176" title="All 2 branches covered.">        return r.header(&quot;Content-Length&quot;).isPresent()</span>
-<span class="fc bfc" id="L177" title="All 2 branches covered.">                || r.header(&quot;Transfer-Encoding&quot;).orElse(&quot;&quot;).equalsIgnoreCase(&quot;chunked&quot;);</span>
+    /**
+     * Opens a connection and makes the request. This method returns all the
+     * response information including headers, status code, request body as a byte
+     * array. If the expected status code is not encountered then a
+     * {@link ServiceException} is thrown.
+     * 
+     * @return all response information
+     * @throws ServiceException
+     */
+    public Response responseExpectStatusCode(int expectedStatusCode) {
+<span class="fc" id="L184">        Response r = response();</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (r.statusCode() == expectedStatusCode) {</span>
+<span class="fc" id="L186">            return r;</span>
+        } else {
+<span class="fc" id="L188">            throw new ServiceException(r.statusCode(), r.contentUtf8());</span>
+        }
     }
 
-    private static String calculateUrl(String url, String serviceName, String region,
+    // VisibleForTesting
+    static boolean hasBody(ResponseInputStream r) {
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        return r.header(&quot;Content-Length&quot;).isPresent()</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                || r.header(&quot;Transfer-Encoding&quot;).orElse(&quot;&quot;).equalsIgnoreCase(&quot;chunked&quot;);</span>
+    }
+
+    private static String calculateUrl(String url, String serviceName, Optional&lt;String&gt; region,
             List&lt;NameValue&gt; queries, List&lt;String&gt; pathSegments) {
-<span class="fc" id="L182">        String u = url;</span>
-<span class="fc bfc" id="L183" title="All 2 branches covered.">        if (u == null) {</span>
-<span class="fc" id="L184">            u = &quot;https://&quot; //</span>
+<span class="fc" id="L200">        String u = url;</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (u == null) {</span>
+<span class="fc" id="L202">            u = &quot;https://&quot; //</span>
                     + serviceName //
-                    + &quot;.&quot; //
-                    + region //
+<span class="fc" id="L204">                    + region.map(x -&gt; &quot;.&quot; + x).orElse(&quot;&quot;) //</span>
                     + &quot;.amazonaws.com/&quot; //
                     + pathSegments //
-<span class="fc" id="L190">                            .stream() //</span>
-<span class="fc" id="L191">                            .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) //</span>
-<span class="fc" id="L192">                            .collect(Collectors.joining(&quot;/&quot;));</span>
+<span class="fc" id="L207">                            .stream() //</span>
+<span class="fc" id="L208">                            .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) //</span>
+<span class="fc" id="L209">                            .collect(Collectors.joining(&quot;/&quot;));</span>
         }
         // add queries
-<span class="fc bfc" id="L195" title="All 2 branches covered.">        for (NameValue nv : queries) {</span>
-<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (!u.contains(&quot;?&quot;)) {</span>
-<span class="fc" id="L197">                u += &quot;?&quot;;</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (NameValue nv : queries) {</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (!u.contains(&quot;?&quot;)) {</span>
+<span class="fc" id="L214">                u += &quot;?&quot;;</span>
             }
-<span class="fc bfc" id="L199" title="All 2 branches covered.">            if (!u.endsWith(&quot;?&quot;)) {</span>
-<span class="fc" id="L200">                u += &quot;&amp;&quot;;</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            if (!u.endsWith(&quot;?&quot;)) {</span>
+<span class="fc" id="L217">                u += &quot;&amp;&quot;;</span>
             }
-<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (nv.value != null) {</span>
-<span class="fc" id="L203">                u += Util.urlEncode(nv.name, false) + &quot;=&quot; + Util.urlEncode(nv.value, false);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (nv.value != null) {</span>
+<span class="fc" id="L220">                u += Util.urlEncode(nv.name, false) + &quot;=&quot; + Util.urlEncode(nv.value, false);</span>
             } else {
-<span class="fc" id="L205">                u += Util.urlEncode(nv.name, false);</span>
+<span class="fc" id="L222">                u += Util.urlEncode(nv.name, false);</span>
             }
-<span class="fc" id="L207">        }</span>
-<span class="fc" id="L208">        return u;</span>
+<span class="fc" id="L224">        }</span>
+<span class="fc" id="L225">        return u;</span>
     }
 
     public byte[] responseAsBytes() {
-<span class="fc" id="L212">        Response r = response();</span>
-<span class="fc" id="L213">        Optional&lt;? extends RuntimeException&gt; exception = client.exceptionFactory().create(r);</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (!exception.isPresent()) {</span>
-<span class="fc" id="L215">            return r.content();</span>
+<span class="fc" id="L229">        Response r = response();</span>
+<span class="fc" id="L230">        Optional&lt;? extends RuntimeException&gt; exception = client.exceptionFactory().create(r);</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        if (!exception.isPresent()) {</span>
+<span class="fc" id="L232">            return r.content();</span>
         } else {
-<span class="fc" id="L217">            throw exception.get();</span>
+<span class="fc" id="L234">            throw exception.get();</span>
         }
     }
 
+    /**
+     * Returns true if and only if status code is 2xx. Returns false if status code
+     * is 404 (NOT_FOUND) and throws a {@link ServiceException} otherwise.
+     * 
+     * @return true if status code 2xx, false if 404 otherwise throws
+     *         ServiceException
+     * @throws ServiceException if status code other than 2xx or 404
+     */
+    public boolean exists() {
+<span class="fc" id="L247">        return response().exists();</span>
+    }
+
     public void execute() {
-<span class="fc" id="L222">        responseAsBytes();</span>
-<span class="fc" id="L223">    }</span>
+<span class="fc" id="L251">        responseAsBytes();</span>
+<span class="fc" id="L252">    }</span>
 
     public String responseAsUtf8() {
-<span class="fc" id="L226">        return new String(responseAsBytes(), StandardCharsets.UTF_8);</span>
+<span class="fc" id="L255">        return new String(responseAsBytes(), StandardCharsets.UTF_8);</span>
     }
 
     public XmlElement responseAsXml() {
-<span class="fc" id="L230">        return XmlElement.parse(responseAsUtf8());</span>
+<span class="fc" id="L259">        return XmlElement.parse(responseAsUtf8());</span>
     }
 
     public String presignedUrl(long expiryDuration, TimeUnit unit) {
-<span class="fc" id="L234">        String u = calculateUrl(url, client.serviceName(), region, queries,</span>
-<span class="fc" id="L235">                Arrays.asList(pathSegments));</span>
-<span class="fc" id="L236">        return RequestHelper.presignedUrl(client.clock(), u, method.toString(),</span>
-<span class="fc" id="L237">                RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,</span>
-<span class="fc" id="L238">                client.credentials(), connectTimeoutMs, readTimeoutMs,</span>
-<span class="fc" id="L239">                unit.toSeconds(expiryDuration), signPayload);</span>
+<span class="fc" id="L263">        String u = calculateUrl(url, client.serviceName(), region, queries,</span>
+<span class="fc" id="L264">                Arrays.asList(pathSegments));</span>
+<span class="fc" id="L265">        return RequestHelper.presignedUrl(client.clock(), u, method.toString(),</span>
+<span class="fc" id="L266">                RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,</span>
+<span class="fc" id="L267">                client.credentials(), connectTimeoutMs, readTimeoutMs,</span>
+<span class="fc" id="L268">                unit.toSeconds(expiryDuration), signPayload);</span>
     }
 
     // VisibleForTesting
     static String trimAndRemoveLeadingAndTrailingSlashes(String s) {
-<span class="fc" id="L244">        Preconditions.checkNotNull(s);</span>
-<span class="fc" id="L245">        s = s.trim();</span>
-<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (s.startsWith(&quot;/&quot;)) {</span>
-<span class="fc" id="L247">            s = s.substring(1);</span>
+<span class="fc" id="L273">        Preconditions.checkNotNull(s);</span>
+<span class="fc" id="L274">        s = s.trim();</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">        if (s.startsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L276">            s = s.substring(1);</span>
         }
-<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (s.endsWith(&quot;/&quot;)) {</span>
-<span class="fc" id="L250">            s = s.substring(0, s.length() - 1);</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (s.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L279">            s = s.substring(0, s.length() - 1);</span>
         }
-<span class="fc" id="L252">        return s;</span>
+<span class="fc" id="L281">        return s;</span>
     }
 
     private static final class NameValue {
         final String name;
         final String value;
 
-<span class="fc" id="L259">        NameValue(String name, String value) {</span>
-<span class="fc" id="L260">            this.name = name;</span>
-<span class="fc" id="L261">            this.value = value;</span>
-<span class="fc" id="L262">        }</span>
+<span class="fc" id="L288">        NameValue(String name, String value) {</span>
+<span class="fc" id="L289">            this.name = name;</span>
+<span class="fc" id="L290">            this.value = value;</span>
+<span class="fc" id="L291">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

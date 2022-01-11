@@ -37,7 +37,7 @@
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testHasBodyWhenContentLengthPresent() <strong class="jxr_keyword">throws</strong> IOException {
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>          Map&lt;String, List&lt;String&gt;&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
 <a class="jxr_linenumber" name="L31" href="#L31">31</a>          headers.put(<span class="jxr_string">"content-length"</span>, Collections.singletonList(<span class="jxr_string">"3"</span>));
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(<strong class="jxr_keyword">null</strong>, 200, headers,
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(() -&gt;{}, 200, headers,
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>                  <strong class="jxr_keyword">new</strong> ByteArrayInputStream(<strong class="jxr_keyword">new</strong> byte[] { 1, 2, 3 }))) {
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>              assertTrue(Request.hasBody(r));
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>          }
@@ -47,7 +47,7 @@
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testHasBodyWhenChunked() <strong class="jxr_keyword">throws</strong> IOException {
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>          Map&lt;String, List&lt;String&gt;&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>          headers.put(<span class="jxr_string">"transfer-encoding"</span>, Collections.singletonList(<span class="jxr_string">"chunkeD"</span>));
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(<strong class="jxr_keyword">null</strong>, 200, headers,
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(() -&gt;{}, 200, headers,
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>                  <strong class="jxr_keyword">new</strong> ByteArrayInputStream(<strong class="jxr_keyword">new</strong> byte[] { 1, 2, 3 }))) {
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>              assertTrue(Request.hasBody(r));
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>          }
@@ -56,7 +56,7 @@
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>      @Test
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testHasBodyButNoHeader() <strong class="jxr_keyword">throws</strong> IOException {
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>          Map&lt;String, List&lt;String&gt;&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(<strong class="jxr_keyword">null</strong>, 200, headers,
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          <strong class="jxr_keyword">try</strong> (ResponseInputStream r = <strong class="jxr_keyword">new</strong> ResponseInputStream(() -&gt;{}, 200, headers,
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>                  <strong class="jxr_keyword">new</strong> ByteArrayInputStream(<strong class="jxr_keyword">new</strong> byte[] { 1, 2, 3 }))) {
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>              assertFalse(Request.hasBody(r));
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>          }
@@ -65,6 +65,6 @@
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2021&#x2013;2022. All rights reserved.</div>
 </body>
 </html>

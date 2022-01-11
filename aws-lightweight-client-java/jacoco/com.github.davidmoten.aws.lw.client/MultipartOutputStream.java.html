@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultipartOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">MultipartOutputStream.java</span></div><h1>MultipartOutputStream.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+import com.github.davidmoten.aws.lw.client.xml.builder.Xml;
+
+// NotThreadSafe
+public final class MultipartOutputStream extends OutputStream {
+
+    private final Client s3;
+    private final String bucket;
+    private final String key;
+    private final String uploadId;
+    private final ExecutorService executor;
+    private final ByteArrayOutputStream bytes;
+<span class="fc" id="L27">    private final byte[] singleByte = new byte[1]; // for reuse in write(int) method</span>
+    private final long partTimeoutMs;
+    private final int maxAttempts;
+    private final long retryIntervalMs;
+    private final int partSize;
+<span class="fc" id="L32">    private final List&lt;Future&lt;String&gt;&gt; futures = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">    private int nextPart = 1;</span>
+
+    MultipartOutputStream(Client s3, String bucket, String key,
+            Function&lt;? super Request, ? extends Request&gt; transformCreate, ExecutorService executor,
+<span class="fc" id="L37">            long partTimeoutMs, int maxAttempts, long retryIntervalMs, int partSize) {</span>
+<span class="fc" id="L38">        Preconditions.checkNotNull(s3);</span>
+<span class="fc" id="L39">        Preconditions.checkNotNull(bucket);</span>
+<span class="fc" id="L40">        Preconditions.checkNotNull(key);</span>
+<span class="fc" id="L41">        Preconditions.checkNotNull(transformCreate);</span>
+<span class="fc" id="L42">        Preconditions.checkNotNull(executor);</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        Preconditions.checkArgument(partTimeoutMs &gt; 0);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        Preconditions.checkArgument(maxAttempts &gt;= 1);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        Preconditions.checkArgument(retryIntervalMs &gt;= 0);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        Preconditions.checkArgument(partSize &gt;= 5 * 1024 * 1024);</span>
+<span class="fc" id="L47">        this.s3 = s3;</span>
+<span class="fc" id="L48">        this.bucket = bucket;</span>
+<span class="fc" id="L49">        this.key = key;</span>
+<span class="fc" id="L50">        this.executor = executor;</span>
+<span class="fc" id="L51">        this.partTimeoutMs = partTimeoutMs;</span>
+<span class="fc" id="L52">        this.maxAttempts = maxAttempts;</span>
+<span class="fc" id="L53">        this.retryIntervalMs = retryIntervalMs;</span>
+<span class="fc" id="L54">        this.partSize = partSize;</span>
+<span class="fc" id="L55">        this.bytes = new ByteArrayOutputStream();</span>
+<span class="fc" id="L56">        this.uploadId = transformCreate.apply(s3 //</span>
+<span class="fc" id="L57">                .path(bucket, key) //</span>
+<span class="fc" id="L58">                .query(&quot;uploads&quot;) //</span>
+<span class="fc" id="L59">                .method(HttpMethod.POST)) //</span>
+<span class="fc" id="L60">                .responseAsXml() //</span>
+<span class="fc" id="L61">                .content(&quot;UploadId&quot;);</span>
+<span class="fc" id="L62">    }</span>
+
+    public void abort() {
+<span class="fc" id="L65">        futures.forEach(f -&gt; f.cancel(true));</span>
+<span class="fc" id="L66">        s3 //</span>
+<span class="fc" id="L67">                .path(bucket, key) //</span>
+<span class="fc" id="L68">                .query(&quot;uploadId&quot;, uploadId) //</span>
+<span class="fc" id="L69">                .method(HttpMethod.DELETE) //</span>
+<span class="fc" id="L70">                .execute();</span>
+<span class="fc" id="L71">    }</span>
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        while (len &gt; 0) {</span>
+<span class="fc" id="L76">            int remaining = partSize - bytes.size();</span>
+<span class="fc" id="L77">            int n = Math.min(remaining, len);</span>
+<span class="fc" id="L78">            bytes.write(b, off, n);</span>
+<span class="fc" id="L79">            off += n;</span>
+<span class="fc" id="L80">            len -= n;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (bytes.size() == partSize) {</span>
+<span class="fc" id="L82">                submitPart();</span>
+            }
+<span class="fc" id="L84">        }</span>
+<span class="fc" id="L85">    }</span>
+
+    @Override
+    public void write(byte[] b) throws IOException {
+<span class="fc" id="L89">        write(b, 0, b.length);</span>
+<span class="fc" id="L90">    }</span>
+
+    private void submitPart() {
+<span class="fc" id="L93">        int part = nextPart;</span>
+<span class="fc" id="L94">        nextPart++;</span>
+<span class="fc" id="L95">        byte[] body = bytes.toByteArray();</span>
+<span class="fc" id="L96">        bytes.reset();</span>
+<span class="fc" id="L97">        Future&lt;String&gt; future = executor.submit(() -&gt; retry(() -&gt; s3 //</span>
+<span class="fc" id="L98">                .path(bucket, key) //</span>
+<span class="fc" id="L99">                .method(HttpMethod.PUT) //</span>
+<span class="fc" id="L100">                .query(&quot;partNumber&quot;, &quot;&quot; + part) //</span>
+<span class="fc" id="L101">                .query(&quot;uploadId&quot;, uploadId) //</span>
+<span class="fc" id="L102">                .requestBody(body) //</span>
+<span class="fc" id="L103">                .readTimeout(partTimeoutMs, TimeUnit.MILLISECONDS) //</span>
+<span class="fc" id="L104">                .responseExpectStatusCode(200) //</span>
+<span class="fc" id="L105">                .firstHeader(&quot;ETag&quot;) //</span>
+<span class="fc" id="L106">                .get() //</span>
+<span class="fc" id="L107">                .replace(&quot;\&quot;&quot;, &quot;&quot;), //</span>
+                &quot;on part &quot; + part));
+<span class="fc" id="L109">        futures.add(future);</span>
+<span class="fc" id="L110">    }</span>
+
+    private &lt;T&gt; T retry(Callable&lt;T&gt; callable, String description) {
+<span class="fc" id="L113">        int attempt = 1;</span>
+        while (true) {
+            try {
+<span class="fc" id="L116">                return callable.call();</span>
+<span class="fc" id="L117">            } catch (Throwable e) {</span>
+<span class="fc" id="L118">                attempt++;</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                if (attempt &gt; maxAttempts) {</span>
+<span class="fc" id="L120">                    throw new MaxAttemptsExceededException(</span>
+                            &quot;exceeded max attempts &quot; + maxAttempts + &quot; &quot; + description, e);
+                }
+                // Note could do using ScheduledExecutorService rather than blocking the
+                // thread here
+<span class="fc" id="L125">                sleep(retryIntervalMs);</span>
+<span class="fc" id="L126">            }</span>
+        }
+    }
+
+    private static void sleep(long duration) {
+        try {
+<span class="fc" id="L132">            Thread.sleep(duration);</span>
+<span class="nc" id="L133">        } catch (InterruptedException e) {</span>
+            // do nothing
+<span class="fc" id="L135">        }</span>
+<span class="fc" id="L136">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        // submit whatever's left
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (bytes.size() &gt; 0) {</span>
+<span class="fc" id="L142">            submitPart();</span>
+        }
+<span class="fc" id="L144">        List&lt;String&gt; etags = futures //</span>
+<span class="fc" id="L145">                .stream() //</span>
+<span class="fc" id="L146">                .map(future -&gt; getResult(future)) //</span>
+<span class="fc" id="L147">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L149">        Xml xml = Xml //</span>
+<span class="fc" id="L150">                .create(&quot;CompleteMultipartUpload&quot;) //</span>
+<span class="fc" id="L151">                .attribute(&quot;xmlns&quot;, &quot;http:s3.amazonaws.com/doc/2006-03-01/&quot;);</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        for (int i = 0; i &lt; etags.size(); i++) {</span>
+<span class="fc" id="L153">            xml = xml //</span>
+<span class="fc" id="L154">                    .element(&quot;Part&quot;) //</span>
+<span class="fc" id="L155">                    .element(&quot;ETag&quot;).content(etags.get(i)) //</span>
+<span class="fc" id="L156">                    .up() //</span>
+<span class="fc" id="L157">                    .element(&quot;PartNumber&quot;).content(String.valueOf(i + 1)) //</span>
+<span class="fc" id="L158">                    .up().up();</span>
+        }
+<span class="fc" id="L160">        String xmlFinal = xml.toString();</span>
+<span class="fc" id="L161">        retry(() -&gt; {</span>
+<span class="fc" id="L162">            s3.path(bucket, key) //</span>
+<span class="fc" id="L163">                    .method(HttpMethod.POST) //</span>
+<span class="fc" id="L164">                    .query(&quot;uploadId&quot;, uploadId) //</span>
+<span class="fc" id="L165">                    .header(&quot;Content-Type&quot;, &quot;application/xml&quot;) //</span>
+<span class="fc" id="L166">                    .unsignedPayload() //</span>
+<span class="fc" id="L167">                    .requestBody(xmlFinal) //</span>
+<span class="fc" id="L168">                    .execute();</span>
+<span class="fc" id="L169">            return null;</span>
+        }, &quot;while completing multipart upload&quot;);
+<span class="fc" id="L171">    }</span>
+
+    private String getResult(Future&lt;String&gt; future) {
+        try {
+<span class="fc" id="L175">            return future.get(partTimeoutMs, TimeUnit.MILLISECONDS);</span>
+<span class="fc" id="L176">        } catch (Throwable e) {</span>
+<span class="fc" id="L177">            abort();</span>
+<span class="fc" id="L178">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+<span class="nc" id="L184">        singleByte[0] = (byte) b;</span>
+<span class="nc" id="L185">        write(singleByte, 0, 1);</span>
+<span class="nc" id="L186">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

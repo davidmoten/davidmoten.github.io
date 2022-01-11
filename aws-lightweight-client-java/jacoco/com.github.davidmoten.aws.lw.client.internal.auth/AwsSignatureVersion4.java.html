@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.SimpleTimeZone;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -28,7 +29,7 @@ import com.github.davidmoten.aws.lw.client.internal.util.Util;
  * Common methods and properties for all AWS4 signer variants
  */
 public final class AwsSignatureVersion4 {
-    
+
     static final String ALGORITHM_HMAC_SHA256 = &quot;HmacSHA256&quot;;
     /** SHA256 hash of an empty request body **/
     public static final String EMPTY_BODY_SHA256 = &quot;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&quot;;
@@ -65,82 +66,89 @@ public final class AwsSignatureVersion4 {
      *                        'X-Amz-Content-SHA256' for non-streaming uploads.
      * @param awsAccessKey    The user's AWS Access Key.
      * @param awsSecretKey    The user's AWS Secret Key.
+     * @param sessionToken
      * @return The computed authorization string for the request. This value needs
      *         to be set as the header 'Authorization' on the subsequent HTTP
      *         request.
      */
     public static String computeSignatureForQueryAuth(URL endpointUrl, String httpMethod,
-            String serviceName, String regionName, Clock clock, Map&lt;String, String&gt; headers,
+            String serviceName, Optional&lt;String&gt; regionName, Clock clock, Map&lt;String, String&gt; headers,
             Map&lt;String, String&gt; queryParameters, String bodyHash, String awsAccessKey,
-            String awsSecretKey) {
+            String awsSecretKey, Optional&lt;String&gt; sessionToken) {
         // first get the date and time for the subsequent request, and convert
         // to ISO 8601 format for use in signature generation
-<span class="fc" id="L78">        Date now = new Date(clock.time());</span>
-<span class="fc" id="L79">        String dateTimeStamp = dateTimeFormat().format(now);</span>
+<span class="fc" id="L80">        Date now = new Date(clock.time());</span>
+<span class="fc" id="L81">        String dateTimeStamp = dateTimeFormat().format(now);</span>
 
         // make sure &quot;Host&quot; header is added
-<span class="fc" id="L82">        String hostHeader = endpointUrl.getHost();</span>
-<span class="fc" id="L83">        int port = endpointUrl.getPort();</span>
-<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (port &gt; -1) {</span>
-<span class="fc" id="L85">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
+<span class="fc" id="L84">        String hostHeader = endpointUrl.getHost();</span>
+<span class="fc" id="L85">        int port = endpointUrl.getPort();</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (port &gt; -1) {</span>
+<span class="fc" id="L87">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
         }
-<span class="fc" id="L87">        headers.put(&quot;Host&quot;, hostHeader);</span>
+<span class="fc" id="L89">        headers.put(&quot;Host&quot;, hostHeader);</span>
 
         // canonicalized headers need to be expressed in the query
         // parameters processed in the signature
-<span class="fc" id="L91">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
-<span class="fc" id="L92">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
+<span class="fc" id="L93">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
+<span class="fc" id="L94">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
 
         // we need scope as part of the query parameters
-<span class="fc" id="L95">        String dateStamp = dateStampFormat().format(now);</span>
-<span class="fc" id="L96">        String scope = dateStamp + &quot;/&quot; + regionName + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
+<span class="fc" id="L97">        String dateStamp = dateStampFormat().format(now);</span>
+<span class="fc" id="L98">        String scope = dateStamp + &quot;/&quot; + regionName.orElse(&quot;us-east-1&quot;) + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
 
         // add the fixed authorization params required by Signature V4
-<span class="fc" id="L99">        queryParameters.put(&quot;X-Amz-Algorithm&quot;, SCHEME + &quot;-&quot; + ALGORITHM);</span>
-<span class="fc" id="L100">        queryParameters.put(&quot;X-Amz-Credential&quot;, awsAccessKey + &quot;/&quot; + scope);</span>
+<span class="fc" id="L101">        queryParameters.put(&quot;X-Amz-Algorithm&quot;, SCHEME + &quot;-&quot; + ALGORITHM);</span>
+<span class="fc" id="L102">        queryParameters.put(&quot;X-Amz-Credential&quot;, awsAccessKey + &quot;/&quot; + scope);</span>
 
         // x-amz-date is now added as a query parameter, but still need to be in ISO8601
         // basic form
-<span class="fc" id="L104">        queryParameters.put(&quot;X-Amz-Date&quot;, dateTimeStamp);</span>
+<span class="fc" id="L106">        queryParameters.put(&quot;X-Amz-Date&quot;, dateTimeStamp);</span>
 
-<span class="fc" id="L106">        queryParameters.put(&quot;X-Amz-SignedHeaders&quot;, canonicalizedHeaderNames);</span>
+<span class="fc" id="L108">        queryParameters.put(&quot;X-Amz-SignedHeaders&quot;, canonicalizedHeaderNames);</span>
+        
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (sessionToken.isPresent()) {</span>
+<span class="fc" id="L111">            queryParameters.put(&quot;X-Amz-Security-Token&quot;, sessionToken.get());</span>
+        }
 
         // build the expanded canonical query parameter string that will go into the
         // signature computation
-<span class="fc" id="L110">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
+<span class="fc" id="L116">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
 
         // express all the header and query parameter data as a canonical request string
-<span class="fc" id="L113">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
+<span class="fc" id="L119">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
                 canonicalizedQueryParameters, canonicalizedHeaderNames, canonicalizedHeaders,
                 bodyHash);
 
         // construct the string to be signed
-<span class="fc" id="L118">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
+<span class="fc" id="L124">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
                 canonicalRequest);
 //        System.out.println(&quot;--------- String to sign -----------&quot;);
 //        System.out.println(stringToSign);
 //        System.out.println(&quot;------------------------------------&quot;);
 
         // compute the signing key
-<span class="fc" id="L125">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
-<span class="fc" id="L126">        byte[] kDate = sign(dateStamp, kSecret);</span>
-<span class="fc" id="L127">        byte[] kRegion = sign(regionName, kDate);</span>
-<span class="fc" id="L128">        byte[] kService = sign(serviceName, kRegion);</span>
-<span class="fc" id="L129">        byte[] kSigning = sign(TERMINATOR, kService);</span>
-<span class="fc" id="L130">        byte[] signature = sign(stringToSign, kSigning);</span>
+<span class="fc" id="L131">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L132">        byte[] kDate = sign(dateStamp, kSecret);</span>
+<span class="fc" id="L133">        byte[] kRegion = sign(regionName.orElse(&quot;us-east-1&quot;), kDate);</span>
+<span class="fc" id="L134">        byte[] kService = sign(serviceName, kRegion);</span>
+<span class="fc" id="L135">        byte[] kSigning = sign(TERMINATOR, kService);</span>
+<span class="fc" id="L136">        byte[] signature = sign(stringToSign, kSigning);</span>
 
         // form up the authorization parameters for the caller to place in the query
         // string
-<span class="fc" id="L134">        StringBuilder authString = new StringBuilder();</span>
+<span class="fc" id="L140">        StringBuilder authString = new StringBuilder();</span>
 
-<span class="fc" id="L136">        authString.append(&quot;X-Amz-Algorithm=&quot; + queryParameters.get(&quot;X-Amz-Algorithm&quot;));</span>
-<span class="fc" id="L137">        authString.append(&quot;&amp;X-Amz-Credential=&quot; + queryParameters.get(&quot;X-Amz-Credential&quot;));</span>
-<span class="fc" id="L138">        authString.append(&quot;&amp;X-Amz-Date=&quot; + queryParameters.get(&quot;X-Amz-Date&quot;));</span>
-<span class="fc" id="L139">        authString.append(&quot;&amp;X-Amz-Expires=&quot; + queryParameters.get(&quot;X-Amz-Expires&quot;));</span>
-<span class="fc" id="L140">        authString.append(&quot;&amp;X-Amz-SignedHeaders=&quot; + queryParameters.get(&quot;X-Amz-SignedHeaders&quot;));</span>
-<span class="fc" id="L141">        authString.append(&quot;&amp;X-Amz-Signature=&quot; + Util.toHex(signature));</span>
-
-<span class="fc" id="L143">        return authString.toString();</span>
+<span class="fc" id="L142">        authString.append(&quot;X-Amz-Algorithm=&quot; + queryParameters.get(&quot;X-Amz-Algorithm&quot;));</span>
+<span class="fc" id="L143">        authString.append(&quot;&amp;X-Amz-Credential=&quot; + queryParameters.get(&quot;X-Amz-Credential&quot;));</span>
+<span class="fc" id="L144">        authString.append(&quot;&amp;X-Amz-Date=&quot; + queryParameters.get(&quot;X-Amz-Date&quot;));</span>
+<span class="fc" id="L145">        authString.append(&quot;&amp;X-Amz-Expires=&quot; + queryParameters.get(&quot;X-Amz-Expires&quot;));</span>
+<span class="fc" id="L146">        authString.append(&quot;&amp;X-Amz-SignedHeaders=&quot; + queryParameters.get(&quot;X-Amz-SignedHeaders&quot;));</span>
+<span class="fc" id="L147">        authString.append(&quot;&amp;X-Amz-Signature=&quot; + Util.toHex(signature));</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (sessionToken.isPresent()) {</span>
+<span class="fc" id="L149">            authString.append(&quot;&amp;X-Amz-Security-Token=&quot; + Util.urlEncode(sessionToken.get(), false));</span>
+        }
+<span class="fc" id="L151">        return authString.toString();</span>
     }
 
     /**
@@ -170,37 +178,37 @@ public final class AwsSignatureVersion4 {
             String serviceName, String regionName, Clock clock, Map&lt;String, String&gt; headers,
             Map&lt;String, String&gt; queryParameters, String bodyHash, String awsAccessKey,
             String awsSecretKey) {
-<span class="fc" id="L173">        Preconditions.checkNotNull(headers);</span>
-<span class="fc" id="L174">        Preconditions.checkNotNull(queryParameters);</span>
-<span class="fc" id="L175">        SimpleDateFormat dateTimeFormat = dateTimeFormat();</span>
-<span class="fc" id="L176">        SimpleDateFormat dateStampFormat = dateStampFormat();</span>
+<span class="fc" id="L181">        Preconditions.checkNotNull(headers);</span>
+<span class="fc" id="L182">        Preconditions.checkNotNull(queryParameters);</span>
+<span class="fc" id="L183">        SimpleDateFormat dateTimeFormat = dateTimeFormat();</span>
+<span class="fc" id="L184">        SimpleDateFormat dateStampFormat = dateStampFormat();</span>
         // first get the date and time for the subsequent request, and convert
         // to ISO 8601 format for use in signature generation
-<span class="fc" id="L179">        Date now = new Date(clock.time());</span>
-<span class="fc" id="L180">        String dateTimeStamp = dateTimeFormat.format(now);</span>
+<span class="fc" id="L187">        Date now = new Date(clock.time());</span>
+<span class="fc" id="L188">        String dateTimeStamp = dateTimeFormat.format(now);</span>
 
         // update the headers with required 'x-amz-date' and 'host' values
-<span class="fc" id="L183">        headers.put(&quot;x-amz-date&quot;, dateTimeStamp);</span>
+<span class="fc" id="L191">        headers.put(&quot;x-amz-date&quot;, dateTimeStamp);</span>
 
-<span class="fc" id="L185">        String hostHeader = endpointUrl.getHost();</span>
-<span class="fc" id="L186">        int port = endpointUrl.getPort();</span>
-<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (port &gt; -1) {</span>
-<span class="fc" id="L188">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
+<span class="fc" id="L193">        String hostHeader = endpointUrl.getHost();</span>
+<span class="fc" id="L194">        int port = endpointUrl.getPort();</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (port &gt; -1) {</span>
+<span class="fc" id="L196">            hostHeader = hostHeader.concat(&quot;:&quot; + port);</span>
         }
-<span class="fc" id="L190">        headers.put(&quot;Host&quot;, hostHeader);</span>
+<span class="fc" id="L198">        headers.put(&quot;Host&quot;, hostHeader);</span>
 
         // canonicalize the headers; we need the set of header names as well as the
         // names and values to go into the signature process
-<span class="fc" id="L194">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
-<span class="fc" id="L195">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
+<span class="fc" id="L202">        String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);</span>
+<span class="fc" id="L203">        String canonicalizedHeaders = getCanonicalizedHeaderString(headers);</span>
 
         // if any query string parameters have been supplied, canonicalize them
-<span class="fc" id="L198">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
+<span class="fc" id="L206">        String canonicalizedQueryParameters = getCanonicalizedQueryString(queryParameters);</span>
 //        System.out.println(&quot;--------- Canonical query string --------&quot;);
 //        System.out.println(canonicalizedQueryParameters);
 
         // canonicalize the various components of the request
-<span class="fc" id="L203">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
+<span class="fc" id="L211">        String canonicalRequest = getCanonicalRequest(endpointUrl, httpMethod,</span>
                 canonicalizedQueryParameters, canonicalizedHeaderNames, canonicalizedHeaders,
                 bodyHash);
 //        System.out.println(&quot;--------- Canonical request --------&quot;);
@@ -208,41 +216,41 @@ public final class AwsSignatureVersion4 {
 //        System.out.println(&quot;------------------------------------&quot;);
 
         // construct the string to be signed
-<span class="fc" id="L211">        String dateStamp = dateStampFormat.format(now);</span>
-<span class="fc" id="L212">        String scope = dateStamp + &quot;/&quot; + regionName + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
-<span class="fc" id="L213">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
+<span class="fc" id="L219">        String dateStamp = dateStampFormat.format(now);</span>
+<span class="fc" id="L220">        String scope = dateStamp + &quot;/&quot; + regionName + &quot;/&quot; + serviceName + &quot;/&quot; + TERMINATOR;</span>
+<span class="fc" id="L221">        String stringToSign = getStringToSign(SCHEME, ALGORITHM, dateTimeStamp, scope,</span>
                 canonicalRequest);
 //        System.out.println(&quot;--------- String to sign -----------&quot;);
 //        System.out.println(stringToSign);
 //        System.out.println(&quot;------------------------------------&quot;);
 
         // compute the signing key
-<span class="fc" id="L220">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
-<span class="fc" id="L221">        byte[] kDate = sign(dateStamp, kSecret);</span>
-<span class="fc" id="L222">        byte[] kRegion = sign(regionName, kDate);</span>
-<span class="fc" id="L223">        byte[] kService = sign(serviceName, kRegion);</span>
-<span class="fc" id="L224">        byte[] kSigning = sign(TERMINATOR, kService);</span>
-<span class="fc" id="L225">        byte[] signature = sign(stringToSign, kSigning);</span>
+<span class="fc" id="L228">        byte[] kSecret = (SCHEME + awsSecretKey).getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L229">        byte[] kDate = sign(dateStamp, kSecret);</span>
+<span class="fc" id="L230">        byte[] kRegion = sign(regionName, kDate);</span>
+<span class="fc" id="L231">        byte[] kService = sign(serviceName, kRegion);</span>
+<span class="fc" id="L232">        byte[] kSigning = sign(TERMINATOR, kService);</span>
+<span class="fc" id="L233">        byte[] signature = sign(stringToSign, kSigning);</span>
 
-<span class="fc" id="L227">        String credentialsAuthorizationHeader = &quot;Credential=&quot; + awsAccessKey + &quot;/&quot; + scope;</span>
-<span class="fc" id="L228">        String signedHeadersAuthorizationHeader = &quot;SignedHeaders=&quot; + canonicalizedHeaderNames;</span>
-<span class="fc" id="L229">        String signatureAuthorizationHeader = &quot;Signature=&quot; + Util.toHex(signature);</span>
+<span class="fc" id="L235">        String credentialsAuthorizationHeader = &quot;Credential=&quot; + awsAccessKey + &quot;/&quot; + scope;</span>
+<span class="fc" id="L236">        String signedHeadersAuthorizationHeader = &quot;SignedHeaders=&quot; + canonicalizedHeaderNames;</span>
+<span class="fc" id="L237">        String signatureAuthorizationHeader = &quot;Signature=&quot; + Util.toHex(signature);</span>
 
-<span class="fc" id="L231">        String authorizationHeader = SCHEME + &quot;-&quot; + ALGORITHM + &quot; &quot; + credentialsAuthorizationHeader</span>
+<span class="fc" id="L239">        String authorizationHeader = SCHEME + &quot;-&quot; + ALGORITHM + &quot; &quot; + credentialsAuthorizationHeader</span>
                 + &quot;, &quot; + signedHeadersAuthorizationHeader + &quot;, &quot; + signatureAuthorizationHeader;
-<span class="fc" id="L233">        return authorizationHeader;</span>
+<span class="fc" id="L241">        return authorizationHeader;</span>
     }
 
     static SimpleDateFormat dateTimeFormat() {
-<span class="fc" id="L237">        SimpleDateFormat sdf = new SimpleDateFormat(ISO8601BasicFormat);</span>
-<span class="fc" id="L238">        sdf.setTimeZone(new SimpleTimeZone(0, &quot;UTC&quot;));</span>
-<span class="fc" id="L239">        return sdf;</span>
+<span class="fc" id="L245">        SimpleDateFormat sdf = new SimpleDateFormat(ISO8601BasicFormat);</span>
+<span class="fc" id="L246">        sdf.setTimeZone(new SimpleTimeZone(0, &quot;UTC&quot;));</span>
+<span class="fc" id="L247">        return sdf;</span>
     }
 
     static SimpleDateFormat dateStampFormat() {
-<span class="fc" id="L243">        SimpleDateFormat sdf = new SimpleDateFormat(DateStringFormat);</span>
-<span class="fc" id="L244">        sdf.setTimeZone(new SimpleTimeZone(0, &quot;UTC&quot;));</span>
-<span class="fc" id="L245">        return sdf;</span>
+<span class="fc" id="L251">        SimpleDateFormat sdf = new SimpleDateFormat(DateStringFormat);</span>
+<span class="fc" id="L252">        sdf.setTimeZone(new SimpleTimeZone(0, &quot;UTC&quot;));</span>
+<span class="fc" id="L253">        return sdf;</span>
     }
 
     /**
@@ -254,18 +262,18 @@ public final class AwsSignatureVersion4 {
      * @return canonical header names string
      */
     static String getCanonicalizeHeaderNames(Map&lt;String, String&gt; headers) {
-<span class="fc" id="L257">        List&lt;String&gt; sortedHeaders = new ArrayList&lt;String&gt;();</span>
-<span class="fc" id="L258">        sortedHeaders.addAll(headers.keySet());</span>
-<span class="fc" id="L259">        Collections.sort(sortedHeaders, String.CASE_INSENSITIVE_ORDER);</span>
+<span class="fc" id="L265">        List&lt;String&gt; sortedHeaders = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L266">        sortedHeaders.addAll(headers.keySet());</span>
+<span class="fc" id="L267">        Collections.sort(sortedHeaders, String.CASE_INSENSITIVE_ORDER);</span>
 
-<span class="fc" id="L261">        StringBuilder buffer = new StringBuilder();</span>
-<span class="fc bfc" id="L262" title="All 2 branches covered.">        for (String header : sortedHeaders) {</span>
-<span class="fc bfc" id="L263" title="All 2 branches covered.">            if (buffer.length() &gt; 0)</span>
-<span class="fc" id="L264">                buffer.append(&quot;;&quot;);</span>
-<span class="fc" id="L265">            buffer.append(header.toLowerCase(Locale.ENGLISH));</span>
-<span class="fc" id="L266">        }</span>
+<span class="fc" id="L269">        StringBuilder buffer = new StringBuilder();</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        for (String header : sortedHeaders) {</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if (buffer.length() &gt; 0)</span>
+<span class="fc" id="L272">                buffer.append(&quot;;&quot;);</span>
+<span class="fc" id="L273">            buffer.append(header.toLowerCase(Locale.ENGLISH));</span>
+<span class="fc" id="L274">        }</span>
 
-<span class="fc" id="L268">        return buffer.toString();</span>
+<span class="fc" id="L276">        return buffer.toString();</span>
     }
 
     /**
@@ -278,21 +286,21 @@ public final class AwsSignatureVersion4 {
     static String getCanonicalizedHeaderString(Map&lt;String, String&gt; headers) {
 
         // step1: sort the headers by case-insensitive order
-<span class="fc" id="L281">        List&lt;String&gt; sortedHeaders = new ArrayList&lt;String&gt;();</span>
-<span class="fc" id="L282">        sortedHeaders.addAll(headers.keySet());</span>
-<span class="fc" id="L283">        Collections.sort(sortedHeaders, String.CASE_INSENSITIVE_ORDER);</span>
+<span class="fc" id="L289">        List&lt;String&gt; sortedHeaders = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L290">        sortedHeaders.addAll(headers.keySet());</span>
+<span class="fc" id="L291">        Collections.sort(sortedHeaders, String.CASE_INSENSITIVE_ORDER);</span>
 
         // step2: form the canonical header:value entries in sorted order.
         // Multiple white spaces in the values should be compressed to a single
         // space.
-<span class="fc" id="L288">        StringBuilder buffer = new StringBuilder();</span>
-<span class="fc bfc" id="L289" title="All 2 branches covered.">        for (String key : sortedHeaders) {</span>
-<span class="fc" id="L290">            buffer.append(key.toLowerCase(Locale.ENGLISH).replaceAll(&quot;\\s+&quot;, &quot; &quot;) + &quot;:&quot;</span>
-<span class="fc" id="L291">                    + headers.get(key).replaceAll(&quot;\\s+&quot;, &quot; &quot;));</span>
-<span class="fc" id="L292">            buffer.append(&quot;\n&quot;);</span>
-<span class="fc" id="L293">        }</span>
+<span class="fc" id="L296">        StringBuilder buffer = new StringBuilder();</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">        for (String key : sortedHeaders) {</span>
+<span class="fc" id="L298">            buffer.append(key.toLowerCase(Locale.ENGLISH).replaceAll(&quot;\\s+&quot;, &quot; &quot;) + &quot;:&quot;</span>
+<span class="fc" id="L299">                    + headers.get(key).replaceAll(&quot;\\s+&quot;, &quot; &quot;));</span>
+<span class="fc" id="L300">            buffer.append(&quot;\n&quot;);</span>
+<span class="fc" id="L301">        }</span>
 
-<span class="fc" id="L295">        return buffer.toString();</span>
+<span class="fc" id="L303">        return buffer.toString();</span>
     }
 
     /**
@@ -310,9 +318,12 @@ public final class AwsSignatureVersion4 {
     static String getCanonicalRequest(URL endpoint, String httpMethod,
             String canonicalQueryParameters, String canonicalizedHeaderNames,
             String canonicalizedHeaders, String bodyHash) {
-<span class="fc" id="L313">        return httpMethod + &quot;\n&quot; + getCanonicalizedResourcePath(endpoint) + &quot;\n&quot;</span>
-                + canonicalQueryParameters + &quot;\n&quot; + canonicalizedHeaders + &quot;\n&quot;
-                + canonicalizedHeaderNames + &quot;\n&quot; + bodyHash;
+<span class="fc" id="L321">        return httpMethod + &quot;\n&quot; //</span>
+<span class="fc" id="L322">                + getCanonicalizedResourcePath(endpoint) + &quot;\n&quot; //</span>
+                + canonicalQueryParameters + &quot;\n&quot; //
+                + canonicalizedHeaders + &quot;\n&quot; //
+                + canonicalizedHeaderNames + &quot;\n&quot; //
+                + bodyHash;
     }
 
     /**
@@ -322,12 +333,12 @@ public final class AwsSignatureVersion4 {
      * @return canonicalized resource path
      */
     static String getCanonicalizedResourcePath(URL endpoint) {
-<span class="fc" id="L325">        Preconditions.checkNotNull(endpoint);</span>
-<span class="fc" id="L326">        String path = endpoint.getPath();</span>
-<span class="fc bfc" id="L327" title="All 2 branches covered.">        if (path.isEmpty()) {</span>
-<span class="fc" id="L328">            return &quot;/&quot;;</span>
+<span class="fc" id="L336">        Preconditions.checkNotNull(endpoint);</span>
+<span class="fc" id="L337">        String path = endpoint.getPath();</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        if (path.isEmpty()) {</span>
+<span class="fc" id="L339">            return &quot;/&quot;;</span>
         } else {
-<span class="fc" id="L330">            return Util.urlEncode(path, true);</span>
+<span class="fc" id="L341">            return Util.urlEncode(path, true);</span>
         }
     }
 
@@ -344,43 +355,43 @@ public final class AwsSignatureVersion4 {
      * @return A canonicalized form for the specified query string parameters.
      */
     static String getCanonicalizedQueryString(Map&lt;String, String&gt; parameters) {
-<span class="fc" id="L347">        SortedMap&lt;String, String&gt; sorted = new TreeMap&lt;String, String&gt;();</span>
+<span class="fc" id="L358">        SortedMap&lt;String, String&gt; sorted = new TreeMap&lt;String, String&gt;();</span>
 
-<span class="fc bfc" id="L349" title="All 2 branches covered.">        for (Entry&lt;String, String&gt; pair : parameters.entrySet()) {</span>
-<span class="fc" id="L350">            sorted.put(Util.urlEncode(pair.getKey(), false),</span>
-<span class="fc bfc" id="L351" title="All 2 branches covered.">                    pair.getValue() == null ? null : Util.urlEncode(pair.getValue(), false));</span>
-<span class="fc" id="L352">        }</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        for (Entry&lt;String, String&gt; pair : parameters.entrySet()) {</span>
+<span class="fc" id="L361">            sorted.put(Util.urlEncode(pair.getKey(), false),</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">                    pair.getValue() == null ? null : Util.urlEncode(pair.getValue(), false));</span>
+<span class="fc" id="L363">        }</span>
 
-<span class="fc" id="L354">        return sorted //</span>
-<span class="fc" id="L355">                .entrySet() //</span>
-<span class="fc" id="L356">                .stream() //</span>
-<span class="fc" id="L357">                .map(pair -&gt; pair.getKey() + &quot;=&quot; + blankIfNull(pair.getValue()))</span>
-<span class="fc" id="L358">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
+<span class="fc" id="L365">        return sorted //</span>
+<span class="fc" id="L366">                .entrySet() //</span>
+<span class="fc" id="L367">                .stream() //</span>
+<span class="fc" id="L368">                .map(pair -&gt; pair.getKey() + &quot;=&quot; + blankIfNull(pair.getValue()))</span>
+<span class="fc" id="L369">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
     }
 
     private static String blankIfNull(String s) {
-<span class="fc bfc" id="L362" title="All 2 branches covered.">        return s == null ? &quot;&quot; : s;</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">        return s == null ? &quot;&quot; : s;</span>
     }
 
     static String getStringToSign(String scheme, String algorithm, String dateTime, String scope,
             String canonicalRequest) {
-<span class="fc" id="L367">        return scheme + &quot;-&quot; + algorithm + &quot;\n&quot; + dateTime + &quot;\n&quot; + scope + &quot;\n&quot;</span>
-<span class="fc" id="L368">                + Util.toHex(Util.sha256(canonicalRequest));</span>
+<span class="fc" id="L378">        return scheme + &quot;-&quot; + algorithm + &quot;\n&quot; + dateTime + &quot;\n&quot; + scope + &quot;\n&quot;</span>
+<span class="fc" id="L379">                + Util.toHex(Util.sha256(canonicalRequest));</span>
     }
 
     static byte[] sign(String stringData, byte[] key) {
-<span class="fc" id="L372">        return sign(stringData, key, ALGORITHM_HMAC_SHA256);</span>
+<span class="fc" id="L383">        return sign(stringData, key, ALGORITHM_HMAC_SHA256);</span>
     }
 
     // VisibleForTesting
     static byte[] sign(String stringData, byte[] key, String algorithm) {
         try {
-<span class="fc" id="L378">            byte[] data = stringData.getBytes(StandardCharsets.UTF_8);</span>
-<span class="fc" id="L379">            Mac mac = Mac.getInstance(algorithm);</span>
-<span class="fc" id="L380">            mac.init(new SecretKeySpec(key, algorithm));</span>
-<span class="fc" id="L381">            return mac.doFinal(data);</span>
-<span class="fc" id="L382">        } catch (NoSuchAlgorithmException | InvalidKeyException e) {</span>
-<span class="fc" id="L383">            throw new RuntimeException(e);</span>
+<span class="fc" id="L389">            byte[] data = stringData.getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L390">            Mac mac = Mac.getInstance(algorithm);</span>
+<span class="fc" id="L391">            mac.init(new SecretKeySpec(key, algorithm));</span>
+<span class="fc" id="L392">            return mac.doFinal(data);</span>
+<span class="fc" id="L393">        } catch (NoSuchAlgorithmException | InvalidKeyException e) {</span>
+<span class="fc" id="L394">            throw new RuntimeException(e);</span>
         }
     }
 

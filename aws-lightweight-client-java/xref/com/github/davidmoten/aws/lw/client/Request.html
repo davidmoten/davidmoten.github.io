@@ -27,7 +27,7 @@
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="Request" href="../../../../../../com/github/davidmoten/aws/lw/client/Request.html#Request">Request</a> {
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a name="Client" href="../../../../../../com/github/davidmoten/aws/lw/client/Client.html#Client">Client</a> client;
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">private</strong> String region;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">private</strong> Optional&lt;String&gt; region;
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>      <strong class="jxr_keyword">private</strong> String url;
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">private</strong> <a name="HttpMethod" href="../../../../../../com/github/davidmoten/aws/lw/client/HttpMethod.html#HttpMethod">HttpMethod</a> method = HttpMethod.GET;
 <a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Map&lt;String, List&lt;String&gt;&gt; headers = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
@@ -84,12 +84,12 @@
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>          RequestHelper.put(headers, name, value);
 <a class="jxr_linenumber" name="L77" href="#L77">77</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L78" href="#L78">78</a>      }
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>      
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
 <a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">public</strong> <a name="Request" href="../../../../../../com/github/davidmoten/aws/lw/client/Request.html#Request">Request</a> signPayload(<strong class="jxr_keyword">boolean</strong> signPayload) {
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>          <strong class="jxr_keyword">this</strong>.signPayload= signPayload;
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          <strong class="jxr_keyword">this</strong>.signPayload = signPayload;
 <a class="jxr_linenumber" name="L82" href="#L82">82</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>      }
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>      
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>      <strong class="jxr_keyword">public</strong> <a name="Request" href="../../../../../../com/github/davidmoten/aws/lw/client/Request.html#Request">Request</a> unsignedPayload() {
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>          <strong class="jxr_keyword">return</strong> signPayload(false);
 <a class="jxr_linenumber" name="L87" href="#L87">87</a>      }
@@ -122,7 +122,7 @@
 <a class="jxr_linenumber" name="L114" href="#L114">114</a> 
 <a class="jxr_linenumber" name="L115" href="#L115">115</a>     <strong class="jxr_keyword">public</strong> <a name="Request" href="../../../../../../com/github/davidmoten/aws/lw/client/Request.html#Request">Request</a> region(String region) {
 <a class="jxr_linenumber" name="L116" href="#L116">116</a>         Preconditions.checkNotNull(region);
-<a class="jxr_linenumber" name="L117" href="#L117">117</a>         <strong class="jxr_keyword">this</strong>.region = region;
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         <strong class="jxr_keyword">this</strong>.region = Optional.of(region);
 <a class="jxr_linenumber" name="L118" href="#L118">118</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>;
 <a class="jxr_linenumber" name="L119" href="#L119">119</a>     }
 <a class="jxr_linenumber" name="L120" href="#L120">120</a> 
@@ -179,99 +179,128 @@
 <a class="jxr_linenumber" name="L171" href="#L171">171</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="Response" href="../../../../../../com/github/davidmoten/aws/lw/client/Response.html#Response">Response</a>(r.headers(), bytes, r.statusCode());
 <a class="jxr_linenumber" name="L172" href="#L172">172</a>     }
 <a class="jxr_linenumber" name="L173" href="#L173">173</a> 
-<a class="jxr_linenumber" name="L174" href="#L174">174</a>     <em class="jxr_comment">// VisibleForTesting</em>
-<a class="jxr_linenumber" name="L175" href="#L175">175</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> hasBody(<a name="ResponseInputStream" href="../../../../../../com/github/davidmoten/aws/lw/client/ResponseInputStream.html#ResponseInputStream">ResponseInputStream</a> r) {
-<a class="jxr_linenumber" name="L176" href="#L176">176</a>         <strong class="jxr_keyword">return</strong> r.header(<span class="jxr_string">"Content-Length"</span>).isPresent()
-<a class="jxr_linenumber" name="L177" href="#L177">177</a>                 || r.header(<span class="jxr_string">"Transfer-Encoding"</span>).orElse(<span class="jxr_string">""</span>).equalsIgnoreCase(<span class="jxr_string">"chunked"</span>);
-<a class="jxr_linenumber" name="L178" href="#L178">178</a>     }
-<a class="jxr_linenumber" name="L179" href="#L179">179</a> 
-<a class="jxr_linenumber" name="L180" href="#L180">180</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String calculateUrl(String url, String serviceName, String region,
-<a class="jxr_linenumber" name="L181" href="#L181">181</a>             List&lt;NameValue&gt; queries, List&lt;String&gt; pathSegments) {
-<a class="jxr_linenumber" name="L182" href="#L182">182</a>         String u = url;
-<a class="jxr_linenumber" name="L183" href="#L183">183</a>         <strong class="jxr_keyword">if</strong> (u == <strong class="jxr_keyword">null</strong>) {
-<a class="jxr_linenumber" name="L184" href="#L184">184</a>             u = <span class="jxr_string">"https://"</span> //
-<a class="jxr_linenumber" name="L185" href="#L185">185</a>                     + serviceName <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L186" href="#L186">186</a>                     + <span class="jxr_string">"."</span> <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L187" href="#L187">187</a>                     + region <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L188" href="#L188">188</a>                     + <span class="jxr_string">".amazonaws.com/"</span> <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L189" href="#L189">189</a>                     + pathSegments <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L190" href="#L190">190</a>                             .stream() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L191" href="#L191">191</a>                             .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L192" href="#L192">192</a>                             .collect(Collectors.joining(<span class="jxr_string">"/"</span>));
-<a class="jxr_linenumber" name="L193" href="#L193">193</a>         }
-<a class="jxr_linenumber" name="L194" href="#L194">194</a>         <em class="jxr_comment">// add queries</em>
-<a class="jxr_linenumber" name="L195" href="#L195">195</a>         <strong class="jxr_keyword">for</strong> (NameValue nv : queries) {
-<a class="jxr_linenumber" name="L196" href="#L196">196</a>             <strong class="jxr_keyword">if</strong> (!u.contains(<span class="jxr_string">"?"</span>)) {
-<a class="jxr_linenumber" name="L197" href="#L197">197</a>                 u += <span class="jxr_string">"?"</span>;
-<a class="jxr_linenumber" name="L198" href="#L198">198</a>             }
-<a class="jxr_linenumber" name="L199" href="#L199">199</a>             <strong class="jxr_keyword">if</strong> (!u.endsWith(<span class="jxr_string">"?"</span>)) {
-<a class="jxr_linenumber" name="L200" href="#L200">200</a>                 u += <span class="jxr_string">"&amp;"</span>;
-<a class="jxr_linenumber" name="L201" href="#L201">201</a>             }
-<a class="jxr_linenumber" name="L202" href="#L202">202</a>             <strong class="jxr_keyword">if</strong> (nv.value != <strong class="jxr_keyword">null</strong>) {
-<a class="jxr_linenumber" name="L203" href="#L203">203</a>                 u += Util.urlEncode(nv.name, false) + <span class="jxr_string">"="</span> + Util.urlEncode(nv.value, false);
-<a class="jxr_linenumber" name="L204" href="#L204">204</a>             } <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L205" href="#L205">205</a>                 u += Util.urlEncode(nv.name, false);
-<a class="jxr_linenumber" name="L206" href="#L206">206</a>             }
-<a class="jxr_linenumber" name="L207" href="#L207">207</a>         }
-<a class="jxr_linenumber" name="L208" href="#L208">208</a>         <strong class="jxr_keyword">return</strong> u;
-<a class="jxr_linenumber" name="L209" href="#L209">209</a>     }
-<a class="jxr_linenumber" name="L210" href="#L210">210</a> 
-<a class="jxr_linenumber" name="L211" href="#L211">211</a>     <strong class="jxr_keyword">public</strong> byte[] responseAsBytes() {
-<a class="jxr_linenumber" name="L212" href="#L212">212</a>         <a name="Response" href="../../../../../../com/github/davidmoten/aws/lw/client/Response.html#Response">Response</a> r = response();
-<a class="jxr_linenumber" name="L213" href="#L213">213</a>         Optional&lt;? <strong class="jxr_keyword">extends</strong> RuntimeException&gt; exception = client.exceptionFactory().create(r);
-<a class="jxr_linenumber" name="L214" href="#L214">214</a>         <strong class="jxr_keyword">if</strong> (!exception.isPresent()) {
-<a class="jxr_linenumber" name="L215" href="#L215">215</a>             <strong class="jxr_keyword">return</strong> r.content();
-<a class="jxr_linenumber" name="L216" href="#L216">216</a>         } <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L217" href="#L217">217</a>             <strong class="jxr_keyword">throw</strong> exception.get();
-<a class="jxr_linenumber" name="L218" href="#L218">218</a>         }
-<a class="jxr_linenumber" name="L219" href="#L219">219</a>     }
-<a class="jxr_linenumber" name="L220" href="#L220">220</a> 
-<a class="jxr_linenumber" name="L221" href="#L221">221</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> execute() {
-<a class="jxr_linenumber" name="L222" href="#L222">222</a>         responseAsBytes();
-<a class="jxr_linenumber" name="L223" href="#L223">223</a>     }
-<a class="jxr_linenumber" name="L224" href="#L224">224</a> 
-<a class="jxr_linenumber" name="L225" href="#L225">225</a>     <strong class="jxr_keyword">public</strong> String responseAsUtf8() {
-<a class="jxr_linenumber" name="L226" href="#L226">226</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> String(responseAsBytes(), StandardCharsets.UTF_8);
-<a class="jxr_linenumber" name="L227" href="#L227">227</a>     }
-<a class="jxr_linenumber" name="L228" href="#L228">228</a> 
-<a class="jxr_linenumber" name="L229" href="#L229">229</a>     <strong class="jxr_keyword">public</strong> <a name="XmlElement" href="../../../../../../com/github/davidmoten/aws/lw/client/xml/XmlElement.html#XmlElement">XmlElement</a> responseAsXml() {
-<a class="jxr_linenumber" name="L230" href="#L230">230</a>         <strong class="jxr_keyword">return</strong> XmlElement.parse(responseAsUtf8());
-<a class="jxr_linenumber" name="L231" href="#L231">231</a>     }
-<a class="jxr_linenumber" name="L232" href="#L232">232</a> 
-<a class="jxr_linenumber" name="L233" href="#L233">233</a>     <strong class="jxr_keyword">public</strong> String presignedUrl(<strong class="jxr_keyword">long</strong> expiryDuration, TimeUnit unit) {
-<a class="jxr_linenumber" name="L234" href="#L234">234</a>         String u = calculateUrl(url, client.serviceName(), region, queries,
-<a class="jxr_linenumber" name="L235" href="#L235">235</a>                 Arrays.asList(pathSegments));
-<a class="jxr_linenumber" name="L236" href="#L236">236</a>         <strong class="jxr_keyword">return</strong> RequestHelper.presignedUrl(client.clock(), u, method.toString(),
-<a class="jxr_linenumber" name="L237" href="#L237">237</a>                 RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,
-<a class="jxr_linenumber" name="L238" href="#L238">238</a>                 client.credentials(), connectTimeoutMs, readTimeoutMs,
-<a class="jxr_linenumber" name="L239" href="#L239">239</a>                 unit.toSeconds(expiryDuration), signPayload);
-<a class="jxr_linenumber" name="L240" href="#L240">240</a>     }
-<a class="jxr_linenumber" name="L241" href="#L241">241</a> 
-<a class="jxr_linenumber" name="L242" href="#L242">242</a>     <em class="jxr_comment">// VisibleForTesting</em>
-<a class="jxr_linenumber" name="L243" href="#L243">243</a>     <strong class="jxr_keyword">static</strong> String trimAndRemoveLeadingAndTrailingSlashes(String s) {
-<a class="jxr_linenumber" name="L244" href="#L244">244</a>         Preconditions.checkNotNull(s);
-<a class="jxr_linenumber" name="L245" href="#L245">245</a>         s = s.trim();
-<a class="jxr_linenumber" name="L246" href="#L246">246</a>         <strong class="jxr_keyword">if</strong> (s.startsWith(<span class="jxr_string">"/"</span>)) {
-<a class="jxr_linenumber" name="L247" href="#L247">247</a>             s = s.substring(1);
-<a class="jxr_linenumber" name="L248" href="#L248">248</a>         }
-<a class="jxr_linenumber" name="L249" href="#L249">249</a>         <strong class="jxr_keyword">if</strong> (s.endsWith(<span class="jxr_string">"/"</span>)) {
-<a class="jxr_linenumber" name="L250" href="#L250">250</a>             s = s.substring(0, s.length() - 1);
-<a class="jxr_linenumber" name="L251" href="#L251">251</a>         }
-<a class="jxr_linenumber" name="L252" href="#L252">252</a>         <strong class="jxr_keyword">return</strong> s;
-<a class="jxr_linenumber" name="L253" href="#L253">253</a>     }
-<a class="jxr_linenumber" name="L254" href="#L254">254</a> 
-<a class="jxr_linenumber" name="L255" href="#L255">255</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> NameValue {
-<a class="jxr_linenumber" name="L256" href="#L256">256</a>         <strong class="jxr_keyword">final</strong> String name;
-<a class="jxr_linenumber" name="L257" href="#L257">257</a>         <strong class="jxr_keyword">final</strong> String value;
-<a class="jxr_linenumber" name="L258" href="#L258">258</a> 
-<a class="jxr_linenumber" name="L259" href="#L259">259</a>         NameValue(String name, String value) {
-<a class="jxr_linenumber" name="L260" href="#L260">260</a>             <strong class="jxr_keyword">this</strong>.name = name;
-<a class="jxr_linenumber" name="L261" href="#L261">261</a>             <strong class="jxr_keyword">this</strong>.value = value;
-<a class="jxr_linenumber" name="L262" href="#L262">262</a>         }
-<a class="jxr_linenumber" name="L263" href="#L263">263</a>     }
-<a class="jxr_linenumber" name="L264" href="#L264">264</a> }
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> <em class="jxr_javadoccomment">     * Opens a connection and makes the request. This method returns all the</em>
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> <em class="jxr_javadoccomment">     * response information including headers, status code, request body as a byte</em>
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> <em class="jxr_javadoccomment">     * array. If the expected status code is not encountered then a</em>
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> <em class="jxr_javadoccomment">     * {@link ServiceException} is thrown.</em>
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> <em class="jxr_javadoccomment">     * @return all response information</em>
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> <em class="jxr_javadoccomment">     * @throws ServiceException</em>
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>     <strong class="jxr_keyword">public</strong> <a name="Response" href="../../../../../../com/github/davidmoten/aws/lw/client/Response.html#Response">Response</a> responseExpectStatusCode(<strong class="jxr_keyword">int</strong> expectedStatusCode) {
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>         <a name="Response" href="../../../../../../com/github/davidmoten/aws/lw/client/Response.html#Response">Response</a> r = response();
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>         <strong class="jxr_keyword">if</strong> (r.statusCode() == expectedStatusCode) {
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>             <strong class="jxr_keyword">return</strong> r;
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a name="ServiceException" href="../../../../../../com/github/davidmoten/aws/lw/client/ServiceException.html#ServiceException">ServiceException</a>(r.statusCode(), r.contentUtf8());
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>         }
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>     }
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>     <em class="jxr_comment">// VisibleForTesting</em>
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">boolean</strong> hasBody(<a name="ResponseInputStream" href="../../../../../../com/github/davidmoten/aws/lw/client/ResponseInputStream.html#ResponseInputStream">ResponseInputStream</a> r) {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>         <strong class="jxr_keyword">return</strong> r.header(<span class="jxr_string">"Content-Length"</span>).isPresent()
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>                 || r.header(<span class="jxr_string">"Transfer-Encoding"</span>).orElse(<span class="jxr_string">""</span>).equalsIgnoreCase(<span class="jxr_string">"chunked"</span>);
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>     }
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> 
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String calculateUrl(String url, String serviceName, Optional&lt;String&gt; region,
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>             List&lt;NameValue&gt; queries, List&lt;String&gt; pathSegments) {
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>         String u = url;
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>         <strong class="jxr_keyword">if</strong> (u == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>             u = <span class="jxr_string">"https://"</span> //
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>                     + serviceName <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>                     + region.map(x -&gt; <span class="jxr_string">"."</span> + x).orElse(<span class="jxr_string">""</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>                     + <span class="jxr_string">".amazonaws.com/"</span> <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>                     + pathSegments <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>                             .stream() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>                             .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>                             .collect(Collectors.joining(<span class="jxr_string">"/"</span>));
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>         }
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>         <em class="jxr_comment">// add queries</em>
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>         <strong class="jxr_keyword">for</strong> (NameValue nv : queries) {
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>             <strong class="jxr_keyword">if</strong> (!u.contains(<span class="jxr_string">"?"</span>)) {
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>                 u += <span class="jxr_string">"?"</span>;
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>             }
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>             <strong class="jxr_keyword">if</strong> (!u.endsWith(<span class="jxr_string">"?"</span>)) {
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 u += <span class="jxr_string">"&amp;"</span>;
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>             }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a>             <strong class="jxr_keyword">if</strong> (nv.value != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>                 u += Util.urlEncode(nv.name, false) + <span class="jxr_string">"="</span> + Util.urlEncode(nv.value, false);
+<a class="jxr_linenumber" name="L221" href="#L221">221</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>                 u += Util.urlEncode(nv.name, false);
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>             }
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>         }
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>         <strong class="jxr_keyword">return</strong> u;
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>     }
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>     <strong class="jxr_keyword">public</strong> byte[] responseAsBytes() {
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>         <a name="Response" href="../../../../../../com/github/davidmoten/aws/lw/client/Response.html#Response">Response</a> r = response();
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>         Optional&lt;? <strong class="jxr_keyword">extends</strong> RuntimeException&gt; exception = client.exceptionFactory().create(r);
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>         <strong class="jxr_keyword">if</strong> (!exception.isPresent()) {
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>             <strong class="jxr_keyword">return</strong> r.content();
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>             <strong class="jxr_keyword">throw</strong> exception.get();
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>         }
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>     }
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> <em class="jxr_javadoccomment">     * Returns true if and only if status code is 2xx. Returns false if status code</em>
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> <em class="jxr_javadoccomment">     * is 404 (NOT_FOUND) and throws a {@link ServiceException} otherwise.</em>
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> <em class="jxr_javadoccomment">     * @return true if status code 2xx, false if 404 otherwise throws</em>
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> <em class="jxr_javadoccomment">     *         ServiceException</em>
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> <em class="jxr_javadoccomment">     * @throws ServiceException if status code other than 2xx or 404</em>
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> exists() {
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>         <strong class="jxr_keyword">return</strong> response().exists();
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>     }
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> execute() {
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>         responseAsBytes();
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>     }
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>     <strong class="jxr_keyword">public</strong> String responseAsUtf8() {
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> String(responseAsBytes(), StandardCharsets.UTF_8);
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>     }
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>     <strong class="jxr_keyword">public</strong> <a name="XmlElement" href="../../../../../../com/github/davidmoten/aws/lw/client/xml/XmlElement.html#XmlElement">XmlElement</a> responseAsXml() {
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>         <strong class="jxr_keyword">return</strong> XmlElement.parse(responseAsUtf8());
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>     }
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>     <strong class="jxr_keyword">public</strong> String presignedUrl(<strong class="jxr_keyword">long</strong> expiryDuration, TimeUnit unit) {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         String u = calculateUrl(url, client.serviceName(), region, queries,
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>                 Arrays.asList(pathSegments));
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>         <strong class="jxr_keyword">return</strong> RequestHelper.presignedUrl(client.clock(), u, method.toString(),
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>                 RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,
+<a class="jxr_linenumber" name="L267" href="#L267">267</a>                 client.credentials(), connectTimeoutMs, readTimeoutMs,
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>                 unit.toSeconds(expiryDuration), signPayload);
+<a class="jxr_linenumber" name="L269" href="#L269">269</a>     }
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>     <em class="jxr_comment">// VisibleForTesting</em>
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>     <strong class="jxr_keyword">static</strong> String trimAndRemoveLeadingAndTrailingSlashes(String s) {
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>         Preconditions.checkNotNull(s);
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>         s = s.trim();
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>         <strong class="jxr_keyword">if</strong> (s.startsWith(<span class="jxr_string">"/"</span>)) {
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>             s = s.substring(1);
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>         }
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>         <strong class="jxr_keyword">if</strong> (s.endsWith(<span class="jxr_string">"/"</span>)) {
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>             s = s.substring(0, s.length() - 1);
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>         }
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>         <strong class="jxr_keyword">return</strong> s;
+<a class="jxr_linenumber" name="L282" href="#L282">282</a>     }
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> NameValue {
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>         <strong class="jxr_keyword">final</strong> String name;
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>         <strong class="jxr_keyword">final</strong> String value;
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>         NameValue(String name, String value) {
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>             <strong class="jxr_keyword">this</strong>.name = name;
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>             <strong class="jxr_keyword">this</strong>.value = value;
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>         }
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>     }
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2021&#x2013;2022. All rights reserved.</div>
 </body>
 </html>

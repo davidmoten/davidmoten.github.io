@@ -152,390 +152,390 @@
 <a class="jxr_linenumber" name="L144" href="#L144">144</a>         assertEquals(5000, hc.connectTimeoutMs);
 <a class="jxr_linenumber" name="L145" href="#L145">145</a>         assertEquals(6000, hc.readTimeoutMs);
 <a class="jxr_linenumber" name="L146" href="#L146">146</a>     }
-<a class="jxr_linenumber" name="L147" href="#L147">147</a> 
-<a class="jxr_linenumber" name="L148" href="#L148">148</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L149" href="#L149">149</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadConnectTimeout() {
-<a class="jxr_linenumber" name="L150" href="#L150">150</a>         Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L151" href="#L151">151</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L152" href="#L152">152</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>     
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>     @Test
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRegionNoneUsesUsEast1InSignature() {
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>                 .iam() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>                 .regionNone()
 <a class="jxr_linenumber" name="L153" href="#L153">153</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L154" href="#L154">154</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L155" href="#L155">155</a>                 .connectTimeout(-1, TimeUnit.SECONDS);
-<a class="jxr_linenumber" name="L156" href="#L156">156</a>     }
-<a class="jxr_linenumber" name="L157" href="#L157">157</a> 
-<a class="jxr_linenumber" name="L158" href="#L158">158</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L159" href="#L159">159</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadReadTimeout() {
-<a class="jxr_linenumber" name="L160" href="#L160">160</a>         Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L161" href="#L161">161</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L162" href="#L162">162</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L163" href="#L163">163</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L164" href="#L164">164</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L165" href="#L165">165</a>                 .readTimeout(-1, TimeUnit.SECONDS);
-<a class="jxr_linenumber" name="L166" href="#L166">166</a>     }
-<a class="jxr_linenumber" name="L167" href="#L167">167</a> 
-<a class="jxr_linenumber" name="L168" href="#L168">168</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L169" href="#L169">169</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadConnectTimeout2() {
-<a class="jxr_linenumber" name="L170" href="#L170">170</a>         s3.path().connectTimeout(-1, TimeUnit.SECONDS);
-<a class="jxr_linenumber" name="L171" href="#L171">171</a>     }
-<a class="jxr_linenumber" name="L172" href="#L172">172</a> 
-<a class="jxr_linenumber" name="L173" href="#L173">173</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L174" href="#L174">174</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadReadTimeout2() {
-<a class="jxr_linenumber" name="L175" href="#L175">175</a>         s3.path().readTimeout(-1, TimeUnit.SECONDS);
-<a class="jxr_linenumber" name="L176" href="#L176">176</a>     }
-<a class="jxr_linenumber" name="L177" href="#L177">177</a> 
-<a class="jxr_linenumber" name="L178" href="#L178">178</a>     @Test
-<a class="jxr_linenumber" name="L179" href="#L179">179</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTimeoutsAtClientLevel() {
-<a class="jxr_linenumber" name="L180" href="#L180">180</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L181" href="#L181">181</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L182" href="#L182">182</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L183" href="#L183">183</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L184" href="#L184">184</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L185" href="#L185">185</a>                 .connectTimeout(5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L186" href="#L186">186</a>                 .readTimeout(6, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L187" href="#L187">187</a>                 .httpClient(hc) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L188" href="#L188">188</a>                 .build();
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>                 .httpClient(hc) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>                 .build();
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>         client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>                 .query(<span class="jxr_string">"Action"</span>, <span class="jxr_string">"GetUser"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>                 .query(<span class="jxr_string">"Version"</span>, <span class="jxr_string">"2010-05-08"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>                 .execute();
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>         assertEquals(
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>                 <span class="jxr_string">"https://iam.amazonaws.com/?Action=GetUser&amp;Version=2010-05-08"</span>,
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>         String authorization = hc.headers.get(<span class="jxr_string">"Authorization"</span>);
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>         assertTrue(authorization.contains(<span class="jxr_string">"/us-east-1/iam/aws4_request"</span>));
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>         assertEquals(<span class="jxr_string">"iam.amazonaws.com"</span>, hc.headers.get(<span class="jxr_string">"Host"</span>));
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>     }
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadConnectTimeout() {
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>         Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>                 .connectTimeout(-1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>     }
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L181" href="#L181">181</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadReadTimeout() {
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>         Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>                 .readTimeout(-1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>     }
 <a class="jxr_linenumber" name="L189" href="#L189">189</a> 
-<a class="jxr_linenumber" name="L190" href="#L190">190</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L191" href="#L191">191</a>         client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L192" href="#L192">192</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L193" href="#L193">193</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L194" href="#L194">194</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L195" href="#L195">195</a>                 .execute();
-<a class="jxr_linenumber" name="L196" href="#L196">196</a> 
-<a class="jxr_linenumber" name="L197" href="#L197">197</a>         assertEquals(5000, hc.connectTimeoutMs);
-<a class="jxr_linenumber" name="L198" href="#L198">198</a>         assertEquals(6000, hc.readTimeoutMs);
-<a class="jxr_linenumber" name="L199" href="#L199">199</a>     }
-<a class="jxr_linenumber" name="L200" href="#L200">200</a> 
-<a class="jxr_linenumber" name="L201" href="#L201">201</a>     @Test(expected = UncheckedIOException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L202" href="#L202">202</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testThrows() {
-<a class="jxr_linenumber" name="L203" href="#L203">203</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L204" href="#L204">204</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L205" href="#L205">205</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L206" href="#L206">206</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L207" href="#L207">207</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L208" href="#L208">208</a>                 .connectTimeout(5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L209" href="#L209">209</a>                 .readTimeout(6, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L210" href="#L210">210</a>                 .httpClient(HttpClientTesting.THROWING) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L211" href="#L211">211</a>                 .build();
-<a class="jxr_linenumber" name="L212" href="#L212">212</a> 
-<a class="jxr_linenumber" name="L213" href="#L213">213</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L214" href="#L214">214</a>         client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L215" href="#L215">215</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L216" href="#L216">216</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L218" href="#L218">218</a>                 .execute();
-<a class="jxr_linenumber" name="L219" href="#L219">219</a>     }
-<a class="jxr_linenumber" name="L220" href="#L220">220</a> 
-<a class="jxr_linenumber" name="L221" href="#L221">221</a>     @Test
-<a class="jxr_linenumber" name="L222" href="#L222">222</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDefaultClientFromEnvironment() {
-<a class="jxr_linenumber" name="L223" href="#L223">223</a>         Map&lt;String, String&gt; map = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
-<a class="jxr_linenumber" name="L224" href="#L224">224</a>         map.put(<span class="jxr_string">"AWS_REGION"</span>, <span class="jxr_string">"ap-southeast-2"</span>);
-<a class="jxr_linenumber" name="L225" href="#L225">225</a>         map.put(<span class="jxr_string">"AWS_ACCESS_KEY_ID"</span>, <span class="jxr_string">"123"</span>);
-<a class="jxr_linenumber" name="L226" href="#L226">226</a>         map.put(<span class="jxr_string">"AWS_SECRET_ACCESS_KEY"</span>, <span class="jxr_string">"abc"</span>);
-<a class="jxr_linenumber" name="L227" href="#L227">227</a>         Client client = Client.s3().environment(name -&gt; map.get(name)).defaultClient().build();
-<a class="jxr_linenumber" name="L228" href="#L228">228</a>         assertEquals(<span class="jxr_string">"ap-southeast-2"</span>, client.region());
-<a class="jxr_linenumber" name="L229" href="#L229">229</a>         Credentials c = client.credentials();
-<a class="jxr_linenumber" name="L230" href="#L230">230</a>         assertEquals(<span class="jxr_string">"123"</span>, c.accessKey());
-<a class="jxr_linenumber" name="L231" href="#L231">231</a>         assertEquals(<span class="jxr_string">"abc"</span>, c.secretKey());
-<a class="jxr_linenumber" name="L232" href="#L232">232</a>         assertFalse(c.sessionToken().isPresent());
-<a class="jxr_linenumber" name="L233" href="#L233">233</a>     }
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadConnectTimeout2() {
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>         s3.path().connectTimeout(-1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     }
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>     @Test(expected = IllegalArgumentException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBadReadTimeout2() {
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>         s3.path().readTimeout(-1, TimeUnit.SECONDS);
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>     }
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>     @Test
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTimeoutsAtClientLevel() {
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>                 .connectTimeout(5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>                 .readTimeout(6, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>                 .httpClient(hc) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>                 .build();
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> 
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>         client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>                 .execute();
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> 
+<a class="jxr_linenumber" name="L219" href="#L219">219</a>         assertEquals(5000, hc.connectTimeoutMs);
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>         assertEquals(6000, hc.readTimeoutMs);
+<a class="jxr_linenumber" name="L221" href="#L221">221</a>     }
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>     @Test(expected = UncheckedIOException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testThrows() {
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>                 .connectTimeout(5, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>                 .readTimeout(6, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>                 .httpClient(HttpClientTesting.THROWING) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>                 .build();
 <a class="jxr_linenumber" name="L234" href="#L234">234</a> 
-<a class="jxr_linenumber" name="L235" href="#L235">235</a>     @Test
-<a class="jxr_linenumber" name="L236" href="#L236">236</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDefaultClientFromSystemProperties() {
-<a class="jxr_linenumber" name="L237" href="#L237">237</a>         System.setProperty(<span class="jxr_string">"aws.accessKeyId"</span>, <span class="jxr_string">"123"</span>);
-<a class="jxr_linenumber" name="L238" href="#L238">238</a>         System.setProperty(<span class="jxr_string">"aws.secretKey"</span>, <span class="jxr_string">"abc"</span>);
-<a class="jxr_linenumber" name="L239" href="#L239">239</a>         Client client = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).credentialsFromSystemProperties()
-<a class="jxr_linenumber" name="L240" href="#L240">240</a>                 .build();
-<a class="jxr_linenumber" name="L241" href="#L241">241</a>         assertEquals(<span class="jxr_string">"ap-southeast-2"</span>, client.region());
-<a class="jxr_linenumber" name="L242" href="#L242">242</a>         Credentials c = client.credentials();
-<a class="jxr_linenumber" name="L243" href="#L243">243</a>         assertEquals(<span class="jxr_string">"123"</span>, c.accessKey());
-<a class="jxr_linenumber" name="L244" href="#L244">244</a>         assertEquals(<span class="jxr_string">"abc"</span>, c.secretKey());
-<a class="jxr_linenumber" name="L245" href="#L245">245</a>         assertFalse(c.sessionToken().isPresent());
-<a class="jxr_linenumber" name="L246" href="#L246">246</a>     }
-<a class="jxr_linenumber" name="L247" href="#L247">247</a> 
-<a class="jxr_linenumber" name="L248" href="#L248">248</a>     @Test
-<a class="jxr_linenumber" name="L249" href="#L249">249</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testNoPathOrUrlSet() {
-<a class="jxr_linenumber" name="L250" href="#L250">250</a>         s3.query(<span class="jxr_string">"number"</span>, <span class="jxr_string">"four"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L251" href="#L251">251</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L252" href="#L252">252</a>                 .execute();
-<a class="jxr_linenumber" name="L253" href="#L253">253</a>         assertEquals(<span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?number=four"</span>,
-<a class="jxr_linenumber" name="L254" href="#L254">254</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>         client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L239" href="#L239">239</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L240" href="#L240">240</a>                 .execute();
+<a class="jxr_linenumber" name="L241" href="#L241">241</a>     }
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 
+<a class="jxr_linenumber" name="L243" href="#L243">243</a>     @Test
+<a class="jxr_linenumber" name="L244" href="#L244">244</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDefaultClientFromEnvironment() {
+<a class="jxr_linenumber" name="L245" href="#L245">245</a>         Map&lt;String, String&gt; map = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
+<a class="jxr_linenumber" name="L246" href="#L246">246</a>         map.put(<span class="jxr_string">"AWS_REGION"</span>, <span class="jxr_string">"ap-southeast-2"</span>);
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>         map.put(<span class="jxr_string">"AWS_ACCESS_KEY_ID"</span>, <span class="jxr_string">"123"</span>);
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>         map.put(<span class="jxr_string">"AWS_SECRET_ACCESS_KEY"</span>, <span class="jxr_string">"abc"</span>);
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>         Client client = Client.s3().environment(name -&gt; map.get(name)).defaultClient().build();
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>         assertEquals(<span class="jxr_string">"ap-southeast-2"</span>, client.region().get());
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>         Credentials c = client.credentials();
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>         assertEquals(<span class="jxr_string">"123"</span>, c.accessKey());
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>         assertEquals(<span class="jxr_string">"abc"</span>, c.secretKey());
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>         assertFalse(c.sessionToken().isPresent());
 <a class="jxr_linenumber" name="L255" href="#L255">255</a>     }
 <a class="jxr_linenumber" name="L256" href="#L256">256</a> 
 <a class="jxr_linenumber" name="L257" href="#L257">257</a>     @Test
-<a class="jxr_linenumber" name="L258" href="#L258">258</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testUrlSet() {
-<a class="jxr_linenumber" name="L259" href="#L259">259</a>         s3.url(<span class="jxr_string">"https://blah"</span>) //
-<a class="jxr_linenumber" name="L260" href="#L260">260</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L261" href="#L261">261</a>                 .execute();
-<a class="jxr_linenumber" name="L262" href="#L262">262</a>         assertEquals(<span class="jxr_string">"https://blah"</span>, hc.endpointUrl.toString());
-<a class="jxr_linenumber" name="L263" href="#L263">263</a>     }
-<a class="jxr_linenumber" name="L264" href="#L264">264</a> 
-<a class="jxr_linenumber" name="L265" href="#L265">265</a>     @Test
-<a class="jxr_linenumber" name="L266" href="#L266">266</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttribute() {
-<a class="jxr_linenumber" name="L267" href="#L267">267</a>         s3.attribute(<span class="jxr_string">"colour"</span>, <span class="jxr_string">"blue"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L268" href="#L268">268</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L269" href="#L269">269</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L270" href="#L270">270</a>                 .execute();
-<a class="jxr_linenumber" name="L271" href="#L271">271</a>         assertEquals(
-<a class="jxr_linenumber" name="L272" href="#L272">272</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?Attribute.1.Name=colour&amp;Attribute.1.Value=blue&amp;Attribute.2.Name=color&amp;Attribute.2.Value=green"</span>,
-<a class="jxr_linenumber" name="L273" href="#L273">273</a>                 hc.endpointUrl.toString());
-<a class="jxr_linenumber" name="L274" href="#L274">274</a>     }
-<a class="jxr_linenumber" name="L275" href="#L275">275</a> 
-<a class="jxr_linenumber" name="L276" href="#L276">276</a>     @Test
-<a class="jxr_linenumber" name="L277" href="#L277">277</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttributePrefix() {
-<a class="jxr_linenumber" name="L278" href="#L278">278</a>         s3.attribute(<span class="jxr_string">"colour"</span>, <span class="jxr_string">"blue"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L279" href="#L279">279</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L280" href="#L280">280</a>                 .attributePrefix(<span class="jxr_string">"surface"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L281" href="#L281">281</a>                 .attribute(<span class="jxr_string">"texture"</span>, <span class="jxr_string">"rough"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDefaultClientFromSystemProperties() {
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>         System.setProperty(<span class="jxr_string">"aws.accessKeyId"</span>, <span class="jxr_string">"123"</span>);
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>         System.setProperty(<span class="jxr_string">"aws.secretKey"</span>, <span class="jxr_string">"abc"</span>);
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>         Client client = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).credentialsFromSystemProperties()
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>                 .build();
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         assertEquals(<span class="jxr_string">"ap-southeast-2"</span>, client.region().get());
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>         Credentials c = client.credentials();
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>         assertEquals(<span class="jxr_string">"123"</span>, c.accessKey());
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>         assertEquals(<span class="jxr_string">"abc"</span>, c.secretKey());
+<a class="jxr_linenumber" name="L267" href="#L267">267</a>         assertFalse(c.sessionToken().isPresent());
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>     }
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>     @Test
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testNoPathOrUrlSet() {
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>         s3.query(<span class="jxr_string">"number"</span>, <span class="jxr_string">"four"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>                 .execute();
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>         assertEquals(<span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?number=four"</span>,
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>     }
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>     @Test
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testUrlSet() {
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>         s3.url(<span class="jxr_string">"https://blah"</span>) //
 <a class="jxr_linenumber" name="L282" href="#L282">282</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L283" href="#L283">283</a>                 .execute();
-<a class="jxr_linenumber" name="L284" href="#L284">284</a>         assertEquals(
-<a class="jxr_linenumber" name="L285" href="#L285">285</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?Attribute.1.Name=colour&amp;Attribute.1.Value=blue&amp;Attribute.2.Name=color&amp;Attribute.2.Value=green&amp;surface.1.Name=texture&amp;surface.1.Value=rough"</span>,
-<a class="jxr_linenumber" name="L286" href="#L286">286</a>                 hc.endpointUrl.toString());
-<a class="jxr_linenumber" name="L287" href="#L287">287</a>     }
-<a class="jxr_linenumber" name="L288" href="#L288">288</a> 
-<a class="jxr_linenumber" name="L289" href="#L289">289</a>     @Test
-<a class="jxr_linenumber" name="L290" href="#L290">290</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttributePrefix2() {
-<a class="jxr_linenumber" name="L291" href="#L291">291</a>         s3.attributePrefix(<span class="jxr_string">"surface"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L292" href="#L292">292</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L293" href="#L293">293</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L294" href="#L294">294</a>                 .execute();
-<a class="jxr_linenumber" name="L295" href="#L295">295</a>         assertEquals(
-<a class="jxr_linenumber" name="L296" href="#L296">296</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?surface.1.Name=color&amp;surface.1.Value=green"</span>,
-<a class="jxr_linenumber" name="L297" href="#L297">297</a>                 hc.endpointUrl.toString());
-<a class="jxr_linenumber" name="L298" href="#L298">298</a>     }
-<a class="jxr_linenumber" name="L299" href="#L299">299</a> 
-<a class="jxr_linenumber" name="L300" href="#L300">300</a>     @Test
-<a class="jxr_linenumber" name="L301" href="#L301">301</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerOkResponse2() {
-<a class="jxr_linenumber" name="L302" href="#L302">302</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L303" href="#L303">303</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L304" href="#L304">304</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L305" href="#L305">305</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L306" href="#L306">306</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L307" href="#L307">307</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L308" href="#L308">308</a>                 .build();
-<a class="jxr_linenumber" name="L309" href="#L309">309</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L310" href="#L310">310</a>             server.response().body(<span class="jxr_string">"&lt;a&gt;hello&lt;/a&gt;"</span>).add();
-<a class="jxr_linenumber" name="L311" href="#L311">311</a>             String text = client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L312" href="#L312">312</a>                     .url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L313" href="#L313">313</a>                     .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L314" href="#L314">314</a>                     .responseAsXml() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L315" href="#L315">315</a>                     .content(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L316" href="#L316">316</a>             assertEquals(<span class="jxr_string">"hello"</span>, text);
-<a class="jxr_linenumber" name="L317" href="#L317">317</a>         }
-<a class="jxr_linenumber" name="L318" href="#L318">318</a>     }
-<a class="jxr_linenumber" name="L319" href="#L319">319</a> 
-<a class="jxr_linenumber" name="L320" href="#L320">320</a>     @Test
-<a class="jxr_linenumber" name="L321" href="#L321">321</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorResponse() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L322" href="#L322">322</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L323" href="#L323">323</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L324" href="#L324">324</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L325" href="#L325">325</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L326" href="#L326">326</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L327" href="#L327">327</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L328" href="#L328">328</a>                 .build();
-<a class="jxr_linenumber" name="L329" href="#L329">329</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L330" href="#L330">330</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
-<a class="jxr_linenumber" name="L331" href="#L331">331</a>             <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L332" href="#L332">332</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L333" href="#L333">333</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L334" href="#L334">334</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L335" href="#L335">335</a>                 Assert.fail();
-<a class="jxr_linenumber" name="L336" href="#L336">336</a>             } <strong class="jxr_keyword">catch</strong> (ServiceException e) {
-<a class="jxr_linenumber" name="L337" href="#L337">337</a>                 assertEquals(500, e.statusCode());
-<a class="jxr_linenumber" name="L338" href="#L338">338</a>                 assertEquals(<span class="jxr_string">"hello"</span>, e.message());
-<a class="jxr_linenumber" name="L339" href="#L339">339</a>             }
-<a class="jxr_linenumber" name="L340" href="#L340">340</a>         }
-<a class="jxr_linenumber" name="L341" href="#L341">341</a>     }
-<a class="jxr_linenumber" name="L342" href="#L342">342</a> 
-<a class="jxr_linenumber" name="L343" href="#L343">343</a>     @Test
-<a class="jxr_linenumber" name="L344" href="#L344">344</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorCustomExceptions() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L345" href="#L345">345</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L346" href="#L346">346</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L347" href="#L347">347</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L348" href="#L348">348</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L349" href="#L349">349</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L350" href="#L350">350</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L351" href="#L351">351</a>                 .exception(r -&gt; !r.isOk(), r -&gt; <strong class="jxr_keyword">new</strong> UnsupportedOperationException()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L352" href="#L352">352</a>                 .build();
-<a class="jxr_linenumber" name="L353" href="#L353">353</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L354" href="#L354">354</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
-<a class="jxr_linenumber" name="L355" href="#L355">355</a>             <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L356" href="#L356">356</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L357" href="#L357">357</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L358" href="#L358">358</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L359" href="#L359">359</a>                 Assert.fail();
-<a class="jxr_linenumber" name="L360" href="#L360">360</a>             } <strong class="jxr_keyword">catch</strong> (UnsupportedOperationException e) {
-<a class="jxr_linenumber" name="L361" href="#L361">361</a>                 <em class="jxr_comment">// all good</em>
-<a class="jxr_linenumber" name="L362" href="#L362">362</a>             }
-<a class="jxr_linenumber" name="L363" href="#L363">363</a>         }
-<a class="jxr_linenumber" name="L364" href="#L364">364</a>     }
-<a class="jxr_linenumber" name="L365" href="#L365">365</a> 
-<a class="jxr_linenumber" name="L366" href="#L366">366</a>     @Test
-<a class="jxr_linenumber" name="L367" href="#L367">367</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorCustomExceptionsPassThrough() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L368" href="#L368">368</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L369" href="#L369">369</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L370" href="#L370">370</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L371" href="#L371">371</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L372" href="#L372">372</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L373" href="#L373">373</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L374" href="#L374">374</a>                 .exception(r -&gt; !r.isOk() &amp;&amp; r.statusCode() == 404,
-<a class="jxr_linenumber" name="L375" href="#L375">375</a>                         r -&gt; <strong class="jxr_keyword">new</strong> UnsupportedOperationException()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L376" href="#L376">376</a>                 .build();
-<a class="jxr_linenumber" name="L377" href="#L377">377</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L378" href="#L378">378</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
-<a class="jxr_linenumber" name="L379" href="#L379">379</a>             <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L380" href="#L380">380</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L381" href="#L381">381</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L382" href="#L382">382</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L383" href="#L383">383</a>                 Assert.fail();
-<a class="jxr_linenumber" name="L384" href="#L384">384</a>             } <strong class="jxr_keyword">catch</strong> (ServiceException e) {
-<a class="jxr_linenumber" name="L385" href="#L385">385</a>                 <em class="jxr_comment">// all good</em>
-<a class="jxr_linenumber" name="L386" href="#L386">386</a>             }
-<a class="jxr_linenumber" name="L387" href="#L387">387</a>         }
-<a class="jxr_linenumber" name="L388" href="#L388">388</a>     }
-<a class="jxr_linenumber" name="L389" href="#L389">389</a> 
-<a class="jxr_linenumber" name="L390" href="#L390">390</a>     @Test
-<a class="jxr_linenumber" name="L391" href="#L391">391</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorExceptionFactory() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L392" href="#L392">392</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L393" href="#L393">393</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L394" href="#L394">394</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L395" href="#L395">395</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L396" href="#L396">396</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L397" href="#L397">397</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L398" href="#L398">398</a>                 .exceptionFactory(r -&gt; {
-<a class="jxr_linenumber" name="L399" href="#L399">399</a>                     <strong class="jxr_keyword">if</strong> (r.isOk()) {
-<a class="jxr_linenumber" name="L400" href="#L400">400</a>                         <strong class="jxr_keyword">return</strong> Optional.empty();
-<a class="jxr_linenumber" name="L401" href="#L401">401</a>                     } <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L402" href="#L402">402</a>                         <strong class="jxr_keyword">return</strong> Optional.of(<strong class="jxr_keyword">new</strong> UnsupportedOperationException());
-<a class="jxr_linenumber" name="L403" href="#L403">403</a>                     }
-<a class="jxr_linenumber" name="L404" href="#L404">404</a>                 }) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L405" href="#L405">405</a>                 .build();
-<a class="jxr_linenumber" name="L406" href="#L406">406</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L407" href="#L407">407</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
-<a class="jxr_linenumber" name="L408" href="#L408">408</a>             <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L409" href="#L409">409</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L410" href="#L410">410</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L411" href="#L411">411</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L412" href="#L412">412</a>                 Assert.fail();
-<a class="jxr_linenumber" name="L413" href="#L413">413</a>             } <strong class="jxr_keyword">catch</strong> (UnsupportedOperationException e) {
-<a class="jxr_linenumber" name="L414" href="#L414">414</a>                 <em class="jxr_comment">// all good</em>
-<a class="jxr_linenumber" name="L415" href="#L415">415</a>             }
-<a class="jxr_linenumber" name="L416" href="#L416">416</a>         }
-<a class="jxr_linenumber" name="L417" href="#L417">417</a>     }
-<a class="jxr_linenumber" name="L418" href="#L418">418</a> 
-<a class="jxr_linenumber" name="L419" href="#L419">419</a>     @Test
-<a class="jxr_linenumber" name="L420" href="#L420">420</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testWithServerNoResponseBody() <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L421" href="#L421">421</a>         <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L422" href="#L422">422</a>             Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L423" href="#L423">423</a>                     .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L424" href="#L424">424</a>                     .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L425" href="#L425">425</a>                     .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L426" href="#L426">426</a>                     .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L427" href="#L427">427</a>                     .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L428" href="#L428">428</a>                     .build();
-<a class="jxr_linenumber" name="L429" href="#L429">429</a>             <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
-<a class="jxr_linenumber" name="L430" href="#L430">430</a>                 server.response().statusCode(200).add();
-<a class="jxr_linenumber" name="L431" href="#L431">431</a>                 String text = client.url(server.baseUrl()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L432" href="#L432">432</a>                         .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L433" href="#L433">433</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L434" href="#L434">434</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L435" href="#L435">435</a>                 assertEquals(<span class="jxr_string">""</span>, text);
-<a class="jxr_linenumber" name="L436" href="#L436">436</a>             }
-<a class="jxr_linenumber" name="L437" href="#L437">437</a>         } <strong class="jxr_keyword">catch</strong> (Throwable t) {
-<a class="jxr_linenumber" name="L438" href="#L438">438</a>             t.printStackTrace();
-<a class="jxr_linenumber" name="L439" href="#L439">439</a>             <strong class="jxr_keyword">throw</strong> t;
-<a class="jxr_linenumber" name="L440" href="#L440">440</a>         }
-<a class="jxr_linenumber" name="L441" href="#L441">441</a>     }
-<a class="jxr_linenumber" name="L442" href="#L442">442</a> 
-<a class="jxr_linenumber" name="L443" href="#L443">443</a>     @Test
-<a class="jxr_linenumber" name="L444" href="#L444">444</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithRequestBody() {
-<a class="jxr_linenumber" name="L445" href="#L445">445</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L446" href="#L446">446</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L447" href="#L447">447</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L448" href="#L448">448</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L449" href="#L449">449</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L450" href="#L450">450</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L451" href="#L451">451</a>                 .build();
-<a class="jxr_linenumber" name="L452" href="#L452">452</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L453" href="#L453">453</a>         String presignedUrl = client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L454" href="#L454">454</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L455" href="#L455">455</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L456" href="#L456">456</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L457" href="#L457">457</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L458" href="#L458">458</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L459" href="#L459">459</a>                 .presignedUrl(5, TimeUnit.DAYS);
-<a class="jxr_linenumber" name="L460" href="#L460">460</a>         assertEquals(
-<a class="jxr_linenumber" name="L461" href="#L461">461</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=content-length;host;x-amz-content-sha256&amp;X-Amz-Signature=3f27d3fe5e595d787990866d05112cd73e21be2275bf02269b640bc9b7c35ec6"</span>,
-<a class="jxr_linenumber" name="L462" href="#L462">462</a>                 presignedUrl);
-<a class="jxr_linenumber" name="L463" href="#L463">463</a>     }
-<a class="jxr_linenumber" name="L464" href="#L464">464</a> 
-<a class="jxr_linenumber" name="L465" href="#L465">465</a>     @Test
-<a class="jxr_linenumber" name="L466" href="#L466">466</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithRequestBodyUnsignedPayload() {
-<a class="jxr_linenumber" name="L467" href="#L467">467</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L468" href="#L468">468</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L469" href="#L469">469</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L470" href="#L470">470</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L471" href="#L471">471</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L472" href="#L472">472</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L473" href="#L473">473</a>                 .build();
-<a class="jxr_linenumber" name="L474" href="#L474">474</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L475" href="#L475">475</a>         String presignedUrl = client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L476" href="#L476">476</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L477" href="#L477">477</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L478" href="#L478">478</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L479" href="#L479">479</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L480" href="#L480">480</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L481" href="#L481">481</a>                 .unsignedPayload() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L482" href="#L482">482</a>                 .presignedUrl(5, TimeUnit.DAYS);
-<a class="jxr_linenumber" name="L483" href="#L483">483</a>         assertEquals(
-<a class="jxr_linenumber" name="L484" href="#L484">484</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=7cf6d7fe3bab3b9f23c08aec974bd8007a1c93d8e5009d4d77d0b742f3a3dcb2"</span>,
-<a class="jxr_linenumber" name="L485" href="#L485">485</a>                 presignedUrl);
-<a class="jxr_linenumber" name="L486" href="#L486">486</a>     }
-<a class="jxr_linenumber" name="L487" href="#L487">487</a> 
-<a class="jxr_linenumber" name="L488" href="#L488">488</a>     @Test
-<a class="jxr_linenumber" name="L489" href="#L489">489</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithoutRequestBody() {
-<a class="jxr_linenumber" name="L490" href="#L490">490</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L491" href="#L491">491</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L492" href="#L492">492</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L493" href="#L493">493</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L494" href="#L494">494</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L495" href="#L495">495</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L496" href="#L496">496</a>                 .build();
-<a class="jxr_linenumber" name="L497" href="#L497">497</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L498" href="#L498">498</a>         String presignedUrl = client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L499" href="#L499">499</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L500" href="#L500">500</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L501" href="#L501">501</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L502" href="#L502">502</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L503" href="#L503">503</a>                 .presignedUrl(5, TimeUnit.DAYS);
-<a class="jxr_linenumber" name="L504" href="#L504">504</a>         assertEquals(
-<a class="jxr_linenumber" name="L505" href="#L505">505</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=b14df0b38e6a1dadce2f340483bd61db69730da26d571e1f0cfacea993372085"</span>,
-<a class="jxr_linenumber" name="L506" href="#L506">506</a>                 presignedUrl);
-<a class="jxr_linenumber" name="L507" href="#L507">507</a>     }
-<a class="jxr_linenumber" name="L508" href="#L508">508</a> 
-<a class="jxr_linenumber" name="L509" href="#L509">509</a>     @Test
-<a class="jxr_linenumber" name="L510" href="#L510">510</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWhenUrlHasPort() {
-<a class="jxr_linenumber" name="L511" href="#L511">511</a>         Client client = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L512" href="#L512">512</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L513" href="#L513">513</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L514" href="#L514">514</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L515" href="#L515">515</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L516" href="#L516">516</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L517" href="#L517">517</a>                 .build();
-<a class="jxr_linenumber" name="L518" href="#L518">518</a>         <em class="jxr_comment">// create a bucket</em>
-<a class="jxr_linenumber" name="L519" href="#L519">519</a>         String presignedUrl = client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L520" href="#L520">520</a>                 .url(<span class="jxr_string">"https://s3.myserver.com:8443"</span>) //
-<a class="jxr_linenumber" name="L521" href="#L521">521</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L522" href="#L522">522</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>         assertEquals(<span class="jxr_string">"https://blah"</span>, hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>     }
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>     @Test
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttribute() {
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>         s3.attribute(<span class="jxr_string">"colour"</span>, <span class="jxr_string">"blue"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>                 .execute();
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>         assertEquals(
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?Attribute.1.Name=colour&amp;Attribute.1.Value=blue&amp;Attribute.2.Name=color&amp;Attribute.2.Value=green"</span>,
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>     }
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>     @Test
+<a class="jxr_linenumber" name="L299" href="#L299">299</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttributePrefix() {
+<a class="jxr_linenumber" name="L300" href="#L300">300</a>         s3.attribute(<span class="jxr_string">"colour"</span>, <span class="jxr_string">"blue"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L301" href="#L301">301</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>                 .attributePrefix(<span class="jxr_string">"surface"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L303" href="#L303">303</a>                 .attribute(<span class="jxr_string">"texture"</span>, <span class="jxr_string">"rough"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L305" href="#L305">305</a>                 .execute();
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>         assertEquals(
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?Attribute.1.Name=colour&amp;Attribute.1.Value=blue&amp;Attribute.2.Name=color&amp;Attribute.2.Value=green&amp;surface.1.Name=texture&amp;surface.1.Value=rough"</span>,
+<a class="jxr_linenumber" name="L308" href="#L308">308</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>     }
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a>     @Test
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAttributePrefix2() {
+<a class="jxr_linenumber" name="L313" href="#L313">313</a>         s3.attributePrefix(<span class="jxr_string">"surface"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L314" href="#L314">314</a>                 .attribute(<span class="jxr_string">"color"</span>, <span class="jxr_string">"green"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>                 .execute();
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>         assertEquals(
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/?surface.1.Name=color&amp;surface.1.Value=green"</span>,
+<a class="jxr_linenumber" name="L319" href="#L319">319</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>     }
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>     @Test
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerOkResponse2() <strong class="jxr_keyword">throws</strong> InterruptedException {
+<a class="jxr_linenumber" name="L324" href="#L324">324</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 100; i++) {
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>             Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>                     .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L327" href="#L327">327</a>                     .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>                     .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>                     .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a>                     .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>                     .connectTimeout(10, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>                     .readTimeout(10, TimeUnit.SECONDS) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L333" href="#L333">333</a>                     .build();
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>             <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L335" href="#L335">335</a>                 server.response().body(<span class="jxr_string">"&lt;a&gt;hello&lt;/a&gt;"</span>).add();
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>                 String text = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L337" href="#L337">337</a>                         .url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L339" href="#L339">339</a>                         .responseAsXml() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>                         .content(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>                 assertEquals(<span class="jxr_string">"hello"</span>, text);
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>             }
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>         }
+<a class="jxr_linenumber" name="L344" href="#L344">344</a>     }
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>     @Test
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorResponse() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L348" href="#L348">348</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>                 .build();
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>                 Assert.fail();
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>             } <strong class="jxr_keyword">catch</strong> (ServiceException e) {
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>                 assertEquals(500, e.statusCode());
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>                 assertEquals(<span class="jxr_string">"hello"</span>, e.message());
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>             }
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>         }
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>     }
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>     @Test
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testResponseExists() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>                 .build();
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(404).add();
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>             assertFalse(client.url(server.baseUrl()).exists()); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>         }
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>     }
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>     @Test
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorCustomExceptions() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L386" href="#L386">386</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>                 .exception(r -&gt; !r.isOk(), r -&gt; <strong class="jxr_keyword">new</strong> UnsupportedOperationException()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>                 .build();
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L398" href="#L398">398</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>                 Assert.fail();
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>             } <strong class="jxr_keyword">catch</strong> (UnsupportedOperationException e) {
+<a class="jxr_linenumber" name="L402" href="#L402">402</a>                 <em class="jxr_comment">// all good</em>
+<a class="jxr_linenumber" name="L403" href="#L403">403</a>             }
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>         }
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>     }
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>     @Test
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorCustomExceptionsPassThrough() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>                 .exception(r -&gt; !r.isOk() &amp;&amp; r.statusCode() == 404,
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>                         r -&gt; <strong class="jxr_keyword">new</strong> UnsupportedOperationException()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>                 .build();
+<a class="jxr_linenumber" name="L418" href="#L418">418</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>                 Assert.fail();
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>             } <strong class="jxr_keyword">catch</strong> (ServiceException e) {
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>                 <em class="jxr_comment">// all good</em>
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>             }
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>         }
+<a class="jxr_linenumber" name="L429" href="#L429">429</a>     }
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> 
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>     @Test
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testServerErrorExceptionFactory() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L434" href="#L434">434</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L436" href="#L436">436</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L438" href="#L438">438</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a>                 .exceptionFactory(r -&gt; {
+<a class="jxr_linenumber" name="L440" href="#L440">440</a>                     <strong class="jxr_keyword">if</strong> (r.isOk()) {
+<a class="jxr_linenumber" name="L441" href="#L441">441</a>                         <strong class="jxr_keyword">return</strong> Optional.empty();
+<a class="jxr_linenumber" name="L442" href="#L442">442</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L443" href="#L443">443</a>                         <strong class="jxr_keyword">return</strong> Optional.of(<strong class="jxr_keyword">new</strong> UnsupportedOperationException());
+<a class="jxr_linenumber" name="L444" href="#L444">444</a>                     }
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>                 }) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>                 .build();
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>         <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>             server.response().body(<span class="jxr_string">"hello"</span>).statusCode(500).add();
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>                 client.url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>                 Assert.fail();
+<a class="jxr_linenumber" name="L454" href="#L454">454</a>             } <strong class="jxr_keyword">catch</strong> (UnsupportedOperationException e) {
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>                 <em class="jxr_comment">// all good</em>
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>             }
+<a class="jxr_linenumber" name="L457" href="#L457">457</a>         }
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>     }
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> 
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>     @Test
+<a class="jxr_linenumber" name="L461" href="#L461">461</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testWithServerNoResponseBody() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L462" href="#L462">462</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>             Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>                     .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>                     .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>                     .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>                     .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>                     .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>                     .build();
+<a class="jxr_linenumber" name="L470" href="#L470">470</a>             <strong class="jxr_keyword">try</strong> (Server server = Server.start()) {
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>                 server.response().statusCode(200).add();
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>                 String text = client.url(server.baseUrl()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>                         .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L474" href="#L474">474</a>                         .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>                         .responseAsUtf8(); <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>                 assertEquals(<span class="jxr_string">""</span>, text);
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>             }
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>         } <strong class="jxr_keyword">catch</strong> (Throwable t) {
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>             t.printStackTrace();
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>             <strong class="jxr_keyword">throw</strong> t;
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>         }
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>     }
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 
+<a class="jxr_linenumber" name="L484" href="#L484">484</a>     @Test
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithRequestBody() {
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L487" href="#L487">487</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L491" href="#L491">491</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>                 .build();
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>         String presignedUrl = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L495" href="#L495">495</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L498" href="#L498">498</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>                 .presignedUrl(5, TimeUnit.DAYS);
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>         assertEquals(
+<a class="jxr_linenumber" name="L502" href="#L502">502</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=content-length;host;x-amz-content-sha256&amp;X-Amz-Signature=3f27d3fe5e595d787990866d05112cd73e21be2275bf02269b640bc9b7c35ec6"</span>,
+<a class="jxr_linenumber" name="L503" href="#L503">503</a>                 presignedUrl);
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>     }
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> 
+<a class="jxr_linenumber" name="L506" href="#L506">506</a>     @Test
+<a class="jxr_linenumber" name="L507" href="#L507">507</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithRequestBodyUnsignedPayload() {
+<a class="jxr_linenumber" name="L508" href="#L508">508</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L509" href="#L509">509</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L510" href="#L510">510</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L511" href="#L511">511</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L512" href="#L512">512</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L513" href="#L513">513</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L514" href="#L514">514</a>                 .build();
+<a class="jxr_linenumber" name="L515" href="#L515">515</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L516" href="#L516">516</a>         String presignedUrl = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L517" href="#L517">517</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L519" href="#L519">519</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L520" href="#L520">520</a>                 .requestBody(<span class="jxr_string">"hi there"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L521" href="#L521">521</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L522" href="#L522">522</a>                 .unsignedPayload() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L523" href="#L523">523</a>                 .presignedUrl(5, TimeUnit.DAYS);
 <a class="jxr_linenumber" name="L524" href="#L524">524</a>         assertEquals(
-<a class="jxr_linenumber" name="L525" href="#L525">525</a>                 <span class="jxr_string">"https://s3.myserver.com:8443?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=e78feecf8da1d5c8029f117bb8bd10779d420ce02e838461e3abfafe7d565a5c"</span>,
+<a class="jxr_linenumber" name="L525" href="#L525">525</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=7cf6d7fe3bab3b9f23c08aec974bd8007a1c93d8e5009d4d77d0b742f3a3dcb2"</span>,
 <a class="jxr_linenumber" name="L526" href="#L526">526</a>                 presignedUrl);
 <a class="jxr_linenumber" name="L527" href="#L527">527</a>     }
 <a class="jxr_linenumber" name="L528" href="#L528">528</a> 
 <a class="jxr_linenumber" name="L529" href="#L529">529</a>     @Test
-<a class="jxr_linenumber" name="L530" href="#L530">530</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithoutQueryParameters() {
+<a class="jxr_linenumber" name="L530" href="#L530">530</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithoutRequestBody() {
 <a class="jxr_linenumber" name="L531" href="#L531">531</a>         Client client = Client <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L532" href="#L532">532</a>                 .s3() <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L533" href="#L533">533</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
@@ -546,72 +546,133 @@
 <a class="jxr_linenumber" name="L538" href="#L538">538</a>         <em class="jxr_comment">// create a bucket</em>
 <a class="jxr_linenumber" name="L539" href="#L539">539</a>         String presignedUrl = client <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L540" href="#L540">540</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L541" href="#L541">541</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L542" href="#L542">542</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L543" href="#L543">543</a>                 .presignedUrl(5, TimeUnit.DAYS);
-<a class="jxr_linenumber" name="L544" href="#L544">544</a>         assertEquals(
-<a class="jxr_linenumber" name="L545" href="#L545">545</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=4ffc22f4b86b0514a29994c92bbf0342e2dccc66cdceae670414c847baa338ef"</span>,
-<a class="jxr_linenumber" name="L546" href="#L546">546</a>                 presignedUrl);
-<a class="jxr_linenumber" name="L547" href="#L547">547</a>     }
-<a class="jxr_linenumber" name="L548" href="#L548">548</a> 
-<a class="jxr_linenumber" name="L549" href="#L549">549</a>     @Test
-<a class="jxr_linenumber" name="L550" href="#L550">550</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAuthorizationSignedRequest() {
-<a class="jxr_linenumber" name="L551" href="#L551">551</a>         Client s3 = Client <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L552" href="#L552">552</a>                 .s3() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L553" href="#L553">553</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L554" href="#L554">554</a>                 .credentials(Credentials.of(<span class="jxr_string">"123"</span>, <span class="jxr_string">"456"</span>, <span class="jxr_string">"789"</span>)).clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L555" href="#L555">555</a>                 .httpClient(hc) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L556" href="#L556">556</a>                 .build();
-<a class="jxr_linenumber" name="L557" href="#L557">557</a> 
-<a class="jxr_linenumber" name="L558" href="#L558">558</a>         s3 <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L559" href="#L559">559</a>                 .path(<span class="jxr_string">"myBucket/myObject.txt"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L560" href="#L560">560</a>                 .query(<span class="jxr_string">"Type"</span>, <span class="jxr_string">"Thing"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L561" href="#L561">561</a>                 .header(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L562" href="#L562">562</a>                 .header(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah2"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L563" href="#L563">563</a>                 .requestBody(<span class="jxr_string">"something"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L564" href="#L564">564</a>                 .response();
-<a class="jxr_linenumber" name="L565" href="#L565">565</a> 
-<a class="jxr_linenumber" name="L566" href="#L566">566</a>         assertEquals(<span class="jxr_string">"GET"</span>, hc.httpMethod);
-<a class="jxr_linenumber" name="L567" href="#L567">567</a>         assertEquals(<span class="jxr_string">"something"</span>, hc.requestBodyString());
-<a class="jxr_linenumber" name="L568" href="#L568">568</a>         assertEquals(<span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/myBucket/myObject.txt?Type=Thing"</span>,
-<a class="jxr_linenumber" name="L569" href="#L569">569</a>                 hc.endpointUrl.toString());
-<a class="jxr_linenumber" name="L570" href="#L570">570</a>         Map&lt;String, String&gt; a = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
-<a class="jxr_linenumber" name="L571" href="#L571">571</a>         a.put(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah,blah2"</span>);
-<a class="jxr_linenumber" name="L572" href="#L572">572</a>         a.put(<span class="jxr_string">"x-amz-content-sha256"</span>,
-<a class="jxr_linenumber" name="L573" href="#L573">573</a>                 <span class="jxr_string">"3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb"</span>);
-<a class="jxr_linenumber" name="L574" href="#L574">574</a>         a.put(<span class="jxr_string">"Authorization"</span>,
-<a class="jxr_linenumber" name="L575" href="#L575">575</a>                 <span class="jxr_string">"AWS4-HMAC-SHA256 Credential=123/20210603/ap-southeast-2/s3/aws4_request, SignedHeaders=content-length;host;my-header;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=72983b3d44575f7b8fea5dd7148a764a7031122154387a30764c56d171906c80"</span>);
-<a class="jxr_linenumber" name="L576" href="#L576">576</a>         a.put(<span class="jxr_string">"Host"</span>, <span class="jxr_string">"s3.ap-southeast-2.amazonaws.com"</span>);
-<a class="jxr_linenumber" name="L577" href="#L577">577</a>         a.put(<span class="jxr_string">"x-amz-date"</span>, <span class="jxr_string">"20210603T045046Z"</span>);
-<a class="jxr_linenumber" name="L578" href="#L578">578</a>         a.put(<span class="jxr_string">"content-length"</span>, <span class="jxr_string">""</span> + 9);
-<a class="jxr_linenumber" name="L579" href="#L579">579</a>         a.put(<span class="jxr_string">"x-amz-security-token"</span>, <span class="jxr_string">"789"</span>);
-<a class="jxr_linenumber" name="L580" href="#L580">580</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;String, String&gt; entry : hc.headers.entrySet()) {
-<a class="jxr_linenumber" name="L581" href="#L581">581</a>             assertEquals(a.get(entry.getKey()), entry.getValue());
-<a class="jxr_linenumber" name="L582" href="#L582">582</a>         }
-<a class="jxr_linenumber" name="L583" href="#L583">583</a>         assertEquals(a.size(), hc.headers.size());
-<a class="jxr_linenumber" name="L584" href="#L584">584</a>     }
-<a class="jxr_linenumber" name="L585" href="#L585">585</a> 
-<a class="jxr_linenumber" name="L586" href="#L586">586</a>     @Test(expected = UncheckedIOException.<strong class="jxr_keyword">class</strong>)
-<a class="jxr_linenumber" name="L587" href="#L587">587</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testUrlDoesNotExist() {
-<a class="jxr_linenumber" name="L588" href="#L588">588</a>         Client s3 = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).accessKey(<span class="jxr_string">"123"</span>).secretKey(<span class="jxr_string">"456"</span>).build();
-<a class="jxr_linenumber" name="L589" href="#L589">589</a>         s3.url(<span class="jxr_string">"https://doesnotexist.z21894649.com"</span>).execute();
-<a class="jxr_linenumber" name="L590" href="#L590">590</a>     }
-<a class="jxr_linenumber" name="L591" href="#L591">591</a> 
-<a class="jxr_linenumber" name="L592" href="#L592">592</a>     @Test
-<a class="jxr_linenumber" name="L593" href="#L593">593</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testOtherServiceNames() {
-<a class="jxr_linenumber" name="L594" href="#L594">594</a>         Client s3 = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).accessKey(<span class="jxr_string">"123"</span>).secretKey(<span class="jxr_string">"abc"</span>).build();
-<a class="jxr_linenumber" name="L595" href="#L595">595</a>         assertEquals(<span class="jxr_string">"iam"</span>, Client.iam().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L596" href="#L596">596</a>         assertEquals(<span class="jxr_string">"ec2"</span>, Client.ec2().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L597" href="#L597">597</a>         assertEquals(<span class="jxr_string">"lambda"</span>, Client.lambda().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L598" href="#L598">598</a>         assertEquals(<span class="jxr_string">"s3"</span>, Client.s3().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L599" href="#L599">599</a>         assertEquals(<span class="jxr_string">"sns"</span>, Client.sns().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L600" href="#L600">600</a>         assertEquals(<span class="jxr_string">"sqs"</span>, Client.sqs().from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L601" href="#L601">601</a>         assertEquals(<span class="jxr_string">"hi"</span>, Client.service(<span class="jxr_string">"hi"</span>).from(s3).build().serviceName());
-<a class="jxr_linenumber" name="L602" href="#L602">602</a>     }
-<a class="jxr_linenumber" name="L603" href="#L603">603</a> 
-<a class="jxr_linenumber" name="L604" href="#L604">604</a> }
+<a class="jxr_linenumber" name="L541" href="#L541">541</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L542" href="#L542">542</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L543" href="#L543">543</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L544" href="#L544">544</a>                 .presignedUrl(5, TimeUnit.DAYS);
+<a class="jxr_linenumber" name="L545" href="#L545">545</a>         assertEquals(
+<a class="jxr_linenumber" name="L546" href="#L546">546</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=b14df0b38e6a1dadce2f340483bd61db69730da26d571e1f0cfacea993372085"</span>,
+<a class="jxr_linenumber" name="L547" href="#L547">547</a>                 presignedUrl);
+<a class="jxr_linenumber" name="L548" href="#L548">548</a>     }
+<a class="jxr_linenumber" name="L549" href="#L549">549</a> 
+<a class="jxr_linenumber" name="L550" href="#L550">550</a>     @Test
+<a class="jxr_linenumber" name="L551" href="#L551">551</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithoutRequestBodyWithSessionToken() {
+<a class="jxr_linenumber" name="L552" href="#L552">552</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L553" href="#L553">553</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L554" href="#L554">554</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L555" href="#L555">555</a>                 .credentials(Credentials.of(<span class="jxr_string">"123"</span>, <span class="jxr_string">"456"</span>, <span class="jxr_string">"abc"</span>)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L556" href="#L556">556</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L557" href="#L557">557</a>                 .build();
+<a class="jxr_linenumber" name="L558" href="#L558">558</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L559" href="#L559">559</a>         String presignedUrl = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L560" href="#L560">560</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L561" href="#L561">561</a>                 .query(<span class="jxr_string">"type"</span>, <span class="jxr_string">"thing"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L562" href="#L562">562</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L563" href="#L563">563</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L564" href="#L564">564</a>                 .presignedUrl(5, TimeUnit.DAYS);
+<a class="jxr_linenumber" name="L565" href="#L565">565</a>         assertEquals(
+<a class="jxr_linenumber" name="L566" href="#L566">566</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?type=thing&amp;X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=93dd388b414d719042afedc24393baeaf1d7d37bfe6394f125a26aa2b29d3426&amp;X-Amz-Security-Token=abc"</span>,
+<a class="jxr_linenumber" name="L567" href="#L567">567</a>                 presignedUrl);
+<a class="jxr_linenumber" name="L568" href="#L568">568</a>     }
+<a class="jxr_linenumber" name="L569" href="#L569">569</a> 
+<a class="jxr_linenumber" name="L570" href="#L570">570</a>     @Test
+<a class="jxr_linenumber" name="L571" href="#L571">571</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWhenUrlHasPort() {
+<a class="jxr_linenumber" name="L572" href="#L572">572</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L573" href="#L573">573</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L574" href="#L574">574</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L575" href="#L575">575</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L576" href="#L576">576</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L577" href="#L577">577</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L578" href="#L578">578</a>                 .build();
+<a class="jxr_linenumber" name="L579" href="#L579">579</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L580" href="#L580">580</a>         String presignedUrl = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L581" href="#L581">581</a>                 .url(<span class="jxr_string">"https://s3.myserver.com:8443"</span>) //
+<a class="jxr_linenumber" name="L582" href="#L582">582</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L583" href="#L583">583</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L584" href="#L584">584</a>                 .presignedUrl(5, TimeUnit.DAYS);
+<a class="jxr_linenumber" name="L585" href="#L585">585</a>         assertEquals(
+<a class="jxr_linenumber" name="L586" href="#L586">586</a>                 <span class="jxr_string">"https://s3.myserver.com:8443?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=e78feecf8da1d5c8029f117bb8bd10779d420ce02e838461e3abfafe7d565a5c"</span>,
+<a class="jxr_linenumber" name="L587" href="#L587">587</a>                 presignedUrl);
+<a class="jxr_linenumber" name="L588" href="#L588">588</a>     }
+<a class="jxr_linenumber" name="L589" href="#L589">589</a> 
+<a class="jxr_linenumber" name="L590" href="#L590">590</a>     @Test
+<a class="jxr_linenumber" name="L591" href="#L591">591</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPresignedUrlWithoutQueryParameters() {
+<a class="jxr_linenumber" name="L592" href="#L592">592</a>         Client client = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L593" href="#L593">593</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L594" href="#L594">594</a>                 .region(<span class="jxr_string">"us-west-1"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L595" href="#L595">595</a>                 .accessKey(<span class="jxr_string">"123"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L596" href="#L596">596</a>                 .secretKey(<span class="jxr_string">"456"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L597" href="#L597">597</a>                 .clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L598" href="#L598">598</a>                 .build();
+<a class="jxr_linenumber" name="L599" href="#L599">599</a>         <em class="jxr_comment">// create a bucket</em>
+<a class="jxr_linenumber" name="L600" href="#L600">600</a>         String presignedUrl = client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L601" href="#L601">601</a>                 .path(<span class="jxr_string">"MyBucket"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L602" href="#L602">602</a>                 .method(HttpMethod.PUT) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L603" href="#L603">603</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L604" href="#L604">604</a>                 .presignedUrl(5, TimeUnit.DAYS);
+<a class="jxr_linenumber" name="L605" href="#L605">605</a>         assertEquals(
+<a class="jxr_linenumber" name="L606" href="#L606">606</a>                 <span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/MyBucket?X-Amz-Algorithm=AWS4-HMAC-SHA256&amp;X-Amz-Credential=123/20210603/ap-southeast-2/s3/aws4_request&amp;X-Amz-Date=20210603T045046Z&amp;X-Amz-Expires=432000&amp;X-Amz-SignedHeaders=host;x-amz-content-sha256&amp;X-Amz-Signature=4ffc22f4b86b0514a29994c92bbf0342e2dccc66cdceae670414c847baa338ef"</span>,
+<a class="jxr_linenumber" name="L607" href="#L607">607</a>                 presignedUrl);
+<a class="jxr_linenumber" name="L608" href="#L608">608</a>     }
+<a class="jxr_linenumber" name="L609" href="#L609">609</a> 
+<a class="jxr_linenumber" name="L610" href="#L610">610</a>     @Test
+<a class="jxr_linenumber" name="L611" href="#L611">611</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAuthorizationSignedRequest() {
+<a class="jxr_linenumber" name="L612" href="#L612">612</a>         Client s3 = Client <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L613" href="#L613">613</a>                 .s3() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L614" href="#L614">614</a>                 .region(<span class="jxr_string">"ap-southeast-2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L615" href="#L615">615</a>                 .credentials(Credentials.of(<span class="jxr_string">"123"</span>, <span class="jxr_string">"456"</span>, <span class="jxr_string">"789"</span>)).clock(() -&gt; 1622695846902L) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L616" href="#L616">616</a>                 .httpClient(hc) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L617" href="#L617">617</a>                 .build();
+<a class="jxr_linenumber" name="L618" href="#L618">618</a> 
+<a class="jxr_linenumber" name="L619" href="#L619">619</a>         s3 <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L620" href="#L620">620</a>                 .path(<span class="jxr_string">"myBucket/myObject.txt"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L621" href="#L621">621</a>                 .query(<span class="jxr_string">"Type"</span>, <span class="jxr_string">"Thing"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L622" href="#L622">622</a>                 .header(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L623" href="#L623">623</a>                 .header(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah2"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L624" href="#L624">624</a>                 .requestBody(<span class="jxr_string">"something"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L625" href="#L625">625</a>                 .response();
+<a class="jxr_linenumber" name="L626" href="#L626">626</a> 
+<a class="jxr_linenumber" name="L627" href="#L627">627</a>         assertEquals(<span class="jxr_string">"GET"</span>, hc.httpMethod);
+<a class="jxr_linenumber" name="L628" href="#L628">628</a>         assertEquals(<span class="jxr_string">"something"</span>, hc.requestBodyString());
+<a class="jxr_linenumber" name="L629" href="#L629">629</a>         assertEquals(<span class="jxr_string">"https://s3.ap-southeast-2.amazonaws.com/myBucket/myObject.txt?Type=Thing"</span>,
+<a class="jxr_linenumber" name="L630" href="#L630">630</a>                 hc.endpointUrl.toString());
+<a class="jxr_linenumber" name="L631" href="#L631">631</a>         Map&lt;String, String&gt; a = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
+<a class="jxr_linenumber" name="L632" href="#L632">632</a>         a.put(<span class="jxr_string">"my-header"</span>, <span class="jxr_string">"blah,blah2"</span>);
+<a class="jxr_linenumber" name="L633" href="#L633">633</a>         a.put(<span class="jxr_string">"x-amz-content-sha256"</span>,
+<a class="jxr_linenumber" name="L634" href="#L634">634</a>                 <span class="jxr_string">"3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb"</span>);
+<a class="jxr_linenumber" name="L635" href="#L635">635</a>         a.put(<span class="jxr_string">"Authorization"</span>,
+<a class="jxr_linenumber" name="L636" href="#L636">636</a>                 <span class="jxr_string">"AWS4-HMAC-SHA256 Credential=123/20210603/ap-southeast-2/s3/aws4_request, SignedHeaders=content-length;host;my-header;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=72983b3d44575f7b8fea5dd7148a764a7031122154387a30764c56d171906c80"</span>);
+<a class="jxr_linenumber" name="L637" href="#L637">637</a>         a.put(<span class="jxr_string">"Host"</span>, <span class="jxr_string">"s3.ap-southeast-2.amazonaws.com"</span>);
+<a class="jxr_linenumber" name="L638" href="#L638">638</a>         a.put(<span class="jxr_string">"x-amz-date"</span>, <span class="jxr_string">"20210603T045046Z"</span>);
+<a class="jxr_linenumber" name="L639" href="#L639">639</a>         a.put(<span class="jxr_string">"content-length"</span>, <span class="jxr_string">""</span> + 9);
+<a class="jxr_linenumber" name="L640" href="#L640">640</a>         a.put(<span class="jxr_string">"x-amz-security-token"</span>, <span class="jxr_string">"789"</span>);
+<a class="jxr_linenumber" name="L641" href="#L641">641</a>         <strong class="jxr_keyword">for</strong> (Entry&lt;String, String&gt; entry : hc.headers.entrySet()) {
+<a class="jxr_linenumber" name="L642" href="#L642">642</a>             assertEquals(a.get(entry.getKey()), entry.getValue());
+<a class="jxr_linenumber" name="L643" href="#L643">643</a>         }
+<a class="jxr_linenumber" name="L644" href="#L644">644</a>         assertEquals(a.size(), hc.headers.size());
+<a class="jxr_linenumber" name="L645" href="#L645">645</a>     }
+<a class="jxr_linenumber" name="L646" href="#L646">646</a> 
+<a class="jxr_linenumber" name="L647" href="#L647">647</a>     @Test(expected = UncheckedIOException.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L648" href="#L648">648</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testUrlDoesNotExist() {
+<a class="jxr_linenumber" name="L649" href="#L649">649</a>         Client s3 = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).accessKey(<span class="jxr_string">"123"</span>).secretKey(<span class="jxr_string">"456"</span>).build();
+<a class="jxr_linenumber" name="L650" href="#L650">650</a>         s3.url(<span class="jxr_string">"https://doesnotexist.z21894649.com"</span>).execute();
+<a class="jxr_linenumber" name="L651" href="#L651">651</a>     }
+<a class="jxr_linenumber" name="L652" href="#L652">652</a> 
+<a class="jxr_linenumber" name="L653" href="#L653">653</a>     @Test
+<a class="jxr_linenumber" name="L654" href="#L654">654</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testOtherServiceNames() {
+<a class="jxr_linenumber" name="L655" href="#L655">655</a>         Client s3 = Client.s3().region(<span class="jxr_string">"ap-southeast-2"</span>).accessKey(<span class="jxr_string">"123"</span>).secretKey(<span class="jxr_string">"abc"</span>).build();
+<a class="jxr_linenumber" name="L656" href="#L656">656</a>         assertEquals(<span class="jxr_string">"iam"</span>, Client.iam().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L657" href="#L657">657</a>         assertEquals(<span class="jxr_string">"ec2"</span>, Client.ec2().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L658" href="#L658">658</a>         assertEquals(<span class="jxr_string">"lambda"</span>, Client.lambda().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L659" href="#L659">659</a>         assertEquals(<span class="jxr_string">"s3"</span>, Client.s3().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L660" href="#L660">660</a>         assertEquals(<span class="jxr_string">"sns"</span>, Client.sns().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L661" href="#L661">661</a>         assertEquals(<span class="jxr_string">"sqs"</span>, Client.sqs().from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L662" href="#L662">662</a>         assertEquals(<span class="jxr_string">"hi"</span>, Client.service(<span class="jxr_string">"hi"</span>).from(s3).build().serviceName());
+<a class="jxr_linenumber" name="L663" href="#L663">663</a>     }
+<a class="jxr_linenumber" name="L664" href="#L664">664</a> 
+<a class="jxr_linenumber" name="L665" href="#L665">665</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2021. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2021&#x2013;2022. All rights reserved.</div>
 </body>
 </html>
