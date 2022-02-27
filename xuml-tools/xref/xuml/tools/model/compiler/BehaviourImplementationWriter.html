@@ -11,14 +11,14 @@
 <a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.io.PrintStream;
 <a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.List;
 <a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> java.util.Map;
-<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
-<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.apache.commons.io.output.ByteArrayOutputStream;
-<a class="jxr_linenumber" name="L8" href="#L8">8</a>   
-<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.info.MyEvent;
-<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.info.MyTransition;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> java.util.stream.Collectors;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> org.apache.commons.io.output.ByteArrayOutputStream;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Maps;
 <a class="jxr_linenumber" name="L11" href="#L11">11</a>  
-<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Maps;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.info.MyEvent;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.info.MyTransition;
 <a class="jxr_linenumber" name="L14" href="#L14">14</a>  
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_javadoccomment">/**</em>
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_javadoccomment"> * Generates entity behaviour class (java source code) containing on-entry</em>
@@ -27,156 +27,146 @@
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment"> * @author dave</em>
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment"> * </em>
 <a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> */</em>
-<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../xuml/tools/model/compiler/BehaviourImplementationWriter.html">BehaviourImplementationWriter</a> {
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="BehaviourImplementationWriter" href="../../../../xuml/tools/model/compiler/BehaviourImplementationWriter.html#BehaviourImplementationWriter">BehaviourImplementationWriter</a> {
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../xuml/tools/model/compiler/ClassInfo.html">ClassInfo</a> info;
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String behaviourFullClassName;
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../xuml/tools/model/compiler/TypeRegister.html">TypeRegister</a> types = <strong class="jxr_keyword">new</strong> <a href="../../../../xuml/tools/model/compiler/TypeRegister.html">TypeRegister</a>();
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a name="ClassInfo" href="../../../../xuml/tools/model/compiler/ClassInfo.html#ClassInfo">ClassInfo</a> info;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String behaviourFullClassName;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a name="TypeRegister" href="../../../../xuml/tools/model/comp<a name="TypeRegister" href="../../../../xuml/tools/model/compiler/TypeRegister.html#TypeRegister">TypeRegister</a>ister.html#TypeRegister">TypeRegister</a> types = <strong class="jxr_keyword">new</strong> <a name="TypeRegister" href="../../../../xuml/tools/model/compiler/TypeRegister.html#TypeRegister">TypeRegister</a>();
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>  
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment">	 * Constructor.</em>
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment">	 * @param info</em>
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment">	 * @param behaviourFullClassName</em>
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>  	<strong class="jxr_keyword">public</strong> <a href="../../../../xuml/tools/model/compiler/BehaviourImplementationWriter.html">BehaviourImplementationWriter</a>(<a href="../../../../xuml/tools/model/compiler/ClassInfo.html">ClassInfo</a> info,
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>  			String behaviourFullClassName) {
-<a class="jxr_linenumber" name="L36" href="#L36">36</a>  		<strong class="jxr_keyword">this</strong>.info = info;
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>  		<strong class="jxr_keyword">this</strong>.behaviourFullClassName = behaviourFullClassName;
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>  	}
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>  
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <em class="jxr_javadoccomment">	 * Returns generated java source code for the implementation of the class</em>
-<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <em class="jxr_javadoccomment">	 * name specified in the constructor of this class.</em>
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <em class="jxr_javadoccomment">	 * @return</em>
-<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>  	<strong class="jxr_keyword">public</strong> String generate() {
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>  		ByteArrayOutputStream bytes = <strong class="jxr_keyword">new</strong> ByteArrayOutputStream();
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>  		PrintStream out = <strong class="jxr_keyword">new</strong> PrintStream(bytes);
-<a class="jxr_linenumber" name="L49" href="#L49">49</a>  		generate(out);
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>  		out.close();
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>  		String result = bytes.toString().replace(<span class="jxr_string">"&lt;IMPORTS&gt;"</span>,
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>  				types.getImports(behaviourFullClassName).trim());
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		<strong class="jxr_keyword">return</strong> result;
-<a class="jxr_linenumber" name="L54" href="#L54">54</a>  	}
-<a class="jxr_linenumber" name="L55" href="#L55">55</a>  
-<a class="jxr_linenumber" name="L56" href="#L56">56</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <em class="jxr_javadoccomment">	 * Writes generated java source code to the given {@link PrintStream}.</em>
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <em class="jxr_javadoccomment">	 * @param out</em>
-<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L61" href="#L61">61</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> generate(PrintStream out) {
-<a class="jxr_linenumber" name="L62" href="#L62">62</a>  		String simpleClassName = <a href="../../../../xuml/tools/model/compiler/Util.html">Util</a>
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>  				.getSimpleClassName(behaviourFullClassName);
-<a class="jxr_linenumber" name="L64" href="#L64">64</a>  		String packageName = Util.getPackage(behaviourFullClassName);
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>  		out.format(<span class="jxr_string">"package %s;\n\n"</span>, packageName);
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>  		out.format(<span class="jxr_string">"&lt;IMPORTS&gt;\n\n"</span>);
-<a class="jxr_linenumber" name="L67" href="#L67">67</a>  		out.format(<span class="jxr_string">"public class %s implements %s {\n\n"</span>,
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>  				Util.getSimpleClassName(behaviourFullClassName),
-<a class="jxr_linenumber" name="L69" href="#L69">69</a>  				types.addType(info.getClassFullName() + <span class="jxr_string">".Behaviour"</span>));
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment">     * Constructor.</em>
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment">     * @param info</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment">     * @param behaviourFullClassName</em>
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>      <strong class="jxr_keyword">public</strong> <a name="BehaviourImplementationWriter" href="../../../../xuml/tools/model/compiler/BehaviourImplementationWriter.html#BehaviourImplementationWriter">BehaviourImplementationWriter</a>(<a name="ClassInfo" href="../../../../xuml/tools/model/compiler/ClassInfo.html#ClassInfo">ClassInfo</a> info, String behaviourFullClassName) {
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>          <strong class="jxr_keyword">this</strong>.info = info;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>          <strong class="jxr_keyword">this</strong>.behaviourFullClassName = behaviourFullClassName;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      }
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <em class="jxr_javadoccomment">     * Returns generated java source code for the implementation of the class</em>
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <em class="jxr_javadoccomment">     * name specified in the constructor of this class.</em>
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <em class="jxr_javadoccomment">     * @return</em>
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      <strong class="jxr_keyword">public</strong> String generate() {
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>          ByteArrayOutputStream bytes = <strong class="jxr_keyword">new</strong> ByteArrayOutputStream();
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          <strong class="jxr_keyword">try</strong> (PrintStream out = <strong class="jxr_keyword">new</strong> PrintStream(bytes)) {
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>              generate(out);
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          }
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          String result = bytes.toString().replace(<span class="jxr_string">"&lt;IMPORTS&gt;"</span>,
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>                  types.getImports(behaviourFullClassName).trim());
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <em class="jxr_javadoccomment">     * Writes generated java source code to the given {@link PrintStream}.</em>
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <em class="jxr_javadoccomment">     * @param out</em>
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> generate(PrintStream out) {
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          String simpleClassName = Util.getSimpleClassName(behaviourFullClassName);
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          String packageName = Util.getPackage(behaviourFullClassName);
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          out.format(<span class="jxr_string">"package %s;\n\n"</span>, packageName);
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          out.format(<span class="jxr_string">"&lt;IMPORTS&gt;\n\n"</span>);
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          out.format(<span class="jxr_string">"public class %s implements %s {\n\n"</span>,
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>                  Util.getSimpleClassName(behaviourFullClassName),
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>                  types.addType(info.getClassFullName() + <span class="jxr_string">".Behaviour"</span>));
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          writeFields(out, simpleClassName);
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>  
-<a class="jxr_linenumber" name="L71" href="#L71">71</a>  		writeFields(out, simpleClassName);
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          writeOnEntryMethods(out);
 <a class="jxr_linenumber" name="L72" href="#L72">72</a>  
-<a class="jxr_linenumber" name="L73" href="#L73">73</a>  		writeOnEntryMethods(out);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          writeFactory(out);
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>  
-<a class="jxr_linenumber" name="L75" href="#L75">75</a>  		writeFactory(out);
-<a class="jxr_linenumber" name="L76" href="#L76">76</a>  
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>  		out.format(<span class="jxr_string">"}"</span>);
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>  	}
-<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>  <em class="jxr_javadoccomment">	 * Writes required fields to the PrintStream.</em>
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>  <em class="jxr_javadoccomment">	 * @param out</em>
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>  <em class="jxr_javadoccomment">	 * @param simpleClassName</em>
-<a class="jxr_linenumber" name="L85" href="#L85">85</a>  <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeFields(PrintStream out, String simpleClassName) {
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>  		out.format(<span class="jxr_string">"    private final %s self;\n\n"</span>,
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>  				info.addType(info.getClassFullName()));
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>  
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>  		out.format(<span class="jxr_string">"    public %s(%s self) {\n"</span>, simpleClassName,
-<a class="jxr_linenumber" name="L91" href="#L91">91</a>  				types.addType(info.getClassFullName()));
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>  		out.format(<span class="jxr_string">"        this.self = self;\n"</span>);
-<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		out.format(<span class="jxr_string">"    }\n\n"</span>);
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>  	}
-<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
-<a class="jxr_linenumber" name="L96" href="#L96">96</a>  	<em class="jxr_javadoccomment">/**</em>
-<a class="jxr_linenumber" name="L97" href="#L97">97</a>  <em class="jxr_javadoccomment">	 * Writes the onEntry procedure methods.</em>
-<a class="jxr_linenumber" name="L98" href="#L98">98</a>  <em class="jxr_javadoccomment">	 * </em>
-<a class="jxr_linenumber" name="L99" href="#L99">99</a>  <em class="jxr_javadoccomment">	 * @param out</em>
-<a class="jxr_linenumber" name="L100" href="#L100">100</a> <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L101" href="#L101">101</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeOnEntryMethods(PrintStream out) {
-<a class="jxr_linenumber" name="L102" href="#L102">102</a> 		Map&lt;String, MyEvent&gt; stateEvent = Maps.newLinkedHashMap();
-<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		<strong class="jxr_keyword">for</strong> (MyEvent event : info.getEvents()) {
-<a class="jxr_linenumber" name="L104" href="#L104">104</a> 			<strong class="jxr_keyword">if</strong> (event.getStateName() != <strong class="jxr_keyword">null</strong>)
-<a class="jxr_linenumber" name="L105" href="#L105">105</a> 				stateEvent.put(event.getStateName(), event);
-<a class="jxr_linenumber" name="L106" href="#L106">106</a> 		}
-<a class="jxr_linenumber" name="L107" href="#L107">107</a> 		List&lt;MyEvent&gt; nonStateEvents = Lists.newArrayList();
-<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		<strong class="jxr_keyword">for</strong> (MyEvent event : info.getEvents()) {
-<a class="jxr_linenumber" name="L109" href="#L109">109</a> 			<strong class="jxr_keyword">if</strong> (event.getStateName() == <strong class="jxr_keyword">null</strong>)
-<a class="jxr_linenumber" name="L110" href="#L110">110</a> 				nonStateEvents.add(event);
-<a class="jxr_linenumber" name="L111" href="#L111">111</a> 		}
-<a class="jxr_linenumber" name="L112" href="#L112">112</a> 
-<a class="jxr_linenumber" name="L113" href="#L113">113</a> 		<strong class="jxr_keyword">for</strong> (MyEvent event : stateEvent.values()) {
-<a class="jxr_linenumber" name="L114" href="#L114">114</a> 			writeStateEventOnEntryMethod(out, event);
-<a class="jxr_linenumber" name="L115" href="#L115">115</a> 		}
-<a class="jxr_linenumber" name="L116" href="#L116">116</a> 
-<a class="jxr_linenumber" name="L117" href="#L117">117</a> 		<strong class="jxr_keyword">for</strong> (MyEvent event : nonStateEvents) {
-<a class="jxr_linenumber" name="L118" href="#L118">118</a> 			writeNonStateEventEntryMethods(out, event);
-<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		}
-<a class="jxr_linenumber" name="L120" href="#L120">120</a> 	}
-<a class="jxr_linenumber" name="L121" href="#L121">121</a> 
-<a class="jxr_linenumber" name="L122" href="#L122">122</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeNonStateEventEntryMethods(PrintStream out, <a href="../../../../xuml/tools/model/compiler/info/MyEvent.html">MyEvent</a> event) {
-<a class="jxr_linenumber" name="L123" href="#L123">123</a> 		<strong class="jxr_keyword">for</strong> (MyTransition transition : info.getTransitions()) {
-<a class="jxr_linenumber" name="L124" href="#L124">124</a> 			<em class="jxr_comment">// constraint is no event overloading</em>
-<a class="jxr_linenumber" name="L125" href="#L125">125</a> 			<strong class="jxr_keyword">if</strong> (transition.getEventName().equals(event.getName())) {
-<a class="jxr_linenumber" name="L126" href="#L126">126</a> 				out.format(<span class="jxr_string">"    @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
-<a class="jxr_linenumber" name="L127" href="#L127">127</a> 				out.format(<span class="jxr_string">"    public void onEntry%s(%s event) {\n"</span>, <a href="../../../../xuml/tools/model/compiler/Util.html">Util</a>
-<a class="jxr_linenumber" name="L128" href="#L128">128</a> 						.upperFirst(Util.toJavaIdentifier(transition
-<a class="jxr_linenumber" name="L129" href="#L129">129</a> 								.getToState())), types.addType(info
-<a class="jxr_linenumber" name="L130" href="#L130">130</a> 						.getClassFullName()
-<a class="jxr_linenumber" name="L131" href="#L131">131</a> 						+ <span class="jxr_string">".Events."</span>
-<a class="jxr_linenumber" name="L132" href="#L132">132</a> 						+ event.getSimpleClassName()));
-<a class="jxr_linenumber" name="L133" href="#L133">133</a> 				out.format(<span class="jxr_string">"        //TODO write implementation here\n"</span>);
-<a class="jxr_linenumber" name="L134" href="#L134">134</a> 				out.format(<span class="jxr_string">"    };\n\n"</span>);
-<a class="jxr_linenumber" name="L135" href="#L135">135</a> 			}
-<a class="jxr_linenumber" name="L136" href="#L136">136</a> 		}
-<a class="jxr_linenumber" name="L137" href="#L137">137</a> 	}
-<a class="jxr_linenumber" name="L138" href="#L138">138</a> 
-<a class="jxr_linenumber" name="L139" href="#L139">139</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeStateEventOnEntryMethod(PrintStream out, <a href="../../../../xuml/tools/model/compiler/info/MyEvent.html">MyEvent</a> event) {
-<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		out.format(<span class="jxr_string">"    @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
-<a class="jxr_linenumber" name="L141" href="#L141">141</a> 		out.format(
-<a class="jxr_linenumber" name="L142" href="#L142">142</a> 				<span class="jxr_string">"    public void onEntry%s(%s event) {\n"</span>,
-<a class="jxr_linenumber" name="L143" href="#L143">143</a> 				Util.upperFirst(Util.toJavaIdentifier(event.getStateName())),
-<a class="jxr_linenumber" name="L144" href="#L144">144</a> 				types.addType(info.getClassFullName() + <span class="jxr_string">".Events."</span>
-<a class="jxr_linenumber" name="L145" href="#L145">145</a> 						+ event.getStateSignatureInterfaceSimpleName()));
-<a class="jxr_linenumber" name="L146" href="#L146">146</a> 		out.format(<span class="jxr_string">"        //TODO write implementation here\n"</span>);
-<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		out.format(<span class="jxr_string">"    };\n\n"</span>);
-<a class="jxr_linenumber" name="L148" href="#L148">148</a> 	}
-<a class="jxr_linenumber" name="L149" href="#L149">149</a> 
-<a class="jxr_linenumber" name="L150" href="#L150">150</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeFactory(PrintStream out) {
-<a class="jxr_linenumber" name="L151" href="#L151">151</a> 		out.format(<span class="jxr_string">"    public static class Factory implements %s {\n"</span>,
-<a class="jxr_linenumber" name="L152" href="#L152">152</a> 				types.addType(info.getClassFullName() + <span class="jxr_string">".BehaviourFactory"</span>));
-<a class="jxr_linenumber" name="L153" href="#L153">153</a> 		out.format(<span class="jxr_string">"        @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
-<a class="jxr_linenumber" name="L154" href="#L154">154</a> 		out.format(<span class="jxr_string">"        public %s create(%s entity) {\n\n"</span>,
-<a class="jxr_linenumber" name="L155" href="#L155">155</a> 				types.addType(info.getClassFullName() + <span class="jxr_string">".Behaviour"</span>),
-<a class="jxr_linenumber" name="L156" href="#L156">156</a> 				types.addType(info.getClassFullName()));
-<a class="jxr_linenumber" name="L157" href="#L157">157</a> 		out.format(<span class="jxr_string">"            return new %s(entity);\n"</span>,
-<a class="jxr_linenumber" name="L158" href="#L158">158</a> 				types.addType(behaviourFullClassName));
-<a class="jxr_linenumber" name="L159" href="#L159">159</a> 		out.format(<span class="jxr_string">"        }\n"</span>);
-<a class="jxr_linenumber" name="L160" href="#L160">160</a> 		out.format(<span class="jxr_string">"    }\n\n"</span>);
-<a class="jxr_linenumber" name="L161" href="#L161">161</a> 
-<a class="jxr_linenumber" name="L162" href="#L162">162</a> 		out.format(<span class="jxr_string">"    private static Factory factory = new Factory();\n\n"</span>);
-<a class="jxr_linenumber" name="L163" href="#L163">163</a> 
-<a class="jxr_linenumber" name="L164" href="#L164">164</a> 		out.format(<span class="jxr_string">"    public static Factory factory() {\n"</span>);
-<a class="jxr_linenumber" name="L165" href="#L165">165</a> 		out.format(<span class="jxr_string">"        return factory;\n"</span>);
-<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		out.format(<span class="jxr_string">"    }\n"</span>);
-<a class="jxr_linenumber" name="L167" href="#L167">167</a> 	}
-<a class="jxr_linenumber" name="L168" href="#L168">168</a> 
-<a class="jxr_linenumber" name="L169" href="#L169">169</a> }
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>          out.format(<span class="jxr_string">"}"</span>);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>      }
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  <em class="jxr_javadoccomment">     * Writes required fields to the PrintStream.</em>
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  <em class="jxr_javadoccomment">     * @param out</em>
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  <em class="jxr_javadoccomment">     * @param simpleClassName</em>
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeFields(PrintStream out, String simpleClassName) {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          out.format(<span class="jxr_string">"    private final %s self;\n\n"</span>, info.addType(info.getClassFullName()));
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>          out.format(<span class="jxr_string">"    public %s(%s self) {\n"</span>, simpleClassName,
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  types.addType(info.getClassFullName()));
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>          out.format(<span class="jxr_string">"        this.self = self;\n"</span>);
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>          out.format(<span class="jxr_string">"    }\n\n"</span>);
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>      }
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  <em class="jxr_javadoccomment">     * Writes the onEntry procedure methods.</em>
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  <em class="jxr_javadoccomment">     * @param out</em>
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeOnEntryMethods(PrintStream out) {
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>          Map&lt;String, MyEvent&gt; stateEvent = Maps.newLinkedHashMap();
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>         <strong class="jxr_keyword">for</strong> (<a name="MyEvent" href="../../../../xuml/tools/model/compiler/info/MyEvent.html#MyEvent">MyEvent</a> event : info.getEvents()) {
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>             <strong class="jxr_keyword">if</strong> (event.getStateName() != <strong class="jxr_keyword">null</strong>)
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                 stateEvent.put(event.getStateName(), event);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>         }
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>         List&lt;MyEvent&gt; nonStateEvents = info.getEvents().stream()
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>                 .filter(ev -&gt; ev.getStateName() == <strong class="jxr_keyword">null</strong>).collect(Collectors.toList());
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">for</strong> (<a name="MyEvent" href="../../../../xuml/tools/model/compiler/info/MyEvent.html#MyEvent">MyEvent</a> event : stateEvent.values()) {
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>             writeStateEventOnEntryMethod(out, event);
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>         }
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>         <strong class="jxr_keyword">for</strong> (<a name="MyEvent" href="../../../../xuml/tools/model/compiler/info/MyEvent.html#MyEvent">MyEvent</a> event : nonStateEvents) {
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>             writeNonStateEventEntryMethods(out, event);
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>         }
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>     }
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeNonStateEventEntryMethods(PrintStream out, <a name="MyEvent" href="../../../../xuml/tools/model/compiler/info/MyEvent.html#MyEvent">MyEvent</a> event) {
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         <strong class="jxr_keyword">for</strong> (<a name="MyTransition" href="../../../../xuml/tools/model/compiler/info/MyTransition.html#MyTransition">MyTransition</a> transition : info.getTransitions()) {
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>             <em class="jxr_comment">// constraint is no event overloading</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>             <strong class="jxr_keyword">if</strong> (transition.getEventName().equals(event.getName())) {
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>                 out.format(<span class="jxr_string">"    @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>                 out.format(<span class="jxr_string">"    public void onEntry%s(%s event) {\n"</span>,
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>                         Util.upperFirst(Util.toJavaIdentifier(transition.getToState())),
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>                         types.addType(
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>                                 info.getClassFullName() + <span class="jxr_string">".Events."</span> + event.getSimpleClassName()));
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                 out.format(<span class="jxr_string">"        //TODO write implementation here\n"</span>);
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                 out.format(<span class="jxr_string">"    };\n\n"</span>);
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>             }
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>         }
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>     }
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeStateEventOnEntryMethod(PrintStream out, <a name="MyEvent" href="../../../../xuml/tools/model/compiler/info/MyEvent.html#MyEvent">MyEvent</a> event) {
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         out.format(<span class="jxr_string">"    @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         out.format(<span class="jxr_string">"    public void onEntry%s(%s event) {\n"</span>,
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>                 Util.upperFirst(Util.toJavaIdentifier(event.getStateName())),
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>                 types.addType(info.getClassFullName() + <span class="jxr_string">".Events."</span>
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>                         + event.getStateSignatureInterfaceSimpleName()));
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>         out.format(<span class="jxr_string">"        //TODO write implementation here\n"</span>);
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>         out.format(<span class="jxr_string">"    };\n\n"</span>);
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>     }
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> writeFactory(PrintStream out) {
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         out.format(<span class="jxr_string">"    public static class Factory implements %s {\n"</span>,
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>                 types.addType(info.getClassFullName() + <span class="jxr_string">".BehaviourFactory"</span>));
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         out.format(<span class="jxr_string">"        @%s\n"</span>, types.addType(Override.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>         out.format(<span class="jxr_string">"        public %s create(%s entity) {\n\n"</span>,
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>                 types.addType(info.getClassFullName() + <span class="jxr_string">".Behaviour"</span>),
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>                 types.addType(info.getClassFullName()));
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>         out.format(<span class="jxr_string">"            return new %s(entity);\n"</span>, types.addType(behaviourFullClassName));
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>         out.format(<span class="jxr_string">"        }\n"</span>);
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>         out.format(<span class="jxr_string">"    }\n\n"</span>);
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>         out.format(<span class="jxr_string">"    private static Factory factory = new Factory();\n\n"</span>);
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         out.format(<span class="jxr_string">"    public static Factory factory() {\n"</span>);
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>         out.format(<span class="jxr_string">"        return factory;\n"</span>);
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>         out.format(<span class="jxr_string">"    }\n"</span>);
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>     }
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2012&#x2013;2014. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2012&#x2013;2022. All rights reserved.</div>
 </body>
 </html>

@@ -16,39 +16,40 @@
 <a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.runtime.actor.EntityActor;
 <a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> xuml.tools.model.compiler.runtime.message.Signal;
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>  
-<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../xuml/tools/model/compiler/runtime/SignalProcessorListenerRetryOnFailure.html">SignalProcessorListenerRetryOnFailure</a> <strong class="jxr_keyword">implements</strong> SignalProcessorListener {
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="SignalProcessorListenerRetryOnFailure" href="../../../../../xuml/tools/model/compiler/runtime/SignalProcessorListenerRetryOnFailure.html#SignalProcessorListenerRetryOnFailure">SignalProcessorListenerRetryOnFailure</a> <strong class="jxr_keyword">implements</strong> SignalProcessorListener {
 <a class="jxr_linenumber" name="L12" href="#L12">12</a>  
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Logger log = Logger
-<a class="jxr_linenumber" name="L14" href="#L14">14</a>  			.getLogger(SignalProcessorListenerRetryOnFailure.<strong class="jxr_keyword">class</strong>.getName());
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Logger log = Logger
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>              .getLogger(SignalProcessorListenerRetryOnFailure.<strong class="jxr_keyword">class</strong>.getName());
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>  
-<a class="jxr_linenumber" name="L16" href="#L16">16</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Duration DELAY = Duration.create(5, TimeUnit.MINUTES);
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Duration DELAY = Duration.create(5, TimeUnit.MINUTES);
 <a class="jxr_linenumber" name="L17" href="#L17">17</a>  
-<a class="jxr_linenumber" name="L18" href="#L18">18</a>  	@Override
-<a class="jxr_linenumber" name="L19" href="#L19">19</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> beforeProcessing(Signal&lt;?&gt; signal, EntityActor actor) {
-<a class="jxr_linenumber" name="L20" href="#L20">20</a>  		<em class="jxr_comment">// do nothing</em>
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  	}
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      @Override
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> beforeProcessing(Signal&lt;?&gt; signal, EntityActor actor) {
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>          <em class="jxr_comment">// do nothing</em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>      }
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  
-<a class="jxr_linenumber" name="L23" href="#L23">23</a>  	@Override
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> afterProcessing(Signal&lt;?&gt; signal, EntityActor actor) {
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>  		<em class="jxr_comment">// do nothing</em>
-<a class="jxr_linenumber" name="L26" href="#L26">26</a>  	}
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>      @Override
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> afterProcessing(Signal&lt;?&gt; signal, EntityActor actor) {
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>          <em class="jxr_comment">// do nothing</em>
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>      }
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>  
-<a class="jxr_linenumber" name="L28" href="#L28">28</a>  	@Override
-<a class="jxr_linenumber" name="L29" href="#L29">29</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> failure(Signal&lt;?&gt; signal, Exception e, EntityActor actor) {
-<a class="jxr_linenumber" name="L30" href="#L30">30</a>  		<em class="jxr_comment">// log the failure</em>
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>  		String msg = <span class="jxr_string">"error processing "</span> + signal + <span class="jxr_string">": "</span> + e.getMessage();
-<a class="jxr_linenumber" name="L32" href="#L32">32</a>  		log.log(Level.SEVERE, msg, e);
-<a class="jxr_linenumber" name="L33" href="#L33">33</a>  		<em class="jxr_comment">// retry the message after an interval</em>
-<a class="jxr_linenumber" name="L34" href="#L34">34</a>  		resend(signal, DELAY);
-<a class="jxr_linenumber" name="L35" href="#L35">35</a>  	}
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      @Override
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> failure(Signal&lt;?&gt; signal, Exception e, EntityActor actor) {
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>          <em class="jxr_comment">// log the failure</em>
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          String msg = <span class="jxr_string">"error processing "</span> + signal + <span class="jxr_string">": "</span> + e.getMessage();
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>          log.log(Level.SEVERE, msg, e);
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <em class="jxr_comment">// retry the message after an interval</em>
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>          resend(signal, DELAY);
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>      }
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>  
-<a class="jxr_linenumber" name="L37" href="#L37">37</a>  	<strong class="jxr_keyword">private</strong> &lt;T&gt; <strong class="jxr_keyword">void</strong> resend(Signal&lt;T&gt; signal, Duration delay) {
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>  		signal.getEntity().signal(signal.getEvent(), DELAY);
-<a class="jxr_linenumber" name="L39" href="#L39">39</a>  	}
-<a class="jxr_linenumber" name="L40" href="#L40">40</a>  
-<a class="jxr_linenumber" name="L41" href="#L41">41</a>  }
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>      <strong class="jxr_keyword">private</strong> &lt;T&gt; <strong class="jxr_keyword">void</strong> resend(Signal&lt;T&gt; signal, Duration delay) {
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>          <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(<span class="jxr_string">"TODO"</span>);
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>          <em class="jxr_comment">// signal.getEntity().signal(signal.getEvent(), DELAY);</em>
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>      }
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2012&#x2013;2014. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2012&#x2013;2022. All rights reserved.</div>
 </body>
 </html>
