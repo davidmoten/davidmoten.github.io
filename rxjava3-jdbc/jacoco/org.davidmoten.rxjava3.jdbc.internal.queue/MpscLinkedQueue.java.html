@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MpscLinkedQueue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc.internal.queue</a> &gt; <span class="el_source">MpscLinkedQueue.java</span></div><h1>MpscLinkedQueue.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+/*
+ * The code was inspired by the similarly named JCTools class:
+ * https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic
+ */
+
+package org.davidmoten.rxjava3.jdbc.internal.queue;
+
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.reactivex.rxjava3.annotations.Nullable;
+
+/**
+ * A multi-producer single consumer unbounded queue.
+ * @param &lt;T&gt; the contained value type
+ */
+public final class MpscLinkedQueue&lt;T&gt; implements SimplePlainQueue&lt;T&gt; {
+    private final AtomicReference&lt;LinkedQueueNode&lt;T&gt;&gt; producerNode;
+    private final AtomicReference&lt;LinkedQueueNode&lt;T&gt;&gt; consumerNode;
+
+<span class="fc" id="L33">    public MpscLinkedQueue() {</span>
+<span class="fc" id="L34">        producerNode = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L35">        consumerNode = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L36">        LinkedQueueNode&lt;T&gt; node = new LinkedQueueNode&lt;&gt;();</span>
+<span class="fc" id="L37">        spConsumerNode(node);</span>
+<span class="fc" id="L38">        xchgProducerNode(node); // this ensures correct construction: StoreLoad</span>
+<span class="fc" id="L39">    }</span>
+
+    /**
+     * {@inheritDoc} &lt;br&gt;
+     * &lt;p&gt;
+     * IMPLEMENTATION NOTES:&lt;br&gt;
+     * Offer is allowed from multiple threads.&lt;br&gt;
+     * Offer allocates a new node and:
+     * &lt;ol&gt;
+     * &lt;li&gt;Swaps it atomically with current producer node (only one producer 'wins')
+     * &lt;li&gt;Sets the new node as the node following from the swapped producer node
+     * &lt;/ol&gt;
+     * This works because each producer is guaranteed to 'plant' a new node and link the old node. No 2 producers can
+     * get the same producer node as part of XCHG guarantee.
+     *
+     * @see java.util.Queue#offer(java.lang.Object)
+     */
+    @Override
+    public boolean offer(final T e) {
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (null == e) {</span>
+<span class="nc" id="L59">            throw new NullPointerException(&quot;Null is not a valid element&quot;);</span>
+        }
+<span class="fc" id="L61">        final LinkedQueueNode&lt;T&gt; nextNode = new LinkedQueueNode&lt;&gt;(e);</span>
+<span class="fc" id="L62">        final LinkedQueueNode&lt;T&gt; prevProducerNode = xchgProducerNode(nextNode);</span>
+        // Should a producer thread get interrupted here the chain WILL be broken until that thread is resumed
+        // and completes the store in prev.next.
+<span class="fc" id="L65">        prevProducerNode.soNext(nextNode); // StoreStore</span>
+<span class="fc" id="L66">        return true;</span>
+    }
+
+    /**
+     * {@inheritDoc} &lt;br&gt;
+     * &lt;p&gt;
+     * IMPLEMENTATION NOTES:&lt;br&gt;
+     * Poll is allowed from a SINGLE thread.&lt;br&gt;
+     * Poll reads the next node from the consumerNode and:
+     * &lt;ol&gt;
+     * &lt;li&gt;If it is null, the queue is assumed empty (though it might not be).
+     * &lt;li&gt;If it is not null set it as the consumer node and return it's now evacuated value.
+     * &lt;/ol&gt;
+     * This means the consumerNode.value is always null, which is also the starting point for the queue. Because null
+     * values are not allowed to be offered this is the only node with it's value set to null at any one time.
+     *
+     * @see java.util.Queue#poll()
+     */
+    @Nullable
+    @Override
+    public T poll() {
+<span class="fc" id="L87">        LinkedQueueNode&lt;T&gt; currConsumerNode = lpConsumerNode(); // don't load twice, it's alright</span>
+<span class="fc" id="L88">        LinkedQueueNode&lt;T&gt; nextNode = currConsumerNode.lvNext();</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (nextNode != null) {</span>
+            // we have to null out the value because we are going to hang on to the node
+<span class="fc" id="L91">            final T nextValue = nextNode.getAndNullValue();</span>
+<span class="fc" id="L92">            spConsumerNode(nextNode);</span>
+<span class="fc" id="L93">            return nextValue;</span>
+        }
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        else if (currConsumerNode != lvProducerNode()) {</span>
+            // spin, we are no longer wait free
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            while ((nextNode = currConsumerNode.lvNext()) == null) { } // NOPMD</span>
+            // got the next node...
+
+            // we have to null out the value because we are going to hang on to the node
+<span class="nc" id="L101">            final T nextValue = nextNode.getAndNullValue();</span>
+<span class="nc" id="L102">            spConsumerNode(nextNode);</span>
+<span class="nc" id="L103">            return nextValue;</span>
+        }
+<span class="fc" id="L105">        return null;</span>
+    }
+
+    @Override
+    public boolean offer(T v1, T v2) {
+<span class="nc" id="L110">        offer(v1);</span>
+<span class="nc" id="L111">        offer(v2);</span>
+<span class="nc" id="L112">        return true;</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        while (poll() != null &amp;&amp; !isEmpty()) { } // NOPMD</span>
+<span class="nc" id="L118">    }</span>
+    LinkedQueueNode&lt;T&gt; lvProducerNode() {
+<span class="fc" id="L120">        return producerNode.get();</span>
+    }
+    LinkedQueueNode&lt;T&gt; xchgProducerNode(LinkedQueueNode&lt;T&gt; node) {
+<span class="fc" id="L123">        return producerNode.getAndSet(node);</span>
+    }
+    LinkedQueueNode&lt;T&gt; lvConsumerNode() {
+<span class="nc" id="L126">        return consumerNode.get();</span>
+    }
+
+    LinkedQueueNode&lt;T&gt; lpConsumerNode() {
+<span class="fc" id="L130">        return consumerNode.get();</span>
+    }
+    void spConsumerNode(LinkedQueueNode&lt;T&gt; node) {
+<span class="fc" id="L133">        consumerNode.lazySet(node);</span>
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * {@inheritDoc} &lt;br&gt;
+     * &lt;p&gt;
+     * IMPLEMENTATION NOTES:&lt;br&gt;
+     * Queue is empty when producerNode is the same as consumerNode. An alternative implementation would be to observe
+     * the producerNode.value is null, which also means an empty queue because only the consumerNode.value is allowed to
+     * be null.
+     */
+    @Override
+    public boolean isEmpty() {
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        return lvConsumerNode() == lvProducerNode();</span>
+    }
+
+    static final class LinkedQueueNode&lt;E&gt; extends AtomicReference&lt;LinkedQueueNode&lt;E&gt;&gt; {
+
+        private static final long serialVersionUID = 2404266111789071508L;
+
+        private E value;
+
+<span class="fc" id="L155">        LinkedQueueNode() {</span>
+<span class="fc" id="L156">        }</span>
+
+<span class="fc" id="L158">        LinkedQueueNode(E val) {</span>
+<span class="fc" id="L159">            spValue(val);</span>
+<span class="fc" id="L160">        }</span>
+        /**
+         * Gets the current value and nulls out the reference to it from this node.
+         *
+         * @return value
+         */
+        public E getAndNullValue() {
+<span class="fc" id="L167">            E temp = lpValue();</span>
+<span class="fc" id="L168">            spValue(null);</span>
+<span class="fc" id="L169">            return temp;</span>
+        }
+
+        public E lpValue() {
+<span class="fc" id="L173">            return value;</span>
+        }
+
+        public void spValue(E newValue) {
+<span class="fc" id="L177">            value = newValue;</span>
+<span class="fc" id="L178">        }</span>
+
+        public void soNext(LinkedQueueNode&lt;E&gt; n) {
+<span class="fc" id="L181">            lazySet(n);</span>
+<span class="fc" id="L182">        }</span>
+
+        public LinkedQueueNode&lt;E&gt; lvNext() {
+<span class="fc" id="L185">            return get();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactedReturnGeneratedKeysBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">TransactedReturnGeneratedKeysBuilder.java</span></div><h1>TransactedReturnGeneratedKeysBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.Nonnull;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Flowable;
+
+public final class TransactedReturnGeneratedKeysBuilder implements GetterTx {
+
+    private final TransactedUpdateBuilder update;
+    private final Database db;
+
+<span class="fc" id="L17">    TransactedReturnGeneratedKeysBuilder(TransactedUpdateBuilder update, Database db) {</span>
+<span class="fc" id="L18">        this.update = update;</span>
+<span class="fc" id="L19">        this.db = db;</span>
+<span class="fc" id="L20">    }</span>
+
+    /**
+     * Transforms the results using the given function.
+     *
+     * @param mapper
+     *            maps the query results to an object
+     * @return the results of the query as an Observable
+     */
+    @Override
+    public &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; mapper) {
+<span class="fc" id="L31">        Preconditions.checkNotNull(mapper, &quot;mapper cannot be null&quot;);</span>
+<span class="fc" id="L32">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L33">            AtomicReference&lt;Connection&gt; connection = new AtomicReference&lt;Connection&gt;();</span>
+<span class="fc" id="L34">            Flowable&lt;T&gt; o = Update.&lt;T&gt;createReturnGeneratedKeys( //</span>
+                    update.updateBuilder.connections //
+<span class="fc" id="L36">                            .map(c -&gt; Util.toTransactedConnection(connection, c)),</span>
+<span class="fc" id="L37">                    update.parameterGroupsToFlowable(), update.updateBuilder.sql, mapper, false);</span>
+<span class="fc" id="L38">            return o.materialize() //</span>
+<span class="fc" id="L39">                    .flatMap(n -&gt; Tx.toTx(n, connection.get(), db)) //</span>
+<span class="fc" id="L40">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L42">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                        }
+<span class="fc" id="L44">                    });</span>
+        });
+    }
+
+    public ValuesOnly valuesOnly() {
+<span class="fc" id="L49">        return new ValuesOnly(this);</span>
+    }
+
+    public static final class ValuesOnly implements Getter {
+
+        private final TransactedReturnGeneratedKeysBuilder builder;
+
+<span class="fc" id="L56">        public ValuesOnly(TransactedReturnGeneratedKeysBuilder builder) {</span>
+<span class="fc" id="L57">            this.builder = builder;</span>
+<span class="fc" id="L58">        }</span>
+
+        @Override
+        public &lt;T&gt; Flowable&lt;T&gt; get(ResultSetMapper&lt;? extends T&gt; function) {
+<span class="fc" id="L62">            return builder.get(function).flatMap(Tx.flattenToValuesOnly());</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

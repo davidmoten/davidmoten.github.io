@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactedCallableBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">TransactedCallableBuilder.java</span></div><h1>TransactedCallableBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.davidmoten.rxjava3.jdbc.callable.CallableResultSet1;
+import org.davidmoten.rxjava3.jdbc.callable.CallableResultSet2;
+import org.davidmoten.rxjava3.jdbc.callable.CallableResultSet3;
+import org.davidmoten.rxjava3.jdbc.callable.CallableResultSet4;
+import org.davidmoten.rxjava3.jdbc.callable.CallableResultSetN;
+import org.davidmoten.rxjava3.jdbc.callable.internal.In;
+import org.davidmoten.rxjava3.jdbc.callable.internal.InOut;
+import org.davidmoten.rxjava3.jdbc.callable.internal.Out;
+import org.davidmoten.rxjava3.jdbc.callable.internal.TxGetter1;
+import org.davidmoten.rxjava3.jdbc.callable.internal.TxGetter2;
+import org.davidmoten.rxjava3.jdbc.callable.internal.TxGetter3;
+import org.davidmoten.rxjava3.jdbc.callable.internal.TxGetter4;
+import org.davidmoten.rxjava3.jdbc.callable.internal.TxGetterN;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple2;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple3;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple4;
+import org.davidmoten.rxjava3.jdbc.tuple.TupleN;
+
+import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Notification;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.functions.Function;
+
+public final class TransactedCallableBuilder implements TxGetter1 {
+
+    private CallableBuilder b;
+
+<span class="fc" id="L39">    public TransactedCallableBuilder(CallableBuilder b) {</span>
+<span class="fc" id="L40">        this.b = b;</span>
+<span class="fc" id="L41">    }</span>
+
+    public Flowable&lt;List&lt;Object&gt;&gt; parameterGroups() {
+<span class="fc" id="L44">        return b.parameterGroups();</span>
+    }
+
+    public TransactedCallableBuilder in() {
+<span class="fc" id="L48">        b.params.add(In.IN);</span>
+<span class="fc" id="L49">        return this;</span>
+    }
+
+    public Single&lt;TxWithoutValue&gt; input(Flowable&lt;?&gt; f) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        Preconditions.checkArgument(b.inStream == null, &quot;you can only specify in flowable once, current=&quot; + b.inStream);</span>
+<span class="fc" id="L54">        b.inStream = f;</span>
+<span class="fc" id="L55">        return build();</span>
+    }
+
+    public Single&lt;TxWithoutValue&gt; once() {
+<span class="fc" id="L59">        return input(1);</span>
+    }
+
+    public Single&lt;TxWithoutValue&gt; input(Object... objects) {
+<span class="fc" id="L63">        return input(Flowable.fromArray(objects));</span>
+    }
+
+    public &lt;T&gt; CallableBuilder1&lt;T&gt; inOut(Type type, Class&lt;T&gt; cls) {
+<span class="fc" id="L67">        b.params.add(new InOut(type));</span>
+<span class="fc" id="L68">        return new CallableBuilder1&lt;T&gt;(b, cls);</span>
+    }
+
+    public &lt;T&gt; CallableBuilder1&lt;T&gt; out(Type type, Class&lt;T&gt; cls) {
+<span class="fc" id="L72">        b.params.add(new Out(type));</span>
+<span class="fc" id="L73">        return new CallableBuilder1&lt;T&gt;(b, cls);</span>
+    }
+
+    @Override
+    public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="fc" id="L78">        return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+    }
+
+    public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="fc" id="L82">        return get(Util.autoMap(cls));</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private Single&lt;TxWithoutValue&gt; build() {
+<span class="fc" id="L87">        return Single.defer(() -&gt; {</span>
+<span class="fc" id="L88">            AtomicReference&lt;Connection&gt; con = new AtomicReference&lt;Connection&gt;();</span>
+            // set the atomic reference when transactedConnection emits
+<span class="fc" id="L90">            Single&lt;Connection&gt; transactedConnection = b.connection //</span>
+<span class="fc" id="L91">                    .map(c -&gt; Util.toTransactedConnection(con, c));</span>
+<span class="fc" id="L92">            return Call //</span>
+<span class="fc" id="L93">                    .createWithZeroOutParameters(transactedConnection, b.sql, parameterGroups(), b.params) //</span>
+<span class="fc" id="L94">                    .materialize() //</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                    .filter(x -&gt; !x.isOnNext()) //</span>
+<span class="fc" id="L96">                    .&lt;TxWithoutValue&gt;flatMap(n -&gt; Tx.toTx(n, con.get(), b.db)) //</span>
+<span class="fc" id="L97">                    .doOnNext(tx -&gt; {</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L99">                            ((TxImpl&lt;Object&gt;) tx).connection().commit();</span>
+                        }
+<span class="fc" id="L101">                    }) //</span>
+<span class="fc" id="L102">                    .lastOrError();</span>
+        });
+    }
+
+    public static final class CallableBuilder1&lt;T1&gt; implements TxGetter1 {
+
+        private final CallableBuilder b;
+        private final Class&lt;T1&gt; cls;
+
+<span class="fc" id="L111">        public CallableBuilder1(CallableBuilder b, Class&lt;T1&gt; cls) {</span>
+<span class="fc" id="L112">            this.b = b;</span>
+<span class="fc" id="L113">            this.cls = cls;</span>
+<span class="fc" id="L114">        }</span>
+
+        public CallableBuilder1&lt;T1&gt; in() {
+<span class="nc" id="L117">            b.in();</span>
+<span class="nc" id="L118">            return this;</span>
+        }
+
+        public &lt;T2&gt; CallableBuilder2&lt;T1, T2&gt; out(Type type, Class&lt;T2&gt; cls2) {
+<span class="fc" id="L122">            b.out(type, cls2);</span>
+<span class="fc" id="L123">            return new CallableBuilder2&lt;T1, T2&gt;(b, cls, cls2);</span>
+        }
+
+        public &lt;T2&gt; CallableBuilder2&lt;T1, T2&gt; inOut(Type type, Class&lt;T2&gt; cls2) {
+<span class="fc" id="L127">            b.inOut(type, cls2);</span>
+<span class="fc" id="L128">            return new CallableBuilder2&lt;T1, T2&gt;(b, cls, cls2);</span>
+        }
+
+        public Flowable&lt;Tx&lt;T1&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L132">            b.input(f);</span>
+<span class="fc" id="L133">            return build();</span>
+        }
+
+        public Flowable&lt;Tx&lt;T1&gt;&gt; input(Object... objects) {
+<span class="fc" id="L137">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        @Override
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="nc" id="L142">            return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+        }
+
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="nc" id="L146">            return get(Util.autoMap(cls));</span>
+        }
+
+        private Flowable&lt;Tx&lt;T1&gt;&gt; build() {
+<span class="fc" id="L150">            return inTransaction(b, con -&gt; Call //</span>
+<span class="fc" id="L151">                    .createWithOneOutParameter(con, b.sql, b.parameterGroups(), b.params, cls));</span>
+        }
+    }
+
+    public static final class CallableBuilder2&lt;T1, T2&gt; implements TxGetter1 {
+
+        private final CallableBuilder b;
+        private final Class&lt;T1&gt; cls1;
+        private final Class&lt;T2&gt; cls2;
+
+<span class="fc" id="L161">        public CallableBuilder2(CallableBuilder b, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2) {</span>
+<span class="fc" id="L162">            this.b = b;</span>
+<span class="fc" id="L163">            this.cls1 = cls1;</span>
+<span class="fc" id="L164">            this.cls2 = cls2;</span>
+<span class="fc" id="L165">        }</span>
+
+        public &lt;T3&gt; CallableBuilder3&lt;T1, T2, T3&gt; out(Type type, Class&lt;T3&gt; cls3) {
+<span class="fc" id="L168">            b.out(type, cls3);</span>
+<span class="fc" id="L169">            return new CallableBuilder3&lt;T1, T2, T3&gt;(b, cls1, cls2, cls3);</span>
+        }
+
+        public Flowable&lt;Tx&lt;Tuple2&lt;T1, T2&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L173">            b.input(f);</span>
+<span class="fc" id="L174">            return build();</span>
+        }
+
+        public CallableBuilder2&lt;T1, T2&gt; in() {
+<span class="nc" id="L178">            b.in();</span>
+<span class="nc" id="L179">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;Tuple2&lt;T1, T2&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L183">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public &lt;T3&gt; CallableBuilder3&lt;T1, T2, T3&gt; inOut(Type type, Class&lt;T3&gt; cls3) {
+<span class="fc" id="L187">            b.inOut(type, cls3);</span>
+<span class="fc" id="L188">            return new CallableBuilder3&lt;T1, T2, T3&gt;(b, cls1, cls2, cls3);</span>
+        }
+
+        @Override
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="fc" id="L193">            return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+        }
+
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="fc" id="L197">            return get(Util.autoMap(cls));</span>
+        }
+
+        private Flowable&lt;Tx&lt;Tuple2&lt;T1, T2&gt;&gt;&gt; build() {
+<span class="fc" id="L201">            return inTransaction(b,</span>
+<span class="fc" id="L202">                    con -&gt; Call.createWithTwoOutParameters(con, b.sql, b.parameterGroups(), b.params, cls1, cls2));</span>
+        }
+    }
+
+    public static final class CallableBuilder3&lt;T1, T2, T3&gt; implements TxGetter1 {
+
+        private final CallableBuilder b;
+        private final Class&lt;T1&gt; cls1;
+        private final Class&lt;T2&gt; cls2;
+        private final Class&lt;T3&gt; cls3;
+
+<span class="fc" id="L213">        public CallableBuilder3(CallableBuilder b, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3) {</span>
+<span class="fc" id="L214">            this.b = b;</span>
+<span class="fc" id="L215">            this.cls1 = cls1;</span>
+<span class="fc" id="L216">            this.cls2 = cls2;</span>
+<span class="fc" id="L217">            this.cls3 = cls3;</span>
+<span class="fc" id="L218">        }</span>
+
+        public &lt;T4&gt; CallableBuilder4&lt;T1, T2, T3, T4&gt; out(Type type, Class&lt;T4&gt; cls4) {
+<span class="fc" id="L221">            b.out(type, cls4);</span>
+<span class="fc" id="L222">            return new CallableBuilder4&lt;T1, T2, T3, T4&gt;(b, cls1, cls2, cls3, cls4);</span>
+        }
+
+        public Flowable&lt;Tx&lt;Tuple3&lt;T1, T2, T3&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L226">            b.input(f);</span>
+<span class="fc" id="L227">            return build();</span>
+        }
+
+        public CallableBuilder3&lt;T1, T2, T3&gt; in() {
+<span class="nc" id="L231">            b.in();</span>
+<span class="nc" id="L232">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;Tuple3&lt;T1, T2, T3&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L236">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public &lt;T4&gt; CallableBuilder4&lt;T1, T2, T3, T4&gt; inOut(Type type, Class&lt;T4&gt; cls4) {
+<span class="nc" id="L240">            b.inOut(type, cls4);</span>
+<span class="nc" id="L241">            return new CallableBuilder4&lt;T1, T2, T3, T4&gt;(b, cls1, cls2, cls3, cls4);</span>
+        }
+
+        @Override
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="nc" id="L246">            return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+        }
+
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="nc" id="L250">            return get(Util.autoMap(cls));</span>
+        }
+
+        private Flowable&lt;Tx&lt;Tuple3&lt;T1, T2, T3&gt;&gt;&gt; build() {
+<span class="fc" id="L254">            return inTransaction(b, con -&gt; Call.createWithThreeOutParameters(con, b.sql, b.parameterGroups(), b.params,</span>
+                    cls1, cls2, cls3));
+
+        }
+    }
+
+    public static final class CallableBuilder4&lt;T1, T2, T3, T4&gt; implements TxGetter1 {
+
+        private final CallableBuilder b;
+        private final Class&lt;T1&gt; cls1;
+        private final Class&lt;T2&gt; cls2;
+        private final Class&lt;T3&gt; cls3;
+        private final Class&lt;T4&gt; cls4;
+
+<span class="fc" id="L268">        public CallableBuilder4(CallableBuilder b, Class&lt;T1&gt; cls1, Class&lt;T2&gt; cls2, Class&lt;T3&gt; cls3, Class&lt;T4&gt; cls4) {</span>
+<span class="fc" id="L269">            this.b = b;</span>
+<span class="fc" id="L270">            this.cls1 = cls1;</span>
+<span class="fc" id="L271">            this.cls2 = cls2;</span>
+<span class="fc" id="L272">            this.cls3 = cls3;</span>
+<span class="fc" id="L273">            this.cls4 = cls4;</span>
+<span class="fc" id="L274">        }</span>
+
+        public Flowable&lt;Tx&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="nc" id="L277">            b.input(f);</span>
+<span class="nc" id="L278">            return build();</span>
+        }
+
+        public CallableBuilder4&lt;T1, T2, T3, T4&gt; in() {
+<span class="nc" id="L282">            b.in();</span>
+<span class="nc" id="L283">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt;&gt; input(Object... objects) {
+<span class="nc" id="L287">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableBuilderN inOut(Type type, Class&lt;T3&gt; cls5) {
+<span class="nc" id="L291">            b.inOut(type, cls5);</span>
+<span class="nc" id="L292">            return new CallableBuilderN(b, Lists.newArrayList(cls1, cls2, cls3, cls4, cls5));</span>
+        }
+
+        public CallableBuilderN out(Type type, Class&lt;?&gt; cls5) {
+<span class="fc" id="L296">            b.out(type, cls5);</span>
+<span class="fc" id="L297">            return new CallableBuilderN(b, Lists.newArrayList(cls1, cls2, cls3, cls4, cls5));</span>
+        }
+
+        @Override
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="nc" id="L302">            return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+        }
+
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="nc" id="L306">            return get(Util.autoMap(cls));</span>
+        }
+
+        private Flowable&lt;Tx&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt;&gt; build() {
+<span class="nc" id="L310">            return inTransaction(b, con -&gt; Call.createWithFourOutParameters(con, b.sql, b.parameterGroups(), b.params,</span>
+                    cls1, cls2, cls3, cls4));
+        }
+    }
+
+    public static final class CallableBuilderN implements TxGetter1 {
+
+        private final CallableBuilder b;
+        private final List&lt;Class&lt;?&gt;&gt; outClasses;
+
+<span class="fc" id="L320">        public CallableBuilderN(CallableBuilder b, List&lt;Class&lt;?&gt;&gt; outClasses) {</span>
+<span class="fc" id="L321">            this.b = b;</span>
+<span class="fc" id="L322">            this.outClasses = outClasses;</span>
+<span class="fc" id="L323">        }</span>
+
+        public Flowable&lt;Tx&lt;TupleN&lt;Object&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L326">            b.input(f);</span>
+<span class="fc" id="L327">            return build();</span>
+        }
+
+        public CallableBuilderN in() {
+<span class="nc" id="L331">            b.in();</span>
+<span class="nc" id="L332">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;TupleN&lt;Object&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L336">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableBuilderN out(Type type, Class&lt;?&gt; cls) {
+<span class="fc" id="L340">            b.out(type, cls);</span>
+<span class="fc" id="L341">            return new CallableBuilderN(b, createList(outClasses, cls));</span>
+        }
+
+        @Override
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; get(Function&lt;? super ResultSet, ? extends T&gt; function) {
+<span class="nc" id="L346">            return new CallableResultSets1Builder&lt;T&gt;(b, function);</span>
+        }
+
+        public &lt;T&gt; CallableResultSets1Builder&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="nc" id="L350">            return get(Util.autoMap(cls));</span>
+        }
+
+        private Flowable&lt;Tx&lt;TupleN&lt;Object&gt;&gt;&gt; build() {
+<span class="fc" id="L354">            return inTransaction(b,</span>
+<span class="fc" id="L355">                    con -&gt; Call.createWithNParameters(con, b.sql, b.parameterGroups(), b.params, outClasses));</span>
+        }
+    }
+
+    public static final class CallableResultSets1Builder&lt;T1&gt; implements TxGetter2&lt;T1&gt; {
+
+        private final CallableBuilder b;
+        private final Function&lt;? super ResultSet, ? extends T1&gt; f1;
+
+<span class="fc" id="L364">        CallableResultSets1Builder(CallableBuilder b, Function&lt;? super ResultSet, ? extends T1&gt; function) {</span>
+<span class="fc" id="L365">            this.b = b;</span>
+<span class="fc" id="L366">            this.f1 = function;</span>
+<span class="fc" id="L367">        }</span>
+
+        public CallableResultSets1Builder&lt;T1&gt; out(Type type, Class&lt;?&gt; cls5) {
+<span class="nc" id="L370">            b.out(type, cls5);</span>
+<span class="nc" id="L371">            return this;</span>
+        }
+
+        public &lt;T2&gt; CallableResultSets2Builder&lt;T1, T2&gt; autoMap(Class&lt;T2&gt; cls) {
+<span class="fc" id="L375">            return get(Util.autoMap(cls));</span>
+        }
+
+        public &lt;T2&gt; CallableResultSets2Builder&lt;T1, T2&gt; get(Function&lt;? super ResultSet, ? extends T2&gt; f2) {
+<span class="fc" id="L379">            return new CallableResultSets2Builder&lt;T1, T2&gt;(b, f1, f2);</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet1&lt;T1&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L383">            b.input(f);</span>
+<span class="fc" id="L384">            return build();</span>
+        }
+
+        public CallableResultSets1Builder&lt;T1&gt; in() {
+<span class="fc" id="L388">            b.in();</span>
+<span class="fc" id="L389">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet1&lt;T1&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L393">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableResultSets1Builder&lt;T1&gt; inOut(Type type, Class&lt;?&gt; cls) {
+<span class="nc" id="L397">            b.inOut(type, cls);</span>
+<span class="nc" id="L398">            return this;</span>
+        }
+
+        private Flowable&lt;Tx&lt;CallableResultSet1&lt;T1&gt;&gt;&gt; build() {
+<span class="fc" id="L402">            return inTransaction(b,</span>
+<span class="fc" id="L403">                    con -&gt; Call.createWithOneResultSet(con, b.sql, b.parameterGroups(), b.params, f1, 0));</span>
+        }
+
+    }
+
+    public static final class CallableResultSets2Builder&lt;T1, T2&gt; implements TxGetter3&lt;T1, T2&gt; {
+
+        private final CallableBuilder b;
+        private final Function&lt;? super ResultSet, ? extends T1&gt; f1;
+        private final Function&lt;? super ResultSet, ? extends T2&gt; f2;
+
+        CallableResultSets2Builder(CallableBuilder b, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+<span class="fc" id="L415">                Function&lt;? super ResultSet, ? extends T2&gt; f2) {</span>
+<span class="fc" id="L416">            this.b = b;</span>
+<span class="fc" id="L417">            this.f1 = f1;</span>
+<span class="fc" id="L418">            this.f2 = f2;</span>
+<span class="fc" id="L419">        }</span>
+
+        public CallableResultSets2Builder&lt;T1, T2&gt; out(Type type, Class&lt;?&gt; cls5) {
+<span class="nc" id="L422">            b.out(type, cls5);</span>
+<span class="nc" id="L423">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L427">            b.input(f);</span>
+<span class="fc" id="L428">            return build();</span>
+        }
+
+        public CallableResultSets2Builder&lt;T1, T2&gt; in() {
+<span class="fc" id="L432">            b.in();</span>
+<span class="fc" id="L433">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L437">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableResultSets2Builder&lt;T1, T2&gt; inOut(Type type, Class&lt;?&gt; cls) {
+<span class="nc" id="L441">            b.inOut(type, cls);</span>
+<span class="nc" id="L442">            return this;</span>
+        }
+
+        public &lt;T3&gt; CallableResultSets3Builder&lt;T1, T2, T3&gt; autoMap(Class&lt;T3&gt; cls) {
+<span class="fc" id="L446">            return get(Util.autoMap(cls));</span>
+        }
+
+        public &lt;T3&gt; CallableResultSets3Builder&lt;T1, T2, T3&gt; get(Function&lt;? super ResultSet, ? extends T3&gt; f3) {
+<span class="fc" id="L450">            return new CallableResultSets3Builder&lt;T1, T2, T3&gt;(b, f1, f2, f3);</span>
+        }
+
+        private Flowable&lt;Tx&lt;CallableResultSet2&lt;T1, T2&gt;&gt;&gt; build() {
+<span class="fc" id="L454">            return inTransaction(b,</span>
+<span class="fc" id="L455">                    con -&gt; Call.createWithTwoResultSets(con, b.sql, b.parameterGroups(), b.params, f1, f2, 0));</span>
+        }
+    }
+
+    public static final class CallableResultSets3Builder&lt;T1, T2, T3&gt; implements TxGetter4&lt;T1, T2, T3&gt; {
+
+        private final CallableBuilder b;
+        private final Function&lt;? super ResultSet, ? extends T1&gt; f1;
+        private final Function&lt;? super ResultSet, ? extends T2&gt; f2;
+        private final Function&lt;? super ResultSet, ? extends T3&gt; f3;
+
+        CallableResultSets3Builder(CallableBuilder b, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+<span class="fc" id="L467">                Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3) {</span>
+<span class="fc" id="L468">            this.b = b;</span>
+<span class="fc" id="L469">            this.f1 = f1;</span>
+<span class="fc" id="L470">            this.f2 = f2;</span>
+<span class="fc" id="L471">            this.f3 = f3;</span>
+<span class="fc" id="L472">        }</span>
+
+        public CallableResultSets3Builder&lt;T1, T2, T3&gt; out(Type type, Class&lt;?&gt; cls5) {
+<span class="nc" id="L475">            b.out(type, cls5);</span>
+<span class="nc" id="L476">            return this;</span>
+        }
+
+        public CallableResultSets3Builder&lt;T1, T2, T3&gt; in() {
+<span class="nc" id="L480">            b.in();</span>
+<span class="nc" id="L481">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L485">            b.input(f);</span>
+<span class="fc" id="L486">            return build();</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt; input(Object... objects) {
+<span class="fc" id="L490">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableResultSets3Builder&lt;T1, T2, T3&gt; inOut(Type type, Class&lt;?&gt; cls) {
+<span class="nc" id="L494">            b.inOut(type, cls);</span>
+<span class="nc" id="L495">            return this;</span>
+        }
+
+        public &lt;T4&gt; CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; autoMap(Class&lt;T4&gt; cls) {
+<span class="fc" id="L499">            return get(Util.autoMap(cls));</span>
+        }
+
+        public &lt;T4&gt; CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; get(Function&lt;? super ResultSet, ? extends T4&gt; f4) {
+<span class="fc" id="L503">            return new CallableResultSets4Builder&lt;T1, T2, T3, T4&gt;(b, f1, f2, f3, f4);</span>
+        }
+
+        private Flowable&lt;Tx&lt;CallableResultSet3&lt;T1, T2, T3&gt;&gt;&gt; build() {
+<span class="fc" id="L507">            return inTransaction(b, con -&gt; Call.createWithThreeResultSets(con, b.sql, b.parameterGroups(),</span>
+                    b.params, f1, f2, f3, 0));
+        }
+    }
+
+    public static final class CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; implements TxGetterN {
+
+        private final CallableBuilder b;
+        private final Function&lt;? super ResultSet, ? extends T1&gt; f1;
+        private final Function&lt;? super ResultSet, ? extends T2&gt; f2;
+        private final Function&lt;? super ResultSet, ? extends T3&gt; f3;
+        private final Function&lt;? super ResultSet, ? extends T4&gt; f4;
+
+        CallableResultSets4Builder(CallableBuilder b, Function&lt;? super ResultSet, ? extends T1&gt; f1,
+                Function&lt;? super ResultSet, ? extends T2&gt; f2, Function&lt;? super ResultSet, ? extends T3&gt; f3,
+<span class="fc" id="L522">                Function&lt;? super ResultSet, ? extends T4&gt; f4) {</span>
+<span class="fc" id="L523">            this.b = b;</span>
+<span class="fc" id="L524">            this.f1 = f1;</span>
+<span class="fc" id="L525">            this.f2 = f2;</span>
+<span class="fc" id="L526">            this.f3 = f3;</span>
+<span class="fc" id="L527">            this.f4 = f4;</span>
+<span class="fc" id="L528">        }</span>
+
+        public CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; out(Type type, Class&lt;?&gt; cls5) {
+<span class="nc" id="L531">            b.out(type, cls5);</span>
+<span class="nc" id="L532">            return this;</span>
+        }
+
+        public CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; in() {
+<span class="nc" id="L536">            b.in();</span>
+<span class="nc" id="L537">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="nc" id="L541">            b.input(f);</span>
+<span class="nc" id="L542">            return build();</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt; input(Object... objects) {
+<span class="nc" id="L546">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableResultSets4Builder&lt;T1, T2, T3, T4&gt; inOut(Type type, Class&lt;?&gt; cls) {
+<span class="nc" id="L550">            b.inOut(type, cls);</span>
+<span class="nc" id="L551">            return this;</span>
+        }
+
+        public &lt;T&gt; CallableResultSetsNBuilder autoMap(Class&lt;T&gt; cls) {
+<span class="fc" id="L555">            return get(Util.autoMap(cls));</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public CallableResultSetsNBuilder get(Function&lt;? super ResultSet, ?&gt; f5) {
+<span class="fc" id="L560">            return new CallableResultSetsNBuilder(b, Lists.newArrayList(f1, f2, f3, f4, f5));</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSet4&lt;T1, T2, T3, T4&gt;&gt;&gt; build() {
+<span class="nc" id="L564">            return inTransaction(b,</span>
+<span class="nc" id="L565">                    con -&gt; Call.createWithFourResultSets(con, b.sql, b.parameterGroups(), b.params, f1, f2, f3, f4, 0));</span>
+        }
+    }
+
+    public static final class CallableResultSetsNBuilder {
+
+        private final CallableBuilder b;
+        private final List&lt;Function&lt;? super ResultSet, ?&gt;&gt; functions;
+
+<span class="fc" id="L574">        CallableResultSetsNBuilder(CallableBuilder b, List&lt;Function&lt;? super ResultSet, ?&gt;&gt; functions) {</span>
+<span class="fc" id="L575">            this.b = b;</span>
+<span class="fc" id="L576">            this.functions = functions;</span>
+<span class="fc" id="L577">        }</span>
+
+        public CallableResultSetsNBuilder in() {
+<span class="nc" id="L580">            b.in();</span>
+<span class="nc" id="L581">            return this;</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSetN&gt;&gt; input(Flowable&lt;?&gt; f) {
+<span class="fc" id="L585">            b.input(f);</span>
+<span class="fc" id="L586">            return build();</span>
+        }
+
+        public Flowable&lt;Tx&lt;CallableResultSetN&gt;&gt; input(Object... objects) {
+<span class="fc" id="L590">            return input(Flowable.fromArray(objects));</span>
+        }
+
+        public CallableResultSetsNBuilder inOut(Type type, Class&lt;?&gt; cls) {
+<span class="nc" id="L594">            b.inOut(type, cls);</span>
+<span class="nc" id="L595">            return this;</span>
+        }
+
+        public &lt;T&gt; CallableResultSetsNBuilder autoMap(Class&lt;T&gt; cls) {
+<span class="fc" id="L599">            return get(Util.autoMap(cls));</span>
+        }
+
+        public CallableResultSetsNBuilder get(Function&lt;? super ResultSet, ?&gt; f) {
+<span class="fc" id="L603">            functions.add(f);</span>
+<span class="fc" id="L604">            return this;</span>
+        }
+
+        private Flowable&lt;Tx&lt;CallableResultSetN&gt;&gt; build() {
+<span class="fc" id="L608">            return inTransaction(b,</span>
+<span class="fc" id="L609">                    con -&gt; Call.createWithNResultSets(con, b.sql, b.parameterGroups(), b.params, functions, 0) //</span>
+            );
+        }
+    }
+
+    private static &lt;T&gt; List&lt;T&gt; createList(List&lt;T&gt; list, T t) {
+<span class="fc" id="L615">        ArrayList&lt;T&gt; r = new ArrayList&lt;&gt;(list);</span>
+<span class="fc" id="L616">        r.add(t);</span>
+<span class="fc" id="L617">        return r;</span>
+    }
+
+    private static &lt;T&gt; Flowable&lt;Tx&lt;T&gt;&gt; inTransaction(CallableBuilder b,
+            Function&lt;Single&lt;Connection&gt;, Flowable&lt;Notification&lt;T&gt;&gt;&gt; f) {
+<span class="fc" id="L622">        return Flowable.defer(() -&gt; {</span>
+<span class="fc" id="L623">            AtomicReference&lt;Connection&gt; con = new AtomicReference&lt;Connection&gt;();</span>
+            // set the atomic reference when transactedConnection emits
+<span class="fc" id="L625">            Single&lt;Connection&gt; transactedConnection = b.connection //</span>
+<span class="fc" id="L626">                    .map(c -&gt; Util.toTransactedConnection(con, c));</span>
+<span class="fc" id="L627">            return f.apply(transactedConnection) //</span>
+<span class="fc" id="L628">                    .&lt;Tx&lt;T&gt;&gt;flatMap(n -&gt; Tx.toTx(n, con.get(), b.db)) //</span>
+<span class="fc" id="L629">                    .doOnNext(tx -&gt; {</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">                        if (tx.isComplete()) {</span>
+<span class="fc" id="L631">                            ((TxImpl&lt;T&gt;) tx).connection().commit();</span>
+                        }
+<span class="fc" id="L633">                    });</span>
+        });
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

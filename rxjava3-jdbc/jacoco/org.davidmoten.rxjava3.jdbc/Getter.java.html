@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Getter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">Getter.java</span></div><h1>Getter.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.sql.ResultSet;
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple2;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple3;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple4;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple5;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple6;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuple7;
+import org.davidmoten.rxjava3.jdbc.tuple.TupleN;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuples;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+
+public interface Getter {
+
+    /**
+     * Transforms the results using the given function.
+     *
+     * @param mapper
+     *            transforms ResultSet rows to an object of type T
+     * @param &lt;T&gt;
+     *            the type being mapped to
+     * @return the results of the query as an Observable
+     */
+    &lt;T&gt; Flowable&lt;T&gt; get(@Nonnull ResultSetMapper&lt;? extends T&gt; mapper);
+
+    default &lt;T&gt; Flowable&lt;T&gt; getAs(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L36">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L37">        return get(rs -&gt; Util.mapObject(rs, cls, 1));</span>
+    }
+
+    default &lt;T&gt; Flowable&lt;Optional&lt;T&gt;&gt; getAsOptional(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L41">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L42">        return get(rs -&gt; Optional.ofNullable(Util.mapObject(rs, cls, 1)));</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Transforms each row of the {@link ResultSet} into an instance of
+     * &lt;code&gt;T&lt;/code&gt; using &lt;i&gt;automapping&lt;/i&gt; of the ResultSet columns into
+     * corresponding constructor parameters that are assignable. Beyond normal
+     * assignable criteria (for example Integer 123 is assignable to a Double) other
+     * conversions exist to facilitate the automapping:
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * They are:
+     * &lt;ul&gt;
+     * &lt;li&gt;java.sql.Blob --&amp;gt; byte[]&lt;/li&gt;
+     * &lt;li&gt;java.sql.Blob --&amp;gt; java.io.InputStream&lt;/li&gt;
+     * &lt;li&gt;java.sql.Clob --&amp;gt; String&lt;/li&gt;
+     * &lt;li&gt;java.sql.Clob --&amp;gt; java.io.Reader&lt;/li&gt;
+     * &lt;li&gt;java.sql.Date --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Date --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.sql.Timestamp --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Timestamp --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.sql.Time --&amp;gt; java.util.Date&lt;/li&gt;
+     * &lt;li&gt;java.sql.Time --&amp;gt; Long&lt;/li&gt;
+     * &lt;li&gt;java.math.BigInteger --&amp;gt;
+     * Short,Integer,Long,Float,Double,BigDecimal&lt;/li&gt;
+     * &lt;li&gt;java.math.BigDecimal --&amp;gt;
+     * Short,Integer,Long,Float,Double,BigInteger&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param cls
+     *            class to automap each row of the ResultSet to
+     * @param &lt;T&gt;
+     *            generic type of returned stream emissions
+     * @return Flowable of T
+     * 
+     */
+    default &lt;T&gt; Flowable&lt;T&gt; autoMap(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L80">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L81">        return get(Util.autoMap(cls));</span>
+    }
+
+    /**
+     * Automaps all the columns of the {@link ResultSet} into the target class
+     * &lt;code&gt;cls&lt;/code&gt;. See {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls
+     *            class of the TupleN elements
+     * @param &lt;T&gt;
+     *            generic type of returned stream emissions
+     * @return a stream of TupleN
+     */
+    default &lt;T&gt; Flowable&lt;TupleN&lt;T&gt;&gt; getTupleN(@Nonnull Class&lt;T&gt; cls) {
+<span class="fc" id="L95">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="fc" id="L96">        return get(Tuples.tupleN(cls));</span>
+    }
+
+    /**
+     * Automaps all the columns of the {@link ResultSet} into {@link Object} . See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @return stream of TupleN
+     */
+    default Flowable&lt;TupleN&lt;Object&gt;&gt; getTupleN() {
+<span class="fc" id="L106">        return get(Tuples.tupleN(Object.class));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @return flowable
+     */
+    default &lt;T1, T2&gt; Flowable&lt;Tuple2&lt;T1, T2&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2) {
+<span class="fc" id="L125">        return get(Tuples.tuple(cls1, cls2));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param cls3
+     *            third class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @param &lt;T3&gt;
+     *            type of third class
+     * @return tuple
+     */
+    default &lt;T1, T2, T3&gt; Flowable&lt;Tuple3&lt;T1, T2, T3&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3) {
+<span class="fc" id="L148">        return get(Tuples.tuple(cls1, cls2, cls3));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param cls3
+     *            third class
+     * @param cls4
+     *            fourth class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @param &lt;T3&gt;
+     *            type of third class
+     * @param &lt;T4&gt;
+     *            type of fourth class
+     * @return tuple
+     */
+    default &lt;T1, T2, T3, T4&gt; Flowable&lt;Tuple4&lt;T1, T2, T3, T4&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4) {
+<span class="fc" id="L175">        return get(Tuples.tuple(cls1, cls2, cls3, cls4));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param cls3
+     *            third class
+     * @param cls4
+     *            fourth class
+     * @param cls5
+     *            fifth class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @param &lt;T3&gt;
+     *            type of third class
+     * @param &lt;T4&gt;
+     *            type of fourth class
+     * @param &lt;T5&gt;
+     *            type of fifth class
+     * @return tuple
+     */
+    default &lt;T1, T2, T3, T4, T5&gt; Flowable&lt;Tuple5&lt;T1, T2, T3, T4, T5&gt;&gt; getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4,
+            @Nonnull Class&lt;T5&gt; cls5) {
+<span class="fc" id="L207">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param cls3
+     *            third class
+     * @param cls4
+     *            fourth class
+     * @param cls5
+     *            fifth class
+     * @param cls6
+     *            sixth class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @param &lt;T3&gt;
+     *            type of third class
+     * @param &lt;T4&gt;
+     *            type of fourth class
+     * @param &lt;T5&gt;
+     *            type of fifth class
+     * @param &lt;T6&gt;
+     *            type of sixth class
+     * @return tuple
+     */
+    default &lt;T1, T2, T3, T4, T5, T6&gt; Flowable&lt;Tuple6&lt;T1, T2, T3, T4, T5, T6&gt;&gt; getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3,
+            @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6) {
+<span class="fc" id="L243">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6));</span>
+    }
+
+    /**
+     * Automaps the columns of the {@link ResultSet} into the specified classes. See
+     * {@link #autoMap(Class) autoMap()}.
+     *
+     * @param cls1
+     *            first class
+     * @param cls2
+     *            second class
+     * @param cls3
+     *            third class
+     * @param cls4
+     *            fourth class
+     * @param cls5
+     *            fifth class
+     * @param cls6
+     *            sixth class
+     * @param cls7
+     *            seventh class
+     * @param &lt;T1&gt;
+     *            type of first class
+     * @param &lt;T2&gt;
+     *            type of second class
+     * @param &lt;T3&gt;
+     *            type of third class
+     * @param &lt;T4&gt;
+     *            type of fourth class
+     * @param &lt;T5&gt;
+     *            type of fifth class
+     * @param &lt;T6&gt;
+     *            type of sixth class
+     * @param &lt;T7&gt;
+     *            type of seventh class
+     * @return tuple
+     */
+    default &lt;T1, T2, T3, T4, T5, T6, T7&gt; Flowable&lt;Tuple7&lt;T1, T2, T3, T4, T5, T6, T7&gt;&gt; getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3,
+            @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6,
+            @Nonnull Class&lt;T7&gt; cls7) {
+<span class="fc" id="L284">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6, cls7));</span>
+    }
+
+    default Single&lt;Long&gt; count() {
+<span class="fc" id="L288">        return get(rs -&gt; 1).count();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

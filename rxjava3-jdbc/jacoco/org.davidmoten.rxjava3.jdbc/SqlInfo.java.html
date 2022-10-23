@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqlInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">SqlInfo.java</span></div><h1>SqlInfo.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+final class SqlInfo {
+    
+<span class="fc" id="L16">    private static final Logger log = LoggerFactory.getLogger(SqlInfo.class);</span>
+    private final String sql;
+    private final List&lt;String&gt; names;
+    private final int numQuestionMarks;
+
+<span class="fc" id="L21">    SqlInfo(String sql, List&lt;String&gt; names) {</span>
+<span class="fc" id="L22">        this.sql = sql;</span>
+<span class="fc" id="L23">        this.names = names;</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (names.isEmpty()) {</span>
+<span class="fc" id="L25">            numQuestionMarks = Util.countQuestionMarkParameters(sql);</span>
+        } else {
+<span class="fc" id="L27">            numQuestionMarks = 0;</span>
+        }
+
+<span class="fc" id="L30">    }</span>
+
+    String sql() {
+<span class="fc" id="L33">        return sql;</span>
+    }
+
+    int numParameters() {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (names.isEmpty()) {</span>
+<span class="fc" id="L38">            return numQuestionMarks;</span>
+        } else {
+<span class="fc" id="L40">            return names.size();</span>
+        }
+    }
+
+    List&lt;String&gt; names() {
+<span class="fc" id="L45">        return names;</span>
+    }
+
+    static SqlInfo parse(String namedSql, List&lt;Parameter&gt; parameters) {
+        // was originally using regular expressions, but they didn't work well
+        // for ignoring parameter-like strings inside quotes.
+<span class="fc" id="L51">        List&lt;String&gt; names = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L52">        String sql = collectNamesAndConvertToQuestionMarks(namedSql, names, parameters);</span>
+<span class="fc" id="L53">        log.debug(&quot;sqlAfterSubs={}&quot;, sql);</span>
+<span class="fc" id="L54">        return new SqlInfo(sql, names);</span>
+    }
+
+    static SqlInfo parse(String namedSql) {
+<span class="fc" id="L58">        return parse(namedSql, Collections.emptyList());</span>
+    }
+
+    private static String collectNamesAndConvertToQuestionMarks(String namedSql, List&lt;String&gt; names,
+            List&lt;Parameter&gt; parameters) {
+
+<span class="fc" id="L64">        Map&lt;String, Parameter&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (Parameter p : parameters) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            if (p.hasName()) {</span>
+<span class="fc" id="L67">                map.put(p.name(), p);</span>
+            }
+<span class="fc" id="L69">        }</span>
+<span class="fc" id="L70">        int length = namedSql.length();</span>
+<span class="fc" id="L71">        StringBuilder parsedQuery = new StringBuilder(length);</span>
+<span class="fc" id="L72">        boolean inSingleQuote = false;</span>
+<span class="fc" id="L73">        boolean inDoubleQuote = false;</span>
+<span class="fc" id="L74">        int count = 0;</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L76">            char c = namedSql.charAt(i);</span>
+<span class="fc" id="L77">            StringBuilder s = new StringBuilder();</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (inSingleQuote) {</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                if (c == '\'') {</span>
+<span class="fc" id="L80">                    inSingleQuote = false;</span>
+                }
+<span class="fc" id="L82">                s.append(c);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            } else if (inDoubleQuote) {</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                if (c == '&quot;') {</span>
+<span class="nc" id="L85">                    inDoubleQuote = false;</span>
+                }
+<span class="nc" id="L87">                s.append(c);</span>
+            } else {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (c == '\'') {</span>
+<span class="fc" id="L90">                    inSingleQuote = true;</span>
+<span class="fc" id="L91">                    s.append(c);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                } else if (c == '&quot;') {</span>
+<span class="nc" id="L93">                    inDoubleQuote = true;</span>
+<span class="nc" id="L94">                    s.append(c);</span>
+<span class="pc bpc" id="L95" title="2 of 6 branches missed.">                } else if (c == ':' &amp;&amp; i + 1 &lt; length &amp;&amp; !isFollowedOrPrefixedByColon(namedSql, i)</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">                        &amp;&amp; Character.isJavaIdentifierStart(namedSql.charAt(i + 1))) {</span>
+<span class="fc" id="L97">                    count++;</span>
+<span class="fc" id="L98">                    int j = i + 2;</span>
+<span class="fc bfc" id="L99" title="All 4 branches covered.">                    while (j &lt; length &amp;&amp; Character.isJavaIdentifierPart(namedSql.charAt(j))) {</span>
+<span class="fc" id="L100">                        j++;</span>
+                    }
+<span class="fc" id="L102">                    String name = namedSql.substring(i + 1, j);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                    if (!parameters.isEmpty()) {</span>
+<span class="fc" id="L104">                        Parameter p = map.get(name);</span>
+<span class="fc" id="L105">                        s.append(IntStream.range(0, p.size()).mapToObj(x -&gt; &quot;?&quot;)</span>
+<span class="fc" id="L106">                                .collect(Collectors.joining(&quot;,&quot;)));</span>
+<span class="fc" id="L107">                    } else {</span>
+<span class="fc" id="L108">                        s.append(&quot;?&quot;); // replace the parameter with a question mark</span>
+                    }
+<span class="fc" id="L110">                    names.add(name);</span>
+<span class="fc" id="L111">                    i += name.length(); // skip past the end if the parameter</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                } else if (c == '?') {</span>
+<span class="fc" id="L113">                    count++;</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                    if (!parameters.isEmpty()) {</span>
+<span class="fc" id="L115">                        Parameter p = parameters.get(count - 1);</span>
+<span class="fc" id="L116">                        s.append(IntStream.range(0, p.size()).mapToObj(x -&gt; &quot;?&quot;)</span>
+<span class="fc" id="L117">                                .collect(Collectors.joining(&quot;,&quot;)));</span>
+<span class="fc" id="L118">                    } else {</span>
+<span class="fc" id="L119">                        s.append(c);</span>
+                    }
+                } else {
+<span class="fc" id="L122">                    s.append(c);</span>
+                }
+            }
+<span class="fc" id="L125">            parsedQuery.append(s.toString());</span>
+        }
+<span class="fc" id="L127">        return parsedQuery.toString();</span>
+    }
+
+    // Visible for testing
+    static boolean isFollowedOrPrefixedByColon(String sql, int i) {
+<span class="pc bpc" id="L132" title="3 of 6 branches missed.">        return ':' == sql.charAt(i + 1) || i &gt; 0 &amp;&amp; ':' == sql.charAt(i - 1);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

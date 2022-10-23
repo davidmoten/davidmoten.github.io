@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TxImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">TxImpl.java</span></div><h1>TxImpl.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.sql.Connection;
+
+final class TxImpl&lt;T&gt; implements Tx&lt;T&gt; {
+
+    private final TransactedConnection con;
+    private final T value;
+    private final Throwable e;
+    private final boolean completed;
+    private final Database db;
+
+<span class="fc" id="L13">    TxImpl(Connection con, T value, Throwable e, boolean completed, Database db) {</span>
+<span class="fc" id="L14">        this.db = db;</span>
+<span class="pc bpc" id="L15" title="1 of 2 branches missed.">        if (con instanceof TransactedConnection) {</span>
+<span class="fc" id="L16">            this.con = (TransactedConnection) con;</span>
+        } else {
+<span class="nc" id="L18">            this.con = new TransactedConnection(con);</span>
+        }
+<span class="fc" id="L20">        this.value = value;</span>
+<span class="fc" id="L21">        this.e = e;</span>
+<span class="fc" id="L22">        this.completed = completed;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public boolean isValue() {
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">        return !completed &amp;&amp; e == null;</span>
+    }
+
+    @Override
+    public boolean isComplete() {
+<span class="fc" id="L32">        return completed;</span>
+    }
+
+    @Override
+    public boolean isError() {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        return e != null;</span>
+    }
+
+    @Override
+    public T value() {
+<span class="fc" id="L42">        return value;</span>
+    }
+
+    @Override
+    public Throwable throwable() {
+<span class="nc" id="L47">        return e;</span>
+    }
+
+    public TransactedConnection connection() {
+<span class="fc" id="L51">        return con;</span>
+    }
+
+    @Override
+    public TransactedSelectBuilder select(String sql) {
+<span class="fc" id="L56">        return db.tx(this).select(sql);</span>
+    }
+
+    @Override
+    public TransactedUpdateBuilder update(String sql) {
+<span class="fc" id="L61">        return db.tx(this).update(sql);</span>
+    }
+    
+    @Override
+    public TransactedCallableBuilder call(String sql) {
+<span class="nc" id="L66">        return db.tx(this).call(sql);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L71">        StringBuilder builder = new StringBuilder();</span>
+<span class="fc" id="L72">        builder.append(&quot;TxImpl [con=&quot;);</span>
+<span class="fc" id="L73">        builder.append(con);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (isValue()) {</span>
+<span class="fc" id="L75">            builder.append(&quot;, value=&quot;);</span>
+<span class="fc" id="L76">            builder.append(value);</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        } else if (isError()) {</span>
+<span class="nc" id="L78">            builder.append(&quot;, error=&quot;);</span>
+<span class="nc" id="L79">            builder.append(e);</span>
+        } else {
+<span class="fc" id="L81">            builder.append(&quot;, completed=&quot;);</span>
+<span class="fc" id="L82">            builder.append(completed);</span>
+        }
+<span class="fc" id="L84">        builder.append(&quot;]&quot;);</span>
+<span class="fc" id="L85">        return builder.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

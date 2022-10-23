@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdateBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">UpdateBuilder.java</span></div><h1>UpdateBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+
+import javax.annotation.Nonnull;
+
+import org.davidmoten.rxjava3.jdbc.internal.Functions;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Single;
+
+public final class UpdateBuilder extends ParametersBuilder&lt;UpdateBuilder&gt; implements DependsOn&lt;UpdateBuilder&gt; {
+
+    static final int DEFAULT_BATCH_SIZE = 1;
+
+    final String sql;
+    final Single&lt;Connection&gt; connections;
+    private final Database db;
+    Flowable&lt;?&gt; dependsOn;
+<span class="fc" id="L24">    int batchSize = DEFAULT_BATCH_SIZE;</span>
+<span class="fc" id="L25">    int queryTimeoutSec = Util.QUERY_TIMEOUT_NOT_SET;</span>
+
+    UpdateBuilder(String sql, Single&lt;Connection&gt; connections, Database db) {
+<span class="fc" id="L28">        super(sql);</span>
+<span class="fc" id="L29">        this.sql = sql;</span>
+<span class="fc" id="L30">        this.connections = connections;</span>
+<span class="fc" id="L31">        this.db = db;</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public UpdateBuilder dependsOn(Flowable&lt;?&gt; flowable) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        Preconditions.checkArgument(dependsOn == null, &quot;dependsOn can only be set once&quot;);</span>
+<span class="fc" id="L37">        dependsOn = flowable;</span>
+<span class="fc" id="L38">        return this;</span>
+    }
+
+    public UpdateBuilder batchSize(int batchSize) {
+<span class="fc" id="L42">        this.batchSize = batchSize;</span>
+<span class="fc" id="L43">        return this;</span>
+    }
+
+    public UpdateBuilder queryTimeoutSec(int queryTimeoutSec) {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        Preconditions.checkArgument(queryTimeoutSec &gt;= 0);</span>
+<span class="nc" id="L48">        this.queryTimeoutSec = queryTimeoutSec;</span>
+<span class="nc" id="L49">        return this;</span>
+    }
+
+    /**
+     * Returns a builder used to specify how to process the generated keys
+     * {@link ResultSet}. Not all jdbc drivers support this functionality and
+     * some have limitations in their support (h2 for instance only returns the
+     * last generated key when multiple inserts happen in the one statement).
+     * 
+     * @return a builder used to specify how to process the generated keys
+     *         ResultSet
+     */
+    public ReturnGeneratedKeysBuilder returnGeneratedKeys() {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        Preconditions.checkArgument(batchSize == 1, &quot;Cannot return generated keys if batchSize &gt; 1&quot;);</span>
+<span class="fc" id="L63">        return new ReturnGeneratedKeysBuilder(this);</span>
+    }
+
+    public Flowable&lt;Integer&gt; counts() {
+<span class="fc" id="L67">        return startWithDependency(</span>
+<span class="fc" id="L68">                Update.create(connections, super.parameterGroupsToFlowable(), sql, batchSize, true, queryTimeoutSec).dematerialize(Functions.identity()));</span>
+    }
+
+    &lt;T&gt; Flowable&lt;T&gt; startWithDependency(@Nonnull Flowable&lt;T&gt; f) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (dependsOn != null) {</span>
+<span class="fc" id="L73">            return dependsOn.ignoreElements().andThen(f);</span>
+        } else {
+<span class="fc" id="L75">            return f;</span>
+        }
+    }
+
+    public TransactedUpdateBuilder transacted() {
+<span class="fc" id="L80">        return new TransactedUpdateBuilder(this, db);</span>
+    }
+
+    public Flowable&lt;Tx&lt;?&gt;&gt; transaction() {
+<span class="fc" id="L84">        return transacted().tx();</span>
+    }
+
+    public Completable complete() {
+<span class="fc" id="L88">        return counts().ignoreElements();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

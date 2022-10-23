@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializedConnectionListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc.pool.internal</a> &gt; <span class="el_source">SerializedConnectionListener.java</span></div><h1>SerializedConnectionListener.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc.pool.internal;
+
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.davidmoten.rxjava3.jdbc.internal.queue.MpscLinkedQueue;
+import org.davidmoten.rxjava3.jdbc.internal.queue.SimplePlainQueue;
+
+import io.reactivex.rxjava3.functions.Consumer;
+import io.reactivex.rxjava3.plugins.RxJavaPlugins;
+
+@SuppressWarnings(&quot;serial&quot;)
+public final class SerializedConnectionListener extends AtomicInteger
+        implements Consumer&lt;Optional&lt;Throwable&gt;&gt; {
+
+    private final Consumer&lt;? super Optional&lt;Throwable&gt;&gt; c;
+<span class="fc" id="L17">    private final SimplePlainQueue&lt;Optional&lt;Throwable&gt;&gt; queue = new MpscLinkedQueue&lt;&gt;();</span>
+
+<span class="fc" id="L19">    public SerializedConnectionListener(Consumer&lt;? super Optional&lt;Throwable&gt;&gt; c) {</span>
+<span class="fc" id="L20">        this.c = c;</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    public void accept(Optional&lt;Throwable&gt; error) throws Exception {
+<span class="fc" id="L25">        queue.offer(error);</span>
+<span class="fc" id="L26">        drain();</span>
+<span class="fc" id="L27">    }</span>
+
+    private void drain() {
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (getAndIncrement() == 0) {</span>
+<span class="fc" id="L31">            int missed = 1;</span>
+            while (true) {
+                Optional&lt;Throwable&gt; o;
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                while ((o = queue.poll()) != null) {</span>
+                    try {
+<span class="fc" id="L36">                        c.accept(o);</span>
+<span class="nc" id="L37">                    } catch (Throwable e) {</span>
+<span class="nc" id="L38">                        RxJavaPlugins.onError(e);</span>
+<span class="pc" id="L39">                    }</span>
+                }
+<span class="fc" id="L41">                missed = addAndGet(-missed);</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">                if (missed == 0) {</span>
+<span class="fc" id="L43">                    return;</span>
+                }
+<span class="nc" id="L45">            }</span>
+        }
+<span class="nc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

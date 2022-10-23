@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetterN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc.callable.internal</a> &gt; <span class="el_source">GetterN.java</span></div><h1>GetterN.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc.callable.internal;
+
+import java.sql.ResultSet;
+
+import javax.annotation.Nonnull;
+
+import org.davidmoten.rxjava3.jdbc.Util;
+import org.davidmoten.rxjava3.jdbc.CallableBuilder.CallableResultSetsNBuilder;
+import org.davidmoten.rxjava3.jdbc.tuple.Tuples;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.functions.Function;
+
+public interface GetterN {
+
+    CallableResultSetsNBuilder get(Function&lt;? super ResultSet, ?&gt; function);
+
+    default &lt;T&gt; CallableResultSetsNBuilder getAs(@Nonnull Class&lt;T&gt; cls) {
+<span class="nc" id="L20">        Preconditions.checkNotNull(cls, &quot;cls cannot be null&quot;);</span>
+<span class="nc" id="L21">        return get(rs -&gt; Util.mapObject(rs, cls, 1));</span>
+    }
+
+    default &lt;T1, T2&gt; CallableResultSetsNBuilder getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2) {
+<span class="nc" id="L26">        return get(Tuples.tuple(cls1, cls2));</span>
+    }
+
+    default &lt;T1, T2, T3&gt; CallableResultSetsNBuilder getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3) {
+<span class="nc" id="L31">        return get(Tuples.tuple(cls1, cls2, cls3));</span>
+    }
+
+    default &lt;T1, T2, T3, T4&gt; CallableResultSetsNBuilder getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4) {
+<span class="nc" id="L36">        return get(Tuples.tuple(cls1, cls2, cls3, cls4));</span>
+    }
+
+    default &lt;T1, T2, T3, T4, T5&gt; CallableResultSetsNBuilder getAs(@Nonnull Class&lt;T1&gt; cls1,
+            @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4, @Nonnull Class&lt;T5&gt; cls5) {
+<span class="nc" id="L41">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5));</span>
+    }
+
+    default &lt;T1, T2, T3, T4, T5, T6&gt; CallableResultSetsNBuilder getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4,
+            @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6) {
+<span class="nc" id="L47">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6));</span>
+    }
+
+    default &lt;T1, T2, T3, T4, T5, T6, T7&gt; CallableResultSetsNBuilder getAs(
+            @Nonnull Class&lt;T1&gt; cls1, @Nonnull Class&lt;T2&gt; cls2, @Nonnull Class&lt;T3&gt; cls3, @Nonnull Class&lt;T4&gt; cls4,
+            @Nonnull Class&lt;T5&gt; cls5, @Nonnull Class&lt;T6&gt; cls6, @Nonnull Class&lt;T7&gt; cls7) {
+<span class="nc" id="L53">        return get(Tuples.tuple(cls1, cls2, cls3, cls4, cls5, cls6, cls7));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

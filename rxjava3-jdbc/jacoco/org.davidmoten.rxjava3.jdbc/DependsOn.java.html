@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependsOn.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">DependsOn.java</span></div><h1>DependsOn.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import javax.annotation.Nonnull;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+
+public interface DependsOn&lt;T&gt; {
+
+    T dependsOn(Flowable&lt;?&gt; flowable);
+
+    default T dependsOn(@Nonnull Observable&lt;?&gt; observable) {
+<span class="fc" id="L17">        Preconditions.checkNotNull(observable, &quot;observable cannot be null&quot;);</span>
+<span class="fc" id="L18">        return dependsOn(observable.ignoreElements().toFlowable());</span>
+    }
+
+    default T dependsOn(@Nonnull Single&lt;?&gt; single) {
+<span class="fc" id="L22">        Preconditions.checkNotNull(single, &quot;single cannot be null&quot;);</span>
+<span class="fc" id="L23">        return dependsOn(single.toFlowable());</span>
+    }
+
+    default T dependsOn(@Nonnull Completable completable) {
+<span class="fc" id="L27">        Preconditions.checkNotNull(completable, &quot;completable cannot be null&quot;);</span>
+<span class="fc" id="L28">        return dependsOn(completable.toFlowable());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

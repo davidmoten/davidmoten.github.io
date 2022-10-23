@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sql.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">Sql.java</span></div><h1>Sql.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public final class Sql {
+
+    private Sql() {
+
+    }
+
+    private static final String UTF8 = &quot;UTF-8&quot;;
+
+    public static List&lt;String&gt; statements(InputStream is, String delimiter) {
+<span class="fc" id="L20">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="fc" id="L21">        byte[] b = new byte[8192];</span>
+        while (true) {
+            try {
+<span class="fc" id="L24">                int len = is.read(b);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">                if (len == -1) {</span>
+<span class="fc" id="L26">                    break;</span>
+                } else {
+<span class="fc" id="L28">                    bytes.write(b, 0, len);</span>
+                }
+<span class="nc" id="L30">            } catch (IOException e) {</span>
+<span class="nc" id="L31">                throw new RuntimeException(e);</span>
+<span class="fc" id="L32">            }</span>
+        }
+        try {
+<span class="fc" id="L35">            String s = bytes.toString(UTF8);</span>
+            //trim comment lines starting with --
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            s = Arrays.stream(s.split(&quot;\n&quot;)).filter(line -&gt; !line.startsWith(&quot;--&quot;)).collect(Collectors.joining(&quot;\n&quot;));</span>
+<span class="fc" id="L38">            String[] statements = s.split(delimiter);</span>
+<span class="fc" id="L39">            return Arrays.asList(statements);</span>
+<span class="nc" id="L40">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L41">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    public static List&lt;String&gt; statements(InputStream is) {
+<span class="fc" id="L46">        return statements(is, &quot;;&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

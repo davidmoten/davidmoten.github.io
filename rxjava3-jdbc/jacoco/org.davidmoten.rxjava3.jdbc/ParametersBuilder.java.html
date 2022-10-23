@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParametersBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">ParametersBuilder.java</span></div><h1>ParametersBuilder.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+import io.reactivex.rxjava3.core.Flowable;
+
+abstract class ParametersBuilder&lt;T&gt; {
+
+<span class="fc" id="L16">    private static final Flowable&lt;List&lt;Object&gt;&gt; SINGLE_EMPTY_LIST = Flowable.just(Collections.emptyList());</span>
+
+<span class="fc" id="L18">    private final List&lt;Flowable&lt;List&lt;Object&gt;&gt;&gt; parameterGroups = new ArrayList&lt;&gt;();</span>
+    // for building up a number of parameters
+<span class="fc" id="L20">    private final List&lt;Object&gt; parameterBuffer = new ArrayList&lt;&gt;();</span>
+    private final SqlInfo sqlInfo;
+
+<span class="fc" id="L23">    ParametersBuilder(@Nonnull String sql) {</span>
+<span class="fc" id="L24">        this.sqlInfo = SqlInfo.parse(sql);</span>
+<span class="fc" id="L25">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public final T parameterStream(@Nonnull Flowable&lt;?&gt; values) {
+<span class="fc" id="L29">        Preconditions.checkNotNull(values);</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (sqlInfo.numParameters() == 0) {</span>
+<span class="nc" id="L31">            parameterListStream(values.map(x -&gt; Collections.emptyList()));</span>
+        } else {
+<span class="fc" id="L33">            parameterListStream((Flowable&lt;List&lt;?&gt;&gt;) (Flowable&lt;?&gt;) values.buffer(sqlInfo.numParameters()));</span>
+        }
+<span class="fc" id="L35">        return (T) this;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public final T parameterListStream(@Nonnull Flowable&lt;List&lt;?&gt;&gt; valueLists) {
+<span class="fc" id="L40">        Preconditions.checkNotNull(valueLists, &quot;valueLists cannot be null&quot;);</span>
+<span class="fc" id="L41">        useAndCloseParameterBuffer();</span>
+<span class="fc" id="L42">        parameterGroups.add((Flowable&lt;List&lt;Object&gt;&gt;) (Flowable&lt;?&gt;) valueLists);</span>
+<span class="fc" id="L43">        return (T) this;</span>
+    }
+
+    public final T parameters(@Nonnull List&lt;?&gt; values) {
+<span class="fc" id="L47">        return parameterList(values.toArray());</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public final T parameter(@Nonnull String name, Object value) {
+<span class="fc" id="L52">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="fc" id="L53">        parameterBuffer.add(new Parameter(name, value));</span>
+<span class="fc" id="L54">        return (T) this;</span>
+    }
+
+    public final T parameter(Object value) {
+<span class="fc" id="L58">        return parameters(value);</span>
+    }
+
+    public final T parameters(@Nonnull Object... values) {
+<span class="fc" id="L62">        return parameterList(values);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private T parameterList(Object[] values) {
+<span class="fc" id="L67">        Preconditions.checkNotNull(values);</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (values.length == 0) {</span>
+            // no effect
+<span class="nc" id="L70">            return (T) this;</span>
+        }
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        Preconditions.checkArgument(sqlInfo.numParameters() == 0 || values.length % sqlInfo.numParameters() == 0,</span>
+<span class="fc" id="L73">                &quot;number of values should be a multiple of number of parameters in sql: &quot; + sqlInfo.sql());</span>
+<span class="fc" id="L74">        Preconditions.checkArgument(Arrays.stream(values)</span>
+<span class="pc bpc" id="L75" title="1 of 6 branches missed.">                .allMatch(o -&gt; sqlInfo.names().isEmpty() || o instanceof Parameter &amp;&amp; ((Parameter) o).hasName()));</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (Object val : values) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (val == null) {</span>
+<span class="fc" id="L78">                parameterBuffer.add(Parameter.NULL);</span>
+            } else {
+<span class="fc" id="L80">                parameterBuffer.add(val);</span>
+            }
+        }
+<span class="fc" id="L83">        return (T) this;</span>
+    }
+
+    final Flowable&lt;List&lt;Object&gt;&gt; parameterGroupsToFlowable() {
+<span class="fc" id="L87">        useAndCloseParameterBuffer();</span>
+        Flowable&lt;List&lt;Object&gt;&gt; pg;
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (parameterGroups.isEmpty()) {</span>
+<span class="fc" id="L90">            pg = SINGLE_EMPTY_LIST;</span>
+        } else {
+<span class="fc" id="L92">            pg = Flowable.concat(parameterGroups);</span>
+        }
+<span class="fc" id="L94">        return pg;</span>
+    }
+
+    private void useAndCloseParameterBuffer() {
+        // called when about to add stream of parameters or about to call get
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (!parameterBuffer.isEmpty()) {</span>
+            Flowable&lt;List&lt;Object&gt;&gt; p;
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (sqlInfo.numParameters() &gt; 0) {</span>
+<span class="fc" id="L102">                p = Flowable //</span>
+<span class="fc" id="L103">                        .fromIterable(new ArrayList&lt;&gt;(parameterBuffer)) //</span>
+<span class="fc" id="L104">                        .buffer(sqlInfo.numParameters());</span>
+            } else {
+<span class="fc" id="L106">                p = Flowable //</span>
+<span class="fc" id="L107">                        .fromIterable(new ArrayList&lt;&gt;(parameterBuffer)) //</span>
+<span class="fc" id="L108">                        .map(x -&gt; Collections.emptyList());</span>
+            }
+<span class="fc" id="L110">            parameterGroups.add(p);</span>
+<span class="fc" id="L111">            parameterBuffer.clear();</span>
+        }
+<span class="fc" id="L113">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

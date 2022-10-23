@@ -1,0 +1,1074 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rxjava3-jdbc</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.rxjava3.jdbc</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package org.davidmoten.rxjava3.jdbc;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import javax.annotation.RegEx;
+import javax.sql.DataSource;
+
+import org.apache.commons.io.IOUtils;
+import org.davidmoten.rxjava3.jdbc.annotations.Column;
+import org.davidmoten.rxjava3.jdbc.annotations.Index;
+import org.davidmoten.rxjava3.jdbc.callable.internal.OutParameterPlaceholder;
+import org.davidmoten.rxjava3.jdbc.callable.internal.ParameterPlaceholder;
+import org.davidmoten.rxjava3.jdbc.exceptions.AnnotationsNotFoundException;
+import org.davidmoten.rxjava3.jdbc.exceptions.AutomappedInterfaceInaccessibleException;
+import org.davidmoten.rxjava3.jdbc.exceptions.ColumnIndexOutOfRangeException;
+import org.davidmoten.rxjava3.jdbc.exceptions.ColumnNotFoundException;
+import org.davidmoten.rxjava3.jdbc.exceptions.MoreColumnsRequestedThanExistException;
+import org.davidmoten.rxjava3.jdbc.exceptions.NamedParameterFoundButSqlDoesNotHaveNamesException;
+import org.davidmoten.rxjava3.jdbc.exceptions.NamedParameterMissingException;
+import org.davidmoten.rxjava3.jdbc.exceptions.ParameterMissingNameException;
+import org.davidmoten.rxjava3.jdbc.exceptions.SQLRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+<span class="fc" id="L64">public enum Util {</span>
+    ;
+
+<span class="fc" id="L67">    private static final Logger log = LoggerFactory.getLogger(Util.class);</span>
+    public static final int QUERY_TIMEOUT_NOT_SET = -1;
+
+    /**
+     * Sets parameters for the {@link PreparedStatement}.
+     * 
+     * @param ps
+     * @param params
+     * @throws SQLException
+     */
+    @VisibleForTesting
+    static void setParameters(PreparedStatement ps, List&lt;Parameter&gt; params, boolean namesAllowed) throws SQLException {
+<span class="fc" id="L79">        int j = 1;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        for (int i = 0; i &lt; params.size(); i++) {</span>
+<span class="fc" id="L81">            Parameter p = params.get(i);</span>
+<span class="fc bfc" id="L82" title="All 4 branches covered.">            if (p.hasName() &amp;&amp; !namesAllowed) {</span>
+<span class="fc" id="L83">                throw new NamedParameterFoundButSqlDoesNotHaveNamesException(</span>
+                        &quot;named parameter found but sql does not contain names ps=&quot; + ps);
+            }
+<span class="fc" id="L86">            Object v = p.value();</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            if (p.isCollection()) {</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                for (Object o : (Collection&lt;?&gt;) v) {</span>
+<span class="fc" id="L89">                    setParameter(ps, j, o);</span>
+<span class="fc" id="L90">                    j++;</span>
+<span class="fc" id="L91">                }</span>
+            } else {
+<span class="fc" id="L93">                setParameter(ps, j, v);</span>
+<span class="fc" id="L94">                j++;</span>
+            }
+        }
+<span class="fc" id="L97">    }</span>
+
+    static void setParameter(PreparedStatement ps, int i, Object o) throws SQLException {
+<span class="fc" id="L100">        log.debug(&quot;setting parameter {} to {}&quot;, i, o);</span>
+        try {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            if (o == null)</span>
+<span class="fc" id="L103">                ps.setObject(i, null);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            else if (o == Database.NULL_CLOB)</span>
+<span class="fc" id="L105">                ps.setNull(i, Types.CLOB);</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            else if (o == Database.NULL_BLOB)</span>
+<span class="fc" id="L107">                ps.setNull(i, Types.BLOB);</span>
+            else {
+<span class="fc" id="L109">                Class&lt;?&gt; cls = o.getClass();</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                if (Clob.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L111">                    setClob(ps, i, o, cls);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                } else if (Blob.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L113">                    setBlob(ps, i, o, cls);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                } else if (Calendar.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L115">                    Calendar cal = (Calendar) o;</span>
+<span class="fc" id="L116">                    Timestamp t = new Timestamp(cal.getTimeInMillis());</span>
+<span class="fc" id="L117">                    ps.setTimestamp(i, t);</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                } else if (Time.class.isAssignableFrom(cls)) {</span>
+<span class="nc" id="L119">                    Calendar cal = Calendar.getInstance();</span>
+<span class="nc" id="L120">                    ps.setTime(i, (Time) o, cal);</span>
+<span class="pc bfc" id="L121" title="All 2 branches covered.">                } else if (Timestamp.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L122">                    Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L123">                    ps.setTimestamp(i, (Timestamp) o, cal);</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                } else if (java.sql.Date.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L125">                    ps.setDate(i, (java.sql.Date) o, Calendar.getInstance());</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                } else if (java.util.Date.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L127">                    Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L128">                    java.util.Date date = (java.util.Date) o;</span>
+<span class="fc" id="L129">                    ps.setTimestamp(i, new Timestamp(date.getTime()), cal);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                } else if (Instant.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L131">                    Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L132">                    Instant instant = (Instant) o;</span>
+<span class="fc" id="L133">                    ps.setTimestamp(i, new Timestamp(instant.toEpochMilli()), cal);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                } else if (ZonedDateTime.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L135">                    Calendar cal = Calendar.getInstance();</span>
+<span class="fc" id="L136">                    ZonedDateTime d = (ZonedDateTime) o;</span>
+<span class="fc" id="L137">                    ps.setTimestamp(i, new Timestamp(d.toInstant().toEpochMilli()), cal);</span>
+<span class="fc" id="L138">                } else</span>
+<span class="fc" id="L139">                    ps.setObject(i, o);</span>
+            }
+<span class="fc" id="L141">        } catch (SQLException e) {</span>
+<span class="fc" id="L142">            log.debug(&quot;{} when setting ps.setObject({},{})&quot;, e.getMessage(), i, o);</span>
+<span class="fc" id="L143">            throw e;</span>
+<span class="fc" id="L144">        }</span>
+<span class="fc" id="L145">    }</span>
+
+    /**
+     * Sets a blob parameter for the prepared statement.
+     * 
+     * @param ps
+     * @param i
+     * @param o
+     * @param cls
+     * @throws SQLException
+     */
+    private static void setBlob(PreparedStatement ps, int i, Object o, Class&lt;?&gt; cls) throws SQLException {
+        // if (o instanceof Blob) {
+<span class="fc" id="L158">        ps.setBlob(i, (Blob) o);</span>
+        // } else {
+        // final InputStream is;
+        // if (o instanceof byte[]) {
+        // is = new ByteArrayInputStream((byte[]) o);
+        // } else if (o instanceof InputStream)
+        // is = (InputStream) o;
+        // else
+        // throw new RuntimeException(&quot;cannot insert parameter of type &quot; + cls + &quot; into
+        // blob column &quot; + i);
+        // Blob c = ps.getConnection().createBlob();
+        // OutputStream os = c.setBinaryStream(1);
+        // copy(is, os);
+        // ps.setBlob(i, c);
+        // }
+<span class="fc" id="L173">    }</span>
+
+    /**
+     * Sets the clob parameter for the prepared statement.
+     * 
+     * @param ps
+     * @param i
+     * @param o
+     * @param cls
+     * @throws SQLException
+     */
+    private static void setClob(PreparedStatement ps, int i, Object o, Class&lt;?&gt; cls) throws SQLException {
+        // if (o instanceof Clob) {
+<span class="fc" id="L186">        ps.setClob(i, (Clob) o);</span>
+        // } else {
+        // final Reader r;
+        // if (o instanceof String)
+        // r = new StringReader((String) o);
+        // else if (o instanceof Reader)
+        // r = (Reader) o;
+        // else
+        // throw new RuntimeException(&quot;cannot insert parameter of type &quot; + cls + &quot; into
+        // clob column &quot; + i);
+        // Clob c = ps.getConnection().createClob();
+        // Writer w = c.setCharacterStream(1);
+        // copy(r, w);
+        // ps.setClob(i, c);
+        // }
+<span class="fc" id="L201">    }</span>
+
+    static void setNamedParameters(PreparedStatement ps, List&lt;Parameter&gt; parameters, List&lt;String&gt; names)
+            throws SQLException {
+<span class="fc" id="L205">        Map&lt;String, Parameter&gt; map = createMap(parameters);</span>
+<span class="fc" id="L206">        List&lt;Parameter&gt; list = new ArrayList&lt;Parameter&gt;();</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        for (String name : names) {</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            if (!map.containsKey(name))</span>
+<span class="fc" id="L209">                throw new NamedParameterMissingException(&quot;named parameter is missing for '&quot; + name + &quot;'&quot;);</span>
+<span class="fc" id="L210">            Parameter p = map.get(name);</span>
+<span class="fc" id="L211">            list.add(p);</span>
+<span class="fc" id="L212">        }</span>
+<span class="fc" id="L213">        Util.setParameters(ps, list, true);</span>
+<span class="fc" id="L214">    }</span>
+
+    @VisibleForTesting
+    static Map&lt;String, Parameter&gt; createMap(List&lt;Parameter&gt; parameters) {
+<span class="fc" id="L218">        Map&lt;String, Parameter&gt; map = new HashMap&lt;String, Parameter&gt;();</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        for (Parameter p : parameters) {</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">            if (p.hasName()) {</span>
+<span class="fc" id="L221">                map.put(p.name(), p);</span>
+            } else {
+<span class="nc" id="L223">                throw new ParameterMissingNameException(</span>
+                        &quot;named parameters were expected but this parameter did not have a name: &quot; + p);
+            }
+<span class="fc" id="L226">        }</span>
+<span class="fc" id="L227">        return map;</span>
+    }
+
+    static PreparedStatement convertAndSetParameters(PreparedStatement ps, List&lt;Object&gt; parameters, List&lt;String&gt; names)
+            throws SQLException {
+<span class="fc" id="L232">        return setParameters(ps, toParameters(parameters), names);</span>
+    }
+
+    static PreparedStatement setParameters(PreparedStatement ps, List&lt;Parameter&gt; parameters, List&lt;String&gt; names)
+            throws SQLException {
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (names.isEmpty()) {</span>
+<span class="fc" id="L238">            Util.setParameters(ps, parameters, false);</span>
+        } else {
+<span class="fc" id="L240">            Util.setNamedParameters(ps, parameters, names);</span>
+        }
+<span class="fc" id="L242">        return ps;</span>
+    }
+
+    static List&lt;Parameter&gt; toParameters(List&lt;Object&gt; parameters) {
+<span class="fc" id="L246">        return parameters.stream().map(o -&gt; {</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            if (o instanceof Parameter) {</span>
+<span class="fc" id="L248">                return (Parameter) o;</span>
+            } else {
+<span class="fc" id="L250">                return new Parameter(o);</span>
+            }
+<span class="fc" id="L252">        }).collect(Collectors.toList());</span>
+    }
+
+    static void incrementCounter(Connection connection) {
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (connection instanceof TransactedConnection) {</span>
+<span class="fc" id="L257">            TransactedConnection c = (TransactedConnection) connection;</span>
+<span class="fc" id="L258">            c.incrementCounter();</span>
+        }
+<span class="fc" id="L260">    }</span>
+
+    public static void closeSilently(AutoCloseable c) {
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (c != null) {</span>
+            try {
+<span class="fc" id="L265">                log.debug(&quot;closing {}&quot;, c);</span>
+<span class="fc" id="L266">                c.close();</span>
+<span class="nc" id="L267">            } catch (Exception e) {</span>
+<span class="nc" id="L268">                log.debug(&quot;ignored exception {}, {}, {}&quot;, e.getMessage(), e.getClass(), e);</span>
+<span class="fc" id="L269">            }</span>
+        }
+<span class="fc" id="L271">    }</span>
+
+    static void closePreparedStatementAndConnection(PreparedStatement ps) {
+<span class="fc" id="L274">        Connection con = null;</span>
+        try {
+<span class="fc" id="L276">            con = ps.getConnection();</span>
+<span class="nc" id="L277">        } catch (SQLException e) {</span>
+<span class="nc" id="L278">            log.warn(e.getMessage(), e);</span>
+<span class="fc" id="L279">        }</span>
+<span class="fc" id="L280">        closeSilently(ps);</span>
+<span class="fc" id="L281">        closeSilently(con);</span>
+<span class="fc" id="L282">    }</span>
+
+    static void closePreparedStatementAndConnection(NamedPreparedStatement ps) {
+<span class="fc" id="L285">        closePreparedStatementAndConnection(ps.ps);</span>
+<span class="fc" id="L286">    }</span>
+
+    static void closeCallableStatementAndConnection(NamedCallableStatement stmt) {
+<span class="fc" id="L289">        closePreparedStatementAndConnection(stmt.stmt);</span>
+<span class="fc" id="L290">    }</span>
+
+    static NamedPreparedStatement prepare(Connection con, String sql, int queryTimeoutSec) throws SQLException {
+<span class="fc" id="L293">        return prepare(con, 0, sql, queryTimeoutSec);</span>
+    }
+
+    static NamedPreparedStatement prepare(Connection con, int fetchSize, String sql, int queryTimeoutSec) throws SQLException {
+        // TODO can we parse SqlInfo through because already calculated by
+        // builder?
+<span class="fc" id="L299">        SqlInfo info = SqlInfo.parse(sql);</span>
+<span class="fc" id="L300">        log.debug(&quot;preparing statement: {}&quot;, sql);</span>
+<span class="fc" id="L301">        return prepare(con, fetchSize, info, queryTimeoutSec);</span>
+    }
+
+    static PreparedStatement prepare(Connection connection, int fetchSize, String sql, List&lt;Parameter&gt; parameters, int queryTimeoutSec)
+            throws SQLException {
+        // should only get here when parameters contains a collection
+<span class="fc" id="L307">        SqlInfo info = SqlInfo.parse(sql, parameters);</span>
+<span class="fc" id="L308">        log.debug(&quot;preparing statement: {}&quot;, info.sql());</span>
+<span class="fc" id="L309">        return createPreparedStatement(connection, fetchSize, info, queryTimeoutSec);</span>
+    }
+
+    private static NamedPreparedStatement prepare(Connection con, int fetchSize, SqlInfo info, int queryTimeoutSec) throws SQLException {
+<span class="fc" id="L313">        PreparedStatement ps = createPreparedStatement(con, fetchSize, info, queryTimeoutSec);</span>
+<span class="fc" id="L314">        return new NamedPreparedStatement(ps, info.names());</span>
+    }
+
+    private static PreparedStatement createPreparedStatement(Connection con, int fetchSize, SqlInfo info, int queryTimeoutSec)
+            throws SQLException {
+<span class="fc" id="L319">        PreparedStatement ps = null;</span>
+        try {
+<span class="fc" id="L321">            ps = con.prepareStatement(info.sql(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">            if (fetchSize &gt; 0) {</span>
+<span class="fc" id="L323">                ps.setFetchSize(fetchSize);</span>
+            }
+
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            if (queryTimeoutSec != QUERY_TIMEOUT_NOT_SET) {</span>
+<span class="fc" id="L327">                ps.setQueryTimeout(queryTimeoutSec);</span>
+            }
+<span class="fc" id="L329">        } catch (RuntimeException | SQLException e) {</span>
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">            if (ps != null) {</span>
+<span class="nc" id="L331">                ps.close();</span>
+            }
+<span class="fc" id="L333">            throw e;</span>
+<span class="fc" id="L334">        }</span>
+<span class="fc" id="L335">        return ps;</span>
+    }
+
+    static NamedCallableStatement prepareCall(Connection con, String sql,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders) throws SQLException {
+<span class="fc" id="L340">        return prepareCall(con, 0, sql, parameterPlaceholders);</span>
+    }
+
+    // TODO is fetchSize required for callablestatement
+    static NamedCallableStatement prepareCall(Connection con, int fetchSize, String sql,
+            List&lt;ParameterPlaceholder&gt; parameterPlaceholders) throws SQLException {
+        // TODO can we parse SqlInfo through because already calculated by
+        // builder?
+<span class="fc" id="L348">        SqlInfo s = SqlInfo.parse(sql);</span>
+<span class="fc" id="L349">        log.debug(&quot;preparing statement: {}&quot;, sql);</span>
+<span class="fc" id="L350">        CallableStatement ps = null;</span>
+        try {
+<span class="fc" id="L352">            ps = con.prepareCall(s.sql(), ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">            for (int i = 0; i &lt; parameterPlaceholders.size(); i++) {</span>
+<span class="fc" id="L354">                ParameterPlaceholder p = parameterPlaceholders.get(i);</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">                if (p instanceof OutParameterPlaceholder) {</span>
+<span class="fc" id="L356">                    ps.registerOutParameter(i + 1, ((OutParameterPlaceholder) p).type().value());</span>
+                }
+            }
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">            if (fetchSize &gt; 0) {</span>
+<span class="nc" id="L360">                ps.setFetchSize(fetchSize);</span>
+            }
+<span class="fc" id="L362">            return new NamedCallableStatement(ps, s.names());</span>
+<span class="nc" id="L363">        } catch (RuntimeException | SQLException e) {</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            if (ps != null) {</span>
+<span class="nc" id="L365">                ps.close();</span>
+            }
+<span class="nc" id="L367">            throw e;</span>
+        }
+    }
+
+    static NamedPreparedStatement prepareReturnGeneratedKeys(Connection con, String sql) throws SQLException {
+<span class="fc" id="L372">        SqlInfo s = SqlInfo.parse(sql);</span>
+<span class="fc" id="L373">        return new NamedPreparedStatement(con.prepareStatement(s.sql(), Statement.RETURN_GENERATED_KEYS), s.names());</span>
+    }
+
+    @VisibleForTesting
+    static int countQuestionMarkParameters(String sql) {
+        // was originally using regular expressions, but they didn't work well
+        // for ignoring parameter-like strings inside quotes.
+<span class="fc" id="L380">        int count = 0;</span>
+<span class="fc" id="L381">        int length = sql.length();</span>
+<span class="fc" id="L382">        boolean inSingleQuote = false;</span>
+<span class="fc" id="L383">        boolean inDoubleQuote = false;</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L385">            char c = sql.charAt(i);</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">            if (inSingleQuote) {</span>
+<span class="fc bfc" id="L387" title="All 2 branches covered.">                if (c == '\'') {</span>
+<span class="fc" id="L388">                    inSingleQuote = false;</span>
+                }
+<span class="fc bfc" id="L390" title="All 2 branches covered.">            } else if (inDoubleQuote) {</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">                if (c == '&quot;') {</span>
+<span class="fc" id="L392">                    inDoubleQuote = false;</span>
+                }
+            } else {
+<span class="fc bfc" id="L395" title="All 2 branches covered.">                if (c == '\'') {</span>
+<span class="fc" id="L396">                    inSingleQuote = true;</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">                } else if (c == '&quot;') {</span>
+<span class="fc" id="L398">                    inDoubleQuote = true;</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">                } else if (c == '?') {</span>
+<span class="fc" id="L400">                    count++;</span>
+                }
+            }
+        }
+<span class="fc" id="L404">        return count;</span>
+    }
+
+    public static void commit(PreparedStatement ps) throws SQLException {
+<span class="fc" id="L408">        Connection c = ps.getConnection();</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        if (!c.getAutoCommit()) {</span>
+<span class="fc" id="L410">            c.commit();</span>
+        }
+<span class="fc" id="L412">    }</span>
+
+    public static void rollback(PreparedStatement ps) throws SQLException {
+<span class="nc" id="L415">        Connection c = ps.getConnection();</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">        if (!c.getAutoCommit()) {</span>
+<span class="nc" id="L417">            c.rollback();</span>
+        }
+<span class="nc" id="L419">    }</span>
+
+    // auto-mapping
+
+    /**
+     * Converts from java.sql Types to common java types like java.util.Date and
+     * numeric types.
+     * 
+     * @param o
+     *            object to map to new object of type {@code cls}
+     * @param cls
+     *            object return type
+     * @return object of type {@code cls}
+     */
+    public static Object autoMap(Object o, Class&lt;?&gt; cls) {
+<span class="fc bfc" id="L434" title="All 2 branches covered.">        if (o == null)</span>
+<span class="fc" id="L435">            return o;</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">        else if (cls.isAssignableFrom(o.getClass())) {</span>
+<span class="fc" id="L437">            return o;</span>
+        } else {
+<span class="fc bfc" id="L439" title="All 2 branches covered.">            if (o instanceof java.sql.Date) {</span>
+<span class="fc" id="L440">                java.sql.Date d = (java.sql.Date) o;</span>
+<span class="fc bfc" id="L441" title="All 2 branches covered.">                if (cls.isAssignableFrom(Long.class))</span>
+<span class="fc" id="L442">                    return d.getTime();</span>
+<span class="fc bfc" id="L443" title="All 2 branches covered.">                else if (cls.isAssignableFrom(BigInteger.class))</span>
+<span class="fc" id="L444">                    return BigInteger.valueOf(d.getTime());</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">                else if (cls.isAssignableFrom(Instant.class))</span>
+<span class="fc" id="L446">                    return Instant.ofEpochMilli(d.getTime());</span>
+                else
+<span class="fc" id="L448">                    return o;</span>
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            } else if (o instanceof Timestamp) {</span>
+<span class="fc" id="L450">                Timestamp t = (Timestamp) o;</span>
+<span class="fc bfc" id="L451" title="All 2 branches covered.">                if (cls.isAssignableFrom(Long.class))</span>
+<span class="fc" id="L452">                    return t.getTime();</span>
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">                else if (cls.isAssignableFrom(BigInteger.class))</span>
+<span class="nc" id="L454">                    return BigInteger.valueOf(t.getTime());</span>
+<span class="pc bpc" id="L455" title="1 of 2 branches missed.">                else if (cls.isAssignableFrom(Instant.class))</span>
+<span class="fc" id="L456">                    return t.toInstant();</span>
+                else
+<span class="nc" id="L458">                    return o;</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">            } else if (o instanceof Time) {</span>
+<span class="nc" id="L460">                Time t = (Time) o;</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">                if (cls.isAssignableFrom(Long.class))</span>
+<span class="nc" id="L462">                    return t.getTime();</span>
+<span class="nc bnc" id="L463" title="All 2 branches missed.">                else if (cls.isAssignableFrom(BigInteger.class))</span>
+<span class="nc" id="L464">                    return BigInteger.valueOf(t.getTime());</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">                else if (cls.isAssignableFrom(Instant.class))</span>
+<span class="nc" id="L466">                    return t.toInstant();</span>
+                else
+<span class="nc" id="L468">                    return o;</span>
+<span class="pc bpc" id="L469" title="3 of 4 branches missed.">            } else if (o instanceof Blob &amp;&amp; cls.isAssignableFrom(byte[].class)) {</span>
+<span class="nc" id="L470">                return toBytes((Blob) o);</span>
+<span class="pc bpc" id="L471" title="3 of 4 branches missed.">            } else if (o instanceof Clob &amp;&amp; cls.isAssignableFrom(String.class)) {</span>
+<span class="nc" id="L472">                return toString((Clob) o);</span>
+<span class="pc bpc" id="L473" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(Long.class)) {</span>
+<span class="nc" id="L474">                return ((BigInteger) o).longValue();</span>
+<span class="pc bpc" id="L475" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(Integer.class)) {</span>
+<span class="nc" id="L476">                return ((BigInteger) o).intValue();</span>
+<span class="pc bpc" id="L477" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(Double.class)) {</span>
+<span class="nc" id="L478">                return ((BigInteger) o).doubleValue();</span>
+<span class="pc bpc" id="L479" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(Float.class)) {</span>
+<span class="nc" id="L480">                return ((BigInteger) o).floatValue();</span>
+<span class="pc bpc" id="L481" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(Short.class)) {</span>
+<span class="nc" id="L482">                return ((BigInteger) o).shortValue();</span>
+<span class="pc bpc" id="L483" title="3 of 4 branches missed.">            } else if (o instanceof BigInteger &amp;&amp; cls.isAssignableFrom(BigDecimal.class)) {</span>
+<span class="nc" id="L484">                return new BigDecimal((BigInteger) o);</span>
+<span class="pc bpc" id="L485" title="1 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(Double.class)) {</span>
+<span class="nc" id="L486">                return ((BigDecimal) o).doubleValue();</span>
+<span class="pc bpc" id="L487" title="1 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(Integer.class)) {</span>
+<span class="fc" id="L488">                return ((BigDecimal) o).toBigInteger().intValue();</span>
+<span class="pc bpc" id="L489" title="3 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(Float.class)) {</span>
+<span class="nc" id="L490">                return ((BigDecimal) o).floatValue();</span>
+<span class="pc bpc" id="L491" title="3 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(Short.class)) {</span>
+<span class="nc" id="L492">                return ((BigDecimal) o).toBigInteger().shortValue();</span>
+<span class="pc bpc" id="L493" title="3 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(Long.class)) {</span>
+<span class="nc" id="L494">                return ((BigDecimal) o).toBigInteger().longValue();</span>
+<span class="pc bpc" id="L495" title="3 of 4 branches missed.">            } else if (o instanceof BigDecimal &amp;&amp; cls.isAssignableFrom(BigInteger.class)) {</span>
+<span class="nc" id="L496">                return ((BigDecimal) o).toBigInteger();</span>
+<span class="pc bpc" id="L497" title="1 of 6 branches missed.">            } else if ((o instanceof Short || o instanceof Integer || o instanceof Long)</span>
+<span class="pc bpc" id="L498" title="1 of 2 branches missed.">                    &amp;&amp; cls.isAssignableFrom(BigInteger.class)) {</span>
+<span class="nc" id="L499">                return new BigInteger(o.toString());</span>
+<span class="pc bpc" id="L500" title="1 of 4 branches missed.">            } else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(BigDecimal.class)) {</span>
+<span class="nc" id="L501">                return new BigDecimal(o.toString());</span>
+<span class="pc bpc" id="L502" title="1 of 4 branches missed.">            } else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Short.class))</span>
+<span class="nc" id="L503">                return ((Number) o).shortValue();</span>
+<span class="fc bfc" id="L504" title="All 4 branches covered.">            else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Integer.class))</span>
+<span class="fc" id="L505">                return ((Number) o).intValue();</span>
+<span class="pc bpc" id="L506" title="1 of 4 branches missed.">            else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Integer.class))</span>
+<span class="nc" id="L507">                return ((Number) o).intValue();</span>
+<span class="pc bpc" id="L508" title="1 of 4 branches missed.">            else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Long.class))</span>
+<span class="nc" id="L509">                return ((Number) o).longValue();</span>
+<span class="pc bpc" id="L510" title="1 of 4 branches missed.">            else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Float.class))</span>
+<span class="nc" id="L511">                return ((Number) o).floatValue();</span>
+<span class="pc bpc" id="L512" title="1 of 4 branches missed.">            else if (o instanceof Number &amp;&amp; cls.isAssignableFrom(Double.class))</span>
+<span class="nc" id="L513">                return ((Number) o).doubleValue();</span>
+            else
+<span class="fc" id="L515">                return o;</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T mapObject(final ResultSet rs, Class&lt;T&gt; cls, int i) {
+<span class="fc" id="L521">        return (T) autoMap(getObject(rs, cls, i), cls);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T mapObject(final CallableStatement cs, Class&lt;T&gt; cls, int i, Type type) {
+<span class="fc" id="L526">        return (T) autoMap(getObject(cs, cls, i, type), cls);</span>
+    }
+
+    private static &lt;T&gt; Object getObject(final ResultSet rs, Class&lt;T&gt; cls, int i) {
+        try {
+<span class="fc" id="L531">            int colCount = rs.getMetaData().getColumnCount();</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">            if (i &gt; colCount) {</span>
+<span class="fc" id="L533">                throw new MoreColumnsRequestedThanExistException(</span>
+                        &quot;only &quot; + colCount + &quot; columns exist in ResultSet and column &quot; + i + &quot; was requested&quot;);
+            }
+<span class="fc bfc" id="L536" title="All 2 branches covered.">            if (rs.getObject(i) == null) {</span>
+<span class="fc" id="L537">                return null;</span>
+            }
+<span class="fc" id="L539">            final int type = rs.getMetaData().getColumnType(i);</span>
+            // TODO java.util.Calendar support
+            // TODO XMLGregorian Calendar support
+<span class="pc bpc" id="L542" title="1 of 2 branches missed.">            if (type == Types.DATE)</span>
+<span class="nc" id="L543">                return rs.getDate(i, Calendar.getInstance());</span>
+<span class="pc bpc" id="L544" title="1 of 2 branches missed.">            else if (type == Types.TIME)</span>
+<span class="nc" id="L545">                return rs.getTime(i, Calendar.getInstance());</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">            else if (type == Types.TIMESTAMP)</span>
+<span class="fc" id="L547">                return rs.getTimestamp(i, Calendar.getInstance());</span>
+<span class="fc bfc" id="L548" title="All 4 branches covered.">            else if (type == Types.CLOB &amp;&amp; cls.equals(String.class)) {</span>
+<span class="fc" id="L549">                return toString(rs.getClob(i));</span>
+<span class="pc bpc" id="L550" title="1 of 4 branches missed.">            } else if (type == Types.CLOB &amp;&amp; Reader.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L551">                Clob c = rs.getClob(i);</span>
+<span class="fc" id="L552">                Reader r = c.getCharacterStream();</span>
+<span class="fc" id="L553">                return createFreeOnCloseReader(c, r);</span>
+<span class="fc bfc" id="L554" title="All 4 branches covered.">            } else if (type == Types.BLOB &amp;&amp; cls.equals(byte[].class)) {</span>
+<span class="fc" id="L555">                return toBytes(rs.getBlob(i));</span>
+<span class="pc bpc" id="L556" title="1 of 4 branches missed.">            } else if (type == Types.BLOB &amp;&amp; InputStream.class.isAssignableFrom(cls)) {</span>
+<span class="fc" id="L557">                final Blob b = rs.getBlob(i);</span>
+<span class="fc" id="L558">                final InputStream is = rs.getBlob(i).getBinaryStream();</span>
+<span class="fc" id="L559">                return createFreeOnCloseInputStream(b, is);</span>
+            } else
+<span class="fc" id="L561">                return rs.getObject(i);</span>
+<span class="nc" id="L562">        } catch (SQLException e) {</span>
+<span class="nc" id="L563">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    private static &lt;T&gt; Object getObject(final CallableStatement cs, Class&lt;T&gt; cls, int i, Type typ) {
+        try {
+<span class="pc bpc" id="L569" title="1 of 2 branches missed.">            if (cs.getObject(i) == null) {</span>
+<span class="nc" id="L570">                return null;</span>
+            }
+<span class="fc" id="L572">            final int type = typ.value();</span>
+            // TODO java.util.Calendar support
+            // TODO XMLGregorian Calendar support
+<span class="pc bpc" id="L575" title="1 of 2 branches missed.">            if (type == Types.DATE)</span>
+<span class="nc" id="L576">                return cs.getDate(i, Calendar.getInstance());</span>
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">            else if (type == Types.TIME)</span>
+<span class="nc" id="L578">                return cs.getTime(i, Calendar.getInstance());</span>
+<span class="pc bpc" id="L579" title="1 of 2 branches missed.">            else if (type == Types.TIMESTAMP)</span>
+<span class="nc" id="L580">                return cs.getTimestamp(i, Calendar.getInstance());</span>
+<span class="pc bpc" id="L581" title="3 of 4 branches missed.">            else if (type == Types.CLOB &amp;&amp; cls.equals(String.class)) {</span>
+<span class="nc" id="L582">                return toString(cs.getClob(i));</span>
+<span class="pc bpc" id="L583" title="3 of 4 branches missed.">            } else if (type == Types.CLOB &amp;&amp; Reader.class.isAssignableFrom(cls)) {</span>
+<span class="nc" id="L584">                Clob c = cs.getClob(i);</span>
+<span class="nc" id="L585">                Reader r = c.getCharacterStream();</span>
+<span class="nc" id="L586">                return createFreeOnCloseReader(c, r);</span>
+<span class="pc bpc" id="L587" title="3 of 4 branches missed.">            } else if (type == Types.BLOB &amp;&amp; cls.equals(byte[].class)) {</span>
+<span class="nc" id="L588">                return toBytes(cs.getBlob(i));</span>
+<span class="pc bpc" id="L589" title="3 of 4 branches missed.">            } else if (type == Types.BLOB &amp;&amp; InputStream.class.isAssignableFrom(cls)) {</span>
+<span class="nc" id="L590">                final Blob b = cs.getBlob(i);</span>
+<span class="nc" id="L591">                final InputStream is = cs.getBlob(i).getBinaryStream();</span>
+<span class="nc" id="L592">                return createFreeOnCloseInputStream(b, is);</span>
+            } else
+<span class="fc" id="L594">                return cs.getObject(i);</span>
+<span class="nc" id="L595">        } catch (SQLException e) {</span>
+<span class="nc" id="L596">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    /**
+     * Returns the bytes of a {@link Blob} and frees the blob resource.
+     * 
+     * @param b
+     *            blob
+     * @return
+     */
+    @VisibleForTesting
+    static byte[] toBytes(Blob b) {
+        try {
+<span class="fc" id="L610">            InputStream is = b.getBinaryStream();</span>
+<span class="fc" id="L611">            byte[] result = IOUtils.toByteArray(is);</span>
+<span class="fc" id="L612">            is.close();</span>
+<span class="fc" id="L613">            b.free();</span>
+<span class="fc" id="L614">            return result;</span>
+<span class="fc" id="L615">        } catch (IOException e) {</span>
+<span class="fc" id="L616">            throw new RuntimeException(e);</span>
+<span class="fc" id="L617">        } catch (SQLException e) {</span>
+<span class="fc" id="L618">            throw new SQLRuntimeException(e);</span>
+        }
+
+    }
+
+    /**
+     * Returns the String of a {@link Clob} and frees the clob resource.
+     * 
+     * @param c
+     * @return
+     */
+    @VisibleForTesting
+    static String toString(Clob c) {
+        try {
+<span class="fc" id="L632">            Reader reader = c.getCharacterStream();</span>
+<span class="fc" id="L633">            String result = IOUtils.toString(reader);</span>
+<span class="fc" id="L634">            reader.close();</span>
+<span class="fc" id="L635">            c.free();</span>
+<span class="fc" id="L636">            return result;</span>
+<span class="fc" id="L637">        } catch (IOException e) {</span>
+<span class="fc" id="L638">            throw new RuntimeException(e);</span>
+<span class="fc" id="L639">        } catch (SQLException e) {</span>
+<span class="fc" id="L640">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    /**
+     * Automatically frees the blob (&lt;code&gt;blob.free()&lt;/code&gt;) once the blob
+     * {@link InputStream} is closed.
+     * 
+     * @param blob
+     * @param is
+     * @return
+     */
+    private static InputStream createFreeOnCloseInputStream(final Blob blob, final InputStream is) {
+<span class="fc" id="L653">        return new InputStream() {</span>
+
+            @Override
+            public int read() throws IOException {
+<span class="fc" id="L657">                return is.read();</span>
+            }
+
+            @Override
+            public void close() throws IOException {
+                try {
+<span class="fc" id="L663">                    is.close();</span>
+                } finally {
+                    try {
+<span class="fc" id="L666">                        blob.free();</span>
+<span class="nc" id="L667">                    } catch (SQLException e) {</span>
+<span class="nc" id="L668">                        log.debug(e.getMessage());</span>
+<span class="fc" id="L669">                    }</span>
+                }
+<span class="fc" id="L671">            }</span>
+        };
+    }
+
+    /**
+     * Automatically frees the clob (&lt;code&gt;Clob.free()&lt;/code&gt;) once the clob Reader
+     * is closed.
+     * 
+     * @param clob
+     * @param reader
+     * @return
+     */
+    private static Reader createFreeOnCloseReader(final Clob clob, final Reader reader) {
+<span class="fc" id="L684">        return new Reader() {</span>
+
+            @Override
+            public void close() throws IOException {
+                try {
+<span class="fc" id="L689">                    reader.close();</span>
+                } finally {
+                    try {
+<span class="fc" id="L692">                        clob.free();</span>
+<span class="nc" id="L693">                    } catch (SQLException e) {</span>
+<span class="nc" id="L694">                        log.debug(e.getMessage());</span>
+<span class="fc" id="L695">                    }</span>
+                }
+<span class="fc" id="L697">            }</span>
+
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+<span class="fc" id="L701">                return reader.read(cbuf, off, len);</span>
+            }
+        };
+    }
+
+    /**
+     * Returns a function that converts the ResultSet column values into parameters
+     * to the constructor (with number of parameters equals the number of columns)
+     * of type &lt;code&gt;cls&lt;/code&gt; then returns an instance of type &lt;code&gt;cls&lt;/code&gt;.
+     * See {@link SelectBuilder#autoMap(Class)}.
+     * 
+     * @param cls
+     * @return
+     */
+    static &lt;T&gt; ResultSetMapper&lt;T&gt; autoMap(Class&lt;T&gt; cls) {
+<span class="fc" id="L716">        return new ResultSetMapper&lt;T&gt;() {</span>
+
+            ProxyService&lt;T&gt; proxyService;
+            private ResultSet rs;
+
+            @Override
+            public T apply(ResultSet rs) {
+                // access to this method will be serialized
+                // only create a new ProxyService when the ResultSet changes
+                // for example with the second run of a PreparedStatement
+<span class="fc bfc" id="L726" title="All 2 branches covered.">                if (rs != this.rs) {</span>
+<span class="fc" id="L727">                    this.rs = rs;</span>
+<span class="fc" id="L728">                    proxyService = new ProxyService&lt;T&gt;(rs, cls);</span>
+                }
+<span class="fc" id="L730">                return autoMap(rs, cls, proxyService);</span>
+            }
+        };
+    }
+
+    /**
+     * Converts the ResultSet column values into parameters to the constructor (with
+     * number of parameters equals the number of columns) of type &lt;code&gt;T&lt;/code&gt;
+     * then returns an instance of type &lt;code&gt;T&lt;/code&gt;. See See
+     * {@link SelectBuilder#autoMap(Class)}.
+     * 
+     * @param rs
+     * @param cls
+     *            the class of the resultant instance
+     * @param proxyService
+     * @return an automapped instance
+     */
+    static &lt;T&gt; T autoMap(ResultSet rs, Class&lt;T&gt; cls, ProxyService&lt;T&gt; proxyService) {
+<span class="fc" id="L748">        return proxyService.newInstance();</span>
+    }
+
+    interface Col {
+        Class&lt;?&gt; returnType();
+    }
+
+    static class NamedCol implements Col {
+        final String name;
+        private final Class&lt;?&gt; returnType;
+
+<span class="fc" id="L759">        public NamedCol(String name, Class&lt;?&gt; returnType) {</span>
+<span class="fc" id="L760">            this.name = name;</span>
+<span class="fc" id="L761">            this.returnType = returnType;</span>
+<span class="fc" id="L762">        }</span>
+
+        @Override
+        public Class&lt;?&gt; returnType() {
+<span class="fc" id="L766">            return returnType;</span>
+        }
+    }
+
+    static class IndexedCol implements Col {
+        final int index;
+        private final Class&lt;?&gt; returnType;
+
+<span class="fc" id="L774">        public IndexedCol(int index, Class&lt;?&gt; returnType) {</span>
+<span class="fc" id="L775">            this.index = index;</span>
+<span class="fc" id="L776">            this.returnType = returnType;</span>
+<span class="fc" id="L777">        }</span>
+
+        @Override
+        public Class&lt;?&gt; returnType() {
+<span class="fc" id="L781">            return returnType;</span>
+        }
+
+    }
+
+    private static class ProxyService&lt;T&gt; {
+
+        private final Map&lt;String, Integer&gt; colIndexes;
+        private final Map&lt;String, Col&gt; methodCols;
+        private final Class&lt;T&gt; cls;
+        private final ResultSet rs;
+
+        public ProxyService(ResultSet rs, Class&lt;T&gt; cls) {
+<span class="fc" id="L794">            this(rs, collectColIndexes(rs), getMethodCols(cls), cls);</span>
+<span class="fc" id="L795">        }</span>
+
+<span class="fc" id="L797">        public ProxyService(ResultSet rs, Map&lt;String, Integer&gt; colIndexes, Map&lt;String, Col&gt; methodCols, Class&lt;T&gt; cls) {</span>
+<span class="fc" id="L798">            this.rs = rs;</span>
+<span class="fc" id="L799">            this.colIndexes = colIndexes;</span>
+<span class="fc" id="L800">            this.methodCols = methodCols;</span>
+<span class="fc" id="L801">            this.cls = cls;</span>
+<span class="fc" id="L802">        }</span>
+
+        private Map&lt;String, Object&gt; values() {
+<span class="fc" id="L805">            Map&lt;String, Object&gt; values = new HashMap&lt;String, Object&gt;();</span>
+            // calculate values for all the interface methods and put them in a
+            // map
+<span class="fc bfc" id="L808" title="All 2 branches covered.">            for (Method m : cls.getMethods()) {</span>
+<span class="fc" id="L809">                String methodName = m.getName();</span>
+<span class="fc" id="L810">                Col column = methodCols.get(methodName);</span>
+<span class="fc bfc" id="L811" title="All 2 branches covered.">                if (column != null) {</span>
+                    Integer index;
+<span class="fc bfc" id="L813" title="All 2 branches covered.">                    if (column instanceof NamedCol) {</span>
+<span class="fc" id="L814">                        String name = ((NamedCol) column).name;</span>
+<span class="fc" id="L815">                        index = colIndexes.get(name.toUpperCase(Locale.ENGLISH));</span>
+<span class="fc bfc" id="L816" title="All 2 branches covered.">                        if (index == null) {</span>
+<span class="fc" id="L817">                            throw new ColumnNotFoundException(&quot;query column names do not include '&quot; + name</span>
+<span class="fc" id="L818">                                    + &quot;' which is a named column in the automapped interface &quot; + cls.getName());</span>
+                        }
+<span class="fc" id="L820">                    } else {</span>
+<span class="fc" id="L821">                        IndexedCol col = (IndexedCol) column;</span>
+<span class="fc" id="L822">                        index = col.index;</span>
+<span class="fc bfc" id="L823" title="All 2 branches covered.">                        if (index &lt; 1) {</span>
+<span class="fc" id="L824">                            throw new ColumnIndexOutOfRangeException(</span>
+<span class="fc" id="L825">                                    &quot;value for Index annotation (on autoMapped interface &quot; + cls.getName()</span>
+                                            + &quot;) must be &gt; 0&quot;);
+                        } else {
+<span class="fc" id="L828">                            int count = getColumnCount(rs);</span>
+<span class="fc bfc" id="L829" title="All 2 branches covered.">                            if (index &gt; count) {</span>
+<span class="fc" id="L830">                                throw new ColumnIndexOutOfRangeException(&quot;value &quot; + index</span>
+<span class="fc" id="L831">                                        + &quot; for Index annotation (on autoMapped interface &quot; + cls.getName()</span>
+                                        + &quot;) must be between 1 and the number of columns in the result set (&quot; + count
+                                        + &quot;)&quot;);
+                            }
+                        }
+                    }
+<span class="fc" id="L837">                    Object value = autoMap(getObject(rs, column.returnType(), index), column.returnType());</span>
+<span class="fc" id="L838">                    values.put(methodName, value);</span>
+                }
+            }
+<span class="fc bfc" id="L841" title="All 2 branches covered.">            if (values.isEmpty()) {</span>
+<span class="fc" id="L842">                throw new AnnotationsNotFoundException(</span>
+<span class="fc" id="L843">                        &quot;Did you forget to add @Column or @Index annotations to &quot; + cls.getName() + &quot;?&quot;);</span>
+            }
+<span class="fc" id="L845">            return values;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public T newInstance() {
+<span class="fc" id="L850">            return (T) Proxy.newProxyInstance(cls.getClassLoader(), new Class[] { cls },</span>
+<span class="fc" id="L851">                    new ProxyInstance&lt;T&gt;(cls, values()));</span>
+        }
+
+    }
+
+    private static int getColumnCount(ResultSet rs) {
+        try {
+<span class="fc" id="L858">            return rs.getMetaData().getColumnCount();</span>
+<span class="nc" id="L859">        } catch (SQLException e) {</span>
+<span class="nc" id="L860">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    private static final class ProxyInstance&lt;T&gt; implements java.lang.reflect.InvocationHandler {
+
+<span class="fc" id="L866">        private static boolean JAVA_9 = false;</span>
+
+        private static final String METHOD_TO_STRING = &quot;toString&quot;;
+
+        private final Class&lt;T&gt; cls;
+        private final Map&lt;String, Object&gt; values;
+
+<span class="fc" id="L873">        ProxyInstance(Class&lt;T&gt; cls, Map&lt;String, Object&gt; values) {</span>
+<span class="fc" id="L874">            this.cls = cls;</span>
+<span class="fc" id="L875">            this.values = values;</span>
+<span class="fc" id="L876">        }</span>
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+<span class="pc bpc" id="L880" title="1 of 4 branches missed.">            if (METHOD_TO_STRING.equals(method.getName()) &amp;&amp; isEmpty(args)) {</span>
+<span class="fc" id="L881">                return Util.toString(cls.getSimpleName(), values);</span>
+<span class="pc bpc" id="L882" title="2 of 6 branches missed.">            } else if (&quot;equals&quot;.equals(method.getName()) &amp;&amp; args != null &amp;&amp; args.length == 1) {</span>
+<span class="fc bfc" id="L883" title="All 2 branches covered.">                if (args[0] == null) {</span>
+<span class="fc" id="L884">                    return false;</span>
+<span class="fc bfc" id="L885" title="All 2 branches covered.">                } else if (args[0] instanceof Proxy) {</span>
+<span class="fc" id="L886">                    ProxyInstance&lt;?&gt; handler = (ProxyInstance&lt;?&gt;) Proxy.getInvocationHandler(args[0]);</span>
+<span class="fc bfc" id="L887" title="All 2 branches covered.">                    if (!handler.cls.equals(cls)) {</span>
+                        // is a proxied object for a different interface!
+<span class="fc" id="L889">                        return false;</span>
+                    } else {
+<span class="fc" id="L891">                        return handler.values.equals(values);</span>
+                    }
+                } else {
+<span class="fc" id="L894">                    return false;</span>
+                }
+<span class="fc bfc" id="L896" title="All 2 branches covered.">            } else if (isHashCode(method, args)) {</span>
+<span class="fc" id="L897">                return values.hashCode();</span>
+<span class="pc bpc" id="L898" title="1 of 4 branches missed.">            } else if (values.containsKey(method.getName()) &amp;&amp; isEmpty(args)) {</span>
+<span class="fc" id="L899">                return values.get(method.getName());</span>
+<span class="pc bpc" id="L900" title="1 of 2 branches missed.">            } else if (method.isDefault()) {</span>
+<span class="fc" id="L901">                final Class&lt;?&gt; declaringClass = method.getDeclaringClass();</span>
+<span class="fc bfc" id="L902" title="All 2 branches covered.">                if (!Modifier.isPublic(declaringClass.getModifiers())) {</span>
+<span class="fc" id="L903">                    throw new AutomappedInterfaceInaccessibleException(</span>
+                            &quot;An automapped interface must be public for you to call default methods on that interface&quot;);
+                }
+                // TODO java 9 support (fix IllegalAccessException)
+<span class="pc bpc" id="L907" title="1 of 2 branches missed.">                if (JAVA_9) {</span>
+<span class="nc" id="L908">                    MethodType methodType = MethodType.methodType(method.getReturnType(), method.getParameterTypes());</span>
+<span class="nc" id="L909">                    return MethodHandles.lookup() //</span>
+<span class="nc" id="L910">                            .findSpecial( //</span>
+                                    declaringClass, //
+<span class="nc" id="L912">                                    method.getName(), //</span>
+                                    methodType, //
+                                    declaringClass) //
+<span class="nc" id="L915">                            .bindTo(proxy) //</span>
+<span class="nc" id="L916">                            .invoke(args);</span>
+                } else {
+<span class="fc" id="L918">                    Constructor&lt;MethodHandles.Lookup&gt; constructor = //</span>
+                            MethodHandles.Lookup.class //
+<span class="fc" id="L920">                                    .getDeclaredConstructor(Class.class, int.class);</span>
+<span class="fc" id="L921">                    constructor.setAccessible(true);</span>
+<span class="fc" id="L922">                    return constructor //</span>
+<span class="fc" id="L923">                            .newInstance(declaringClass, MethodHandles.Lookup.PRIVATE)</span>
+<span class="fc" id="L924">                            .unreflectSpecial(method, declaringClass) //</span>
+<span class="fc" id="L925">                            .bindTo(proxy) //</span>
+<span class="fc" id="L926">                            .invokeWithArguments(args);</span>
+                }
+            } else {
+<span class="nc" id="L929">                throw new RuntimeException(&quot;unexpected&quot;);</span>
+            }
+        }
+
+    }
+
+    @VisibleForTesting
+    static boolean isHashCode(Method method, Object[] args) {
+<span class="fc bfc" id="L937" title="All 4 branches covered.">        return &quot;hashCode&quot;.equals(method.getName()) &amp;&amp; isEmpty(args);</span>
+    }
+
+    private static boolean isEmpty(Object[] args) {
+<span class="fc bfc" id="L941" title="All 4 branches covered.">        return args == null || args.length == 0;</span>
+    }
+
+    private static String toString(String clsSimpleName, Map&lt;String, Object&gt; values) {
+<span class="fc" id="L945">        StringBuilder s = new StringBuilder();</span>
+<span class="fc" id="L946">        s.append(clsSimpleName);</span>
+<span class="fc" id="L947">        s.append(&quot;[&quot;);</span>
+<span class="fc" id="L948">        boolean first = true;</span>
+<span class="fc bfc" id="L949" title="All 2 branches covered.">        for (Entry&lt;String, Object&gt; entry : new TreeMap&lt;String, Object&gt;(values).entrySet()) {</span>
+<span class="fc bfc" id="L950" title="All 2 branches covered.">            if (!first) {</span>
+<span class="fc" id="L951">                s.append(&quot;, &quot;);</span>
+            }
+<span class="fc" id="L953">            s.append(entry.getKey());</span>
+<span class="fc" id="L954">            s.append(&quot;=&quot;);</span>
+<span class="fc" id="L955">            s.append(entry.getValue());</span>
+<span class="fc" id="L956">            first = false;</span>
+<span class="fc" id="L957">        }</span>
+<span class="fc" id="L958">        s.append(&quot;]&quot;);</span>
+<span class="fc" id="L959">        return s.toString();</span>
+    }
+
+    private static Map&lt;String, Col&gt; getMethodCols(Class&lt;?&gt; cls) {
+<span class="fc" id="L963">        Map&lt;String, Col&gt; methodCols = new HashMap&lt;String, Col&gt;();</span>
+<span class="fc bfc" id="L964" title="All 2 branches covered.">        for (Method method : cls.getMethods()) {</span>
+<span class="fc" id="L965">            String name = method.getName();</span>
+<span class="fc" id="L966">            Column column = method.getAnnotation(Column.class);</span>
+<span class="fc bfc" id="L967" title="All 2 branches covered.">            if (column != null) {</span>
+<span class="fc" id="L968">                checkHasNoParameters(method);</span>
+                // TODO check method has a mappable return type
+<span class="fc" id="L970">                String col = column.value();</span>
+<span class="fc bfc" id="L971" title="All 2 branches covered.">                if (col.equals(Column.NOT_SPECIFIED))</span>
+<span class="fc" id="L972">                    col = Util.camelCaseToUnderscore(name);</span>
+<span class="fc" id="L973">                methodCols.put(name, new NamedCol(col, method.getReturnType()));</span>
+<span class="fc" id="L974">            } else {</span>
+<span class="fc" id="L975">                Index index = method.getAnnotation(Index.class);</span>
+<span class="fc bfc" id="L976" title="All 2 branches covered.">                if (index != null) {</span>
+                    // TODO check method has a mappable return type
+<span class="fc" id="L978">                    checkHasNoParameters(method);</span>
+<span class="fc" id="L979">                    methodCols.put(name, new IndexedCol(index.value(), method.getReturnType()));</span>
+                }
+            }
+        }
+<span class="fc" id="L983">        return methodCols;</span>
+    }
+
+    private static void checkHasNoParameters(Method method) {
+<span class="pc bpc" id="L987" title="1 of 2 branches missed.">        if (method.getParameterTypes().length &gt; 0) {</span>
+<span class="nc" id="L988">            throw new RuntimeException(&quot;mapped interface method cannot have parameters&quot;);</span>
+        }
+<span class="fc" id="L990">    }</span>
+
+    private static Map&lt;String, Integer&gt; collectColIndexes(ResultSet rs) {
+<span class="fc" id="L993">        HashMap&lt;String, Integer&gt; map = new HashMap&lt;String, Integer&gt;();</span>
+        try {
+<span class="fc" id="L995">            ResultSetMetaData metadata = rs.getMetaData();</span>
+<span class="fc bfc" id="L996" title="All 2 branches covered.">            for (int i = 1; i &lt;= metadata.getColumnCount(); i++) {</span>
+<span class="fc" id="L997">                map.put(metadata.getColumnName(i).toUpperCase(Locale.ENGLISH), i);</span>
+            }
+<span class="fc" id="L999">            return map;</span>
+<span class="nc" id="L1000">        } catch (SQLException e) {</span>
+<span class="nc" id="L1001">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    static String camelCaseToUnderscore(String camelCased) {
+        // guava has best solution for this with CaseFormat class
+        // but don't want to add dependency just for this method
+<span class="fc" id="L1008">        final @RegEx String regex = &quot;([a-z])([A-Z]+)&quot;;</span>
+<span class="fc" id="L1009">        final String replacement = &quot;$1_$2&quot;;</span>
+<span class="fc" id="L1010">        return camelCased.replaceAll(regex, replacement);</span>
+    }
+
+    public static ConnectionProvider connectionProvider(String url, Properties properties) {
+<span class="fc" id="L1014">        return new ConnectionProvider() {</span>
+
+            @Override
+            public Connection get() {
+                try {
+<span class="fc" id="L1019">                    return DriverManager.getConnection(url, properties);</span>
+<span class="fc" id="L1020">                } catch (SQLException e) {</span>
+<span class="fc" id="L1021">                    throw new SQLRuntimeException(e);</span>
+                }
+            }
+
+            @Override
+            public void close() {
+                //
+<span class="nc" id="L1028">            }</span>
+        };
+    }
+
+    static Connection toTransactedConnection(AtomicReference&lt;Connection&gt; connection, Connection c) throws SQLException {
+<span class="fc bfc" id="L1033" title="All 2 branches covered.">        if (c instanceof TransactedConnection) {</span>
+<span class="fc" id="L1034">            connection.set(c);</span>
+<span class="fc" id="L1035">            return c;</span>
+        } else {
+<span class="fc" id="L1037">            c.setAutoCommit(false);</span>
+<span class="fc" id="L1038">            log.debug(&quot;creating new TransactedConnection&quot;);</span>
+<span class="fc" id="L1039">            TransactedConnection c2 = new TransactedConnection(c);</span>
+<span class="fc" id="L1040">            connection.set(c2);</span>
+<span class="fc" id="L1041">            return c2;</span>
+        }
+    }
+
+    public static ConnectionProvider connectionProvider(DataSource dataSource) {
+<span class="fc" id="L1046">        return new ConnectionProvider() {</span>
+
+            @Override
+            public Connection get() {
+<span class="fc" id="L1050">                return getConnection(dataSource);</span>
+            }
+
+            @Override
+            public void close() {
+                // do nothing
+<span class="fc" id="L1056">            }</span>
+        };
+    }
+
+    @VisibleForTesting
+    static Connection getConnection(DataSource ds) {
+        try {
+<span class="fc" id="L1063">            return ds.getConnection();</span>
+<span class="fc" id="L1064">        } catch (SQLException e) {</span>
+<span class="fc" id="L1065">            throw new SQLRuntimeException(e);</span>
+        }
+    }
+
+    public static boolean hasCollection(List&lt;Parameter&gt; params) {
+<span class="fc" id="L1070">        return params.stream().anyMatch(x -&gt; x.isCollection());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
