@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ActorBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels</a> &gt; <span class="el_source">ActorBuilder.java</span></div><h1>ActorBuilder.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import com.github.davidmoten.reels.internal.ActorRefImpl;
+import com.github.davidmoten.reels.internal.Preconditions;
+import com.github.davidmoten.reels.internal.mailbox.MailboxImmediateFactory;
+import com.github.davidmoten.reels.internal.scheduler.SchedulerForkJoinPool;
+import com.github.davidmoten.reels.internal.scheduler.SchedulerImmediate;
+import com.github.davidmoten.reels.internal.util.Util;
+
+/**
+ * Builds an ActorRef.
+ * 
+ * @param &lt;T&gt; message type
+ */
+public final class ActorBuilder&lt;T&gt; {
+
+<span class="fc" id="L24">    private static final AtomicLong counter = new AtomicLong();</span>
+
+    private final Context context;
+<span class="fc" id="L27">    private final List&lt;Matcher&lt;T, ? extends T&gt;&gt; matches = new ArrayList&lt;&gt;();</span>
+    private Supervisor supervisor;
+    private Consumer&lt;? super Throwable&gt; onError;
+    private Scheduler scheduler;
+<span class="fc" id="L31">    private String name = &quot;Anonymous-&quot; + counter.incrementAndGet();</span>
+    private ActorRef&lt;?&gt; parent; // nullable
+<span class="fc" id="L33">    private Optional&lt;Supplier&lt;? extends Actor&lt;T&gt;&gt;&gt; factory = Optional.empty();</span>
+<span class="fc" id="L34">    private Consumer&lt;? super ActorRef&lt;T&gt;&gt; onStop = null;</span>
+<span class="fc" id="L35">    private Consumer&lt;? super ActorRef&lt;T&gt;&gt; preStart = null;</span>
+    private MailboxFactory mailboxFactory;
+
+<span class="fc" id="L38">    ActorBuilder(Context context) {</span>
+<span class="fc" id="L39">        this.context = context;</span>
+<span class="fc" id="L40">        this.parent = context.root;</span>
+<span class="fc" id="L41">    }</span>
+
+    public &lt;S extends T&gt; ActorBuilder&lt;T&gt; match(Class&lt;S&gt; matchClass, Consumer&lt;? super Message&lt;T&gt;&gt; consumer) {
+<span class="fc" id="L44">        Preconditions.checkArgumentNonNull(matchClass, &quot;matchClass&quot;);</span>
+<span class="fc" id="L45">        Preconditions.checkArgumentNonNull(consumer, &quot;consumer&quot;);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        Preconditions.checkArgument(!factory.isPresent(), &quot;cannot set both matches and factory in builder&quot;);</span>
+<span class="fc" id="L47">        matches.add(new Matcher&lt;T, S&gt;(matchClass, null, consumer));</span>
+<span class="fc" id="L48">        return this;</span>
+    }
+
+    public &lt;S extends T&gt; ActorBuilder&lt;T&gt; matchEquals(T value, Consumer&lt;? super Message&lt;T&gt;&gt; consumer) {
+<span class="fc" id="L52">        Preconditions.checkArgumentNonNull(value, &quot;value&quot;);</span>
+<span class="fc" id="L53">        Preconditions.checkArgumentNonNull(consumer, &quot;consumer&quot;);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        Preconditions.checkArgument(!factory.isPresent(), &quot;cannot set both matches and factory in builder&quot;);</span>
+<span class="fc" id="L55">        matches.add(new Matcher&lt;T, S&gt;(null, value, consumer));</span>
+<span class="fc" id="L56">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; actorClass(Class&lt;? extends Actor&lt;T&gt;&gt; actorClass, Object... args) {
+<span class="fc" id="L60">        Preconditions.checkArgumentNonNull(actorClass, &quot;actorClass&quot;);</span>
+<span class="fc" id="L61">        Preconditions.checkArgument(matches.isEmpty(), &quot;cannot set both matches and actorClass in builder&quot;);</span>
+<span class="fc" id="L62">        return actorFactory(() -&gt; Context.createActorObject(actorClass, args));</span>
+    }
+
+    public ActorBuilder&lt;T&gt; actorFactory(Supplier&lt;? extends Actor&lt;T&gt;&gt; factory) {
+<span class="fc" id="L66">        Preconditions.checkArgumentNonNull(factory, &quot;factory&quot;);</span>
+<span class="fc" id="L67">        Preconditions.checkArgument(matches.isEmpty(), &quot;cannot set both matches and factory in builder&quot;);</span>
+<span class="fc" id="L68">        this.factory = Optional.of(factory);</span>
+<span class="fc" id="L69">        return this;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public ActorBuilder&lt;T&gt; matchAny(Consumer&lt;? super Message&lt;T&gt;&gt; consumer) {
+<span class="fc" id="L74">        Preconditions.checkArgumentNonNull(consumer, &quot;consumer&quot;);</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        Preconditions.checkArgument(!factory.isPresent(), &quot;cannot set both matches and factory in builder&quot;);</span>
+<span class="fc" id="L76">        return match((Class&lt;T&gt;) Object.class, consumer);</span>
+    }
+
+    /**
+     * Sets the scheduler on which processing of messages for this Actor will be
+     * scheduled. The default scheduler is {@link SchedulerForkJoinPool#INSTANCE}.
+     * 
+     * @param scheduler
+     * @return builder
+     */
+    public ActorBuilder&lt;T&gt; scheduler(Scheduler scheduler) {
+<span class="fc" id="L87">        Preconditions.checkArgumentNonNull(scheduler, &quot;scheduler&quot;);</span>
+<span class="fc" id="L88">        this.scheduler = scheduler;</span>
+<span class="fc" id="L89">        return this;</span>
+    }
+
+    /**
+     * Sets the supervisor to be used for this Actor and for its child Actors (if
+     * another supervisor not specified).
+     * 
+     * @param supervisor supervisor to use
+     * @return builder
+     */
+    public ActorBuilder&lt;T&gt; supervisor(Supervisor supervisor) {
+<span class="fc" id="L100">        Preconditions.checkArgumentNonNull(supervisor, &quot;supervisor&quot;);</span>
+<span class="fc" id="L101">        this.supervisor = supervisor;</span>
+<span class="fc" id="L102">        return this;</span>
+    }
+
+    /**
+     * Sets unique name of the actor (should be unique amongst sibling Actors).
+     * 
+     * @param name unique name of the actor (should be unique amongst sibling
+     *             Actors).
+     * @return builder
+     */
+    public ActorBuilder&lt;T&gt; name(String name) {
+<span class="fc" id="L113">        Preconditions.checkArgumentNonNull(name, &quot;name&quot;);</span>
+<span class="fc" id="L114">        this.name = name;</span>
+<span class="fc" id="L115">        return this;</span>
+    }
+
+    /**
+     * Define what to do if one of the matchers throws.
+     * 
+     * @param onError what to do if one of the matchers throws.
+     * @return builder
+     */
+    public ActorBuilder&lt;T&gt; onError(Consumer&lt;? super Throwable&gt; onError) {
+<span class="fc" id="L125">        Preconditions.checkArgumentNonNull(onError, &quot;onError&quot;);</span>
+<span class="fc" id="L126">        this.onError = onError;</span>
+<span class="fc" id="L127">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; preStart(Consumer&lt;? super ActorRef&lt;T&gt;&gt; preStart) {
+<span class="fc" id="L131">        Preconditions.checkArgumentNonNull(preStart, &quot;preStart&quot;);</span>
+<span class="fc" id="L132">        this.preStart = preStart;</span>
+<span class="fc" id="L133">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; onStop(Consumer&lt;? super ActorRef&lt;T&gt;&gt; onStop) {
+<span class="fc" id="L137">        Preconditions.checkArgumentNonNull(onStop, &quot;onStop&quot;);</span>
+<span class="fc" id="L138">        this.onStop = onStop;</span>
+<span class="fc" id="L139">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; parent(ActorRef&lt;?&gt; parent) {
+<span class="fc" id="L143">        Preconditions.checkArgumentNonNull(parent, &quot;parent&quot;);</span>
+<span class="fc" id="L144">        this.parent = parent;</span>
+<span class="fc" id="L145">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; mailboxFactory(MailboxFactory mailboxFactory) {
+<span class="fc" id="L149">        Preconditions.checkArgumentNonNull(mailboxFactory, &quot;mailboxFactory&quot;);</span>
+<span class="fc" id="L150">        this.mailboxFactory = mailboxFactory;</span>
+<span class="fc" id="L151">        return this;</span>
+    }
+
+    public ActorBuilder&lt;T&gt; mailbox(Mailbox&lt;T&gt; mailbox) {
+<span class="nc" id="L155">        Preconditions.checkArgumentNonNull(mailbox, &quot;mailbox&quot;);</span>
+<span class="nc" id="L156">        return mailboxFactory(new MailboxFactory() {</span>
+
+            @SuppressWarnings(&quot;unchecked&quot;)
+            @Override
+            public &lt;S&gt; Mailbox&lt;S&gt; create() {
+<span class="nc" id="L161">                return (Mailbox&lt;S&gt;) mailbox;</span>
+            }
+
+        });
+    }
+
+    public ActorRef&lt;T&gt; build() {
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (supervisor == null) {</span>
+<span class="fc" id="L169">            supervisor = ((ActorRefImpl&lt;?&gt;) parent).supervisor();</span>
+        }
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (scheduler == null) {</span>
+<span class="fc" id="L172">            scheduler = parent.scheduler();</span>
+        }
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (mailboxFactory == null) {</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">            if (scheduler instanceof SchedulerImmediate) {</span>
+<span class="fc" id="L176">                mailboxFactory = MailboxImmediateFactory.INSTANCE;</span>
+            } else {
+<span class="fc" id="L178">                mailboxFactory = context.mailboxFactory();</span>
+            }
+        }
+<span class="fc" id="L181">        Supplier&lt;? extends Actor&lt;T&gt;&gt; f = factory.orElse(() -&gt; new MatchingActor&lt;T&gt;(matches, onError, preStart, onStop));</span>
+<span class="fc" id="L182">        return context.createActor(f, name, scheduler, supervisor, parent, mailboxFactory);</span>
+    }
+
+    private static final class Matcher&lt;T, S extends T&gt; {
+        final Class&lt;S&gt; matchClass;
+        final Object matchEquals;
+        final Consumer&lt;? super Message&lt;T&gt;&gt; consumer;
+
+<span class="fc" id="L190">        Matcher(Class&lt;S&gt; matchClass, Object matchEquals, Consumer&lt;? super Message&lt;T&gt;&gt; consumer) {</span>
+<span class="fc" id="L191">            this.matchClass = matchClass;</span>
+<span class="fc" id="L192">            this.matchEquals = matchEquals;</span>
+<span class="fc" id="L193">            this.consumer = consumer;</span>
+<span class="fc" id="L194">        }</span>
+    }
+
+    private static final class MatchingActor&lt;T&gt; implements Actor&lt;T&gt; {
+
+        private final List&lt;Matcher&lt;T, ? extends T&gt;&gt; matchers;
+        private final Consumer&lt;? super Throwable&gt; onError;
+        private final Consumer&lt;? super ActorRef&lt;T&gt;&gt; preStart;
+        private final Consumer&lt;? super ActorRef&lt;T&gt;&gt; onStop;
+
+        public MatchingActor(List&lt;Matcher&lt;T, ? extends T&gt;&gt; matchers, Consumer&lt;? super Throwable&gt; onError,
+<span class="fc" id="L205">                Consumer&lt;? super ActorRef&lt;T&gt;&gt; preStart, Consumer&lt;? super ActorRef&lt;T&gt;&gt; onStop) {</span>
+<span class="fc" id="L206">            this.matchers = matchers;</span>
+<span class="fc" id="L207">            this.onError = onError;</span>
+<span class="fc" id="L208">            this.preStart = preStart;</span>
+<span class="fc" id="L209">            this.onStop = onStop;</span>
+<span class="fc" id="L210">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        @Override
+        public void onMessage(Message&lt;T&gt; message) {
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            for (Matcher&lt;T, ? extends T&gt; matcher : matchers) {</span>
+<span class="fc bfc" id="L216" title="All 6 branches covered.">                if (matcher.matchEquals != null &amp;&amp; matcher.matchEquals.equals(message.content())</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                        || matcher.matchEquals == null &amp;&amp; matcher.matchClass.isInstance(message.content())) {</span>
+                    try {
+<span class="fc" id="L219">                        ((Matcher&lt;T, T&gt;) matcher).consumer.accept(message);</span>
+<span class="fc" id="L220">                    } catch (Throwable e) {</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">                        if (onError != null) {</span>
+<span class="fc" id="L222">                            onError.accept(e);</span>
+                        } else {
+<span class="nc" id="L224">                            Util.rethrow(e);</span>
+                        }
+<span class="fc" id="L226">                    }</span>
+<span class="fc" id="L227">                    return;</span>
+                }
+<span class="fc" id="L229">            }</span>
+<span class="fc" id="L230">        }</span>
+
+        @Override
+        public void preStart(ActorRef&lt;T&gt; self) {
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            if (preStart != null) {</span>
+<span class="fc" id="L235">                preStart.accept(self);</span>
+            }
+<span class="fc" id="L237">        }</span>
+
+        @Override
+        public void onStop(ActorRef&lt;T&gt; self) {
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            if (onStop != null) {</span>
+<span class="fc" id="L242">                onStop.accept(self);</span>
+            }
+<span class="fc" id="L244">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

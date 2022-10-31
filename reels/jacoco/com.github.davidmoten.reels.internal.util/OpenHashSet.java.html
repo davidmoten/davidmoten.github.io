@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenHashSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal.util</a> &gt; <span class="el_source">OpenHashSet.java</span></div><h1>OpenHashSet.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+/*
+ * Inspired by fastutils' OpenHashSet implementation at
+ * https://github.com/vigna/fastutil/blob/master/drv/OpenHashSet.drv
+ */
+
+package com.github.davidmoten.reels.internal.util;
+
+/**
+ * A simple open hash set with add, remove and clear capabilities only.
+ * &lt;p&gt;Doesn't support nor check for {@code null}s.
+ *
+ * @param &lt;T&gt; the element type
+ */
+public final class OpenHashSet&lt;T&gt; {
+    private static final int INT_PHI = 0x9E3779B9;
+
+    final float loadFactor;
+    int mask;
+    int size;
+    int maxSize;
+    T[] keys;
+
+    public OpenHashSet() {
+<span class="fc" id="L37">        this(16, 0.75f);</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Creates an OpenHashSet with the initial capacity and load factor of 0.75f.
+     * @param capacity the initial capacity
+     */
+    public OpenHashSet(int capacity) {
+<span class="fc" id="L45">        this(capacity, 0.75f);</span>
+<span class="fc" id="L46">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L49">    public OpenHashSet(int capacity, float loadFactor) {</span>
+<span class="fc" id="L50">        this.loadFactor = loadFactor;</span>
+<span class="fc" id="L51">        int c = Util.roundToPowerOfTwo(capacity);</span>
+<span class="fc" id="L52">        this.mask = c - 1;</span>
+<span class="fc" id="L53">        this.maxSize = (int)(loadFactor * c);</span>
+<span class="fc" id="L54">        this.keys = (T[])new Object[c];</span>
+<span class="fc" id="L55">    }</span>
+
+    public boolean add(T value) {
+<span class="fc" id="L58">        final T[] a = keys;</span>
+<span class="fc" id="L59">        final int m = mask;</span>
+
+<span class="fc" id="L61">        int pos = mix(value.hashCode()) &amp; m;</span>
+<span class="fc" id="L62">        T curr = a[pos];</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (curr != null) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (curr.equals(value)) {</span>
+<span class="fc" id="L65">                return false;</span>
+            }
+            for (;;) {
+<span class="fc" id="L68">                pos = (pos + 1) &amp; m;</span>
+<span class="fc" id="L69">                curr = a[pos];</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                if (curr == null) {</span>
+<span class="fc" id="L71">                    break;</span>
+                }
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                if (curr.equals(value)) {</span>
+<span class="nc" id="L74">                    return false;</span>
+                }
+            }
+        }
+<span class="fc" id="L78">        a[pos] = value;</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (++size &gt;= maxSize) {</span>
+<span class="fc" id="L80">            rehash();</span>
+        }
+<span class="fc" id="L82">        return true;</span>
+    }
+    public boolean remove(T value) {
+<span class="fc" id="L85">        T[] a = keys;</span>
+<span class="fc" id="L86">        int m = mask;</span>
+<span class="fc" id="L87">        int pos = mix(value.hashCode()) &amp; m;</span>
+<span class="fc" id="L88">        T curr = a[pos];</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (curr == null) {</span>
+<span class="fc" id="L90">            return false;</span>
+        }
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (curr.equals(value)) {</span>
+<span class="fc" id="L93">            return removeEntry(pos, a, m);</span>
+        }
+        for (;;) {
+<span class="fc" id="L96">            pos = (pos + 1) &amp; m;</span>
+<span class="fc" id="L97">            curr = a[pos];</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (curr == null) {</span>
+<span class="nc" id="L99">                return false;</span>
+            }
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (curr.equals(value)) {</span>
+<span class="fc" id="L102">                return removeEntry(pos, a, m);</span>
+            }
+        }
+    }
+
+    boolean removeEntry(int pos, T[] a, int m) {
+<span class="fc" id="L108">        size--;</span>
+
+        int last;
+        int slot;
+        T curr;
+        for (;;) {
+<span class="fc" id="L114">            last = pos;</span>
+<span class="fc" id="L115">            pos = (pos + 1) &amp; m;</span>
+            for (;;) {
+<span class="fc" id="L117">                curr = a[pos];</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (curr == null) {</span>
+<span class="fc" id="L119">                    a[last] = null;</span>
+<span class="fc" id="L120">                    return true;</span>
+                }
+<span class="fc" id="L122">                slot = mix(curr.hashCode()) &amp; m;</span>
+
+<span class="pc bpc" id="L124" title="8 of 10 branches missed.">                if (last &lt;= pos ? last &gt;= slot || slot &gt; pos : last &gt;= slot &amp;&amp; slot &gt; pos) {</span>
+<span class="nc" id="L125">                    break;</span>
+                }
+
+<span class="nc" id="L128">                pos = (pos + 1) &amp; m;</span>
+            }
+<span class="fc" id="L130">            a[last] = curr;</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    void rehash() {
+<span class="fc" id="L136">        T[] a = keys;</span>
+<span class="fc" id="L137">        int i = a.length;</span>
+<span class="fc" id="L138">        int newCap = i &lt;&lt; 1;</span>
+<span class="fc" id="L139">        int m = newCap - 1;</span>
+
+<span class="fc" id="L141">        T[] b = (T[])new Object[newCap];</span>
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (int j = size; j-- != 0; ) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            while (a[--i] == null) { } // NOPMD</span>
+<span class="fc" id="L145">            int pos = mix(a[i].hashCode()) &amp; m;</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (b[pos] != null) {</span>
+                for (;;) {
+<span class="fc" id="L148">                    pos = (pos + 1) &amp; m;</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                    if (b[pos] == null) {</span>
+<span class="fc" id="L150">                        break;</span>
+                    }
+                }
+            }
+<span class="fc" id="L154">            b[pos] = a[i];</span>
+<span class="fc" id="L155">        }</span>
+
+<span class="fc" id="L157">        this.mask = m;</span>
+<span class="fc" id="L158">        this.maxSize = (int)(newCap * loadFactor);</span>
+<span class="fc" id="L159">        this.keys = b;</span>
+<span class="fc" id="L160">    }</span>
+
+    static int mix(int x) {
+<span class="fc" id="L163">        final int h = x * INT_PHI;</span>
+<span class="fc" id="L164">        return h ^ (h &gt;&gt;&gt; 16);</span>
+    }
+
+    public Object[] keys() {
+<span class="fc" id="L168">        return keys; // NOPMD</span>
+    }
+
+    public int size() {
+<span class="fc" id="L172">        return size;</span>
+    }
+    
+    public boolean isEmpty() {
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        return size == 0;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L181">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        for (int i = 0; i &lt; keys.length; i++) {</span>
+<span class="fc" id="L183">            T v = keys[i];</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (v != null) {</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                if (b.length() &gt; 0) {</span>
+<span class="fc" id="L186">                    b.append(&quot;, &quot;);</span>
+                }
+<span class="fc" id="L188">                b.append(v);</span>
+            }
+        }
+<span class="fc" id="L191">        return &quot;Set[&quot; + b.toString() + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Supervisor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels</a> &gt; <span class="el_source">Supervisor.java</span></div><h1>Supervisor.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels;
+
+import com.github.davidmoten.reels.internal.supervisor.SupervisorDefault;
+
+@FunctionalInterface
+public interface Supervisor {
+
+    /**
+     * Processes an error thrown by {@link Actor#onMessage} or by
+     * {@link Actor#onStop} or by {@link Actor#preStart}.
+     * 
+     * &lt;p&gt;
+     * An error thrown by the {@link Actor#onStop} will be wrapped in an
+     * {@link OnStopException}.
+     * 
+     * &lt;p&gt;
+     * An error thrown by the {@link Actor#preStart} will be wrapped in a
+     * {@link PreStartException}.
+     * 
+     * &lt;P&gt;
+     * This method &lt;b&gt;must not throw&lt;/b&gt;.
+     * 
+     * &lt;p&gt;
+     * Note that because the method is provided with the actorRef, the dispose
+     * method can be called on the actorRef which will stop all further processing
+     * of messages including already queued ones. If the actorRef is not disposed
+     * then message processing will continue with subsequent messages as normal.
+     * 
+     * &lt;p&gt;
+     * A {@link SupervisedActorRef} can restart the actor (recreate the actor object
+     * which discards current state in the actor) but retain the queued messages.
+     * This should only be called synchronously in the processFailure method because
+     * of type safety constraints.
+     * 
+     * @param message  message the actor failed to process (includes context
+     *                 reference)
+     * @param self reference to the actor where the error occurred
+     * @param error    the error throw in the Actor.onMessage method. Wrapped in
+     *                 OnStopException if thrown by onStop method, or
+     *                 PreStartException if thrown by the preStart method.
+     */
+    void processFailure(Message&lt;?&gt; message, SupervisedActorRef&lt;?&gt; self, Throwable error);
+
+    static Supervisor defaultSupervisor() {
+<span class="fc" id="L45">        return SupervisorDefault.INSTANCE;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

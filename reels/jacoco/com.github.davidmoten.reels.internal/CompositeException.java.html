@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal</a> &gt; <span class="el_source">CompositeException.java</span></div><h1>CompositeException.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+package com.github.davidmoten.reels.internal;
+
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Represents an exception that is a composite of one or more other exceptions. A {@code CompositeException}
+ * does not modify the structure of any exception it wraps, but at print-time it iterates through the list of
+ * Throwables contained in the composite in order to print them all.
+ *
+ * Its invariant is to contain an immutable, ordered (by insertion order), unique list of non-composite
+ * exceptions. You can retrieve individual exceptions in this list with {@link #getExceptions()}.
+ *
+ * The {@link #printStackTrace()} implementation handles the StackTrace in a customized way instead of using
+ * {@code getCause()} so that it can avoid circular references.
+ *
+ * If you invoke {@link #getCause()}, it will lazily create the causal chain but will stop if it finds any
+ * Throwable in the chain that it has already seen.
+ */
+public final class CompositeException extends RuntimeException {
+
+    private static final long serialVersionUID = 3026362227162912146L;
+
+    private final List&lt;Throwable&gt; exceptions;
+    private final String message;
+    private Throwable cause;
+
+    /**
+     * Constructs a CompositeException with the given array of Throwables as the
+     * list of suppressed exceptions.
+     * @param exceptions the Throwables to have as initially suppressed exceptions
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;exceptions&lt;/code&gt; is empty.
+     */
+    public CompositeException( Throwable... exceptions) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        this(exceptions == null ?</span>
+<span class="fc" id="L58">                Collections.singletonList(new NullPointerException(&quot;exceptions was null&quot;)) : Arrays.asList(exceptions));</span>
+<span class="fc" id="L59">    }</span>
+
+    /**
+     * Constructs a CompositeException with the given array of Throwables as the
+     * list of suppressed exceptions.
+     * @param errors the Throwables to have as initially suppressed exceptions
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;errors&lt;/code&gt; is empty.
+     */
+<span class="fc" id="L68">    public CompositeException( Iterable&lt;? extends Throwable&gt; errors) {</span>
+<span class="fc" id="L69">        Set&lt;Throwable&gt; deDupedExceptions = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (errors != null) {</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            for (Throwable ex : errors) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (ex instanceof CompositeException) {</span>
+<span class="fc" id="L73">                    deDupedExceptions.addAll(((CompositeException) ex).getExceptions());</span>
+                } else
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                if (ex != null) {</span>
+<span class="fc" id="L76">                    deDupedExceptions.add(ex);</span>
+                } else {
+<span class="fc" id="L78">                    deDupedExceptions.add(new NullPointerException(&quot;Throwable was null!&quot;));</span>
+                }
+<span class="fc" id="L80">            }</span>
+        } else {
+<span class="fc" id="L82">            deDupedExceptions.add(new NullPointerException(&quot;errors was null&quot;));</span>
+        }
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (deDupedExceptions.isEmpty()) {</span>
+<span class="fc" id="L85">            throw new IllegalArgumentException(&quot;errors is empty&quot;);</span>
+        }
+<span class="fc" id="L87">        List&lt;Throwable&gt; localExceptions = new ArrayList&lt;&gt;(deDupedExceptions);</span>
+<span class="fc" id="L88">        this.exceptions = Collections.unmodifiableList(localExceptions);</span>
+<span class="fc" id="L89">        this.message = exceptions.size() + &quot; exceptions occurred. &quot;;</span>
+<span class="fc" id="L90">    }</span>
+
+    /**
+     * Retrieves the list of exceptions that make up the {@code CompositeException}.
+     *
+     * @return the exceptions that make up the {@code CompositeException}, as a {@link List} of {@link Throwable}s
+     */
+    
+    public List&lt;Throwable&gt; getExceptions() {
+<span class="fc" id="L99">        return exceptions;</span>
+    }
+
+    @Override
+    
+    public String getMessage() {
+<span class="fc" id="L105">        return message;</span>
+    }
+
+    @Override
+    
+    public synchronized Throwable getCause() { // NOPMD
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (cause == null) {</span>
+<span class="fc" id="L112">            String separator = System.getProperty(&quot;line.separator&quot;);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (exceptions.size() &gt; 1) {</span>
+<span class="fc" id="L114">                Map&lt;Throwable, Boolean&gt; seenCauses = new IdentityHashMap&lt;&gt;();</span>
+
+<span class="fc" id="L116">                StringBuilder aggregateMessage = new StringBuilder();</span>
+<span class="fc" id="L117">                aggregateMessage.append(&quot;Multiple exceptions (&quot;).append(exceptions.size()).append(&quot;)&quot;).append(separator);</span>
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                for (Throwable inner : exceptions) {</span>
+<span class="fc" id="L120">                    int depth = 0;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                    while (inner != null) {</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                        for (int i = 0; i &lt; depth; i++) {</span>
+<span class="fc" id="L123">                            aggregateMessage.append(&quot;  &quot;);</span>
+                        }
+<span class="fc" id="L125">                        aggregateMessage.append(&quot;|-- &quot;);</span>
+<span class="fc" id="L126">                        aggregateMessage.append(inner.getClass().getCanonicalName()).append(&quot;: &quot;);</span>
+<span class="fc" id="L127">                        String innerMessage = inner.getMessage();</span>
+<span class="fc bfc" id="L128" title="All 4 branches covered.">                        if (innerMessage != null &amp;&amp; innerMessage.contains(separator)) {</span>
+<span class="fc" id="L129">                            aggregateMessage.append(separator);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                            for (String line : innerMessage.split(separator)) {</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                                for (int i = 0; i &lt; depth + 2; i++) {</span>
+<span class="fc" id="L132">                                    aggregateMessage.append(&quot;  &quot;);</span>
+                                }
+<span class="fc" id="L134">                                aggregateMessage.append(line).append(separator);</span>
+                            }
+                        } else {
+<span class="fc" id="L137">                            aggregateMessage.append(innerMessage);</span>
+<span class="fc" id="L138">                            aggregateMessage.append(separator);</span>
+                        }
+
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                        for (int i = 0; i &lt; depth + 2; i++) {</span>
+<span class="fc" id="L142">                            aggregateMessage.append(&quot;  &quot;);</span>
+                        }
+<span class="fc" id="L144">                        StackTraceElement[] st = inner.getStackTrace();</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                        if (st.length &gt; 0) {</span>
+<span class="fc" id="L146">                            aggregateMessage.append(&quot;at &quot;).append(st[0]).append(separator);</span>
+                        }
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                        if (!seenCauses.containsKey(inner)) {</span>
+<span class="fc" id="L150">                            seenCauses.put(inner, true);</span>
+
+<span class="fc" id="L152">                            inner = inner.getCause();</span>
+<span class="fc" id="L153">                            depth++;</span>
+                        } else {
+<span class="fc" id="L155">                            inner = inner.getCause();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                            if (inner != null) {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                                for (int i = 0; i &lt; depth + 2; i++) {</span>
+<span class="fc" id="L158">                                    aggregateMessage.append(&quot;  &quot;);</span>
+                                }
+<span class="fc" id="L160">                                aggregateMessage.append(&quot;|-- &quot;);</span>
+<span class="fc" id="L161">                                aggregateMessage.append(&quot;(cause not expanded again) &quot;);</span>
+<span class="fc" id="L162">                                aggregateMessage.append(inner.getClass().getCanonicalName()).append(&quot;: &quot;);</span>
+<span class="fc" id="L163">                                aggregateMessage.append(inner.getMessage());</span>
+<span class="fc" id="L164">                                aggregateMessage.append(separator);</span>
+                            }
+                            break;
+                        }
+<span class="fc" id="L168">                    }</span>
+<span class="fc" id="L169">                }</span>
+
+<span class="fc" id="L171">                cause = new ExceptionOverview(aggregateMessage.toString().trim());</span>
+<span class="fc" id="L172">            } else {</span>
+<span class="fc" id="L173">                cause = exceptions.get(0);</span>
+            }
+        }
+<span class="fc" id="L176">        return cause;</span>
+    }
+
+    /**
+     * All of the following {@code printStackTrace} functionality is derived from JDK {@link Throwable}
+     * {@code printStackTrace}. In particular, the {@code PrintStreamOrWriter} abstraction is copied wholesale.
+     *
+     * Changes from the official JDK implementation:&lt;ul&gt;
+     * &lt;li&gt;no infinite loop detection&lt;/li&gt;
+     * &lt;li&gt;smaller critical section holding {@link PrintStream} lock&lt;/li&gt;
+     * &lt;li&gt;explicit knowledge about the exceptions {@link List} that this loops through&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    @Override
+    public void printStackTrace() {
+<span class="fc" id="L191">        printStackTrace(System.err);</span>
+<span class="fc" id="L192">    }</span>
+
+    @Override
+    public void printStackTrace(PrintStream s) {
+<span class="fc" id="L196">        printStackTrace(new WrappedPrintStream(s));</span>
+<span class="fc" id="L197">    }</span>
+
+    @Override
+    public void printStackTrace(PrintWriter s) {
+<span class="fc" id="L201">        printStackTrace(new WrappedPrintWriter(s));</span>
+<span class="fc" id="L202">    }</span>
+
+    /**
+     * Special handling for printing out a {@code CompositeException}.
+     * Loops through all inner exceptions and prints them out.
+     *
+     * @param output
+     *            stream to print to
+     */
+    private void printStackTrace(PrintStreamOrWriter output) {
+<span class="fc" id="L212">        output.append(this).append(&quot;\n&quot;);</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        for (StackTraceElement myStackElement : getStackTrace()) {</span>
+<span class="fc" id="L214">            output.append(&quot;\tat &quot;).append(myStackElement).append(&quot;\n&quot;);</span>
+        }
+<span class="fc" id="L216">        int i = 1;</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        for (Throwable ex : exceptions) {</span>
+<span class="fc" id="L218">            output.append(&quot;  ComposedException &quot;).append(i).append(&quot; :\n&quot;);</span>
+<span class="fc" id="L219">            appendStackTrace(output, ex, &quot;\t&quot;);</span>
+<span class="fc" id="L220">            i++;</span>
+<span class="fc" id="L221">        }</span>
+<span class="fc" id="L222">        output.append(&quot;\n&quot;);</span>
+<span class="fc" id="L223">    }</span>
+
+    private void appendStackTrace(PrintStreamOrWriter output, Throwable ex, String prefix) {
+<span class="fc" id="L226">        output.append(prefix).append(ex).append('\n');</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        for (StackTraceElement stackElement : ex.getStackTrace()) {</span>
+<span class="fc" id="L228">            output.append(&quot;\t\tat &quot;).append(stackElement).append('\n');</span>
+        }
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        if (ex.getCause() != null) {</span>
+<span class="fc" id="L231">            output.append(&quot;\tCaused by: &quot;);</span>
+<span class="fc" id="L232">            appendStackTrace(output, ex.getCause(), &quot;&quot;);</span>
+        }
+<span class="fc" id="L234">    }</span>
+
+<span class="fc" id="L236">    abstract static class PrintStreamOrWriter {</span>
+        /**
+         * Prints the object's string representation via the underlying PrintStream or PrintWriter.
+         * @param o the object to print
+         * @return this
+         */
+        abstract PrintStreamOrWriter append(Object o);
+    }
+
+    /**
+     * Same abstraction and implementation as in JDK to allow PrintStream and PrintWriter to share implementation.
+     */
+    static final class WrappedPrintStream extends PrintStreamOrWriter {
+        private final PrintStream printStream;
+
+<span class="fc" id="L251">        WrappedPrintStream(PrintStream printStream) {</span>
+<span class="fc" id="L252">            this.printStream = printStream;</span>
+<span class="fc" id="L253">        }</span>
+
+        @Override
+        WrappedPrintStream append(Object o) {
+<span class="fc" id="L257">            printStream.print(o);</span>
+<span class="fc" id="L258">            return this;</span>
+        }
+    }
+
+    /**
+     * Same abstraction and implementation as in JDK to allow PrintStream and PrintWriter to share implementation.
+     */
+    static final class WrappedPrintWriter extends PrintStreamOrWriter {
+        private final PrintWriter printWriter;
+
+<span class="fc" id="L268">        WrappedPrintWriter(PrintWriter printWriter) {</span>
+<span class="fc" id="L269">            this.printWriter = printWriter;</span>
+<span class="fc" id="L270">        }</span>
+
+        @Override
+        WrappedPrintWriter append(Object o) {
+<span class="fc" id="L274">            printWriter.print(o);</span>
+<span class="fc" id="L275">            return this;</span>
+        }
+    }
+
+    /**
+     * Contains a formatted message with a simplified representation of the exception graph
+     * contained within the CompositeException.
+     */
+    static final class ExceptionOverview extends RuntimeException {
+
+        private static final long serialVersionUID = 3875212506787802066L;
+
+        ExceptionOverview(String message) {
+<span class="fc" id="L288">            super(message);</span>
+<span class="fc" id="L289">        }</span>
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+<span class="fc" id="L293">            return this;</span>
+        }
+    }
+
+    /**
+     * Returns the number of suppressed exceptions.
+     * @return the number of suppressed exceptions
+     */
+    public int size() {
+<span class="fc" id="L302">        return exceptions.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

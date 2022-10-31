@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeDisposable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal</a> &gt; <span class="el_source">CompositeDisposable.java</span></div><h1>CompositeDisposable.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+package com.github.davidmoten.reels.internal;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import com.github.davidmoten.reels.Disposable;
+import com.github.davidmoten.reels.internal.util.OpenHashSet;
+
+/**
+ * A disposable container that can hold onto multiple other {@link Disposable}s
+ * and offers &lt;em&gt;O(1)&lt;/em&gt; time complexity for {@link #add(Disposable)},
+ * {@link #remove(Disposable)} and {@link #delete(Disposable)} operations.
+ */
+public final class CompositeDisposable implements Disposable, DisposableContainer {
+
+    OpenHashSet&lt;Disposable&gt; resources;
+
+    volatile boolean disposed;
+
+    /**
+     * Creates an empty {@code CompositeDisposable}.
+     */
+<span class="fc" id="L37">    public CompositeDisposable() {</span>
+<span class="fc" id="L38">    }</span>
+
+    /**
+     * Creates a {@code CompositeDisposable} with the given array of initial
+     * {@link Disposable} elements.
+     * 
+     * @param disposables the array of {@code Disposable}s to start with
+     * @throws NullPointerException if {@code disposables} or any of its array items
+     *                              is {@code null}
+     */
+<span class="fc" id="L48">    public CompositeDisposable(Disposable... disposables) {</span>
+<span class="fc" id="L49">        Objects.requireNonNull(disposables, &quot;disposables is null&quot;);</span>
+<span class="fc" id="L50">        this.resources = new OpenHashSet&lt;&gt;(disposables.length + 1);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (Disposable d : disposables) {</span>
+<span class="fc" id="L52">            Objects.requireNonNull(d, &quot;A Disposable in the disposables array is null&quot;);</span>
+<span class="fc" id="L53">            this.resources.add(d);</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * Creates a {@code CompositeDisposable} with the given {@link Iterable}
+     * sequence of initial {@link Disposable} elements.
+     * 
+     * @param disposables the {@code Iterable} sequence of {@code Disposable} to
+     *                    start with
+     * @throws NullPointerException if {@code disposables} or any of its items is
+     *                              {@code null}
+     */
+<span class="fc" id="L66">    public CompositeDisposable(Iterable&lt;? extends Disposable&gt; disposables) {</span>
+<span class="fc" id="L67">        Objects.requireNonNull(disposables, &quot;disposables is null&quot;);</span>
+<span class="fc" id="L68">        this.resources = new OpenHashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for (Disposable d : disposables) {</span>
+<span class="fc" id="L70">            Objects.requireNonNull(d, &quot;A Disposable item in the disposables sequence is null&quot;);</span>
+<span class="fc" id="L71">            this.resources.add(d);</span>
+<span class="fc" id="L72">        }</span>
+<span class="fc" id="L73">    }</span>
+
+    @Override
+    public void dispose() {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (disposed) {</span>
+<span class="fc" id="L78">            return;</span>
+        }
+        OpenHashSet&lt;Disposable&gt; set;
+<span class="fc" id="L81">        synchronized (this) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (disposed) {</span>
+<span class="fc" id="L83">                return;</span>
+            }
+<span class="fc" id="L85">            disposed = true;</span>
+<span class="fc" id="L86">            set = resources;</span>
+<span class="fc" id="L87">            resources = null;</span>
+<span class="fc" id="L88">        }</span>
+
+<span class="fc" id="L90">        dispose(set);</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * Adds a {@link Disposable} to this container or disposes it if the container
+     * has been disposed.
+     * 
+     * @param disposable the {@code Disposable} to add, not {@code null}
+     * @return {@code true} if successful, {@code false} if this container has been
+     *         disposed
+     * @throws NullPointerException if {@code disposable} is {@code null}
+     */
+    @Override
+    public boolean add(Disposable disposable) {
+<span class="fc" id="L104">        Objects.requireNonNull(disposable, &quot;disposable is null&quot;);</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (!disposed) {</span>
+<span class="fc" id="L106">            synchronized (this) {</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                if (!disposed) {</span>
+<span class="fc" id="L108">                    OpenHashSet&lt;Disposable&gt; set = resources;</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                    if (set == null) {</span>
+<span class="fc" id="L110">                        set = new OpenHashSet&lt;&gt;();</span>
+<span class="fc" id="L111">                        resources = set;</span>
+                    }
+<span class="fc" id="L113">                    set.add(disposable);</span>
+<span class="fc" id="L114">                    return true;</span>
+                }
+<span class="nc" id="L116">            }</span>
+        }
+<span class="fc" id="L118">        disposable.dispose();</span>
+<span class="fc" id="L119">        return false;</span>
+    }
+
+    /**
+     * Atomically adds the given array of {@link Disposable}s to the container or
+     * disposes them all if the container has been disposed.
+     * 
+     * @param disposables the array of {@code Disposable}s
+     * @return {@code true} if the operation was successful, {@code false} if the
+     *         container has been disposed
+     * @throws NullPointerException if {@code disposables} or any of its array items
+     *                              is {@code null}
+     */
+    public boolean addAll(Disposable... disposables) {
+<span class="fc" id="L133">        Objects.requireNonNull(disposables, &quot;disposables is null&quot;);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (!disposed) {</span>
+<span class="fc" id="L135">            synchronized (this) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                if (!disposed) {</span>
+<span class="fc" id="L137">                    OpenHashSet&lt;Disposable&gt; set = resources;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                    if (set == null) {</span>
+<span class="fc" id="L139">                        set = new OpenHashSet&lt;&gt;(disposables.length + 1);</span>
+<span class="fc" id="L140">                        resources = set;</span>
+                    }
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                    for (Disposable d : disposables) {</span>
+<span class="fc" id="L143">                        Objects.requireNonNull(d, &quot;A Disposable in the disposables array is null&quot;);</span>
+<span class="fc" id="L144">                        set.add(d);</span>
+                    }
+<span class="fc" id="L146">                    return true;</span>
+                }
+<span class="nc" id="L148">            }</span>
+        }
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (Disposable d : disposables) {</span>
+<span class="fc" id="L151">            d.dispose();</span>
+        }
+<span class="fc" id="L153">        return false;</span>
+    }
+
+    /**
+     * Removes and disposes the given {@link Disposable} if it is part of this
+     * container.
+     * 
+     * @param disposable the disposable to remove and dispose, not {@code null}
+     * @return {@code true} if the operation was successful
+     * @throws NullPointerException if {@code disposable} is {@code null}
+     */
+    @Override
+    public boolean remove(Disposable disposable) {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (delete(disposable)) {</span>
+<span class="fc" id="L167">            disposable.dispose();</span>
+<span class="fc" id="L168">            return true;</span>
+        }
+<span class="fc" id="L170">        return false;</span>
+    }
+
+    /**
+     * Removes (but does not dispose) the given {@link Disposable} if it is part of
+     * this container.
+     * 
+     * @param disposable the disposable to remove, not {@code null}
+     * @return {@code true} if the operation was successful
+     * @throws NullPointerException if {@code disposable} is {@code null}
+     */
+    @Override
+    public boolean delete(Disposable disposable) {
+<span class="fc" id="L183">        Objects.requireNonNull(disposable, &quot;disposable is null&quot;);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (disposed) {</span>
+<span class="fc" id="L185">            return false;</span>
+        }
+<span class="fc" id="L187">        synchronized (this) {</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (disposed) {</span>
+<span class="fc" id="L189">                return false;</span>
+            }
+
+<span class="fc" id="L192">            OpenHashSet&lt;Disposable&gt; set = resources;</span>
+<span class="fc bfc" id="L193" title="All 4 branches covered.">            if (set == null || !set.remove(disposable)) {</span>
+<span class="fc" id="L194">                return false;</span>
+            }
+<span class="fc" id="L196">        }</span>
+<span class="fc" id="L197">        return true;</span>
+    }
+
+    /**
+     * Atomically clears the container, then disposes all the previously contained
+     * {@link Disposable}s.
+     */
+    public void clear() {
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        if (disposed) {</span>
+<span class="fc" id="L206">            return;</span>
+        }
+        OpenHashSet&lt;Disposable&gt; set;
+<span class="fc" id="L209">        synchronized (this) {</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            if (disposed) {</span>
+<span class="fc" id="L211">                return;</span>
+            }
+
+<span class="fc" id="L214">            set = resources;</span>
+<span class="fc" id="L215">            resources = null;</span>
+<span class="fc" id="L216">        }</span>
+
+<span class="fc" id="L218">        dispose(set);</span>
+<span class="fc" id="L219">    }</span>
+
+    /**
+     * Returns the number of currently held {@link Disposable}s.
+     * 
+     * @return the number of currently held {@code Disposable}s
+     */
+    public int size() {
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (disposed) {</span>
+<span class="fc" id="L228">            return 0;</span>
+        }
+<span class="fc" id="L230">        synchronized (this) {</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (disposed) {</span>
+<span class="fc" id="L232">                return 0;</span>
+            }
+<span class="fc" id="L234">            OpenHashSet&lt;Disposable&gt; set = resources;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            return set != null ? set.size() : 0;</span>
+        }
+    }
+
+    /**
+     * Dispose the contents of the {@link OpenHashSet} by suppressing non-fatal
+     * {@link Throwable}s till the end.
+     * 
+     * @param set the {@code OpenHashSet} to dispose elements of
+     */
+    void dispose(OpenHashSet&lt;Disposable&gt; set) {
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (set == null) {</span>
+<span class="fc" id="L247">            return;</span>
+        }
+<span class="fc" id="L249">        List&lt;Throwable&gt; errors = null;</span>
+<span class="fc" id="L250">        Object[] array = set.keys();</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        for (Object o : array) {</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if (o instanceof Disposable) {</span>
+                try {
+<span class="fc" id="L254">                    ((Disposable) o).dispose();</span>
+<span class="fc" id="L255">                } catch (Throwable ex) {</span>
+<span class="fc" id="L256">                    Exceptions.throwIfFatal(ex);</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">                    if (errors == null) {</span>
+<span class="fc" id="L258">                        errors = new ArrayList&lt;&gt;();</span>
+                    }
+<span class="fc" id="L260">                    errors.add(ex);</span>
+<span class="fc" id="L261">                }</span>
+            }
+        }
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        if (errors != null) {</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">            if (errors.size() == 1) {</span>
+<span class="fc" id="L266">                throw Exceptions.wrapOrThrow(errors.get(0));</span>
+            }
+<span class="fc" id="L268">            throw new CompositeException(errors);</span>
+        }
+<span class="fc" id="L270">    }</span>
+    
+    @Override
+    public boolean isDisposed() {
+<span class="fc" id="L274">        return disposed;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

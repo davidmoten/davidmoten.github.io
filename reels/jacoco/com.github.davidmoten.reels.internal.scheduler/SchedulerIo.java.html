@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SchedulerIo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal.scheduler</a> &gt; <span class="el_source">SchedulerIo.java</span></div><h1>SchedulerIo.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+package com.github.davidmoten.reels.internal.scheduler;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.github.davidmoten.reels.Disposable;
+import com.github.davidmoten.reels.Scheduler;
+import com.github.davidmoten.reels.Worker;
+import com.github.davidmoten.reels.internal.CompositeDisposable;
+import com.github.davidmoten.reels.internal.Preconditions;
+
+/**
+ * Scheduler that creates and caches a set of thread pools and reuses them if
+ * possible.
+ */
+public final class SchedulerIo extends AbstractCanScheduleDisposable implements Scheduler {
+
+    private static final String WORKER_THREAD_NAME_PREFIX = &quot;ReelsIo&quot;;
+    private static final String EVICTOR_THREAD_NAME_PREFIX = &quot;ReelsIoEvictor&quot;;
+<span class="fc" id="L39">    private static final ThreadFactory WORKER_THREAD_FACTORY = SchedulerHelper</span>
+<span class="fc" id="L40">            .createThreadFactory(WORKER_THREAD_NAME_PREFIX);</span>
+<span class="fc" id="L41">    private static final ThreadFactory EVICTOR_THREAD_FACTORY = SchedulerHelper</span>
+<span class="fc" id="L42">            .createThreadFactory(EVICTOR_THREAD_NAME_PREFIX);</span>
+
+    /**
+     * The name of the system property for setting the keep-alive time (in seconds)
+     * for this Scheduler workers.
+     */
+    private static final String KEY_KEEP_ALIVE_TIME = &quot;reels.io.keep.alive.time.seconds&quot;;
+    public static final long KEEP_ALIVE_TIME_DEFAULT = 60;
+<span class="fc" id="L50">    private static final TimeUnit KEEP_ALIVE_UNIT = TimeUnit.SECONDS;</span>
+<span class="fc" id="L51">    private static final long KEEP_ALIVE_TIME = Long.getLong(KEY_KEEP_ALIVE_TIME, KEEP_ALIVE_TIME_DEFAULT);</span>
+<span class="fc" id="L52">    private static final ThreadWorker SHUTDOWN_THREAD_WORKER = createShutdownWorker();</span>
+    private final ThreadFactory threadFactory;
+    private final AtomicReference&lt;CachedWorkerPool&gt; pool;
+<span class="fc" id="L55">    private static final CachedWorkerPool NONE = createEmptyCachedWorkerPool();</span>
+
+<span class="fc" id="L57">    public static final SchedulerIo INSTANCE = new SchedulerIo();</span>
+
+    private SchedulerIo() {
+<span class="fc" id="L60">        this(WORKER_THREAD_FACTORY);</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Constructs an IoScheduler with the given thread factory and starts the pool
+     * of workers.
+     * 
+     * @param threadFactory thread factory to use for creating worker threads. Note
+     *                      that this takes precedence over any system properties
+     *                      for configuring new thread creation. Cannot be null.
+     */
+<span class="fc" id="L71">    private SchedulerIo(ThreadFactory threadFactory) {</span>
+<span class="fc" id="L72">        Preconditions.checkArgumentNonNull(threadFactory, &quot;threadFactory&quot;);</span>
+<span class="fc" id="L73">        this.threadFactory = threadFactory;</span>
+<span class="fc" id="L74">        this.pool = new AtomicReference&lt;&gt;(NONE);</span>
+<span class="fc" id="L75">        start();</span>
+<span class="fc" id="L76">    }</span>
+
+    static final class CachedWorkerPool implements Runnable {
+        private final long keepAliveTime;
+        private final ConcurrentLinkedQueue&lt;ThreadWorker&gt; expiringWorkerQueue;
+        private final CompositeDisposable allWorkers;
+        private final ScheduledExecutorService evictorService;
+        private final Future&lt;?&gt; evictorTask;
+        private final ThreadFactory threadFactory;
+
+<span class="fc" id="L86">        CachedWorkerPool(long keepAliveTime, TimeUnit unit, ThreadFactory threadFactory) {</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            this.keepAliveTime = unit != null ? unit.toNanos(keepAliveTime) : 0L;</span>
+<span class="fc" id="L88">            this.expiringWorkerQueue = new ConcurrentLinkedQueue&lt;&gt;();</span>
+<span class="fc" id="L89">            this.allWorkers = new CompositeDisposable();</span>
+<span class="fc" id="L90">            this.threadFactory = threadFactory;</span>
+
+<span class="fc" id="L92">            ScheduledExecutorService evictor = null;</span>
+<span class="fc" id="L93">            Future&lt;?&gt; task = null;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (unit != null) {</span>
+<span class="fc" id="L95">                evictor = Executors.newScheduledThreadPool(1, EVICTOR_THREAD_FACTORY);</span>
+<span class="fc" id="L96">                task = evictor.scheduleWithFixedDelay(this, this.keepAliveTime, this.keepAliveTime,</span>
+                        TimeUnit.NANOSECONDS);
+            }
+<span class="fc" id="L99">            evictorService = evictor;</span>
+<span class="fc" id="L100">            evictorTask = task;</span>
+<span class="fc" id="L101">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L105">            evictExpiredWorkers(expiringWorkerQueue, allWorkers);</span>
+<span class="nc" id="L106">        }</span>
+
+        ThreadWorker get() {
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (allWorkers.isDisposed()) {</span>
+<span class="nc" id="L110">                return SHUTDOWN_THREAD_WORKER;</span>
+            }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            while (!expiringWorkerQueue.isEmpty()) {</span>
+<span class="fc" id="L113">                ThreadWorker threadWorker = expiringWorkerQueue.poll();</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                if (threadWorker != null) {</span>
+<span class="fc" id="L115">                    return threadWorker;</span>
+                }
+<span class="nc" id="L117">            }</span>
+
+            // No cached worker found, so create a new one.
+<span class="fc" id="L120">            ThreadWorker w = new ThreadWorker(threadFactory);</span>
+<span class="fc" id="L121">            allWorkers.add(w);</span>
+<span class="fc" id="L122">            return w;</span>
+        }
+
+        void release(ThreadWorker threadWorker) {
+            // Refresh expire time before putting worker back in pool
+<span class="fc" id="L127">            threadWorker.setExpirationTime(now() + keepAliveTime);</span>
+<span class="fc" id="L128">            expiringWorkerQueue.offer(threadWorker);</span>
+<span class="fc" id="L129">        }</span>
+
+        static void evictExpiredWorkers(ConcurrentLinkedQueue&lt;ThreadWorker&gt; expiringWorkerQueue,
+                CompositeDisposable allWorkers) {
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (!expiringWorkerQueue.isEmpty()) {</span>
+<span class="nc" id="L134">                long currentTimestamp = now();</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                for (ThreadWorker threadWorker : expiringWorkerQueue) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                    if (threadWorker.getExpirationTime() &lt;= currentTimestamp) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">                        if (expiringWorkerQueue.remove(threadWorker)) {</span>
+<span class="nc" id="L139">                            allWorkers.remove(threadWorker);</span>
+                        }
+                    } else {
+                        // Queue is ordered with the worker that will expire first in the beginning, so
+                        // when we find a non-expired worker we can stop evicting.
+                        break;
+                    }
+<span class="nc" id="L146">                }</span>
+            }
+<span class="nc" id="L148">        }</span>
+
+        static long now() {
+<span class="fc" id="L151">            return System.nanoTime();</span>
+        }
+
+        void shutdown() {
+<span class="fc" id="L155">            allWorkers.dispose();</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            if (evictorTask != null) {</span>
+<span class="nc" id="L157">                evictorTask.cancel(true);</span>
+            }
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (evictorService != null) {</span>
+<span class="nc" id="L160">                evictorService.shutdownNow();</span>
+            }
+<span class="fc" id="L162">        }</span>
+    }
+
+    private void start() {
+<span class="fc" id="L166">        CachedWorkerPool update = new CachedWorkerPool(KEEP_ALIVE_TIME, KEEP_ALIVE_UNIT, threadFactory);</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (!pool.compareAndSet(NONE, update)) {</span>
+<span class="nc" id="L168">            update.shutdown();</span>
+        }
+<span class="fc" id="L170">    }</span>
+
+    @Override
+    public void shutdown() {
+<span class="nc" id="L174">        CachedWorkerPool curr = pool.getAndSet(NONE);</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (curr != NONE) {</span>
+<span class="nc" id="L176">            curr.shutdown();</span>
+        }
+<span class="nc" id="L178">    }</span>
+
+    @Override
+    public Worker createWorker() {
+<span class="fc" id="L182">        return new EventLoopWorker(pool.get());</span>
+    }
+
+    public int size() {
+<span class="nc" id="L186">        return pool.get().allWorkers.size();</span>
+    }
+
+    static final class EventLoopWorker extends AbstractCanScheduleDisposable implements Worker {
+        private final CompositeDisposable tasks;
+        private final CachedWorkerPool pool;
+        private final ThreadWorker threadWorker;
+<span class="fc" id="L193">        private final AtomicBoolean once = new AtomicBoolean();</span>
+
+<span class="fc" id="L195">        EventLoopWorker(CachedWorkerPool pool) {</span>
+<span class="fc" id="L196">            this.pool = pool;</span>
+<span class="fc" id="L197">            this.tasks = new CompositeDisposable();</span>
+<span class="fc" id="L198">            this.threadWorker = pool.get();</span>
+<span class="fc" id="L199">        }</span>
+
+        @Override
+        public void dispose() {
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            if (once.compareAndSet(false, true)) {</span>
+<span class="fc" id="L204">                tasks.dispose();</span>
+
+                // releasing the pool should be the last action
+<span class="fc" id="L207">                pool.release(threadWorker);</span>
+            }
+<span class="fc" id="L209">        }</span>
+
+        @Override
+        public boolean isDisposed() {
+<span class="fc" id="L213">            return once.get();</span>
+        }
+
+        @Override
+        public Disposable _schedule(Runnable run) {
+<span class="fc" id="L218">            Disposable d = threadWorker.schedule(run);</span>
+<span class="fc" id="L219">            tasks.add(d);</span>
+<span class="fc" id="L220">            return d;</span>
+        }
+
+        @Override
+        public Disposable _schedule(Runnable action, long delayTime, TimeUnit unit) {
+<span class="fc" id="L225">            Disposable d = threadWorker.schedule(action, delayTime, unit);</span>
+<span class="fc" id="L226">            tasks.add(d);</span>
+<span class="fc" id="L227">            return d;</span>
+        }
+
+        @Override
+        public Disposable _schedulePeriodically(Runnable run, long initialDelay, long period, TimeUnit unit) {
+<span class="nc" id="L232">            Disposable d = threadWorker.schedulePeriodically(run, initialDelay, period, unit);</span>
+<span class="nc" id="L233">            tasks.add(d);</span>
+<span class="nc" id="L234">            return d;</span>
+        }
+    }
+
+    static final class ThreadWorker extends NewThreadWorker {
+
+        long expirationTime;
+
+        ThreadWorker(ThreadFactory threadFactory) {
+<span class="fc" id="L243">            super(threadFactory);</span>
+<span class="fc" id="L244">            this.expirationTime = 0L;</span>
+<span class="fc" id="L245">        }</span>
+
+        public long getExpirationTime() {
+<span class="nc" id="L248">            return expirationTime;</span>
+        }
+
+        public void setExpirationTime(long expirationTime) {
+<span class="fc" id="L252">            this.expirationTime = expirationTime;</span>
+<span class="fc" id="L253">        }</span>
+    }
+
+    private static ThreadWorker createShutdownWorker() {
+<span class="fc" id="L257">        ThreadWorker w = new ThreadWorker(SchedulerHelper.createThreadFactory(&quot;ReelsCachedThreadSchedulerShutdown&quot;));</span>
+<span class="fc" id="L258">        w.dispose();</span>
+<span class="fc" id="L259">        return w;</span>
+    }
+
+    private static CachedWorkerPool createEmptyCachedWorkerPool() {
+<span class="fc" id="L263">        CachedWorkerPool p = new CachedWorkerPool(0, null, WORKER_THREAD_FACTORY);</span>
+<span class="fc" id="L264">        p.shutdown();</span>
+<span class="fc" id="L265">        return p;</span>
+    }
+
+    @Override
+    public Disposable _schedule(Runnable run) {
+<span class="nc" id="L270">        Worker w = createWorker();</span>
+<span class="nc" id="L271">        Disposable d = w.schedule(run);</span>
+<span class="nc" id="L272">        return new CompositeDisposable(d, w);</span>
+    }
+
+    @Override
+    public Disposable _schedule(Runnable run, long delay, TimeUnit unit) {
+<span class="fc" id="L277">        Worker w = createWorker();</span>
+<span class="fc" id="L278">        Disposable d = w.schedule(run, delay, unit);</span>
+<span class="fc" id="L279">        return new CompositeDisposable(d, w);</span>
+    }
+
+    @Override
+    public Disposable _schedulePeriodically(Runnable run, long initialDelay, long period, TimeUnit unit) {
+<span class="nc" id="L284">        Worker w = createWorker();</span>
+<span class="nc" id="L285">        Disposable d = w.schedulePeriodically(run, initialDelay, period, unit);</span>
+<span class="nc" id="L286">        return new CompositeDisposable(d, w);</span>
+    }
+
+    @Override
+    public boolean requiresDrainSynchronization() {
+<span class="fc" id="L291">        return false;</span>
+    }
+
+    @Override
+    public void dispose() {
+<span class="nc" id="L296">        shutdown();</span>
+<span class="nc" id="L297">    }</span>
+
+    @Override
+    public boolean isDisposed() {
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">        return pool.get() == NONE;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Exceptions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal</a> &gt; <span class="el_source">Exceptions.java</span></div><h1>Exceptions.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2016-present, RxJava Contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is
+ * distributed on an &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See
+ * the License for the specific language governing permissions and limitations under the License.
+ */
+
+package com.github.davidmoten.reels.internal;
+
+/**
+ * Utility class to help propagate checked exceptions and rethrow exceptions
+ * designated as fatal.
+ */
+public final class Exceptions {
+
+    /** Utility class. */
+    private Exceptions() {
+        // prevent instantiation
+    }
+    
+    /**
+     * If the provided Throwable is an Error this method
+     * throws it, otherwise returns a RuntimeException wrapping the error
+     * if that error is a checked exception.
+     * @param error the error to wrap or throw
+     * @return the (wrapped) error
+     */
+    public static RuntimeException wrapOrThrow(Throwable error) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (error instanceof Error) {</span>
+<span class="fc" id="L36">            throw (Error)error;</span>
+        }
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (error instanceof RuntimeException) {</span>
+<span class="fc" id="L39">            return (RuntimeException)error;</span>
+        }
+<span class="fc" id="L41">        return new RuntimeException(error);</span>
+    }
+
+    /**
+     * Throws a particular {@code Throwable} only if it belongs to a set of &quot;fatal&quot; error varieties. These
+     * varieties are as follows:
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code VirtualMachineError}&lt;/li&gt;
+     * &lt;li&gt;{@code ThreadDeath}&lt;/li&gt;
+     * &lt;li&gt;{@code LinkageError}&lt;/li&gt;
+     * &lt;/ul&gt;
+     * This can be useful if you are writing an operator that calls user-supplied code, and you want to
+     * notify subscribers of errors encountered in that code by calling their {@code onError} methods, but only
+     * if the errors are not so catastrophic that such a call would be futile, in which case you simply want to
+     * rethrow the error.
+     *
+     * @param t
+     *         the {@code Throwable} to test and perhaps throw
+     * @see &lt;a href=&quot;https://github.com/ReactiveX/RxJava/issues/748#issuecomment-32471495&quot;&gt;RxJava: StackOverflowError is swallowed (Issue #748)&lt;/a&gt;
+     */
+    public static void throwIfFatal( Throwable t) {
+        // values here derived from https://github.com/ReactiveX/RxJava/issues/748#issuecomment-32471495
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (t instanceof VirtualMachineError) {</span>
+<span class="fc" id="L64">            throw (VirtualMachineError) t;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        } else if (t instanceof ThreadDeath) {</span>
+<span class="fc" id="L66">            throw (ThreadDeath) t;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        } else if (t instanceof LinkageError) {</span>
+<span class="fc" id="L68">            throw (LinkageError) t;</span>
+        }
+<span class="fc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

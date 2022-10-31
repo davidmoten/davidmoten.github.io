@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContextBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels</a> &gt; <span class="el_source">ContextBuilder.java</span></div><h1>ContextBuilder.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels;
+
+import java.util.function.Supplier;
+
+import com.github.davidmoten.reels.internal.DeadLetterActor;
+import com.github.davidmoten.reels.internal.Preconditions;
+
+public final class ContextBuilder {
+
+<span class="fc" id="L10">    private Supervisor supervisor = Supervisor.defaultSupervisor();</span>
+<span class="fc" id="L11">    private Supplier&lt;? extends Actor&lt;DeadLetter&gt;&gt; deadLetterActorFactory = () -&gt; Context</span>
+<span class="fc" id="L12">            .createActorObject(DeadLetterActor.class);</span>
+<span class="fc" id="L13">    private Scheduler scheduler = Scheduler.defaultScheduler();</span>
+<span class="fc" id="L14">    private MailboxFactory mailboxFactory = MailboxFactory.unbounded();</span>
+
+<span class="fc" id="L16">    ContextBuilder() {</span>
+<span class="fc" id="L17">    }</span>
+
+    public ContextBuilder supervisor(Supervisor supervisor) {
+<span class="fc" id="L20">        Preconditions.checkArgumentNonNull(supervisor, &quot;supervisor&quot;);</span>
+<span class="fc" id="L21">        this.supervisor = supervisor;</span>
+<span class="fc" id="L22">        return this;</span>
+    }
+
+    public ContextBuilder deadLetterActorFactory(Supplier&lt;? extends Actor&lt;DeadLetter&gt;&gt; factory) {
+<span class="fc" id="L26">        Preconditions.checkArgumentNonNull(factory, &quot;factory&quot;);</span>
+<span class="fc" id="L27">        this.deadLetterActorFactory = factory;</span>
+<span class="fc" id="L28">        return this;</span>
+    }
+    
+    public ContextBuilder scheduler(Scheduler scheduler) {
+<span class="fc" id="L32">        this.scheduler = scheduler;</span>
+<span class="fc" id="L33">        return this;</span>
+    }
+    
+    public ContextBuilder mailboxFactory(MailboxFactory mailboxFactory) {
+<span class="nc" id="L37">        this.mailboxFactory = mailboxFactory;</span>
+<span class="nc" id="L38">        return this;</span>
+    }
+
+    public Context build() {
+<span class="fc" id="L42">        return new Context(supervisor, deadLetterActorFactory, scheduler, mailboxFactory);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

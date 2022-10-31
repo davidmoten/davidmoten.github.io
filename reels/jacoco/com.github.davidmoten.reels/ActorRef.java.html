@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ActorRef.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels</a> &gt; <span class="el_source">ActorRef.java</span></div><h1>ActorRef.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels;
+
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+
+import com.github.davidmoten.reels.internal.ActorRefNone;
+
+/**
+ * Reference that controls the lifecycle and operation of an Actor.
+ * 
+ * @param &lt;T&gt; the message type for the Actor
+ */
+public interface ActorRef&lt;T&gt; {
+
+    /**
+     * Sends the message without a sender.
+     * 
+     * @param message
+     */
+    void tell(T message);
+
+    /**
+     * Sends the message with the given sender.
+     * 
+     * @param message message to send
+     * @param sender  message sender (for replies as an example)
+     */
+    void tell(T message, ActorRef&lt;?&gt; sender);
+
+    /**
+     * Creates a temporary actor that sends the message to {@code this} and the
+     * returned {@link CompletableFuture} waits on a response. The arrival of the
+     * response to the Future or a timeout on CompletableFuture.get also disposes
+     * the temporary actor as does cancelling the Future.
+     * 
+     * @param &lt;S&gt;     type of response
+     * @param message message to send to {@code this}
+     * @return future
+     */
+    &lt;S&gt; CompletableFuture&lt;S&gt; ask(T message);
+
+    /**
+     * Sends a Poison Pill message to the actor which will be stopped when that
+     * message is processed. The Poison Pill message does not jump the queue past
+     * other already waiting messages on the Actor.
+     */
+    void stop();
+
+    /**
+     * Sends a Poison Pill message to the actor which will be stopped when that
+     * message is processed. All messages before it in the queue are removed from
+     * the queue and sent to the Dead Letter actor so the Poison Pill message
+     * effectively jumps the queue.
+     */
+    void stopNow();
+
+    boolean isStopped();
+
+    /**
+     * Returns the current actor system context.
+     * 
+     * @return actor system context
+     */
+    Context context();
+
+    /**
+     * The unique Actor identifier for the current Context.
+     * 
+     * @return unique identifier for the current Context
+     */
+    String name();
+
+    /**
+     * Returns the scheduler that the Actor uses to process messages.
+     * 
+     * @return the scheduler that the Actor uses to process messages
+     */
+    Scheduler scheduler();
+
+    /**
+     * Returns the parent of this actor.
+     * 
+     * @return parent actor reference
+     */
+    &lt;S&gt; ActorRef&lt;S&gt; parent();
+
+    /**
+     * Returns the child of this actor with the given name. Returns null if not
+     * found.
+     * 
+     * @param &lt;S&gt;  message type of child actor
+     * @param name name of actor
+     * @return the child of this actor with the given name. Returns null if not
+     *         found
+     */
+    &lt;S&gt; ActorRef&lt;S&gt; child(String name);
+
+    /**
+     * Returns the children of this.
+     * 
+     * @param &lt;S&gt; children type (use Object) if unknown
+     * @return children of this
+     */
+    &lt;S&gt; Collection&lt;ActorRef&lt;S&gt;&gt; children();
+
+    /**
+     * Returns type-safe recasting of ActorRef message type.
+     * 
+     * @param &lt;S&gt; new message type
+     * @return this but with different generic typing
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    default &lt;S&gt; ActorRef&lt;S&gt; recast() {
+<span class="fc" id="L114">        return (ActorRef&lt;S&gt;) this;</span>
+    }
+
+    /**
+     * Returns type-safe recasting of ActorRef message type.
+     * 
+     * @param &lt;S&gt; new message type
+     * @return this but with different generic typing
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    default &lt;S extends T&gt; ActorRef&lt;S&gt; narrow() {
+<span class="fc" id="L125">        return (ActorRef&lt;S&gt;) this;</span>
+    }
+
+    /**
+     * Returns a singleton ActorRef that does nothing (with whatever generic type
+     * for your convenience).
+     * 
+     * @param &lt;S&gt; message type of ActorRef
+     * @return do nothing ActorRef
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    static &lt;S&gt; ActorRef&lt;S&gt; none() {
+<span class="fc" id="L137">        return (ActorRef&lt;S&gt;) ActorRefNone.NONE;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

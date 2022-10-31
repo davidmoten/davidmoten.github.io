@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ActorRefImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal</a> &gt; <span class="el_source">ActorRefImpl.java</span></div><h1>ActorRefImpl.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels.internal;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.davidmoten.reels.Actor;
+import com.github.davidmoten.reels.ActorRef;
+import com.github.davidmoten.reels.Context;
+import com.github.davidmoten.reels.CreateException;
+import com.github.davidmoten.reels.DeadLetter;
+import com.github.davidmoten.reels.Mailbox;
+import com.github.davidmoten.reels.MailboxFactory;
+import com.github.davidmoten.reels.Message;
+import com.github.davidmoten.reels.OnStopException;
+import com.github.davidmoten.reels.PoisonPill;
+import com.github.davidmoten.reels.PreStartException;
+import com.github.davidmoten.reels.Scheduler;
+import com.github.davidmoten.reels.SupervisedActorRef;
+import com.github.davidmoten.reels.Supervisor;
+import com.github.davidmoten.reels.Worker;
+
+public abstract class ActorRefImpl&lt;T&gt; implements SupervisedActorRef&lt;T&gt;, Runnable {
+
+    public static final boolean debug = false;
+<span class="fc" id="L36">    private static final Logger log = LoggerFactory.getLogger(ActorRefImpl.class);</span>
+
+    private final String name;
+    private final Supplier&lt;? extends Actor&lt;T&gt;&gt; factory; // used to recreate actor
+    private transient final Mailbox&lt;T&gt; mailbox; // mailbox
+    private final Context context;
+    private final Supervisor supervisor;
+    private final Scheduler scheduler;
+    private final Worker worker;
+    private final ActorRef&lt;?&gt; parent; // nullable
+    private final Map&lt;String, ActorRef&lt;?&gt;&gt; children; // concurrent
+    private Actor&lt;T&gt; actor; // mutable because recreated if restart called
+    private boolean preStartHasBeenRun;
+<span class="fc" id="L49">    protected final AtomicInteger state = new AtomicInteger(); // ACTIVE</span>
+    private boolean systemMessagesOnly;
+
+    private static final int ACTIVE = 0;
+    private static final int STOPPING = 1;
+    private static final int STOPPED = 2;
+    private static final int STOPPING_NOW = 3;
+    protected static final int RESTART = 4;
+    private static final int PAUSED = 5;
+
+    public static &lt;T&gt; ActorRefImpl&lt;T&gt; create(String name, Supplier&lt;? extends Actor&lt;T&gt;&gt; factory, Scheduler scheduler,
+            Context context, Supervisor supervisor, ActorRef&lt;?&gt; parent, MailboxFactory mailboxFactory) {
+        final ActorRefImpl&lt;T&gt; a;
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (scheduler.requiresDrainSynchronization()) {</span>
+<span class="fc" id="L63">            a = new ActorRefSynchronizedDrain&lt;T&gt;(name, factory, scheduler, context, supervisor, parent, mailboxFactory);</span>
+        } else {
+<span class="fc" id="L65">            a = new ActorRefUnsynchronizedDrain&lt;T&gt;(name, factory, scheduler, context, supervisor, parent, mailboxFactory);</span>
+        }
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L68">            ((ActorRefImpl&lt;?&gt;) parent).addChild(a);</span>
+        }
+<span class="fc" id="L70">        return a;</span>
+    }
+
+    protected ActorRefImpl(String name, Supplier&lt;? extends Actor&lt;T&gt;&gt; factory, Scheduler scheduler, Context context,
+<span class="fc" id="L74">            Supervisor supervisor, ActorRef&lt;?&gt; parent, MailboxFactory mailboxFactory) {</span>
+<span class="fc" id="L75">        this.name = name;</span>
+<span class="fc" id="L76">        this.factory = factory;</span>
+<span class="fc" id="L77">        this.context = context;</span>
+<span class="fc" id="L78">        this.supervisor = supervisor;</span>
+<span class="fc" id="L79">        this.mailbox = mailboxFactory.create();</span>
+<span class="fc" id="L80">        this.worker = scheduler.createWorker();</span>
+<span class="fc" id="L81">        this.parent = parent;</span>
+<span class="fc" id="L82">        this.scheduler = scheduler;</span>
+<span class="fc" id="L83">        this.children = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L84">        createActor();</span>
+<span class="fc" id="L85">    }</span>
+
+    private void addChild(ActorRef&lt;?&gt; actor) {
+<span class="fc" id="L88">        int s = state.get();</span>
+<span class="pc bpc" id="L89" title="2 of 6 branches missed.">        if (s == STOPPING_NOW || s == STOPPING || s == STOPPED) {</span>
+<span class="fc" id="L90">            actor.stopNow();</span>
+        } else {
+<span class="fc" id="L92">            children.put(actor.name(), actor);</span>
+        }
+<span class="fc" id="L94">    }</span>
+
+    @Override
+    public void stop() {
+<span class="fc" id="L98">        tell(PoisonPill.instance(), parent);</span>
+<span class="fc" id="L99">    }</span>
+
+    @Override
+    public void stopNow() {
+        if (debug)
+            log(&quot;stopNow&quot;);
+        // use a stack rather than recursion to avoid
+        // stack overflow on deeply nested hierarchies
+<span class="fc" id="L107">        Deque&lt;ActorRef&lt;?&gt;&gt; stack = new ArrayDeque&lt;&gt;();</span>
+<span class="fc" id="L108">        stack.offer(this);</span>
+        ActorRef&lt;?&gt; a;
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        while ((a = stack.poll()) != null) {</span>
+<span class="fc" id="L111">            ((ActorRefImpl&lt;?&gt;) a).stopNowThis();</span>
+<span class="fc" id="L112">            stack.addAll(children.values());</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    public void stopNowThis() {
+
+        while (true) {
+<span class="fc" id="L119">            final int s = state.get();</span>
+<span class="fc bfc" id="L120" title="All 6 branches covered.">            if (s == STOPPING_NOW || s == STOPPING || s == STOPPED) {</span>
+<span class="fc" id="L121">                break;</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            } else if (state.compareAndSet(s, STOPPING_NOW)) {</span>
+                if (debug) {
+                    log(&quot;removing from parent and calling stop&quot;);
+                }
+<span class="fc" id="L126">                stop();</span>
+<span class="fc" id="L127">                break;</span>
+            }
+<span class="nc" id="L129">        }</span>
+<span class="fc" id="L130">    }</span>
+
+    private boolean setState(int value) {
+        while (true) {
+<span class="fc" id="L134">            int s = state.get();</span>
+<span class="pc bpc" id="L135" title="2 of 6 branches missed.">            if (s == STOPPED || s == STOPPING &amp;&amp; value == STOPPING_NOW) {</span>
+<span class="nc" id="L136">                return false;</span>
+            }
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">            if (state.compareAndSet(s, value)) {</span>
+<span class="fc" id="L139">                return true;</span>
+            }
+<span class="nc" id="L141">        }</span>
+    }
+
+    @Override
+    public boolean isStopped() {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        return state.get() == STOPPED;</span>
+    }
+
+    @Override
+    public void tell(T message) {
+<span class="fc" id="L151">        tell(message, ActorRef.none());</span>
+<span class="fc" id="L152">    }</span>
+
+    @Override
+    public void tell(T message, ActorRef&lt;?&gt; sender) {
+<span class="fc" id="L156">        mailbox.offer(new Message&lt;T&gt;(message, this, sender));</span>
+<span class="fc" id="L157">        scheduleDrain();</span>
+<span class="fc" id="L158">    }</span>
+
+    private void scheduleDrain() {
+<span class="fc" id="L161">        worker.schedule(this);</span>
+<span class="fc" id="L162">    }</span>
+
+    private void handleTerminationMessage(Message&lt;T&gt; message) {
+<span class="fc" id="L165">        children.remove(message.sender().name());</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (children.isEmpty()) {</span>
+<span class="fc" id="L167">            runOnStop(message);</span>
+        }
+<span class="fc" id="L169">    }</span>
+
+    private void sendToDeadLetter(Message&lt;T&gt; message) {
+<span class="fc bfc" id="L172" title="All 4 branches covered.">        if (context.deadLetterActor() != this &amp;&amp; !systemMessagesOnly) {</span>
+<span class="fc" id="L173">            context.deadLetterActor().tell(new DeadLetter(message), this);</span>
+        }
+<span class="fc" id="L175">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void runOnStop(Message&lt;T&gt; message) {
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (setState(STOPPED)) {</span>
+            if (debug) {
+                log(this + &quot;: running onStop with message=&quot; + message);
+            }
+            try {
+<span class="fc" id="L184">                actor.onStop(this);</span>
+<span class="fc" id="L185">            } catch (Throwable e) {</span>
+<span class="fc" id="L186">                supervisor.processFailure(message, this, new OnStopException(e));</span>
+<span class="fc" id="L187">            }</span>
+<span class="fc" id="L188">            complete();</span>
+<span class="fc" id="L189">            ActorRef&lt;?&gt; p = parent;</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (p == null) {</span>
+                // is root actor (which is the only actor without a parent)
+<span class="fc" id="L192">                mailbox.offer(new Message&lt;T&gt;((T) Terminated.INSTANCE, this, this));</span>
+            } else {
+<span class="fc" id="L194">                p.&lt;Object&gt;recast().tell(Terminated.INSTANCE, this);</span>
+            }
+        }
+<span class="fc" id="L197">    }</span>
+
+    private void log(String s) {
+<span class="nc" id="L200">        log.debug(&quot;{}: {}&quot;, name, s);</span>
+<span class="nc" id="L201">    }</span>
+
+    @Override
+    public Context context() {
+<span class="fc" id="L205">        return context;</span>
+    }
+
+    @Override
+    public boolean restart() {
+        while (true) {
+<span class="fc" id="L211">            int s = state.get();</span>
+<span class="pc bpc" id="L212" title="3 of 4 branches missed.">            if (s == ACTIVE || s == PAUSED) {</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">                if (state.compareAndSet(s, RESTART)) {</span>
+<span class="fc" id="L214">                    run();</span>
+<span class="fc" id="L215">                    return true;</span>
+                }
+            } else {
+<span class="nc" id="L218">                return false;</span>
+            }
+<span class="nc" id="L220">        }</span>
+    }
+
+    @Override
+    public boolean pause(long duration, TimeUnit unit) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (state.compareAndSet(ACTIVE, PAUSED)) {</span>
+<span class="fc" id="L226">            scheduler.schedule(() -&gt; state.compareAndSet(PAUSED, ACTIVE), duration, unit);</span>
+<span class="fc" id="L227">            return true;</span>
+        } else {
+<span class="nc" id="L229">            return false;</span>
+        }
+    }
+
+    @Override
+    public boolean pauseAndRestart(long delay, TimeUnit unit) {
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if (pause(delay, unit)) {</span>
+<span class="fc" id="L236">            scheduler.schedule(this::restart, delay, unit);</span>
+<span class="fc" id="L237">            return true;</span>
+        } else {
+<span class="nc" id="L239">            return false;</span>
+        }
+    }
+
+    private Actor&lt;T&gt; createActor() {
+<span class="fc" id="L244">        actor = factory.get();</span>
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (actor == null) {</span>
+<span class="fc" id="L246">            throw new CreateException(&quot;actor factory cannot return null&quot;);</span>
+        }
+<span class="fc" id="L248">        preStartHasBeenRun = false;</span>
+<span class="fc" id="L249">        return actor;</span>
+    }
+
+    @Override
+    public String name() {
+<span class="fc" id="L254">        return name;</span>
+    }
+
+    @Override
+    public Scheduler scheduler() {
+<span class="fc" id="L259">        return scheduler;</span>
+    }
+
+    @Override
+    public &lt;S&gt; CompletableFuture&lt;S&gt; ask(T message) {
+<span class="fc" id="L264">        ActorRefCompletableFuture&lt;S&gt; actor = new ActorRefCompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L265">        tell(message, actor);</span>
+<span class="fc" id="L266">        return actor;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public &lt;S&gt; ActorRef&lt;S&gt; parent() {
+<span class="fc" id="L272">        return (ActorRef&lt;S&gt;) parent;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public &lt;S&gt; ActorRef&lt;S&gt; child(String name) {
+<span class="fc" id="L278">        return (ActorRef&lt;S&gt;) children.get(name);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public &lt;S&gt; Collection&lt;ActorRef&lt;S&gt;&gt; children() {
+<span class="nc" id="L284">        return (Collection&lt;ActorRef&lt;S&gt;&gt;) (Collection&lt;?&gt;) new ArrayList&lt;&gt;(children.values());</span>
+    }
+
+    protected void complete() {
+        // do nothing
+<span class="fc" id="L289">    }</span>
+
+    public Supervisor supervisor() {
+<span class="fc" id="L292">        return supervisor;</span>
+    }
+
+    @Override
+    public void retry() {
+<span class="fc" id="L297">        mailbox.retryLatest();</span>
+<span class="fc" id="L298">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected void drain() {
+        Message&lt;T&gt; message;
+        int s;
+<span class="fc bfc" id="L304" title="All 4 branches covered.">        while ((s = state.get()) != PAUSED &amp;&amp; (message = (Message&lt;T&gt;) mailbox.poll()) != null) {</span>
+            if (debug) {
+                log(&quot;message polled=&quot; + message.content() + &quot; from &quot; + message.sender() + &quot;, state=&quot; + s);
+            }
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (s == RESTART) {</span>
+<span class="fc" id="L309">                actor.onStop(this);</span>
+<span class="fc" id="L310">                createActor();</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">                if (setState(ACTIVE)) {</span>
+<span class="fc" id="L312">                    s = ACTIVE;</span>
+                } else {
+<span class="nc" id="L314">                    s = state.get();</span>
+                }
+            }
+<span class="fc bfc" id="L317" title="All 2 branches covered.">            if (s == STOPPING_NOW) {</span>
+<span class="fc" id="L318">                systemMessagesOnly = true;</span>
+            }
+<span class="fc bfc" id="L320" title="All 2 branches covered.">            if (s == STOPPING) {</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                if (message.content() == Terminated.INSTANCE) {</span>
+<span class="fc" id="L322">                    handleTerminationMessage(message);</span>
+                } else {
+<span class="fc" id="L324">                    sendToDeadLetter(message);</span>
+                }
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            } else if (s == STOPPED) {</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">                if (message.content() != PoisonPill.instance()) {</span>
+<span class="fc" id="L328">                    sendToDeadLetter(message);</span>
+                }
+<span class="fc bfc" id="L330" title="All 2 branches covered.">            } else if (message.content() == PoisonPill.instance()) {</span>
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">                if (setState(STOPPING)) {</span>
+<span class="fc" id="L332">                    boolean isEmpty = true;</span>
+                    ActorRef&lt;Object&gt; ch;
+<span class="fc bfc" id="L334" title="All 2 branches covered.">                    for (ActorRef&lt;?&gt; child : children.values()) {</span>
+<span class="fc" id="L335">                        ch = (ActorRef&lt;Object&gt;) child;</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">                        if (systemMessagesOnly) {</span>
+<span class="fc" id="L337">                            ch.stopNow();</span>
+                        } else {
+<span class="fc" id="L339">                            ch.stop();</span>
+                        }
+<span class="fc" id="L341">                        isEmpty = false;</span>
+<span class="fc" id="L342">                    }</span>
+<span class="fc bfc" id="L343" title="All 2 branches covered.">                    if (isEmpty) {</span>
+                        // no children, run onStop and send Terminated to parent
+<span class="fc" id="L345">                        runOnStop(message);</span>
+                    }
+<span class="fc" id="L347">                }</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">            } else if (message.content() == Terminated.INSTANCE) {</span>
+<span class="fc" id="L349">                handleTerminationMessage(message);</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">            } else if (systemMessagesOnly) {</span>
+<span class="fc" id="L351">                sendToDeadLetter(message);</span>
+            } else {
+<span class="fc bfc" id="L353" title="All 2 branches covered.">                if (!preStartHasBeenRun) {</span>
+<span class="fc" id="L354">                    runPreStart(message);</span>
+                }
+                try {
+<span class="fc" id="L357">                    actor.onMessage(message);</span>
+<span class="fc" id="L358">                } catch (Throwable e) {</span>
+                    // if the line below throws then the actor will no longer process messages
+                    // (because wip will be != 0)
+<span class="fc" id="L361">                    supervisor.processFailure(message, this, e);</span>
+<span class="fc" id="L362">                }</span>
+            }
+        }
+<span class="fc" id="L365">    }</span>
+
+    private void runPreStart(Message&lt;T&gt; message) {
+        try {
+<span class="fc" id="L369">            actor.preStart(this);</span>
+<span class="fc" id="L370">            preStartHasBeenRun = true;</span>
+<span class="fc" id="L371">        } catch (Throwable e) {</span>
+            // if the line below throws then the actor will no longer process messages
+            // (because wip will be != 0)
+<span class="fc" id="L374">            supervisor.processFailure(message, this, new PreStartException(e));</span>
+<span class="fc" id="L375">        }</span>
+<span class="fc" id="L376">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L380">        return name;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

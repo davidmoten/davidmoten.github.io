@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SplitResponsibilityScheduledExecutorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal.scheduler</a> &gt; <span class="el_source">SplitResponsibilityScheduledExecutorService.java</span></div><h1>SplitResponsibilityScheduledExecutorService.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels.internal.scheduler;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+public final class SplitResponsibilityScheduledExecutorService implements ScheduledExecutorService {
+
+    private final ExecutorService executor;
+    private final ScheduledExecutorService scheduled;
+
+<span class="fc" id="L20">    public SplitResponsibilityScheduledExecutorService(ExecutorService executor, ScheduledExecutorService scheduled) {</span>
+<span class="fc" id="L21">        this.executor = executor;</span>
+<span class="fc" id="L22">        this.scheduled = scheduled;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public ScheduledFuture&lt;?&gt; schedule(Runnable command, long delay, TimeUnit unit) {
+<span class="fc" id="L27">        return scheduled.schedule(command, delay, unit);</span>
+    }
+
+    @Override
+    public void execute(Runnable command) {
+<span class="nc" id="L32">        executor.execute(command);</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public &lt;V&gt; ScheduledFuture&lt;V&gt; schedule(Callable&lt;V&gt; callable, long delay, TimeUnit unit) {
+<span class="nc" id="L37">        return scheduled.schedule(callable, delay, unit);</span>
+    }
+
+    @Override
+    public ScheduledFuture&lt;?&gt; scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+<span class="nc" id="L42">        return scheduled.scheduleAtFixedRate(command, initialDelay, period, unit);</span>
+    }
+
+    @Override
+    public void shutdown() {
+<span class="nc" id="L47">        executor.shutdown();</span>
+<span class="nc" id="L48">        scheduled.shutdown();</span>
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public List&lt;Runnable&gt; shutdownNow() {
+<span class="nc" id="L53">        List&lt;Runnable&gt; list = new ArrayList&lt;&gt;(executor.shutdownNow());</span>
+<span class="nc" id="L54">        list.addAll(scheduled.shutdownNow());</span>
+<span class="nc" id="L55">        return list;</span>
+    }
+
+    @Override
+    public ScheduledFuture&lt;?&gt; scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+<span class="nc" id="L60">        return scheduled.scheduleWithFixedDelay(command, initialDelay, delay, unit);</span>
+    }
+
+    @Override
+    public boolean isShutdown() {
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        return executor.isShutdown() &amp;&amp; scheduled.isShutdown();</span>
+    }
+
+    @Override
+    public boolean isTerminated() {
+<span class="nc bnc" id="L70" title="All 4 branches missed.">        return executor.isTerminated() &amp;&amp; scheduled.isTerminated();</span>
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+<span class="nc bnc" id="L75" title="All 4 branches missed.">        return executor.awaitTermination(timeout, unit) &amp;&amp; scheduled.awaitTermination(timeout, unit);</span>
+    }
+
+    @Override
+    public &lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task) {
+<span class="nc" id="L80">        return executor.submit(task);</span>
+    }
+
+    @Override
+    public &lt;T&gt; Future&lt;T&gt; submit(Runnable task, T result) {
+<span class="nc" id="L85">        return executor.submit(task, result);</span>
+    }
+
+    @Override
+    public Future&lt;?&gt; submit(Runnable task) {
+<span class="fc" id="L90">        return executor.submit(task);</span>
+    }
+
+    @Override
+    public &lt;T&gt; List&lt;Future&lt;T&gt;&gt; invokeAll(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks) throws InterruptedException {
+<span class="nc" id="L95">        return executor.invokeAll(tasks);</span>
+    }
+
+    @Override
+    public &lt;T&gt; List&lt;Future&lt;T&gt;&gt; invokeAll(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks, long timeout, TimeUnit unit)
+            throws InterruptedException {
+<span class="nc" id="L101">        return scheduled.invokeAll(tasks, timeout, unit);</span>
+    }
+
+    @Override
+    public &lt;T&gt; T invokeAny(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks) throws InterruptedException, ExecutionException {
+<span class="nc" id="L106">        return executor.invokeAny(tasks);</span>
+    }
+
+    @Override
+    public &lt;T&gt; T invokeAny(Collection&lt;? extends Callable&lt;T&gt;&gt; tasks, long timeout, TimeUnit unit)
+            throws InterruptedException, ExecutionException, TimeoutException {
+<span class="nc" id="L112">        return scheduled.invokeAny(tasks, timeout, unit);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

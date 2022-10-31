@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal.util</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels.internal.util;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+
+import com.github.davidmoten.reels.CreateException;
+
+public final class Util {
+
+    private Util() {
+        // prevent instantiation
+    }
+
+    public static void rethrow(Throwable e) {
+<span class="fc bfc" id="L15" title="All 2 branches covered.">        if (e instanceof RuntimeException) {</span>
+<span class="fc" id="L16">            throw (RuntimeException) e;</span>
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        } else if (e instanceof Error) {</span>
+<span class="fc" id="L18">            throw (Error) e;</span>
+        } else {
+<span class="fc" id="L20">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    /**
+     * Find the next larger positive power of two value up from the given value. If
+     * value is a power of two then this value will be returned.
+     *
+     * @param value from which next positive power of two will be found.
+     * @return the next positive power of 2 or this value if it is a power of 2.
+     */
+    public static int roundToPowerOfTwo(final int value) {
+<span class="fc" id="L32">        return 1 &lt;&lt; (32 - Integer.numberOfLeadingZeros(value - 1));</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;C&gt; Constructor&lt;C&gt; getMatchingConstructor(Class&lt;C&gt; c, Object[] args) {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (Constructor&lt;?&gt; con : c.getDeclaredConstructors()) {</span>
+<span class="fc" id="L38">            Class&lt;?&gt;[] types = con.getParameterTypes();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            if (types.length != args.length)</span>
+<span class="fc" id="L40">                continue;</span>
+<span class="fc" id="L41">            boolean match = true;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            for (int i = 0; i &lt; types.length; i++) {</span>
+<span class="fc" id="L43">                Class&lt;?&gt; need = types[i], got = args[i].getClass();</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">                if (!typesMatch(need, got)) {</span>
+<span class="nc" id="L45">                    match = false;</span>
+<span class="nc" id="L46">                    break;</span>
+                }
+            }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (match) {</span>
+<span class="fc" id="L50">                return (Constructor&lt;C&gt;) con;</span>
+            }
+        }
+<span class="fc" id="L53">        throw new CreateException(</span>
+<span class="fc" id="L54">                &quot;Cannot find an appropriate constructor for class &quot; + c + &quot; and arguments &quot; + Arrays.toString(args));</span>
+    }
+
+    // VisibleForTesting
+    static boolean typesMatch(Class&lt;?&gt; need, Class&lt;?&gt; got) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (need.isAssignableFrom(got)) {</span>
+<span class="fc" id="L60">            return true;</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        } else if (need.isPrimitive()) {</span>
+<span class="fc" id="L62">            return primitiveTypesMatch(need, got);</span>
+        } else {
+<span class="fc" id="L64">            return false;</span>
+        }
+    }
+
+    // VisibleForTesting
+    static boolean primitiveTypesMatch(Class&lt;?&gt; need, Class&lt;?&gt; got) {
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        return int.class.equals(need) &amp;&amp; Integer.class.equals(got) //</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">                || long.class.equals(need) &amp;&amp; Long.class.equals(got) //</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">                || char.class.equals(need) &amp;&amp; Character.class.equals(got) //</span>
+<span class="fc bfc" id="L73" title="All 4 branches covered.">                || short.class.equals(need) &amp;&amp; Short.class.equals(got) //</span>
+<span class="fc bfc" id="L74" title="All 4 branches covered.">                || boolean.class.equals(need) &amp;&amp; Boolean.class.equals(got) //</span>
+<span class="fc bfc" id="L75" title="All 4 branches covered.">                || byte.class.equals(need) &amp;&amp; Byte.class.equals(got)</span>
+<span class="fc bfc" id="L76" title="All 4 branches covered.">                || double.class.equals(need) &amp;&amp; Double.class.equals(got) //</span>
+<span class="fc bfc" id="L77" title="All 4 branches covered.">                || float.class.equals(need) &amp;&amp; Float.class.equals(got);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

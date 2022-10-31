@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SchedulerComputationSticky.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">reels</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.reels.internal.scheduler</a> &gt; <span class="el_source">SchedulerComputationSticky.java</span></div><h1>SchedulerComputationSticky.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.reels.internal.scheduler;
+
+import java.util.List;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import com.github.davidmoten.reels.Disposable;
+import com.github.davidmoten.reels.Scheduler;
+import com.github.davidmoten.reels.Worker;
+import com.github.davidmoten.reels.internal.util.FastRandomInt;
+
+public final class SchedulerComputationSticky extends AbstractCanScheduleDisposable implements Scheduler {
+
+<span class="fc" id="L16">    public static final SchedulerComputationSticky INSTANCE = new SchedulerComputationSticky();</span>
+
+    private final List&lt;Worker&gt; workers;
+
+<span class="fc" id="L20">    private final FastRandomInt random = new FastRandomInt();</span>
+
+    // VisibleForTesting
+<span class="fc" id="L23">    SchedulerComputationSticky() {</span>
+<span class="fc" id="L24">        int size = Integer.getInteger(&quot;reels.computation.pool.size&quot;, Runtime.getRuntime().availableProcessors());</span>
+<span class="fc" id="L25">        ThreadFactory factory = SchedulerHelper.createThreadFactory(&quot;ReelsComputation&quot;);</span>
+<span class="fc" id="L26">        workers = IntStream //</span>
+<span class="fc" id="L27">                .range(0, size) //</span>
+<span class="fc" id="L28">                .mapToObj(n -&gt; new NewThreadWorker(factory)) //</span>
+<span class="fc" id="L29">                .collect(Collectors.toList());</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    public Worker createWorker() {
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (workers.isEmpty()) {</span>
+<span class="nc" id="L35">            return WorkerDisposed.INSTANCE;</span>
+        }
+<span class="fc" id="L37">        return new SchedulerWorker(workers.get(nextIndex()));</span>
+    }
+
+    @Override
+    public void shutdown() {
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        for (Worker w : workers) {</span>
+<span class="fc" id="L43">            w.dispose();</span>
+<span class="fc" id="L44">        }</span>
+<span class="fc" id="L45">        workers.clear();</span>
+<span class="fc" id="L46">    }</span>
+
+    @Override
+    public Disposable _schedule(Runnable run) {
+<span class="fc" id="L50">        return workers.get(nextIndex()).schedule(run);</span>
+    }
+
+    @Override
+    public Disposable _schedule(Runnable run, long delay, TimeUnit unit) {
+<span class="fc" id="L55">        return workers.get(nextIndex()).schedule(run, delay, unit);</span>
+    }
+
+    @Override
+    public Disposable _schedulePeriodically(Runnable run, long initialDelay, long period, TimeUnit unit) {
+<span class="fc" id="L60">        return workers.get(nextIndex()).schedulePeriodically(run, initialDelay, period, unit);</span>
+    }
+
+    private int nextIndex() {
+<span class="fc" id="L64">        return random.nextInt(workers.size());</span>
+    }
+
+    @Override
+    public boolean requiresDrainSynchronization() {
+<span class="fc" id="L69">        return false;</span>
+    }
+
+    @Override
+    public void dispose() {
+<span class="nc" id="L74">        shutdown();</span>
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public boolean isDisposed() {
+<span class="fc" id="L79">        return workers.isEmpty();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
