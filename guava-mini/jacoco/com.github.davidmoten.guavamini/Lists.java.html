@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Lists.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">guava-mini</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.guavamini</a> &gt; <span class="el_source">Lists.java</span></div><h1>Lists.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.guavamini;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+public final class Lists {
+
+    private Lists() {
+        // cannot instantiate
+    }
+
+    public static &lt;E&gt; ArrayList&lt;E&gt; newArrayList(@SuppressWarnings(&quot;unchecked&quot;) E... elements) {
+<span class="fc" id="L17">        Preconditions.checkNotNull(elements);</span>
+        // Avoid integer overflow when a large array is passed in
+<span class="fc" id="L19">        int capacity = computeArrayListCapacity(elements.length);</span>
+<span class="fc" id="L20">        ArrayList&lt;E&gt; list = new ArrayList&lt;E&gt;(capacity);</span>
+<span class="fc" id="L21">        Collections.addAll(list, elements);</span>
+<span class="fc" id="L22">        return list;</span>
+    }
+
+    @VisibleForTesting
+    static int computeArrayListCapacity(int arraySize) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        Preconditions.checkArgument(arraySize &gt;= 0, &quot;arraySize must be non-negative&quot;);</span>
+
+        // TODO(kevinb): Figure out the right behavior, and document it
+<span class="fc" id="L30">        return saturatedCast(5L + arraySize + (arraySize / 10));</span>
+    }
+
+    /**
+     * Returns the {@code int} nearest in value to {@code value}.
+     *
+     * @param value
+     *            any {@code long} value
+     * @return the same value cast to {@code int} if it is in the range of the
+     *         {@code int} type, {@link Integer#MAX_VALUE} if it is too large,
+     *         or {@link Integer#MIN_VALUE} if it is too small
+     */
+    @VisibleForTesting
+    static int saturatedCast(long value) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (value &gt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L45">            return Integer.MAX_VALUE;</span>
+        }
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (value &lt; Integer.MIN_VALUE) {</span>
+<span class="fc" id="L48">            return Integer.MIN_VALUE;</span>
+        }
+<span class="fc" id="L50">        return (int) value;</span>
+    }
+
+    public static &lt;E&gt; ArrayList&lt;E&gt; newArrayList() {
+<span class="fc" id="L54">        return new ArrayList&lt;E&gt;();</span>
+    }
+
+    public static &lt;E&gt; ArrayList&lt;E&gt; newArrayList(Iterable&lt;? extends E&gt; elements) {
+<span class="fc" id="L58">        Preconditions.checkNotNull(elements); // for GWT</span>
+        // Let ArrayList's sizing logic work, if possible
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        return (elements instanceof Collection) ? new ArrayList&lt;E&gt;(Collections2.cast(elements))</span>
+<span class="fc" id="L61">                : newArrayList(elements.iterator());</span>
+    }
+
+    public static &lt;E&gt; ArrayList&lt;E&gt; newArrayList(Iterator&lt;? extends E&gt; elements) {
+<span class="fc" id="L65">        ArrayList&lt;E&gt; list = newArrayList();</span>
+<span class="fc" id="L66">        Iterators.addAll(list, elements);</span>
+<span class="fc" id="L67">        return list;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

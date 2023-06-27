@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.github.davidmoten.guavamini"},{"l":"com.github.davidmoten.guavamini.annotations"}];updateSearchResults();

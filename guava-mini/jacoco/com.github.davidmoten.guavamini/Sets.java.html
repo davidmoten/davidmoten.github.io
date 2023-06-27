@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sets.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">guava-mini</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.guavamini</a> &gt; <span class="el_source">Sets.java</span></div><h1>Sets.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.guavamini;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+public final class Sets {
+
+    private Sets() {
+        // prevent instantiation
+    }
+
+    static final int MAX_POWER_OF_TWO = 1 &lt;&lt; (Integer.SIZE - 2);
+
+    public static &lt;E&gt; HashSet&lt;E&gt; newHashSet(E... elements) {
+<span class="fc" id="L19">        Preconditions.checkNotNull(elements);</span>
+<span class="fc" id="L20">        HashSet&lt;E&gt; set = newHashSetWithExpectedSize(elements.length);</span>
+<span class="fc" id="L21">        Collections.addAll(set, elements);</span>
+<span class="fc" id="L22">        return set;</span>
+    }
+
+    public static &lt;E&gt; HashSet&lt;E&gt; newHashSetWithExpectedSize(int expectedSize) {
+<span class="fc" id="L26">        return new HashSet&lt;E&gt;(capacity(expectedSize));</span>
+    }
+
+    /**
+     * Returns a capacity that is sufficient to keep the map from being resized
+     * as long as it grows no larger than expectedSize and the load factor is &gt;=
+     * its default (0.75).
+     */
+    @VisibleForTesting
+    static int capacity(int expectedSize) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (expectedSize &lt; 3) {</span>
+<span class="fc" id="L37">            checkNonnegative(expectedSize, &quot;expectedSize&quot;);</span>
+<span class="fc" id="L38">            return expectedSize + 1;</span>
+        }
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (expectedSize &lt; MAX_POWER_OF_TWO) {</span>
+<span class="fc" id="L41">            return expectedSize + expectedSize / 3;</span>
+        }
+<span class="fc" id="L43">        return Integer.MAX_VALUE; // any large value</span>
+    }
+
+    @VisibleForTesting
+    static int checkNonnegative(int value, String name) {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (value &lt; 0) {</span>
+<span class="fc" id="L49">            throw new IllegalArgumentException(name + &quot; cannot be negative but was: &quot; + value);</span>
+        }
+<span class="fc" id="L51">        return value;</span>
+    }
+
+    public static &lt;E&gt; HashSet&lt;E&gt; newHashSet(Iterable&lt;? extends E&gt; elements) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        return (elements instanceof Collection) ? new HashSet&lt;E&gt;(Collections2.cast(elements))</span>
+<span class="fc" id="L56">                : newHashSet(elements.iterator());</span>
+    }
+
+    public static &lt;E&gt; HashSet&lt;E&gt; newHashSet(Iterator&lt;? extends E&gt; elements) {
+<span class="fc" id="L60">        HashSet&lt;E&gt; set = newHashSet();</span>
+<span class="fc" id="L61">        Iterators.addAll(set, elements);</span>
+<span class="fc" id="L62">        return set;</span>
+    }
+
+    public static &lt;E&gt; HashSet&lt;E&gt; newHashSet() {
+<span class="fc" id="L66">        return new HashSet&lt;E&gt;();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Iterators.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">guava-mini</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.guavamini</a> &gt; <span class="el_source">Iterators.java</span></div><h1>Iterators.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.guavamini;
+
+import java.util.Collection;
+import java.util.Iterator;
+
+public final class Iterators {
+
+    private Iterators() {
+        // prevent instantiation
+    }
+
+    /**
+     * Adds all elements in {@code iterator} to {@code collection}. The iterator
+     * will be left exhausted: its {@code hasNext()} method will return
+     * {@code false}.
+     *
+     * @param addTo
+     *            collection to add to
+     * @param iterator
+     *            iterator whose elements will be added to the collection
+     * @param &lt;T&gt;
+     *            generic type of collection
+     * @return {@code true} if {@code collection} was modified as a result of
+     *         this operation
+     */
+    public static &lt;T&gt; boolean addAll(Collection&lt;T&gt; addTo, Iterator&lt;? extends T&gt; iterator) {
+<span class="fc" id="L27">        Preconditions.checkNotNull(addTo);</span>
+<span class="fc" id="L28">        Preconditions.checkNotNull(iterator);</span>
+<span class="fc" id="L29">        boolean wasModified = false;</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L31">            wasModified |= addTo.add(iterator.next());</span>
+        }
+<span class="fc" id="L33">        return wasModified;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
