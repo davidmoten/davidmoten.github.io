@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PropertyBytesNotRequired.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">PropertyBytesNotRequired.java</span></div><h1>PropertyBytesNotRequired.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class PropertyBytesNotRequired {
+
+    @JsonProperty(&quot;one&quot;)
+    private final byte[] one;
+
+    @JsonProperty(&quot;two&quot;)
+    private final String two;
+
+    @JsonCreator
+    private PropertyBytesNotRequired(
+            @JsonProperty(&quot;one&quot;) byte[] one,
+<span class="nc" id="L37">            @JsonProperty(&quot;two&quot;) String two) {</span>
+<span class="nc" id="L38">        this.one = one;</span>
+<span class="nc" id="L39">        this.two = two;</span>
+<span class="nc" id="L40">    }</span>
+
+    @ConstructorBinding
+    public PropertyBytesNotRequired(
+            Optional&lt;byte[]&gt; one,
+<span class="nc" id="L45">            Optional&lt;byte[]&gt; two) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(PropertyBytesNotRequired.class)) {</span>
+<span class="nc" id="L47">            Preconditions.checkNotNull(two, &quot;two&quot;);</span>
+        }
+<span class="nc" id="L49">        this.one = one.orElse(null);</span>
+<span class="nc" id="L50">        this.two = Util.encodeOctets(two);</span>
+<span class="nc" id="L51">    }</span>
+
+    public static Builder builder() {
+<span class="nc" id="L54">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="nc" id="L59">        private Optional&lt;byte[]&gt; one = Optional.empty();</span>
+<span class="nc" id="L60">        private Optional&lt;byte[]&gt; two = Optional.empty();</span>
+
+<span class="nc" id="L62">        Builder() {</span>
+<span class="nc" id="L63">        }</span>
+
+        public Builder one(byte[] one) {
+<span class="nc" id="L66">            this.one = Optional.of(one);</span>
+<span class="nc" id="L67">            return this;</span>
+        }
+
+        public Builder one(Optional&lt;byte[]&gt; one) {
+<span class="nc" id="L71">            this.one = one;</span>
+<span class="nc" id="L72">            return this;</span>
+        }
+
+        public Builder two(byte[] two) {
+<span class="nc" id="L76">            this.two = Optional.of(two);</span>
+<span class="nc" id="L77">            return this;</span>
+        }
+
+        public Builder two(Optional&lt;byte[]&gt; two) {
+<span class="nc" id="L81">            this.two = two;</span>
+<span class="nc" id="L82">            return this;</span>
+        }
+
+        public PropertyBytesNotRequired build() {
+<span class="nc" id="L86">            return new PropertyBytesNotRequired(this.one, this.two);</span>
+        }
+    }
+
+    public Optional&lt;byte[]&gt; one() {
+<span class="nc" id="L91">        return Optional.ofNullable(one);</span>
+    }
+
+    public Optional&lt;byte[]&gt; two() {
+<span class="nc" id="L95">        return Optional.ofNullable(Util.decodeOctets(two));</span>
+    }
+
+    public PropertyBytesNotRequired withOne(Optional&lt;byte[]&gt; one) {
+<span class="nc" id="L99">        return new PropertyBytesNotRequired(one, Optional.ofNullable(Util.decodeOctets(two)));</span>
+    }
+
+    public PropertyBytesNotRequired withOne(byte[] one) {
+<span class="nc" id="L103">        return new PropertyBytesNotRequired(Optional.of(one), Optional.ofNullable(Util.decodeOctets(two)));</span>
+    }
+
+    public PropertyBytesNotRequired withTwo(Optional&lt;byte[]&gt; two) {
+<span class="nc" id="L107">        return new PropertyBytesNotRequired(Optional.ofNullable(one), two);</span>
+    }
+
+    public PropertyBytesNotRequired withTwo(byte[] two) {
+<span class="nc" id="L111">        return new PropertyBytesNotRequired(Optional.ofNullable(one), Optional.of(two));</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L117">            return true;</span>
+        }
+<span class="nc bnc" id="L119" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L120">            return false;</span>
+        }
+<span class="nc" id="L122">        PropertyBytesNotRequired other = (PropertyBytesNotRequired) o;</span>
+<span class="nc" id="L123">        return </span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            Objects.equals(this.one, other.one) &amp;&amp; </span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            Objects.equals(this.two, other.two);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L130">        return Objects.hash(one, two);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L135">        return Util.toString(PropertyBytesNotRequired.class, &quot;one&quot;, one, &quot;two&quot;, two);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

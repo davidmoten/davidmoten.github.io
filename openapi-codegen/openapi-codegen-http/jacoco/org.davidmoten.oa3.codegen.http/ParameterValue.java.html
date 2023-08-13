@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParameterValue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http</a> &gt; <span class="el_source">ParameterValue.java</span></div><h1>ParameterValue.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http;
+
+import java.util.Optional;
+
+public final class ParameterValue {
+
+    private final String name;
+    private final Optional&lt;?&gt; value;
+    private final ParameterType type;
+    private final Optional&lt;String&gt; contentType;
+
+<span class="fc" id="L12">    public ParameterValue(String name, Optional&lt;?&gt; value, ParameterType type, Optional&lt;String&gt; contentType) {</span>
+<span class="fc" id="L13">        this.name = name;</span>
+<span class="fc" id="L14">        this.value = value;</span>
+<span class="fc" id="L15">        this.type = type;</span>
+<span class="fc" id="L16">        this.contentType = contentType;</span>
+<span class="fc" id="L17">    }</span>
+
+    public static ParameterValue query(String name, Optional&lt;?&gt; value) {
+<span class="fc" id="L20">        return new ParameterValue(name, value, ParameterType.QUERY, Optional.empty());</span>
+    }
+
+    public static ParameterValue query(String name, Object value) {
+<span class="fc" id="L24">        return query(name, Optional.ofNullable(value));</span>
+    }
+
+    public static ParameterValue path(String name, Optional&lt;?&gt; value) {
+<span class="fc" id="L28">        return new ParameterValue(name, value, ParameterType.PATH, Optional.empty());</span>
+    }
+
+    public static ParameterValue path(String name, Object value) {
+<span class="fc" id="L32">        return path(name, Optional.ofNullable(value));</span>
+    }
+
+    public static ParameterValue cookie(String name, Optional&lt;?&gt; value) {
+<span class="nc" id="L36">        return new ParameterValue(name, value, ParameterType.COOKIE, Optional.empty());</span>
+    }
+
+    public static ParameterValue cookie(String name, Object value) {
+<span class="nc" id="L40">        return cookie(name, Optional.ofNullable(value));</span>
+    }
+
+    public static ParameterValue header(String name, Optional&lt;?&gt; value) {
+<span class="nc" id="L44">        return new ParameterValue(name, value, ParameterType.HEADER, Optional.empty());</span>
+    }
+
+    public static ParameterValue header(String name, Object value) {
+<span class="nc" id="L48">        return header(name, Optional.ofNullable(value));</span>
+    }
+
+    public static ParameterValue body(Object value, String contentType) {
+<span class="fc" id="L52">        return body(Optional.ofNullable(value), contentType);</span>
+    }
+
+    public static ParameterValue body(Optional&lt;?&gt; value, String contentType) {
+<span class="fc" id="L56">        return new ParameterValue(&quot;requestBody&quot;, value, ParameterType.BODY, Optional.of(contentType));</span>
+    }
+
+    public String name() {
+<span class="fc" id="L60">        return name;</span>
+    }
+
+    public Optional&lt;?&gt; value() {
+<span class="fc" id="L64">        return value;</span>
+    }
+
+    public ParameterType type() {
+<span class="fc" id="L68">        return type;</span>
+    }
+
+    public Optional&lt;String&gt; contentType() {
+<span class="fc" id="L72">        return contentType;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.internal</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.internal;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.Sets;
+
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.MapSchema;
+import io.swagger.v3.oas.models.media.Schema;
+
+<span class="nc" id="L20">public final class Util {</span>
+
+<span class="fc" id="L22">    private static Set&lt;String&gt; PRIMITIVE_CLASS_NAMES = Sets.newHashSet(&quot;int&quot;, &quot;double&quot;, &quot;float&quot;, &quot;long&quot;, &quot;boolean&quot;,</span>
+            &quot;byte&quot;, &quot;short&quot;);
+
+    public static boolean isPrimitiveFullClassName(String className) {
+<span class="fc" id="L26">        return PRIMITIVE_CLASS_NAMES.contains(className);</span>
+    }
+
+    public static boolean isPrimitive(Schema&lt;?&gt; schema) {
+<span class="fc" id="L30">        String type = schema.getType();</span>
+<span class="fc bfc" id="L31" title="All 6 branches covered.">        return type != null &amp;&amp; !&quot;array&quot;.equals(type) &amp;&amp; !&quot;object&quot;.equals(type);</span>
+    }
+
+    public static boolean isEnum(Schema&lt;?&gt; schema) {
+<span class="pc bpc" id="L35" title="1 of 4 branches missed.">        return schema.getEnum() != null &amp;&amp; !schema.getEnum().isEmpty();</span>
+    }
+
+    public static boolean isRef(Schema&lt;?&gt; schema) {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        return schema.get$ref() != null;</span>
+    }
+
+    public static boolean isObject(Schema&lt;?&gt; schema) {
+<span class="fc bfc" id="L43" title="All 6 branches covered.">        return schema.getType() == null &amp;&amp; schema.getProperties() != null || &quot;object&quot;.equals(schema.getType());</span>
+    }
+
+    public static boolean isArray(Schema&lt;?&gt; schema) {
+<span class="fc" id="L47">        return schema instanceof ArraySchema;</span>
+    }
+
+    public static boolean isOneOf(Schema&lt;?&gt; schema) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (!(schema instanceof ComposedSchema)) {</span>
+<span class="fc" id="L52">            return false;</span>
+        }
+<span class="fc" id="L54">        ComposedSchema sch = (ComposedSchema) schema;</span>
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">        return sch.getOneOf() != null &amp;&amp; !sch.getOneOf().isEmpty();</span>
+    }
+
+    public static boolean isAnyOf(Schema&lt;?&gt; schema) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (!(schema instanceof ComposedSchema)) {</span>
+<span class="fc" id="L60">            return false;</span>
+        }
+<span class="fc" id="L62">        ComposedSchema sch = (ComposedSchema) schema;</span>
+<span class="pc bpc" id="L63" title="3 of 4 branches missed.">        return sch.getAnyOf() != null &amp;&amp; !sch.getAnyOf().isEmpty();</span>
+    }
+
+    public static boolean isAllOf(Schema&lt;?&gt; schema) {
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (!(schema instanceof ComposedSchema)) {</span>
+<span class="fc" id="L68">            return false;</span>
+        }
+<span class="fc" id="L70">        ComposedSchema sch = (ComposedSchema) schema;</span>
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">        return sch.getAllOf() != null &amp;&amp; !sch.getAllOf().isEmpty();</span>
+    }
+
+    public static boolean isMap(Schema&lt;?&gt; schema) {
+<span class="fc" id="L75">        return schema instanceof MapSchema;</span>
+    }
+
+    public static Class&lt;?&gt; toClass(String type, String format, Map&lt;String, Object&gt; extensions,
+            boolean mapIntegerToBigInteger, boolean mapDoubleToBigDouble) {
+<span class="fc" id="L80">        Preconditions.checkNotNull(type);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (&quot;string&quot;.equals(type)) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (&quot;date-time&quot;.equals(format)) {</span>
+<span class="fc" id="L83">                return OffsetDateTime.class;</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            } else if (&quot;date&quot;.equals(format)) {</span>
+<span class="fc" id="L85">                return LocalDate.class;</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            } else if (&quot;time&quot;.equals(format)) {</span>
+<span class="fc" id="L87">                return OffsetTime.class;</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            } else if (&quot;byte&quot;.equals(format)) {</span>
+<span class="fc" id="L89">                return byte[].class;</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            } else if (&quot;binary&quot;.equals(format)) {</span>
+<span class="fc" id="L91">                return byte[].class;</span>
+            } else {
+<span class="fc" id="L93">                return String.class;</span>
+            }
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        } else if (&quot;boolean&quot;.equals(type)) {</span>
+<span class="fc" id="L96">            return Boolean.class;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        } else if (&quot;integer&quot;.equals(type)) {</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (&quot;int32&quot;.equals(format)) {</span>
+<span class="fc" id="L99">                return Integer.class;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            } else if (&quot;int64&quot;.equals(format)) {</span>
+<span class="fc" id="L101">                return Long.class;</span>
+            } else {
+<span class="pc bpc" id="L103" title="1 of 4 branches missed.">                return mapIntegerToBigInteger || isArbitraryPrecision(extensions) ? BigInteger.class : Long.class;</span>
+            }
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        } else if (&quot;number&quot;.equals(type)) {</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            if (&quot;float&quot;.equals(format)) {</span>
+<span class="fc" id="L107">                return Float.class;</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            } else if (&quot;double&quot;.equals(format)) {</span>
+<span class="fc" id="L109">                return Double.class;</span>
+            } else {
+<span class="pc bpc" id="L111" title="2 of 4 branches missed.">                return mapDoubleToBigDouble || isArbitraryPrecision(extensions) ? BigDecimal.class : Double.class;</span>
+            }
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        } else if (&quot;array&quot;.equals(type)) {</span>
+<span class="nc" id="L114">            return List.class;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        } else if (&quot;object&quot;.equals(type)) {</span>
+<span class="nc" id="L116">            return Object.class;</span>
+        } else {
+<span class="nc" id="L118">            throw new RuntimeException(&quot;unexpected type and format: &quot; + type + &quot;, &quot; + format);</span>
+        }
+    }
+
+    private static boolean isArbitraryPrecision(Map&lt;String, Object&gt; extensions) {
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        return extensions != null</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                &amp;&amp; &quot;true&quot;.equalsIgnoreCase(String.valueOf(extensions.get(&quot;x-openapi-codegen-arbitrary-precision&quot;)));</span>
+    }
+
+    public static String toPrimitive(String canonicalClassName) {
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (canonicalClassName.equals(Integer.class.getCanonicalName())) {</span>
+<span class="fc" id="L129">            return &quot;int&quot;;</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        } else if (canonicalClassName.equals(Short.class.getCanonicalName())) {</span>
+<span class="nc" id="L131">            return &quot;short&quot;;</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        } else if (canonicalClassName.equals(Long.class.getCanonicalName())) {</span>
+<span class="fc" id="L133">            return &quot;long&quot;;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        } else if (canonicalClassName.equals(Float.class.getCanonicalName())) {</span>
+<span class="fc" id="L135">            return &quot;float&quot;;</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        } else if (canonicalClassName.equals(Double.class.getCanonicalName())) {</span>
+<span class="fc" id="L137">            return &quot;double&quot;;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        } else if (canonicalClassName.equals(Boolean.class.getCanonicalName())) {</span>
+<span class="fc" id="L139">            return &quot;boolean&quot;;</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        } else if (canonicalClassName.equals(Byte.class.getCanonicalName())) {</span>
+<span class="nc" id="L141">            return &quot;byte&quot;;</span>
+        } else {
+<span class="fc" id="L143">            return canonicalClassName;</span>
+        }
+    }
+
+    public static Class&lt;?&gt; toPrimitive(Class&lt;?&gt; c) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (c.equals(Integer.class)) {</span>
+<span class="nc" id="L149">            return int.class;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        } else if (c.equals(Long.class)) {</span>
+<span class="nc" id="L151">            return long.class;</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        } else if (c.equals(Float.class)) {</span>
+<span class="nc" id="L153">            return float.class;</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        } else if (c.equals(Boolean.class)) {</span>
+<span class="nc" id="L155">            return boolean.class;</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        } else if (c.equals(Short.class)) {</span>
+<span class="nc" id="L157">            return short.class;</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        } else if (c.equals(Byte.class)) {</span>
+<span class="nc" id="L159">            return byte.class;</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        } else if (c.equals(BigInteger.class)) {</span>
+<span class="nc" id="L161">            return c;</span>
+        } else {
+<span class="nc" id="L163">            return c;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-example-pet-store</a> &gt; <a href="index.source.html" class="el_package">pet.store.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package pet.store.client;
+
+import jakarta.annotation.Generated;
+
+import java.lang.String;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
+import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.HttpMethod;
+import org.davidmoten.oa3.codegen.http.HttpResponse;
+import org.davidmoten.oa3.codegen.http.Interceptor;
+import org.davidmoten.oa3.codegen.http.Serializer;
+
+import pet.store.Globals;
+import pet.store.path.FindPets200Response;
+import pet.store.schema.Error;
+import pet.store.schema.NewPet;
+import pet.store.schema.Pet;
+
+/**
+ * &lt;p&gt;Swagger Petstore
+ * &lt;p&gt;A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+ */
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public class Client {
+
+    private final Serializer serializer;
+    private final List&lt;Interceptor&gt; interceptors;
+    private final String basePath;
+
+<span class="fc" id="L33">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath) {</span>
+<span class="fc" id="L34">        this.serializer = serializer;</span>
+<span class="fc" id="L35">        this.interceptors = interceptors;</span>
+<span class="fc" id="L36">        this.basePath = basePath;</span>
+<span class="fc" id="L37">    }</span>
+
+    public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
+<span class="fc" id="L40">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath()), Globals.config(), basePath);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns all pets from the system that the user has access to
+     * Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
+     * &lt;p&gt;Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link FindPets200Response}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param limit
+     *            maximum number of results to return
+     * @param tags
+     *            tags to filter by
+     * @return primary response with status code 200
+     */
+    public FindPets200Response findPets(
+            Optional&lt;List&lt;String&gt;&gt; tags, 
+            int limit) {
+<span class="fc" id="L60">        return findPetsFullResponse(tags, limit)</span>
+<span class="fc" id="L61">                .assertStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L62">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L63">                .dataUnwrapped();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns all pets from the system that the user has access to
+     * Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
+     * &lt;p&gt;Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link FindPets200Response}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param limit
+     *            maximum number of results to return
+     * @param tags
+     *            tags to filter by
+     * @return full response with status code, body and headers
+     */
+    public HttpResponse findPetsFullResponse(
+            Optional&lt;List&lt;String&gt;&gt; tags, 
+            int limit) {
+<span class="fc" id="L83">        return Http</span>
+<span class="fc" id="L84">                .method(HttpMethod.GET)</span>
+<span class="fc" id="L85">                .basePath(this.basePath)</span>
+<span class="fc" id="L86">                .path(&quot;/pets&quot;)</span>
+<span class="fc" id="L87">                .serializer(this.serializer)</span>
+<span class="fc" id="L88">                .interceptors(this.interceptors)</span>
+<span class="fc" id="L89">                .acceptApplicationJson()</span>
+<span class="fc" id="L90">                .queryParam(&quot;tags&quot;, tags)</span>
+<span class="fc" id="L91">                .queryParam(&quot;limit&quot;, limit)</span>
+<span class="fc" id="L92">                .responseAs(FindPets200Response.class)</span>
+<span class="fc" id="L93">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L94">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L95">                .responseAs(Error.class)</span>
+<span class="fc" id="L96">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L97">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L98">                .call();</span>
+    }
+
+    /**
+     * &lt;p&gt;Creates a new pet in the store. Duplicates are allowed
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param requestBody
+     *            requestBody
+     * @return primary response with status code 200
+     */
+    public Pet addPet(
+            NewPet requestBody) {
+<span class="nc" id="L113">        return addPetFullResponse(requestBody)</span>
+<span class="nc" id="L114">                .assertStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L115">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L116">                .dataUnwrapped();</span>
+    }
+
+    /**
+     * &lt;p&gt;Creates a new pet in the store. Duplicates are allowed
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param requestBody
+     *            requestBody
+     * @return full response with status code, body and headers
+     */
+    public HttpResponse addPetFullResponse(
+            NewPet requestBody) {
+<span class="nc" id="L131">        return Http</span>
+<span class="nc" id="L132">                .method(HttpMethod.POST)</span>
+<span class="nc" id="L133">                .basePath(this.basePath)</span>
+<span class="nc" id="L134">                .path(&quot;/pets&quot;)</span>
+<span class="nc" id="L135">                .serializer(this.serializer)</span>
+<span class="nc" id="L136">                .interceptors(this.interceptors)</span>
+<span class="nc" id="L137">                .acceptApplicationJson()</span>
+<span class="nc" id="L138">                .body(requestBody)</span>
+<span class="nc" id="L139">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L140">                .responseAs(Pet.class)</span>
+<span class="nc" id="L141">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L142">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L143">                .responseAs(Error.class)</span>
+<span class="nc" id="L144">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L145">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L146">                .call();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns a user based on a single ID, if the user does not have access to the pet
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param id
+     *            ID of pet to fetch
+     * @return primary response with status code 200
+     */
+    public Pet find_pet_by_id(
+            long id) {
+<span class="nc" id="L161">        return find_pet_by_idFullResponse(id)</span>
+<span class="nc" id="L162">                .assertStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L163">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L164">                .dataUnwrapped();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns a user based on a single ID, if the user does not have access to the pet
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param id
+     *            ID of pet to fetch
+     * @return full response with status code, body and headers
+     */
+    public HttpResponse find_pet_by_idFullResponse(
+            long id) {
+<span class="nc" id="L179">        return Http</span>
+<span class="nc" id="L180">                .method(HttpMethod.GET)</span>
+<span class="nc" id="L181">                .basePath(this.basePath)</span>
+<span class="nc" id="L182">                .path(&quot;/pets/{id}&quot;)</span>
+<span class="nc" id="L183">                .serializer(this.serializer)</span>
+<span class="nc" id="L184">                .interceptors(this.interceptors)</span>
+<span class="nc" id="L185">                .acceptApplicationJson()</span>
+<span class="nc" id="L186">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L187">                .responseAs(Pet.class)</span>
+<span class="nc" id="L188">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L189">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L190">                .responseAs(Error.class)</span>
+<span class="nc" id="L191">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L192">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L193">                .call();</span>
+    }
+
+    /**
+     * &lt;p&gt;deletes a single pet based on the ID supplied
+     * 
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param id
+     *            ID of pet to delete
+     * @return full response with status code, body and headers
+     */
+    public HttpResponse deletePetFullResponse(
+            long id) {
+<span class="nc" id="L207">        return Http</span>
+<span class="nc" id="L208">                .method(HttpMethod.DELETE)</span>
+<span class="nc" id="L209">                .basePath(this.basePath)</span>
+<span class="nc" id="L210">                .path(&quot;/pets/{id}&quot;)</span>
+<span class="nc" id="L211">                .serializer(this.serializer)</span>
+<span class="nc" id="L212">                .interceptors(this.interceptors)</span>
+<span class="nc" id="L213">                .acceptApplicationJson()</span>
+<span class="nc" id="L214">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L215">                .responseAs(Error.class)</span>
+<span class="nc" id="L216">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L217">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L218">                .call();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

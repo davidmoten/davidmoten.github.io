@@ -1,0 +1,33 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>BasicAuthenticator xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../apidocs/org/davidmoten/oa3/codegen/http/BasicAuthenticator.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> org.davidmoten.oa3.codegen.http;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> java.nio.charset.StandardCharsets;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> java.util.Base64;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">interface</strong> <a name="BasicAuthenticator" href="../../../../../org/davidmoten/oa3/codegen/http/BasicAuthenticator.html#BasicAuthenticator">BasicAuthenticator</a> <strong class="jxr_keyword">extends</strong> <a name="Interceptor" href="../../../../../org/davidmoten/oa3/codegen/http/Interceptor.html#Interceptor">Interceptor</a> {
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>       String username();
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>      String password();
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>      <strong class="jxr_keyword">default</strong> <a name="RequestBase" href="../../../../../org/davidmoten/oa3/codegen/http/RequestBase.html#RequestBase">RequestBase</a> intercept(<a name="RequestBase" href="../../../../../org/davidmoten/oa3/codegen/http/RequestBase.html#RequestBase">RequestBase</a> r) {
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>          <a name="Headers" href="../../../../../org/davidmoten/oa3/codegen/http/Headers.html#Headers">Headers</a> h = <strong class="jxr_keyword">new</strong> <a name="Headers" href="../../../../../org/davidmoten/oa3/codegen/http/Headers.html#Headers">Headers</a>(r.headers());
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>          String encoded = Base64.getEncoder()
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>                  .encodeToString((username() + <span class="jxr_string">":"</span> + password()).getBytes(StandardCharsets.UTF_8));
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>          h.put(<span class="jxr_string">"Authorization"</span>, <span class="jxr_string">"Basic "</span> + encoded);
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>          <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a name="RequestBase" href="../../../../../org/davidmoten/oa3/codegen/http/RequestBase.html#RequestBase">RequestBase</a>(r.method(), r.url(), h);
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      }
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2023. All rights reserved.</div>
+</body>
+</html>

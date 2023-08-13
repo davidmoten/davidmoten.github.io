@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdditionalProperties.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">AdditionalProperties.java</span></div><h1>AdditionalProperties.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Integer;
+import java.lang.Long;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.MapBuilder;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class AdditionalProperties {
+
+    @JsonAnyGetter
+    @JsonAnySetter
+    private final Map&lt;String, Long&gt; properties;
+
+    @JsonProperty(&quot;name&quot;)
+    private final String name;
+
+    @JsonProperty(&quot;age&quot;)
+    private final Integer age;
+
+    @JsonCreator
+    private AdditionalProperties(
+            @JsonProperty(&quot;name&quot;) String name,
+<span class="fc" id="L48">            @JsonProperty(&quot;age&quot;) Integer age) {</span>
+<span class="fc" id="L49">        this.properties = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L50">        this.name = name;</span>
+<span class="fc" id="L51">        this.age = age;</span>
+<span class="fc" id="L52">    }</span>
+
+    @ConstructorBinding
+    public AdditionalProperties(
+            Map&lt;String, Long&gt; properties,
+            Optional&lt;String&gt; name,
+<span class="fc" id="L58">            Optional&lt;Integer&gt; age) {</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(AdditionalProperties.class)) {</span>
+<span class="fc" id="L60">            Preconditions.checkNotNull(name, &quot;name&quot;);</span>
+<span class="fc" id="L61">            Preconditions.checkNotNull(age, &quot;age&quot;);</span>
+        }
+<span class="fc" id="L63">        this.properties = properties;</span>
+<span class="fc" id="L64">        this.name = name.orElse(null);</span>
+<span class="fc" id="L65">        this.age = age.orElse(null);</span>
+<span class="fc" id="L66">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L69">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="fc" id="L74">        private Map&lt;String, Long&gt; properties = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L75">        private Optional&lt;String&gt; name = Optional.empty();</span>
+<span class="fc" id="L76">        private Optional&lt;Integer&gt; age = Optional.empty();</span>
+
+<span class="fc" id="L78">        Builder() {</span>
+<span class="fc" id="L79">        }</span>
+
+        public MapBuilder&lt;Long, Builder&gt; addToProperties(String key, Long value) {
+<span class="fc" id="L82">            Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+<span class="fc" id="L83">            return new MapBuilder&lt;Long, Builder&gt;(this, x -&gt; this.properties = x).add(key, value);</span>
+        }
+
+        public MapBuilder&lt;Long, Builder&gt; addAllToProperties(Map&lt;String, Long&gt; map) {
+<span class="nc" id="L87">            return new MapBuilder&lt;Long, Builder&gt;(this, x -&gt; this.properties = x).addAll(map);</span>
+        }
+
+        public Builder properties(Map&lt;String, Long&gt; properties) {
+<span class="nc" id="L91">            this.properties = properties;</span>
+<span class="nc" id="L92">            return this;</span>
+        }
+
+        public Builder name(String name) {
+<span class="fc" id="L96">            this.name = Optional.of(name);</span>
+<span class="fc" id="L97">            return this;</span>
+        }
+
+        public Builder name(Optional&lt;String&gt; name) {
+<span class="nc" id="L101">            this.name = name;</span>
+<span class="nc" id="L102">            return this;</span>
+        }
+
+        public Builder age(int age) {
+<span class="fc" id="L106">            this.age = Optional.of(age);</span>
+<span class="fc" id="L107">            return this;</span>
+        }
+
+        public Builder age(Optional&lt;Integer&gt; age) {
+<span class="nc" id="L111">            this.age = age;</span>
+<span class="nc" id="L112">            return this;</span>
+        }
+
+        public AdditionalProperties build() {
+<span class="fc" id="L116">            return new AdditionalProperties(this.properties, this.name, this.age);</span>
+        }
+    }
+
+    @JsonAnySetter
+    private void put(String key, Long value) {
+<span class="fc" id="L122">        this.properties.put(key, value);</span>
+<span class="fc" id="L123">    }</span>
+
+    public Map&lt;String, Long&gt; properties() {
+<span class="fc" id="L126">        return properties;</span>
+    }
+
+    public Optional&lt;String&gt; name() {
+<span class="fc" id="L130">        return Optional.ofNullable(name);</span>
+    }
+
+    public Optional&lt;Integer&gt; age() {
+<span class="fc" id="L134">        return Optional.ofNullable(age);</span>
+    }
+
+    public AdditionalProperties withProperties(Map&lt;String, Long&gt; properties) {
+<span class="nc" id="L138">        return new AdditionalProperties(properties, Optional.ofNullable(name), Optional.ofNullable(age));</span>
+    }
+
+    public AdditionalProperties withName(Optional&lt;String&gt; name) {
+<span class="nc" id="L142">        return new AdditionalProperties(properties, name, Optional.ofNullable(age));</span>
+    }
+
+    public AdditionalProperties withName(String name) {
+<span class="nc" id="L146">        return new AdditionalProperties(properties, Optional.of(name), Optional.ofNullable(age));</span>
+    }
+
+    public AdditionalProperties withAge(Optional&lt;Integer&gt; age) {
+<span class="nc" id="L150">        return new AdditionalProperties(properties, Optional.ofNullable(name), age);</span>
+    }
+
+    public AdditionalProperties withAge(int age) {
+<span class="nc" id="L154">        return new AdditionalProperties(properties, Optional.ofNullable(name), Optional.of(age));</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L160">            return true;</span>
+        }
+<span class="nc bnc" id="L162" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L163">            return false;</span>
+        }
+<span class="nc" id="L165">        AdditionalProperties other = (AdditionalProperties) o;</span>
+<span class="nc" id="L166">        return </span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            Objects.equals(this.properties, other.properties) &amp;&amp; </span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            Objects.equals(this.name, other.name) &amp;&amp; </span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            Objects.equals(this.age, other.age);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L174">        return Objects.hash(properties, name, age);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L179">        return Util.toString(AdditionalProperties.class, &quot;properties&quot;, properties, &quot;name&quot;, name, &quot;age&quot;, age);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

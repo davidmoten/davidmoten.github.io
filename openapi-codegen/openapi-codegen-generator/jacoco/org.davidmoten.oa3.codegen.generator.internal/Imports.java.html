@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Imports.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.internal</a> &gt; <span class="el_source">Imports.java</span></div><h1>Imports.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.internal;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+public final class Imports {
+
+    private final String fullClassName;
+
+<span class="fc" id="L12">    public Imports(String fullClassName) {</span>
+<span class="fc" id="L13">        this.fullClassName = fullClassName;</span>
+<span class="fc" id="L14">        add(fullClassName);</span>
+<span class="fc" id="L15">    }</span>
+
+    // simpleName (may be full class name if already present) to fullClassName
+<span class="fc" id="L18">    private final Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
+
+    public String add(Class&lt;?&gt; cls) {
+<span class="fc" id="L21">        return add(cls.getCanonicalName().replace(&quot;$&quot;, &quot;.&quot;));</span>
+    }
+
+    public String add(String className) {
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        if (className.endsWith(&quot;[]&quot;)</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">                &amp;&amp; Util.isPrimitiveFullClassName(className.substring(0, className.length() - 2))) {</span>
+            // don't add byte[] etc to imports
+<span class="fc" id="L28">            return className;</span>
+        }
+<span class="fc" id="L30">        final String simpleName = simpleName(className);</span>
+<span class="fc" id="L31">        String c = map.get(simpleName);</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (c == null) {</span>
+<span class="fc" id="L33">            map.put(simpleName, className);</span>
+<span class="fc" id="L34">            return simpleName;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        } else if (c.equals(className)) {</span>
+<span class="fc" id="L36">            return simpleName;</span>
+        } else {
+<span class="fc" id="L38">            return className;</span>
+        }
+    }
+
+    private static String simpleName(String className) {
+        final String simpleName;
+<span class="fc" id="L44">        int i = className.lastIndexOf('.');</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (i == -1) {</span>
+<span class="fc" id="L46">            simpleName = className;</span>
+        } else {
+<span class="fc" id="L48">            simpleName = className.substring(i + 1);</span>
+        }
+<span class="fc" id="L50">        return simpleName;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L55">        String pkgFullClassName = pkg(fullClassName);</span>
+<span class="fc" id="L56">        String x = map //</span>
+<span class="fc" id="L57">                .values() //</span>
+<span class="fc" id="L58">                .stream() //</span>
+<span class="fc" id="L59">                .sorted() //</span>
+//                .filter(c -&gt; !c.startsWith(&quot;java.lang.&quot;)) //
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(&quot;boolean&quot;)) //</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                .filter(c -&gt; !c.equals(&quot;short&quot;)) //</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(&quot;float&quot;)) //</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(&quot;double&quot;)) //</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(&quot;int&quot;)) //</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                .filter(c -&gt; !c.equals(&quot;byte&quot;)) //</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(&quot;long&quot;)) //</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                .filter(c -&gt; !c.equals(fullClassName)) // ensure that if in same pkg as fullClassName that we don't need</span>
+                                                       // to specify an import
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                .filter(c -&gt; !c.startsWith(fullClassName + &quot;.&quot;)) // is member class</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                .filter(c -&gt; !pkg(c).equals(pkgFullClassName)) //</span>
+<span class="fc" id="L72">                .map(process()) //</span>
+<span class="fc" id="L73">                .collect(Collectors.joining(&quot;\n&quot;));</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (!x.isEmpty()) {</span>
+<span class="fc" id="L75">            x = x + &quot;\n&quot;;</span>
+        }
+<span class="fc" id="L77">        return x;</span>
+    }
+
+    private static Function&lt;String, String&gt; process() {
+<span class="fc" id="L81">        return new Function&lt;String, String&gt;() {</span>
+
+            String previous;
+
+            @Override
+            public String apply(String c) {
+<span class="fc" id="L87">                String firstSegment = firstSegment(c);</span>
+<span class="fc bfc" id="L88" title="All 4 branches covered.">                boolean insertBlankLine = previous != null &amp;&amp; !firstSegment.equals(previous);</span>
+<span class="fc" id="L89">                previous = firstSegment;</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                return (insertBlankLine ? &quot;\n&quot; : &quot;&quot;) + &quot;import &quot; + c + &quot;;&quot;;</span>
+            }
+        };
+    }
+
+    private static String pkg(String fullClassName) {
+<span class="fc" id="L96">        int i = fullClassName.lastIndexOf('.');</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (i == -1) {</span>
+<span class="fc" id="L98">            return &quot;&quot;;</span>
+        } else {
+<span class="fc" id="L100">            return fullClassName.substring(0, i);</span>
+        }
+    }
+
+    private static String firstSegment(String s) {
+<span class="fc" id="L105">        int i = s.indexOf('.');</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (i == -1) {</span>
+<span class="nc" id="L107">            return s;</span>
+        } else {
+<span class="fc" id="L109">            return s.substring(0, i);</span>
+        }
+    }
+    
+    public String fullClassName() {
+<span class="fc" id="L114">        return fullClassName;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

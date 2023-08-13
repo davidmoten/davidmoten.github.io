@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WriterUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.internal</a> &gt; <span class="el_source">WriterUtil.java</span></div><h1>WriterUtil.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.internal;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+import org.davidmoten.oa3.codegen.generator.Generator;
+import org.davidmoten.oa3.codegen.generator.Names;
+
+import jakarta.annotation.Generated;
+
+<span class="nc" id="L23">public final class WriterUtil {</span>
+
+<span class="fc" id="L25">    public static final boolean DEBUG = Boolean.parseBoolean(System.getProperty(&quot;debug&quot;, &quot;false&quot;));</span>
+    public static final String IMPORTS_HERE = &quot;IMPORTS_HERE&quot;;
+
+<span class="fc" id="L28">    private static final String version = readVersion();</span>
+
+    private static String readVersion() {
+<span class="fc" id="L31">        Properties p = new Properties();</span>
+<span class="fc" id="L32">        try (InputStream in = Generator.class.getResourceAsStream(&quot;/application.properties&quot;)) {</span>
+<span class="fc" id="L33">            p.load(in);</span>
+<span class="fc" id="L34">            return p.get(&quot;groupId&quot;) + &quot;:&quot; + p.get(&quot;artifactId&quot;) + &quot;:&quot; + p.get(&quot;version&quot;);</span>
+<span class="nc" id="L35">        } catch (IOException e) {</span>
+<span class="nc" id="L36">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    public static void closeParen(PrintWriter out, Indent indent) {
+<span class="nc" id="L41">        indent.left();</span>
+<span class="nc" id="L42">        out.format(&quot;%s}\n&quot;, indent);</span>
+<span class="nc" id="L43">    }</span>
+
+    public static void writeContent(Names names, CodePrintWriter out) {
+<span class="fc" id="L46">        String content = out.text().replace(IMPORTS_HERE, out.imports().toString());</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (DEBUG) {</span>
+<span class="nc" id="L48">            System.out.println(&quot;////////////////////////////////////////////////&quot;);</span>
+<span class="nc" id="L49">            System.out.println(content);</span>
+        }
+<span class="fc" id="L51">        out.close();</span>
+<span class="fc" id="L52">        File file = names.fullClassNameToJavaFile(out.fullClassName());</span>
+<span class="fc" id="L53">        file.getParentFile().mkdirs();</span>
+        try {
+<span class="fc" id="L55">            Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));</span>
+<span class="nc" id="L56">        } catch (IOException e) {</span>
+<span class="nc" id="L57">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L58">        }</span>
+<span class="fc" id="L59">    }</span>
+
+    public static String markdownToHtml(String description) {
+<span class="fc" id="L62">        Parser parser = Parser.builder().build();</span>
+<span class="fc" id="L63">        Node document = parser.parse(description);</span>
+<span class="fc" id="L64">        HtmlRenderer renderer = HtmlRenderer.builder().build();</span>
+<span class="fc" id="L65">        return renderer.render(document);</span>
+    }
+
+    public static void writeApiJavadoc(CodePrintWriter out, Names names) {
+<span class="fc" id="L69">        String text = Stream.of( //</span>
+<span class="fc" id="L70">                Optional.ofNullable(names.api().getInfo().getTitle()), //</span>
+<span class="fc" id="L71">                Optional.ofNullable(names.api().getInfo().getSummary()), //</span>
+<span class="fc" id="L72">                Optional.ofNullable(names.api().getInfo().getDescription())) //</span>
+<span class="fc" id="L73">                .filter(Optional::isPresent) //</span>
+<span class="fc" id="L74">                .map(Optional::get) //</span>
+<span class="fc" id="L75">                .collect(Collectors.joining(&quot;\n\n&quot;));</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (!Javadoc.printJavadoc(out, out.indent(), WriterUtil.markdownToHtml(text), true)) {</span>
+<span class="nc" id="L77">            out.println();</span>
+        }
+<span class="fc" id="L79">    }</span>
+
+    public static void addGeneratedAnnotation(CodePrintWriter out) {
+<span class="fc" id="L82">        out.line(&quot;@%s(value = \&quot;%s\&quot;)&quot;, Generated.class, version);</span>
+<span class="fc" id="L83">    }</span>
+
+    public static String escapePattern(String pattern) {
+<span class="fc" id="L86">        return pattern.replace(&quot;\\&quot;, &quot;\\\\&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

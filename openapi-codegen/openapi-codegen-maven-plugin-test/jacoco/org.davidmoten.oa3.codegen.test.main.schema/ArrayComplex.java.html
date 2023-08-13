@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrayComplex.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">ArrayComplex.java</span></div><h1>ArrayComplex.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class ArrayComplex {
+
+    @JsonValue
+    private final List&lt;ArrayComplexItem&gt; value;
+
+    @JsonCreator
+    @ConstructorBinding
+    public ArrayComplex(
+<span class="nc" id="L36">            List&lt;ArrayComplexItem&gt; value) {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(ArrayComplex.class)) {</span>
+<span class="nc" id="L38">            Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+        }
+<span class="nc" id="L40">        this.value = value;</span>
+<span class="nc" id="L41">    }</span>
+
+    public static ArrayComplex value(List&lt;ArrayComplexItem&gt; value) {
+<span class="nc" id="L44">        return new ArrayComplex(value);</span>
+    }
+
+    public List&lt;ArrayComplexItem&gt; value() {
+<span class="nc" id="L48">        return value;</span>
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class ArrayComplexItem {
+
+        @JsonProperty(&quot;firstName&quot;)
+        private final String firstName;
+
+        @JsonProperty(&quot;secondName&quot;)
+        private final String secondName;
+
+        @JsonCreator
+        private ArrayComplexItem(
+                @JsonProperty(&quot;firstName&quot;) String firstName,
+<span class="nc" id="L64">                @JsonProperty(&quot;secondName&quot;) String secondName) {</span>
+<span class="nc" id="L65">            this.firstName = firstName;</span>
+<span class="nc" id="L66">            this.secondName = secondName;</span>
+<span class="nc" id="L67">        }</span>
+
+        @ConstructorBinding
+        public ArrayComplexItem(
+                String firstName,
+<span class="nc" id="L72">                Optional&lt;String&gt; secondName) {</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(ArrayComplexItem.class)) {</span>
+<span class="nc" id="L74">                Preconditions.checkNotNull(firstName, &quot;firstName&quot;);</span>
+<span class="nc" id="L75">                Preconditions.checkNotNull(secondName, &quot;secondName&quot;);</span>
+            }
+<span class="nc" id="L77">            this.firstName = firstName;</span>
+<span class="nc" id="L78">            this.secondName = secondName.orElse(null);</span>
+<span class="nc" id="L79">        }</span>
+
+        public static Builder builder() {
+<span class="nc" id="L82">            return new Builder();</span>
+        }
+
+        public static final class Builder {
+
+            private String firstName;
+<span class="nc" id="L88">            private Optional&lt;String&gt; secondName = Optional.empty();</span>
+
+<span class="nc" id="L90">            Builder() {</span>
+<span class="nc" id="L91">            }</span>
+
+            public BuilderWithFirstName firstName(String firstName) {
+<span class="nc" id="L94">                this.firstName = firstName;</span>
+<span class="nc" id="L95">                return new BuilderWithFirstName(this);</span>
+            }
+        }
+
+        public static final class BuilderWithFirstName {
+
+            private final Builder b;
+
+<span class="nc" id="L103">            BuilderWithFirstName(Builder b) {</span>
+<span class="nc" id="L104">                this.b = b;</span>
+<span class="nc" id="L105">            }</span>
+
+            public BuilderWithFirstName secondName(String secondName) {
+<span class="nc" id="L108">                this.b.secondName = Optional.of(secondName);</span>
+<span class="nc" id="L109">                return this;</span>
+            }
+
+            public BuilderWithFirstName secondName(Optional&lt;String&gt; secondName) {
+<span class="nc" id="L113">                this.b.secondName = secondName;</span>
+<span class="nc" id="L114">                return this;</span>
+            }
+
+            public ArrayComplexItem build() {
+<span class="nc" id="L118">                return new ArrayComplexItem(this.b.firstName, this.b.secondName);</span>
+            }
+        }
+
+        public static BuilderWithFirstName firstName(String firstName) {
+<span class="nc" id="L123">            return builder().firstName(firstName);</span>
+        }
+
+        public String firstName() {
+<span class="nc" id="L127">            return firstName;</span>
+        }
+
+        public Optional&lt;String&gt; secondName() {
+<span class="nc" id="L131">            return Optional.ofNullable(secondName);</span>
+        }
+
+        public ArrayComplexItem withFirstName(String firstName) {
+<span class="nc" id="L135">            return new ArrayComplexItem(firstName, Optional.ofNullable(secondName));</span>
+        }
+
+        public ArrayComplexItem withSecondName(Optional&lt;String&gt; secondName) {
+<span class="nc" id="L139">            return new ArrayComplexItem(firstName, secondName);</span>
+        }
+
+        public ArrayComplexItem withSecondName(String secondName) {
+<span class="nc" id="L143">            return new ArrayComplexItem(firstName, Optional.of(secondName));</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L149">                return true;</span>
+            }
+<span class="nc bnc" id="L151" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L152">                return false;</span>
+            }
+<span class="nc" id="L154">            ArrayComplexItem other = (ArrayComplexItem) o;</span>
+<span class="nc" id="L155">            return </span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                Objects.equals(this.firstName, other.firstName) &amp;&amp; </span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                Objects.equals(this.secondName, other.secondName);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L162">            return Objects.hash(firstName, secondName);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L167">            return Util.toString(ArrayComplexItem.class, &quot;firstName&quot;, firstName, &quot;secondName&quot;, secondName);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L174">            return true;</span>
+        }
+<span class="nc bnc" id="L176" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L177">            return false;</span>
+        }
+<span class="nc" id="L179">        ArrayComplex other = (ArrayComplex) o;</span>
+<span class="nc" id="L180">        return </span>
+<span class="nc" id="L181">            Objects.equals(this.value, other.value);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L186">        return Objects.hash(value);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L191">        return Util.toString(ArrayComplex.class, &quot;value&quot;, value);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

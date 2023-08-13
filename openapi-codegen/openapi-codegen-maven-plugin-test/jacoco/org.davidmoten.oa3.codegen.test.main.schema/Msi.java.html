@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Msi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Msi.java</span></div><h1>Msi.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Boolean;
+import java.lang.Object;
+import java.lang.Override;
+import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+/**
+ * Represents a created MMSI (with an identifier).
+ * 
+ * `repetition` is optional. If omitted once only is assumed
+ * (no repetition). `startTime` and `endTime`
+ * are optional fields and 0, 1 or both can be present.
+ */
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class Msi {
+
+    @JsonProperty(&quot;id&quot;)
+    private final MsiId id;
+
+    @JsonProperty(&quot;broadcast&quot;)
+    private final Broadcast broadcast;
+
+    @JsonProperty(&quot;createdTime&quot;)
+    private final OffsetDateTime createdTime;
+
+    @JsonProperty(&quot;cancelledTime&quot;)
+    private final OffsetDateTime cancelledTime;
+
+    @JsonProperty(&quot;startTime&quot;)
+    private final OffsetDateTime startTime;
+
+    @JsonProperty(&quot;endTime&quot;)
+    private final OffsetDateTime endTime;
+
+    @JsonProperty(&quot;payload&quot;)
+    private final Payload payload;
+
+    @JsonProperty(&quot;status&quot;)
+    private final Status status;
+
+    @JsonProperty(&quot;echo&quot;)
+    private final Boolean echo;
+
+    @JsonProperty(&quot;repetition&quot;)
+    private final Repetition repetition;
+
+    @JsonProperty(&quot;readAcksEnabled&quot;)
+    private final Boolean readAcksEnabled;
+
+    @JsonProperty(&quot;receiveAcksEnabled&quot;)
+    private final Boolean receiveAcksEnabled;
+
+    @JsonCreator
+    private Msi(
+            @JsonProperty(&quot;id&quot;) MsiId id,
+            @JsonProperty(&quot;broadcast&quot;) Broadcast broadcast,
+            @JsonProperty(&quot;createdTime&quot;) OffsetDateTime createdTime,
+            @JsonProperty(&quot;cancelledTime&quot;) OffsetDateTime cancelledTime,
+            @JsonProperty(&quot;startTime&quot;) OffsetDateTime startTime,
+            @JsonProperty(&quot;endTime&quot;) OffsetDateTime endTime,
+            @JsonProperty(&quot;payload&quot;) Payload payload,
+            @JsonProperty(&quot;status&quot;) Status status,
+            @JsonProperty(&quot;echo&quot;) Boolean echo,
+            @JsonProperty(&quot;repetition&quot;) Repetition repetition,
+            @JsonProperty(&quot;readAcksEnabled&quot;) Boolean readAcksEnabled,
+<span class="fc" id="L85">            @JsonProperty(&quot;receiveAcksEnabled&quot;) Boolean receiveAcksEnabled) {</span>
+<span class="fc" id="L86">        this.id = id;</span>
+<span class="fc" id="L87">        this.broadcast = broadcast;</span>
+<span class="fc" id="L88">        this.createdTime = createdTime;</span>
+<span class="fc" id="L89">        this.cancelledTime = cancelledTime;</span>
+<span class="fc" id="L90">        this.startTime = startTime;</span>
+<span class="fc" id="L91">        this.endTime = endTime;</span>
+<span class="fc" id="L92">        this.payload = payload;</span>
+<span class="fc" id="L93">        this.status = status;</span>
+<span class="fc" id="L94">        this.echo = echo;</span>
+<span class="fc" id="L95">        this.repetition = repetition;</span>
+<span class="fc" id="L96">        this.readAcksEnabled = readAcksEnabled;</span>
+<span class="fc" id="L97">        this.receiveAcksEnabled = receiveAcksEnabled;</span>
+<span class="fc" id="L98">    }</span>
+
+    @ConstructorBinding
+    public Msi(
+            MsiId id,
+            Broadcast broadcast,
+            OffsetDateTime createdTime,
+            Optional&lt;OffsetDateTime&gt; cancelledTime,
+            OffsetDateTime startTime,
+            OffsetDateTime endTime,
+            Payload payload,
+            Status status,
+            Optional&lt;Boolean&gt; echo,
+            Optional&lt;Repetition&gt; repetition,
+            Optional&lt;Boolean&gt; readAcksEnabled,
+<span class="fc" id="L113">            Optional&lt;Boolean&gt; receiveAcksEnabled) {</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(Msi.class)) {</span>
+<span class="fc" id="L115">            Preconditions.checkNotNull(id, &quot;id&quot;);</span>
+<span class="fc" id="L116">            Preconditions.checkNotNull(broadcast, &quot;broadcast&quot;);</span>
+<span class="fc" id="L117">            Preconditions.checkNotNull(createdTime, &quot;createdTime&quot;);</span>
+<span class="fc" id="L118">            Preconditions.checkNotNull(cancelledTime, &quot;cancelledTime&quot;);</span>
+<span class="fc" id="L119">            Preconditions.checkNotNull(startTime, &quot;startTime&quot;);</span>
+<span class="fc" id="L120">            Preconditions.checkNotNull(endTime, &quot;endTime&quot;);</span>
+<span class="fc" id="L121">            Preconditions.checkNotNull(payload, &quot;payload&quot;);</span>
+<span class="fc" id="L122">            Preconditions.checkNotNull(status, &quot;status&quot;);</span>
+<span class="fc" id="L123">            Preconditions.checkNotNull(echo, &quot;echo&quot;);</span>
+<span class="fc" id="L124">            Preconditions.checkNotNull(repetition, &quot;repetition&quot;);</span>
+<span class="fc" id="L125">            Preconditions.checkNotNull(readAcksEnabled, &quot;readAcksEnabled&quot;);</span>
+<span class="fc" id="L126">            Preconditions.checkNotNull(receiveAcksEnabled, &quot;receiveAcksEnabled&quot;);</span>
+        }
+<span class="fc" id="L128">        this.id = id;</span>
+<span class="fc" id="L129">        this.broadcast = broadcast;</span>
+<span class="fc" id="L130">        this.createdTime = createdTime;</span>
+<span class="fc" id="L131">        this.cancelledTime = cancelledTime.orElse(null);</span>
+<span class="fc" id="L132">        this.startTime = startTime;</span>
+<span class="fc" id="L133">        this.endTime = endTime;</span>
+<span class="fc" id="L134">        this.payload = payload;</span>
+<span class="fc" id="L135">        this.status = status;</span>
+<span class="fc" id="L136">        this.echo = echo.orElse(null);</span>
+<span class="fc" id="L137">        this.repetition = repetition.orElse(null);</span>
+<span class="fc" id="L138">        this.readAcksEnabled = readAcksEnabled.orElse(null);</span>
+<span class="fc" id="L139">        this.receiveAcksEnabled = receiveAcksEnabled.orElse(null);</span>
+<span class="fc" id="L140">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L143">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private MsiId id;
+        private Broadcast broadcast;
+        private OffsetDateTime createdTime;
+        private OffsetDateTime startTime;
+        private OffsetDateTime endTime;
+        private Payload payload;
+        private Status status;
+<span class="fc" id="L155">        private Optional&lt;OffsetDateTime&gt; cancelledTime = Optional.empty();</span>
+<span class="fc" id="L156">        private Optional&lt;Boolean&gt; echo = Optional.empty();</span>
+<span class="fc" id="L157">        private Optional&lt;Repetition&gt; repetition = Optional.empty();</span>
+<span class="fc" id="L158">        private Optional&lt;Boolean&gt; readAcksEnabled = Optional.empty();</span>
+<span class="fc" id="L159">        private Optional&lt;Boolean&gt; receiveAcksEnabled = Optional.empty();</span>
+
+<span class="fc" id="L161">        Builder() {</span>
+<span class="fc" id="L162">        }</span>
+
+        public BuilderWithId id(MsiId id) {
+<span class="fc" id="L165">            this.id = id;</span>
+<span class="fc" id="L166">            return new BuilderWithId(this);</span>
+        }
+    }
+
+    public static final class BuilderWithId {
+
+        private final Builder b;
+
+<span class="fc" id="L174">        BuilderWithId(Builder b) {</span>
+<span class="fc" id="L175">            this.b = b;</span>
+<span class="fc" id="L176">        }</span>
+
+        public BuilderWithBroadcast broadcast(Broadcast broadcast) {
+<span class="fc" id="L179">            this.b.broadcast = broadcast;</span>
+<span class="fc" id="L180">            return new BuilderWithBroadcast(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithBroadcast {
+
+        private final Builder b;
+
+<span class="fc" id="L188">        BuilderWithBroadcast(Builder b) {</span>
+<span class="fc" id="L189">            this.b = b;</span>
+<span class="fc" id="L190">        }</span>
+
+        public BuilderWithCreatedTime createdTime(OffsetDateTime createdTime) {
+<span class="fc" id="L193">            this.b.createdTime = createdTime;</span>
+<span class="fc" id="L194">            return new BuilderWithCreatedTime(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithCreatedTime {
+
+        private final Builder b;
+
+<span class="fc" id="L202">        BuilderWithCreatedTime(Builder b) {</span>
+<span class="fc" id="L203">            this.b = b;</span>
+<span class="fc" id="L204">        }</span>
+
+        public BuilderWithStartTime startTime(OffsetDateTime startTime) {
+<span class="fc" id="L207">            this.b.startTime = startTime;</span>
+<span class="fc" id="L208">            return new BuilderWithStartTime(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithStartTime {
+
+        private final Builder b;
+
+<span class="fc" id="L216">        BuilderWithStartTime(Builder b) {</span>
+<span class="fc" id="L217">            this.b = b;</span>
+<span class="fc" id="L218">        }</span>
+
+        public BuilderWithEndTime endTime(OffsetDateTime endTime) {
+<span class="fc" id="L221">            this.b.endTime = endTime;</span>
+<span class="fc" id="L222">            return new BuilderWithEndTime(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithEndTime {
+
+        private final Builder b;
+
+<span class="fc" id="L230">        BuilderWithEndTime(Builder b) {</span>
+<span class="fc" id="L231">            this.b = b;</span>
+<span class="fc" id="L232">        }</span>
+
+        public BuilderWithPayload payload(Payload payload) {
+<span class="fc" id="L235">            this.b.payload = payload;</span>
+<span class="fc" id="L236">            return new BuilderWithPayload(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithPayload {
+
+        private final Builder b;
+
+<span class="fc" id="L244">        BuilderWithPayload(Builder b) {</span>
+<span class="fc" id="L245">            this.b = b;</span>
+<span class="fc" id="L246">        }</span>
+
+        public BuilderWithStatus status(Status status) {
+<span class="fc" id="L249">            this.b.status = status;</span>
+<span class="fc" id="L250">            return new BuilderWithStatus(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithStatus {
+
+        private final Builder b;
+
+<span class="fc" id="L258">        BuilderWithStatus(Builder b) {</span>
+<span class="fc" id="L259">            this.b = b;</span>
+<span class="fc" id="L260">        }</span>
+
+        public BuilderWithStatus cancelledTime(OffsetDateTime cancelledTime) {
+<span class="nc" id="L263">            this.b.cancelledTime = Optional.of(cancelledTime);</span>
+<span class="nc" id="L264">            return this;</span>
+        }
+
+        public BuilderWithStatus cancelledTime(Optional&lt;OffsetDateTime&gt; cancelledTime) {
+<span class="nc" id="L268">            this.b.cancelledTime = cancelledTime;</span>
+<span class="nc" id="L269">            return this;</span>
+        }
+
+        public BuilderWithStatus echo(boolean echo) {
+<span class="nc" id="L273">            this.b.echo = Optional.of(echo);</span>
+<span class="nc" id="L274">            return this;</span>
+        }
+
+        public BuilderWithStatus echo(Optional&lt;Boolean&gt; echo) {
+<span class="nc" id="L278">            this.b.echo = echo;</span>
+<span class="nc" id="L279">            return this;</span>
+        }
+
+        public BuilderWithStatus repetition(Repetition repetition) {
+<span class="nc" id="L283">            this.b.repetition = Optional.of(repetition);</span>
+<span class="nc" id="L284">            return this;</span>
+        }
+
+        public BuilderWithStatus repetition(Optional&lt;Repetition&gt; repetition) {
+<span class="nc" id="L288">            this.b.repetition = repetition;</span>
+<span class="nc" id="L289">            return this;</span>
+        }
+
+        public BuilderWithStatus readAcksEnabled(boolean readAcksEnabled) {
+<span class="nc" id="L293">            this.b.readAcksEnabled = Optional.of(readAcksEnabled);</span>
+<span class="nc" id="L294">            return this;</span>
+        }
+
+        public BuilderWithStatus readAcksEnabled(Optional&lt;Boolean&gt; readAcksEnabled) {
+<span class="nc" id="L298">            this.b.readAcksEnabled = readAcksEnabled;</span>
+<span class="nc" id="L299">            return this;</span>
+        }
+
+        public BuilderWithStatus receiveAcksEnabled(boolean receiveAcksEnabled) {
+<span class="nc" id="L303">            this.b.receiveAcksEnabled = Optional.of(receiveAcksEnabled);</span>
+<span class="nc" id="L304">            return this;</span>
+        }
+
+        public BuilderWithStatus receiveAcksEnabled(Optional&lt;Boolean&gt; receiveAcksEnabled) {
+<span class="nc" id="L308">            this.b.receiveAcksEnabled = receiveAcksEnabled;</span>
+<span class="nc" id="L309">            return this;</span>
+        }
+
+        public Msi build() {
+<span class="fc" id="L313">            return new Msi(this.b.id, this.b.broadcast, this.b.createdTime, this.b.cancelledTime, this.b.startTime, this.b.endTime, this.b.payload, this.b.status, this.b.echo, this.b.repetition, this.b.readAcksEnabled, this.b.receiveAcksEnabled);</span>
+        }
+    }
+
+    public static BuilderWithId id(MsiId id) {
+<span class="fc" id="L318">        return builder().id(id);</span>
+    }
+
+    public MsiId id() {
+<span class="nc" id="L322">        return id;</span>
+    }
+
+    public Broadcast broadcast() {
+<span class="fc" id="L326">        return broadcast;</span>
+    }
+
+    public OffsetDateTime createdTime() {
+<span class="nc" id="L330">        return createdTime;</span>
+    }
+
+    public Optional&lt;OffsetDateTime&gt; cancelledTime() {
+<span class="nc" id="L334">        return Optional.ofNullable(cancelledTime);</span>
+    }
+
+    public OffsetDateTime startTime() {
+<span class="nc" id="L338">        return startTime;</span>
+    }
+
+    public OffsetDateTime endTime() {
+<span class="nc" id="L342">        return endTime;</span>
+    }
+
+    public Payload payload() {
+<span class="nc" id="L346">        return payload;</span>
+    }
+
+    public Status status() {
+<span class="nc" id="L350">        return status;</span>
+    }
+
+    public Optional&lt;Boolean&gt; echo() {
+<span class="nc" id="L354">        return Optional.ofNullable(echo);</span>
+    }
+
+    public Optional&lt;Repetition&gt; repetition() {
+<span class="nc" id="L358">        return Optional.ofNullable(repetition);</span>
+    }
+
+    public Optional&lt;Boolean&gt; readAcksEnabled() {
+<span class="nc" id="L362">        return Optional.ofNullable(readAcksEnabled);</span>
+    }
+
+    public Optional&lt;Boolean&gt; receiveAcksEnabled() {
+<span class="nc" id="L366">        return Optional.ofNullable(receiveAcksEnabled);</span>
+    }
+
+    public Msi withId(MsiId id) {
+<span class="nc" id="L370">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withBroadcast(Broadcast broadcast) {
+<span class="nc" id="L374">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withCreatedTime(OffsetDateTime createdTime) {
+<span class="nc" id="L378">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withCancelledTime(Optional&lt;OffsetDateTime&gt; cancelledTime) {
+<span class="nc" id="L382">        return new Msi(id, broadcast, createdTime, cancelledTime, startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withCancelledTime(OffsetDateTime cancelledTime) {
+<span class="nc" id="L386">        return new Msi(id, broadcast, createdTime, Optional.of(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withStartTime(OffsetDateTime startTime) {
+<span class="nc" id="L390">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withEndTime(OffsetDateTime endTime) {
+<span class="nc" id="L394">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withPayload(Payload payload) {
+<span class="nc" id="L398">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withStatus(Status status) {
+<span class="nc" id="L402">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withEcho(Optional&lt;Boolean&gt; echo) {
+<span class="nc" id="L406">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, echo, Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withEcho(boolean echo) {
+<span class="nc" id="L410">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.of(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withRepetition(Optional&lt;Repetition&gt; repetition) {
+<span class="nc" id="L414">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), repetition, Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withRepetition(Repetition repetition) {
+<span class="nc" id="L418">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.of(repetition), Optional.ofNullable(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withReadAcksEnabled(Optional&lt;Boolean&gt; readAcksEnabled) {
+<span class="nc" id="L422">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), readAcksEnabled, Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withReadAcksEnabled(boolean readAcksEnabled) {
+<span class="nc" id="L426">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.of(readAcksEnabled), Optional.ofNullable(receiveAcksEnabled));</span>
+    }
+
+    public Msi withReceiveAcksEnabled(Optional&lt;Boolean&gt; receiveAcksEnabled) {
+<span class="nc" id="L430">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), receiveAcksEnabled);</span>
+    }
+
+    public Msi withReceiveAcksEnabled(boolean receiveAcksEnabled) {
+<span class="nc" id="L434">        return new Msi(id, broadcast, createdTime, Optional.ofNullable(cancelledTime), startTime, endTime, payload, status, Optional.ofNullable(echo), Optional.ofNullable(repetition), Optional.ofNullable(readAcksEnabled), Optional.of(receiveAcksEnabled));</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L440">            return true;</span>
+        }
+<span class="nc bnc" id="L442" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L443">            return false;</span>
+        }
+<span class="nc" id="L445">        Msi other = (Msi) o;</span>
+<span class="nc" id="L446">        return </span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">            Objects.equals(this.id, other.id) &amp;&amp; </span>
+<span class="nc bnc" id="L448" title="All 2 branches missed.">            Objects.equals(this.broadcast, other.broadcast) &amp;&amp; </span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">            Objects.equals(this.createdTime, other.createdTime) &amp;&amp; </span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">            Objects.equals(this.cancelledTime, other.cancelledTime) &amp;&amp; </span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">            Objects.equals(this.startTime, other.startTime) &amp;&amp; </span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">            Objects.equals(this.endTime, other.endTime) &amp;&amp; </span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">            Objects.equals(this.payload, other.payload) &amp;&amp; </span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">            Objects.equals(this.status, other.status) &amp;&amp; </span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">            Objects.equals(this.echo, other.echo) &amp;&amp; </span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">            Objects.equals(this.repetition, other.repetition) &amp;&amp; </span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            Objects.equals(this.readAcksEnabled, other.readAcksEnabled) &amp;&amp; </span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">            Objects.equals(this.receiveAcksEnabled, other.receiveAcksEnabled);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L463">        return Objects.hash(</span>
+                id, 
+                broadcast, 
+                createdTime, 
+                cancelledTime, 
+                startTime, 
+                endTime, 
+                payload, 
+                status, 
+                echo, 
+                repetition, 
+                readAcksEnabled, 
+                receiveAcksEnabled);
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L480">        return Util.toString(Msi.class,</span>
+                &quot;id&quot;, id,
+                &quot;broadcast&quot;, broadcast,
+                &quot;createdTime&quot;, createdTime,
+                &quot;cancelledTime&quot;, cancelledTime,
+                &quot;startTime&quot;, startTime,
+                &quot;endTime&quot;, endTime,
+                &quot;payload&quot;, payload,
+                &quot;status&quot;, status,
+                &quot;echo&quot;, echo,
+                &quot;repetition&quot;, repetition,
+                &quot;readAcksEnabled&quot;, readAcksEnabled,
+                &quot;receiveAcksEnabled&quot;, receiveAcksEnabled);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

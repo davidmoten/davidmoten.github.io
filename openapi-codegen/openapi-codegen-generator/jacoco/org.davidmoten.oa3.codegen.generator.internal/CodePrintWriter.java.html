@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CodePrintWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.internal</a> &gt; <span class="el_source">CodePrintWriter.java</span></div><h1>CodePrintWriter.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.internal;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+
+import org.davidmoten.oa3.codegen.generator.Names;
+
+public final class CodePrintWriter extends PrintWriter {
+
+    private ByteArrayOutputStream bytes;
+    private final Indent indent;
+    private final Imports imports;
+
+    public CodePrintWriter(OutputStream out, String fullClassName) {
+<span class="fc" id="L19">        this(out, new Imports(fullClassName), new Indent());</span>
+<span class="fc" id="L20">    }</span>
+    
+    private CodePrintWriter(OutputStream out, Imports imports, Indent indent) {
+<span class="fc" id="L23">        super(new OutputStreamWriter(out, StandardCharsets.UTF_8));</span>
+<span class="fc" id="L24">        this.indent = indent;</span>
+<span class="fc" id="L25">        this.imports = imports;</span>
+<span class="fc" id="L26">    }</span>
+    
+    public static CodePrintWriter create(String fullClassName) {
+<span class="fc" id="L29">        return create(new Imports(fullClassName), new Indent());</span>
+    }
+    
+    public static CodePrintWriter create(CodePrintWriter w) {
+<span class="fc" id="L33">        return create(w.imports(), w.indent());</span>
+    }
+    
+    private static CodePrintWriter create(Imports imp, Indent indent) {
+<span class="fc" id="L37">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="fc" id="L38">        CodePrintWriter p = new CodePrintWriter(bytes, imp, indent);</span>
+<span class="fc" id="L39">        p.setBytes(bytes);</span>
+<span class="fc" id="L40">        return p;</span>
+    }
+    
+    private void setBytes(ByteArrayOutputStream bytes) {
+<span class="fc" id="L44">        this.bytes = bytes;</span>
+<span class="fc" id="L45">    }</span>
+
+    public Indent indent() {
+<span class="fc" id="L48">        return indent;</span>
+    }
+
+    public void println() {
+<span class="fc" id="L52">        format(&quot;\n&quot;);</span>
+<span class="fc" id="L53">    }</span>
+
+    public void line(String format, Object... args) {
+<span class="fc" id="L56">        Object[] args2 = new Object[args.length + 2];</span>
+<span class="fc" id="L57">        args2[0] = indent;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        for (int i = 0; i &lt; args.length; i++) {</span>
+<span class="fc" id="L59">            Object v = args[i];</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (v instanceof Class) {</span>
+<span class="fc" id="L61">                v = imports.add((Class&lt;?&gt;) v);</span>
+            }
+<span class="fc" id="L63">            args2[i + 1] = v;</span>
+        }
+<span class="fc" id="L65">        format(&quot;%s&quot; + format + &quot;\n&quot;, args2);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (format.endsWith(&quot;{&quot;)) {</span>
+<span class="fc" id="L67">            right();</span>
+        }
+<span class="fc" id="L69">    }</span>
+
+    public CodePrintWriter left() {
+<span class="fc" id="L72">        indent.left();</span>
+<span class="fc" id="L73">        return this;</span>
+    }
+
+    public CodePrintWriter right() {
+<span class="fc" id="L77">        indent.right();</span>
+<span class="fc" id="L78">        return this;</span>
+    }
+
+    public String text() {
+<span class="fc" id="L82">        this.flush();</span>
+        try {
+<span class="fc" id="L84">            return bytes.toString(&quot;UTF-8&quot;);</span>
+<span class="nc" id="L85">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L86">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    public void closeParen() {
+<span class="fc" id="L91">        indent.left();</span>
+<span class="fc" id="L92">        format(&quot;%s}\n&quot;, indent);</span>
+<span class="fc" id="L93">    }</span>
+
+    public Imports imports() {
+<span class="fc" id="L96">        return imports;</span>
+    }
+    
+    public String add(String fullClassName) {
+<span class="fc" id="L100">        return imports.add(fullClassName);</span>
+    }
+    
+    public String add(Class&lt;?&gt; cls) {
+<span class="fc" id="L104">        return imports.add(cls);</span>
+    }
+
+    public String fullClassName() {
+<span class="fc" id="L108">        return imports.fullClassName();</span>
+    }
+    
+    public String pkg() {
+<span class="fc" id="L112">        return Names.pkg(fullClassName());</span>
+    }
+    
+    public String simpleClassName() {
+<span class="fc" id="L116">        return Names.simpleClassName(fullClassName());</span>
+    }
+    
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

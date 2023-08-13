@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientServerGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator</a> &gt; <span class="el_source">ClientServerGenerator.java</span></div><h1>ClientServerGenerator.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.davidmoten.oa3.codegen.generator.Generator.Cls;
+import org.davidmoten.oa3.codegen.generator.Generator.MyVisitor;
+import org.davidmoten.oa3.codegen.generator.Generator.MyVisitor.Result;
+import org.davidmoten.oa3.codegen.generator.internal.Mutable;
+import org.davidmoten.oa3.codegen.generator.internal.Util;
+import org.davidmoten.oa3.codegen.generator.writer.ClientCodeWriter;
+import org.davidmoten.oa3.codegen.generator.writer.ServerCodeWriterSpringBoot;
+import org.davidmoten.oa3.codegen.util.ImmutableList;
+import org.springframework.core.io.Resource;
+
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.PathItem.HttpMethod;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+
+public class ClientServerGenerator {
+
+    private final Names names;
+    private final Map&lt;String, Cls&gt; refCls;
+    private final Map&lt;Schema&lt;?&gt;, Cls&gt; schemaCls;
+
+<span class="fc" id="L42">    public ClientServerGenerator(Definition definition) {</span>
+<span class="fc" id="L43">        this.names = new Names(definition);</span>
+        // make a ref map
+<span class="fc" id="L45">        Map&lt;String, Cls&gt; refCls = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L46">        Map&lt;Schema&lt;?&gt;, Cls&gt; schemaCls = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L47">        MyVisitor v = new MyVisitor(names);</span>
+<span class="fc" id="L48">        Apis.visitSchemas(names.api(), v);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (Result result : v.results()) {</span>
+<span class="fc" id="L50">            Cls c = result.cls;</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            if (c.topLevel) {</span>
+<span class="fc" id="L52">                String refPrefix = c.category.refPrefix();</span>
+<span class="fc" id="L53">                String ref = refPrefix + c.name.get();</span>
+<span class="fc" id="L54">                refCls.put(ref, c);</span>
+<span class="fc" id="L55">                schemaCls.put(c.schema.get(), c);</span>
+            }
+<span class="fc" id="L57">        }</span>
+<span class="fc" id="L58">        this.refCls = refCls;</span>
+<span class="fc" id="L59">        this.schemaCls = schemaCls;</span>
+<span class="fc" id="L60">    }</span>
+
+    public void generateServer() {
+<span class="fc" id="L63">        List&lt;Method&gt; methods = collectMethods();</span>
+<span class="fc" id="L64">        ServerCodeWriterSpringBoot.writeServiceClasses(names, methods);</span>
+<span class="fc" id="L65">    }</span>
+
+    public void generateClient() {
+<span class="fc" id="L68">        List&lt;Method&gt; methods = collectMethods();</span>
+<span class="fc" id="L69">        ClientCodeWriter.writeClientClass(names, methods);</span>
+<span class="fc" id="L70">    }</span>
+
+    private List&lt;Method&gt; collectMethods() {
+        // want a method per path, operation combo
+<span class="fc" id="L74">        List&lt;Method&gt; methods = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L75">        names.api().getPaths().forEach((pathName, pathItem) -&gt; {</span>
+<span class="fc" id="L76">            gatherMethods(pathName, pathItem, methods);</span>
+<span class="fc" id="L77">        });</span>
+<span class="fc" id="L78">        return methods;</span>
+    }
+
+    private void gatherMethods(String pathName, PathItem pathItem, List&lt;Method&gt; methods) {
+<span class="fc" id="L82">        pathItem = Apis.resolveRefs(names.api(), pathItem);</span>
+<span class="fc" id="L83">        pathItem.readOperationsMap() //</span>
+<span class="fc" id="L84">                .forEach((method, operation) -&gt; gatherMethods(pathName, method, operation, methods));</span>
+<span class="fc" id="L85">    }</span>
+
+    private void gatherMethods(String pathName, HttpMethod method, Operation operation, List&lt;Method&gt; methods) {
+        final String methodName;
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (operation.getOperationId() != null) {</span>
+<span class="nc" id="L90">            methodName = Names.toIdentifier(operation.getOperationId());</span>
+        } else {
+<span class="fc" id="L92">            methodName = Names.toIdentifier(ImmutableList.of(pathName, method.toString().toLowerCase(Locale.ENGLISH)));</span>
+        }
+<span class="fc" id="L94">        Optional&lt;Integer&gt; statusCode = Optional.empty();</span>
+<span class="fc" id="L95">        List&lt;Param&gt; params = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L96">        Optional&lt;String&gt; returnFullClassName = Optional.empty();</span>
+<span class="fc" id="L97">        List&lt;String&gt; consumes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L98">        List&lt;String&gt; produces = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L99">        Set&lt;String&gt; parameterNames = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (operation.getParameters() != null) {</span>
+<span class="fc" id="L101">            operation.getParameters() //</span>
+<span class="fc" id="L102">                    .forEach(p -&gt; {</span>
+                        // TODO handle refs to components/headers
+<span class="fc" id="L104">                        p = resolveParameterRefs(p);</span>
+<span class="fc" id="L105">                        boolean isArray = false;</span>
+<span class="fc" id="L106">                        Schema&lt;?&gt; s = p.getSchema();</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                        if (Util.isArray(s)) {</span>
+<span class="nc" id="L108">                            isArray = true;</span>
+<span class="nc" id="L109">                            s = s.getItems();</span>
+                        }
+<span class="fc" id="L111">                        s = resolveRefs(s);</span>
+<span class="fc" id="L112">                        Optional&lt;Object&gt; defaultValue = Optional.ofNullable(s.getDefault());</span>
+<span class="fc" id="L113">                        String parameterName = Names.toIdentifier(p.getName());</span>
+<span class="fc" id="L114">                        int i = 2;</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                        while (parameterNames.contains(parameterName)) {</span>
+<span class="fc" id="L116">                            parameterName = Names.toIdentifier(p.getName()) + i;</span>
+<span class="fc" id="L117">                            i++;</span>
+                        }
+<span class="fc" id="L119">                        parameterNames.add(parameterName);</span>
+                        final Param param;
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                        if (Util.isPrimitive(s)) {</span>
+                            // handle simple schemas
+<span class="fc" id="L123">                            Class&lt;?&gt; c = Util.toClass(s.getType(), s.getFormat(), s.getExtensions(),</span>
+<span class="fc" id="L124">                                    names.mapIntegerToBigInteger(), names.mapNumberToBigDecimal());</span>
+<span class="fc" id="L125">                            param = new Param(p.getName(), parameterName, defaultValue, p.getRequired(),</span>
+<span class="fc" id="L126">                                    c.getCanonicalName(), isArray, false, constraints(s),</span>
+<span class="fc" id="L127">                                    ParamType.valueOf(p.getIn().toUpperCase(Locale.ENGLISH)), false,</span>
+<span class="fc" id="L128">                                    Optional.ofNullable(p.getDescription()));</span>
+<span class="fc" id="L129">                        } else {</span>
+                            // is complex schema
+<span class="fc" id="L131">                            Cls cls = schemaCls.get(s);</span>
+<span class="fc" id="L132">                            param = new Param(p.getName(), parameterName, defaultValue, p.getRequired(),</span>
+<span class="fc" id="L133">                                    cls.fullClassName, isArray, false, constraints(s),</span>
+<span class="fc" id="L134">                                    ParamType.valueOf(p.getIn().toUpperCase(Locale.ENGLISH)), true,</span>
+<span class="fc" id="L135">                                    Optional.ofNullable(p.getDescription()));</span>
+                        }
+<span class="fc" id="L137">                        params.add(param);</span>
+<span class="fc" id="L138">                    });</span>
+        }
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (operation.getRequestBody() != null) {</span>
+<span class="fc" id="L141">            RequestBody b = resolveRefs(operation.getRequestBody());</span>
+<span class="fc" id="L142">            MediaType mediaType = mediaType(b.getContent(), &quot;application/json&quot;);</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (mediaType == null) {</span>
+<span class="fc" id="L144">                mediaType = mediaType(b.getContent(), &quot;application/xml&quot;);</span>
+            }
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (mediaType != null) {</span>
+<span class="fc" id="L147">                Schema&lt;?&gt; schema = mediaType.getSchema();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">                if (schema != null) {</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                    if (schemaCls.get(schema) != null) {</span>
+<span class="fc" id="L150">                        String fullClassName = resolveRefsFullClassName(schema);</span>
+<span class="fc" id="L151">                        params.add(new Param(&quot;requestBody&quot;, &quot;requestBody&quot;,</span>
+<span class="fc" id="L152">                                Optional.ofNullable((Object) schema.getDefault()),</span>
+<span class="fc" id="L153">                                org.davidmoten.oa3.codegen.util.Util.orElse(b.getRequired(), true), fullClassName,</span>
+<span class="fc" id="L154">                                false, true, constraints(schema), ParamType.BODY, false,</span>
+<span class="fc" id="L155">                                Optional.ofNullable(schema.getDescription())));</span>
+<span class="fc" id="L156">                    } else {</span>
+<span class="nc" id="L157">                        throw new RuntimeException(&quot;unexpected&quot;);</span>
+                    }
+                } else {
+                    // if no schema specified then is octet-stream
+<span class="nc" id="L161">                    String fullClassName = byte[].class.getCanonicalName();</span>
+<span class="nc" id="L162">                    params.add(new Param(&quot;requestBody&quot;, &quot;requestBody&quot;, Optional.empty(),</span>
+<span class="nc" id="L163">                            org.davidmoten.oa3.codegen.util.Util.orElse(b.getRequired(), true), fullClassName, false,</span>
+<span class="nc" id="L164">                            true, Constraints.empty(), ParamType.BODY, false,</span>
+<span class="nc" id="L165">                            Optional.empty()));</span>
+                }
+<span class="fc" id="L167">            } else {</span>
+<span class="fc" id="L168">                System.out.println(&quot;TODO handle request body with media types &quot; + b.getContent().keySet());</span>
+            }
+<span class="fc" id="L170">            consumes = new ArrayList&lt;&gt;(b.getContent().keySet());</span>
+        }
+<span class="fc" id="L172">        Optional&lt;StatusCodeApiResponse&gt; response = primaryResponse(operation.getResponses());</span>
+<span class="fc" id="L173">        Optional&lt;Integer&gt; primaryStatusCode = response.map(x -&gt; x.statusCode);</span>
+<span class="fc" id="L174">        Mutable&lt;String&gt; primaryMimeType = Mutable.create(null);</span>
+<span class="pc bpc" id="L175" title="1 of 4 branches missed.">        if (response.isPresent() &amp;&amp; response.get().response != null) {</span>
+<span class="fc" id="L176">            Content content = resolveResponseRefs(response.get().response).getContent();</span>
+            // if content is null then their is no response body
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (content != null) {</span>
+<span class="fc" id="L179">                primaryMimeType.value = &quot;application/json&quot;;</span>
+<span class="fc" id="L180">                MediaType mediaType = mediaType(content, &quot;application/json&quot;);</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                if (mediaType == null) {</span>
+<span class="fc" id="L182">                    primaryMimeType.value = &quot;application/xml&quot;;</span>
+<span class="fc" id="L183">                    mediaType = mediaType(content, primaryMimeType.value);</span>
+                }
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                if (mediaType != null) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                    if (mediaType.getSchema() == null) {</span>
+                        // Any schema
+<span class="fc" id="L188">                        returnFullClassName = Optional.of(Object.class.getCanonicalName());</span>
+                    } else {
+<span class="fc" id="L190">                        returnFullClassName = Optional.of(resolveRefsFullClassName(mediaType.getSchema()));</span>
+                    }
+                } else {
+                    // loop through all mime-types and pick first non-default to infer return class
+                    // name
+<span class="fc" id="L195">                    final String defaultReturnClassFullName = Resource.class.getCanonicalName();</span>
+<span class="fc" id="L196">                    returnFullClassName = content. //</span>
+<span class="fc" id="L197">                            keySet() //</span>
+<span class="fc" id="L198">                            .stream() //</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">                            .filter(x -&gt; !&quot;default&quot;.equals(x)) //</span>
+<span class="fc" id="L200">                            .map(x -&gt; {</span>
+<span class="fc" id="L201">                                primaryMimeType.value = x;</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">                                if (x.startsWith(&quot;text/&quot;)) {</span>
+<span class="fc" id="L203">                                    return String.class.getCanonicalName();</span>
+                                } else {
+<span class="fc" id="L205">                                    return defaultReturnClassFullName;</span>
+                                }
+                            }) //
+<span class="fc" id="L208">                            .findFirst();</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">                    if (!returnFullClassName.isPresent()) {</span>
+<span class="nc" id="L210">                        primaryMimeType.value = &quot;default&quot;;</span>
+<span class="nc" id="L211">                        MediaType a = content.get(primaryMimeType.value);</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">                        if (a == null) {</span>
+<span class="nc" id="L213">                            returnFullClassName = Optional.empty();</span>
+                        } else {
+<span class="nc" id="L215">                            returnFullClassName = Optional.of(resolveRefsFullClassName(a.getSchema()));</span>
+                        }
+                    }
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">                    if (!returnFullClassName.isPresent()) {</span>
+<span class="nc" id="L219">                        primaryMimeType.value = null;</span>
+                    }
+                }
+<span class="fc" id="L222">                statusCode = Optional.of(response.get().statusCode);</span>
+<span class="fc" id="L223">                produces = new ArrayList&lt;&gt;(content.keySet());</span>
+            }
+        }
+
+<span class="fc" id="L227">        List&lt;ResponseDescriptor&gt; responseDescriptors = responseDescriptors(operation);</span>
+
+<span class="fc" id="L229">        Method m = new Method(methodName, statusCode, params, returnFullClassName, pathName, method, consumes, produces,</span>
+<span class="fc" id="L230">                Optional.ofNullable(operation.getDescription()), primaryStatusCode,</span>
+<span class="fc" id="L231">                Optional.ofNullable(primaryMimeType.value), responseDescriptors);</span>
+<span class="fc" id="L232">        methods.add(m);</span>
+<span class="fc" id="L233">    }</span>
+
+    private MediaType mediaType(Content content, String mimeType) {
+<span class="fc" id="L236">        return content.entrySet().stream().filter(x -&gt; x.getKey().replaceAll(&quot;;.*&quot;, &quot;&quot;).equalsIgnoreCase(mimeType))</span>
+<span class="fc" id="L237">                .map(x -&gt; x.getValue()) //</span>
+<span class="fc" id="L238">                .findFirst() //</span>
+<span class="fc" id="L239">                .orElse(null);</span>
+    }
+
+    private List&lt;ResponseDescriptor&gt; responseDescriptors(Operation operation) {
+<span class="fc" id="L243">        List&lt;ResponseDescriptor&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L244">        operation.getResponses().forEach((statusCode, response) -&gt; {</span>
+<span class="fc" id="L245">            response = resolveResponseRefs(response);</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            if (response.getContent() != null) {</span>
+<span class="fc" id="L247">                response.getContent().forEach((contentType, mediaType) -&gt; {</span>
+                    final String fullClassName;
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                    if (mediaType.getSchema() == null) {</span>
+<span class="fc" id="L250">                        fullClassName = byte[].class.getCanonicalName();</span>
+                    } else {
+<span class="fc" id="L252">                        fullClassName = resolveRefsFullClassName(mediaType.getSchema());</span>
+                    }
+<span class="fc" id="L254">                    list.add(new ResponseDescriptor(statusCode, contentType, fullClassName));</span>
+<span class="fc" id="L255">                });</span>
+            }
+<span class="fc" id="L257">        });</span>
+<span class="fc" id="L258">        return list;</span>
+    }
+
+    private RequestBody resolveRefs(RequestBody b) {
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        while (b.get$ref() != null) {</span>
+<span class="fc" id="L263">            b = names.lookupRequestBody(b.get$ref());</span>
+        }
+<span class="fc" id="L265">        return b;</span>
+    }
+
+    private static Constraints constraints(Schema&lt;?&gt; schema) {
+<span class="fc" id="L269">        return new Constraints(Optional.ofNullable(schema.getMinLength()), Optional.ofNullable(schema.getMaxLength()),</span>
+<span class="fc" id="L270">                Optional.ofNullable(schema.getMinimum()), Optional.ofNullable(schema.getMaximum()),</span>
+<span class="fc" id="L271">                Optional.ofNullable(schema.getExclusiveMinimumValue()),</span>
+<span class="fc" id="L272">                Optional.ofNullable(schema.getExclusiveMaximumValue()), Optional.ofNullable(schema.getMinItems()),</span>
+<span class="fc" id="L273">                Optional.ofNullable(schema.getMaxItems()), Optional.ofNullable(schema.getPattern()));</span>
+    }
+
+    private static Optional&lt;StatusCodeApiResponse&gt; primaryResponse(ApiResponses responses) {
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (responses.get(&quot;200&quot;) != null) {</span>
+<span class="fc" id="L278">            return Optional.of(new StatusCodeApiResponse(200, responses.get(&quot;200&quot;)));</span>
+        } else {
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            for (Entry&lt;String, ApiResponse&gt; r : responses.entrySet()) {</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">                if (is2XX(r.getKey())) {</span>
+<span class="fc" id="L282">                    return Optional.of(new StatusCodeApiResponse(Integer.parseInt(r.getKey()), r.getValue()));</span>
+                }
+<span class="fc" id="L284">            }</span>
+        }
+<span class="fc" id="L286">        return Optional.empty();</span>
+    }
+
+    public static final class StatusCodeApiResponse {
+        final int statusCode;
+        final ApiResponse response;
+
+<span class="fc" id="L293">        StatusCodeApiResponse(int statusCode, ApiResponse response) {</span>
+<span class="fc" id="L294">            this.statusCode = statusCode;</span>
+<span class="fc" id="L295">            this.response = response;</span>
+
+<span class="fc" id="L297">        }</span>
+    }
+
+    private static boolean is2XX(String key) {
+<span class="pc bpc" id="L301" title="1 of 4 branches missed.">        return key.length() == 3 &amp;&amp; key.startsWith(&quot;2&quot;);</span>
+    }
+
+    private Parameter resolveParameterRefs(Parameter p) {
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        while (p.get$ref() != null) {</span>
+<span class="nc" id="L306">            p = names.lookupParameter(p.get$ref());</span>
+        }
+<span class="fc" id="L308">        return p;</span>
+    }
+
+    private ApiResponse resolveResponseRefs(ApiResponse r) {
+<span class="pc bpc" id="L312" title="1 of 2 branches missed.">        while (r.get$ref() != null) {</span>
+<span class="nc" id="L313">            String ref = r.get$ref();</span>
+<span class="nc" id="L314">            r = names.lookupResponse(ref);</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (r == null) {</span>
+<span class="nc" id="L316">                throw new RuntimeException(&quot;could not find response &quot; + ref);</span>
+            }
+<span class="nc" id="L318">        }</span>
+<span class="fc" id="L319">        return r;</span>
+    }
+
+    private String resolveRefsFullClassName(Schema&lt;?&gt; schema) {
+<span class="fc" id="L323">        return schemaCls.get(resolveRefs(schema)).fullClassName;</span>
+    }
+
+    private Schema&lt;?&gt; resolveRefs(Schema&lt;?&gt; schema) {
+<span class="fc" id="L327">        Schema&lt;?&gt; s = schema;</span>
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        while (s.get$ref() != null) {</span>
+<span class="fc" id="L329">            s = refCls.get(s.get$ref()).schema.get();</span>
+        }
+<span class="fc" id="L331">        return s;</span>
+    }
+
+    public static final class Method {
+        public final String methodName;
+        public final List&lt;Param&gt; parameters;
+        public final Optional&lt;String&gt; returnFullClassName; // arrays always wrapped ?
+        public final String path;
+        public final HttpMethod httpMethod;
+        public final Optional&lt;Integer&gt; statusCode;
+        public final List&lt;String&gt; consumes;
+        public final List&lt;String&gt; produces;
+        public final Optional&lt;String&gt; description;
+        public final Optional&lt;Integer&gt; primaryStatusCode;
+        public final Optional&lt;String&gt; primaryMediaType;
+        public final List&lt;ResponseDescriptor&gt; responseDescriptors;
+
+        Method(String methodName, Optional&lt;Integer&gt; statusCode, List&lt;Param&gt; parameters,
+                Optional&lt;String&gt; returnFullClassName, String path, HttpMethod httpMethod, List&lt;String&gt; consumes,
+                List&lt;String&gt; produces, Optional&lt;String&gt; description, Optional&lt;Integer&gt; primaryStatusCode,
+<span class="fc" id="L351">                Optional&lt;String&gt; primaryMediaType, List&lt;ResponseDescriptor&gt; responseDescriptors) {</span>
+<span class="fc" id="L352">            this.methodName = methodName;</span>
+<span class="fc" id="L353">            this.statusCode = statusCode;</span>
+<span class="fc" id="L354">            this.parameters = parameters;</span>
+<span class="fc" id="L355">            this.returnFullClassName = returnFullClassName;</span>
+<span class="fc" id="L356">            this.path = path;</span>
+<span class="fc" id="L357">            this.httpMethod = httpMethod;</span>
+<span class="fc" id="L358">            this.consumes = consumes;</span>
+<span class="fc" id="L359">            this.produces = produces;</span>
+<span class="fc" id="L360">            this.description = description;</span>
+<span class="fc" id="L361">            this.primaryStatusCode = primaryStatusCode;</span>
+<span class="fc" id="L362">            this.primaryMediaType = primaryMediaType;</span>
+<span class="fc" id="L363">            this.responseDescriptors = responseDescriptors;</span>
+<span class="fc" id="L364">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L368">            return &quot;Method [path=&quot; + path + &quot;, httpMethod=&quot; + httpMethod + &quot;, methodName=&quot; + methodName + &quot;, returnCls=&quot;</span>
+<span class="nc" id="L369">                    + returnFullClassName.orElse(&quot;&quot;) + &quot;, parameters=&quot;</span>
+<span class="nc" id="L370">                    + parameters.stream().map(Object::toString).map(x -&gt; &quot;\n    &quot; + x).collect(Collectors.joining())</span>
+                    + &quot;]&quot;;
+        }
+
+    }
+
+    public static final class ResponseDescriptor {
+        private final String statusCode; // can be a pattern like `2*`
+        private final String mediaType;
+        private final String fullClassName;
+
+<span class="fc" id="L381">        public ResponseDescriptor(String statusCode, String mediaType, String fullClassName) {</span>
+<span class="fc" id="L382">            this.statusCode = statusCode;</span>
+<span class="fc" id="L383">            this.mediaType = mediaType;</span>
+<span class="fc" id="L384">            this.fullClassName = fullClassName;</span>
+<span class="fc" id="L385">        }</span>
+
+        public String statusCode() {
+<span class="fc" id="L388">            return statusCode;</span>
+        }
+
+        public String mediaType() {
+<span class="fc" id="L392">            return mediaType;</span>
+        }
+
+        public String fullClassName() {
+<span class="fc" id="L396">            return fullClassName;</span>
+        }
+
+    }
+
+    public static final class Constraints {
+        public final Optional&lt;Integer&gt; minLength;
+        public final Optional&lt;Integer&gt; maxLength;
+        public final Optional&lt;BigDecimal&gt; min;
+        public final Optional&lt;BigDecimal&gt; max;
+        public final Optional&lt;BigDecimal&gt; minExclusive;
+        public final Optional&lt;BigDecimal&gt; maxExclusive;
+        public final Optional&lt;Integer&gt; minItems;
+        public final Optional&lt;Integer&gt; maxItems;
+        public final Optional&lt;String&gt; pattern;
+
+        public Constraints(Optional&lt;Integer&gt; minLength, Optional&lt;Integer&gt; maxLength, Optional&lt;BigDecimal&gt; min,
+                Optional&lt;BigDecimal&gt; max, Optional&lt;BigDecimal&gt; minExclusive, Optional&lt;BigDecimal&gt; maxExclusive,
+<span class="fc" id="L414">                Optional&lt;Integer&gt; minItems, Optional&lt;Integer&gt; maxItems, Optional&lt;String&gt; pattern) {</span>
+<span class="fc" id="L415">            this.minLength = minLength;</span>
+<span class="fc" id="L416">            this.maxLength = maxLength;</span>
+<span class="fc" id="L417">            this.min = min;</span>
+<span class="fc" id="L418">            this.max = max;</span>
+<span class="fc" id="L419">            this.minExclusive = minExclusive;</span>
+<span class="fc" id="L420">            this.maxExclusive = maxExclusive;</span>
+<span class="fc" id="L421">            this.minItems = minItems;</span>
+<span class="fc" id="L422">            this.maxItems = maxItems;</span>
+<span class="fc" id="L423">            this.pattern = pattern;</span>
+<span class="fc" id="L424">        }</span>
+
+        public static Constraints empty() {
+<span class="nc" id="L427">            return new Constraints(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),</span>
+<span class="nc" id="L428">                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());</span>
+        }
+
+        public boolean atLeastOnePresent() {
+<span class="pc bpc" id="L432" title="3 of 8 branches missed.">            return minLength.isPresent() || maxLength.isPresent() || min.isPresent() || max.isPresent()</span>
+<span class="pc bpc" id="L433" title="3 of 6 branches missed.">                    || minExclusive.isPresent() || maxExclusive.isPresent() || minItems.isPresent()</span>
+<span class="pc bpc" id="L434" title="2 of 4 branches missed.">                    || maxItems.isPresent() || pattern.isPresent();</span>
+        }
+
+    }
+
+    public static final class Param {
+        public final String name;
+        public final String identifier;
+        public final Optional&lt;Object&gt; defaultValue;
+        public final boolean required;
+        public final String fullClassName;
+        public final boolean isArray;
+        public final boolean isRequestBody;
+        public final Constraints constraints;
+        public final ParamType type;
+        public final boolean isComplexQueryParameter;
+        public final Optional&lt;String&gt; description;
+
+        public Param(String name, String identifier, Optional&lt;Object&gt; defaultValue, boolean required,
+                String fullClassName, boolean isArray, boolean isRequestBody, Constraints constraints, ParamType type,
+<span class="fc" id="L454">                boolean isComplexQueryParameter, Optional&lt;String&gt; description) {</span>
+<span class="fc" id="L455">            this.name = name;</span>
+<span class="fc" id="L456">            this.identifier = identifier;</span>
+<span class="fc" id="L457">            this.defaultValue = defaultValue;</span>
+<span class="fc" id="L458">            this.required = required;</span>
+<span class="fc" id="L459">            this.fullClassName = fullClassName;</span>
+<span class="fc" id="L460">            this.isArray = isArray;</span>
+<span class="fc" id="L461">            this.isRequestBody = isRequestBody;</span>
+<span class="fc" id="L462">            this.constraints = constraints;</span>
+<span class="fc" id="L463">            this.type = type;</span>
+<span class="fc" id="L464">            this.isComplexQueryParameter = isComplexQueryParameter;</span>
+<span class="fc" id="L465">            this.description = description;</span>
+<span class="fc" id="L466">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L470">            return &quot;Param [&quot; + identifier + &quot;, name=&quot; + name + &quot;, defaultValue=&quot; + defaultValue + &quot;, required=&quot;</span>
+                    + required + &quot;, cls=&quot; + fullClassName + &quot;, isArray=&quot; + isArray + &quot;]&quot;;
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

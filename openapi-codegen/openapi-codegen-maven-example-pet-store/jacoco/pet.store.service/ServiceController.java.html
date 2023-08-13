@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServiceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-example-pet-store</a> &gt; <a href="index.source.html" class="el_package">pet.store.service</a> &gt; <span class="el_source">ServiceController.java</span></div><h1>ServiceController.java</h1><pre class="source lang-java linenums">package pet.store.service;
+
+import jakarta.annotation.Generated;
+
+import java.lang.String;
+import java.lang.Throwable;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.spring.runtime.ControllerExceptionHandler;
+import org.davidmoten.oa3.codegen.spring.runtime.RequestPreconditions;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import pet.store.Globals;
+import pet.store.path.FindPets200Response;
+import pet.store.schema.Error;
+import pet.store.schema.NewPet;
+import pet.store.schema.Pet;
+
+@RestController
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public class ServiceController implements ControllerExceptionHandler {
+
+    private final Service service;
+
+<span class="fc" id="L34">    public ServiceController(@Autowired(required = false) Service service) {</span>
+<span class="fc" id="L35">        this.service = Util.orElse(service, new Service() {});</span>
+<span class="fc" id="L36">    }</span>
+
+    /**
+     * &lt;p&gt;Returns all pets from the system that the user has access to
+     * Nam sed condimentum est. Maecenas tempor sagittis sapien, nec rhoncus sem sagittis sit amet. Aenean at gravida augue, ac iaculis sem. Curabitur odio lorem, ornare eget elementum nec, cursus id lectus. Duis mi turpis, pulvinar ac eros ac, tincidunt varius justo. In hac habitasse platea dictumst. Integer at adipiscing ante, a sagittis ligula. Aenean pharetra tempor ante molestie imperdiet. Vivamus id aliquam diam. Cras quis velit non tortor eleifend sagittis. Praesent at enim pharetra urna volutpat venenatis eget eget mauris. In eleifend fermentum facilisis. Praesent enim enim, gravida ac sodales sed, placerat id erat. Suspendisse lacus dolor, consectetur non augue vel, vehicula interdum libero. Morbi euismod sagittis libero sed lacinia.
+     * &lt;p&gt;Sed tempus felis lobortis leo pulvinar rutrum. Nam mattis velit nisl, eu condimentum ligula luctus nec. Phasellus semper velit eget aliquet faucibus. In a mattis elit. Phasellus vel urna viverra, condimentum lorem id, rhoncus nibh. Ut pellentesque posuere elementum. Sed a varius odio. Morbi rhoncus ligula libero, vel eleifend nunc tristique vitae. Fusce et sem dui. Aenean nec scelerisque tortor. Fusce malesuada accumsan magna vel tempus. Quisque mollis felis eu dolor tristique, sit amet auctor felis gravida. Sed libero lorem, molestie sed nisl in, accumsan tempor nisi. Fusce sollicitudin massa ut lacinia mattis. Sed vel eleifend lorem. Pellentesque vitae felis pretium, pulvinar elit eu, euismod sapien.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link FindPets200Response}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param limit
+     *            maximum number of results to return
+     * @param tags
+     *            tags to filter by
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/pets&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; findPets(
+            @RequestParam(name = &quot;tags&quot;, required = false) Optional&lt;List&lt;String&gt;&gt; tags, 
+            @RequestParam(name = &quot;limit&quot;, defaultValue = &quot;10&quot;, required = false) int limit) {
+        try {
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;findPets&quot;)) {</span>
+<span class="fc" id="L61">                RequestPreconditions.checkMinimum(limit, &quot;1&quot;, &quot;limit&quot;, false);</span>
+            }
+<span class="fc" id="L63">            return ResponseEntity.status(200).body(service.findPets(tags, limit));</span>
+<span class="nc" id="L64">        } catch (Throwable e) {</span>
+<span class="nc" id="L65">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Creates a new pet in the store. Duplicates are allowed
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param requestBody
+     *            requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/pets&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; addPet(
+            @RequestBody NewPet requestBody) {
+        try {
+<span class="nc" id="L87">            return ResponseEntity.status(200).body(service.addPet(requestBody));</span>
+<span class="nc" id="L88">        } catch (Throwable e) {</span>
+<span class="nc" id="L89">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns a user based on a single ID, if the user does not have access to the pet
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Pet}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param id
+     *            ID of pet to fetch
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/pets/{id}&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; find_pet_by_id(
+            @PathVariable(name = &quot;id&quot;, required = true) long id) {
+        try {
+<span class="nc" id="L110">            return ResponseEntity.status(200).body(service.find_pet_by_id(id));</span>
+<span class="nc" id="L111">        } catch (Throwable e) {</span>
+<span class="nc" id="L112">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;deletes a single pet based on the ID supplied
+     * 
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * 
+     * @param id
+     *            ID of pet to delete
+     */
+    @RequestMapping(
+        method = RequestMethod.DELETE,
+        value = &quot;/pets/{id}&quot;)
+    public ResponseEntity&lt;?&gt; deletePet(
+            @PathVariable(name = &quot;id&quot;, required = true) long id) {
+        try {
+<span class="nc" id="L130">            service.deletePet(id);</span>
+<span class="nc" id="L131">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L132">        } catch (Throwable e) {</span>
+<span class="nc" id="L133">            return service.errorResponse(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

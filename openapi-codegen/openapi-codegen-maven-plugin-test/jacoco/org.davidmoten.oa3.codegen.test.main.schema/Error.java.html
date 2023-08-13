@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Error.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Error.java</span></div><h1>Error.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Integer;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+/**
+ * an error message (response)
+ */
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class Error {
+
+    @JsonProperty(&quot;statusCode&quot;)
+    private final Integer statusCode;
+
+    @JsonProperty(&quot;errorMessage&quot;)
+    private final String errorMessage;
+
+    @JsonProperty(&quot;errorType&quot;)
+    private final String errorType;
+
+    @JsonProperty(&quot;stackTrace&quot;)
+    private final StackTrace stackTrace;
+
+    @JsonProperty(&quot;cause&quot;)
+    private final Error cause;
+
+    @JsonCreator
+    private Error(
+            @JsonProperty(&quot;statusCode&quot;) Integer statusCode,
+            @JsonProperty(&quot;errorMessage&quot;) String errorMessage,
+            @JsonProperty(&quot;errorType&quot;) String errorType,
+            @JsonProperty(&quot;stackTrace&quot;) StackTrace stackTrace,
+<span class="nc" id="L55">            @JsonProperty(&quot;cause&quot;) Error cause) {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Error.class)) {</span>
+<span class="nc" id="L57">            Preconditions.checkMinimum(statusCode, &quot;100&quot;, &quot;statusCode&quot;, false);</span>
+<span class="nc" id="L58">            Preconditions.checkMaximum(statusCode, &quot;599&quot;, &quot;statusCode&quot;, false);</span>
+        }
+<span class="nc" id="L60">        this.statusCode = statusCode;</span>
+<span class="nc" id="L61">        this.errorMessage = errorMessage;</span>
+<span class="nc" id="L62">        this.errorType = errorType;</span>
+<span class="nc" id="L63">        this.stackTrace = stackTrace;</span>
+<span class="nc" id="L64">        this.cause = cause;</span>
+<span class="nc" id="L65">    }</span>
+
+    @ConstructorBinding
+    public Error(
+            Optional&lt;Integer&gt; statusCode,
+            Optional&lt;String&gt; errorMessage,
+            Optional&lt;String&gt; errorType,
+            Optional&lt;StackTrace&gt; stackTrace,
+<span class="nc" id="L73">            Optional&lt;Error&gt; cause) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Error.class)) {</span>
+<span class="nc" id="L75">            Preconditions.checkNotNull(statusCode, &quot;statusCode&quot;);</span>
+<span class="nc" id="L76">            Preconditions.checkMinimum(statusCode, &quot;100&quot;, &quot;statusCode&quot;, false);</span>
+<span class="nc" id="L77">            Preconditions.checkMaximum(statusCode, &quot;599&quot;, &quot;statusCode&quot;, false);</span>
+<span class="nc" id="L78">            Preconditions.checkNotNull(errorMessage, &quot;errorMessage&quot;);</span>
+<span class="nc" id="L79">            Preconditions.checkNotNull(errorType, &quot;errorType&quot;);</span>
+<span class="nc" id="L80">            Preconditions.checkNotNull(stackTrace, &quot;stackTrace&quot;);</span>
+<span class="nc" id="L81">            Preconditions.checkNotNull(cause, &quot;cause&quot;);</span>
+        }
+<span class="nc" id="L83">        this.statusCode = statusCode.orElse(null);</span>
+<span class="nc" id="L84">        this.errorMessage = errorMessage.orElse(null);</span>
+<span class="nc" id="L85">        this.errorType = errorType.orElse(null);</span>
+<span class="nc" id="L86">        this.stackTrace = stackTrace.orElse(null);</span>
+<span class="nc" id="L87">        this.cause = cause.orElse(null);</span>
+<span class="nc" id="L88">    }</span>
+
+    public static Builder builder() {
+<span class="nc" id="L91">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="nc" id="L96">        private Optional&lt;Integer&gt; statusCode = Optional.empty();</span>
+<span class="nc" id="L97">        private Optional&lt;String&gt; errorMessage = Optional.empty();</span>
+<span class="nc" id="L98">        private Optional&lt;String&gt; errorType = Optional.empty();</span>
+<span class="nc" id="L99">        private Optional&lt;StackTrace&gt; stackTrace = Optional.empty();</span>
+<span class="nc" id="L100">        private Optional&lt;Error&gt; cause = Optional.empty();</span>
+
+<span class="nc" id="L102">        Builder() {</span>
+<span class="nc" id="L103">        }</span>
+
+        public Builder statusCode(int statusCode) {
+<span class="nc" id="L106">            this.statusCode = Optional.of(statusCode);</span>
+<span class="nc" id="L107">            return this;</span>
+        }
+
+        public Builder statusCode(Optional&lt;Integer&gt; statusCode) {
+<span class="nc" id="L111">            this.statusCode = statusCode;</span>
+<span class="nc" id="L112">            return this;</span>
+        }
+
+        public Builder errorMessage(String errorMessage) {
+<span class="nc" id="L116">            this.errorMessage = Optional.of(errorMessage);</span>
+<span class="nc" id="L117">            return this;</span>
+        }
+
+        public Builder errorMessage(Optional&lt;String&gt; errorMessage) {
+<span class="nc" id="L121">            this.errorMessage = errorMessage;</span>
+<span class="nc" id="L122">            return this;</span>
+        }
+
+        public Builder errorType(String errorType) {
+<span class="nc" id="L126">            this.errorType = Optional.of(errorType);</span>
+<span class="nc" id="L127">            return this;</span>
+        }
+
+        public Builder errorType(Optional&lt;String&gt; errorType) {
+<span class="nc" id="L131">            this.errorType = errorType;</span>
+<span class="nc" id="L132">            return this;</span>
+        }
+
+        public Builder stackTrace(StackTrace stackTrace) {
+<span class="nc" id="L136">            this.stackTrace = Optional.of(stackTrace);</span>
+<span class="nc" id="L137">            return this;</span>
+        }
+
+        public Builder stackTrace(Optional&lt;StackTrace&gt; stackTrace) {
+<span class="nc" id="L141">            this.stackTrace = stackTrace;</span>
+<span class="nc" id="L142">            return this;</span>
+        }
+
+        public Builder cause(Error cause) {
+<span class="nc" id="L146">            this.cause = Optional.of(cause);</span>
+<span class="nc" id="L147">            return this;</span>
+        }
+
+        public Builder cause(Optional&lt;Error&gt; cause) {
+<span class="nc" id="L151">            this.cause = cause;</span>
+<span class="nc" id="L152">            return this;</span>
+        }
+
+        public Error build() {
+<span class="nc" id="L156">            return new Error(this.statusCode, this.errorMessage, this.errorType, this.stackTrace, this.cause);</span>
+        }
+    }
+
+    public Optional&lt;Integer&gt; statusCode() {
+<span class="nc" id="L161">        return Optional.ofNullable(statusCode);</span>
+    }
+
+    public Optional&lt;String&gt; errorMessage() {
+<span class="nc" id="L165">        return Optional.ofNullable(errorMessage);</span>
+    }
+
+    public Optional&lt;String&gt; errorType() {
+<span class="nc" id="L169">        return Optional.ofNullable(errorType);</span>
+    }
+
+    public Optional&lt;StackTrace&gt; stackTrace() {
+<span class="nc" id="L173">        return Optional.ofNullable(stackTrace);</span>
+    }
+
+    public Optional&lt;Error&gt; cause() {
+<span class="nc" id="L177">        return Optional.ofNullable(cause);</span>
+    }
+
+    public Error withStatusCode(Optional&lt;Integer&gt; statusCode) {
+<span class="nc" id="L181">        return new Error(statusCode, Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withStatusCode(int statusCode) {
+<span class="nc" id="L185">        return new Error(Optional.of(statusCode), Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withErrorMessage(Optional&lt;String&gt; errorMessage) {
+<span class="nc" id="L189">        return new Error(Optional.ofNullable(statusCode), errorMessage, Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withErrorMessage(String errorMessage) {
+<span class="nc" id="L193">        return new Error(Optional.ofNullable(statusCode), Optional.of(errorMessage), Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withErrorType(Optional&lt;String&gt; errorType) {
+<span class="nc" id="L197">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), errorType, Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withErrorType(String errorType) {
+<span class="nc" id="L201">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), Optional.of(errorType), Optional.ofNullable(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withStackTrace(Optional&lt;StackTrace&gt; stackTrace) {
+<span class="nc" id="L205">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), stackTrace, Optional.ofNullable(cause));</span>
+    }
+
+    public Error withStackTrace(StackTrace stackTrace) {
+<span class="nc" id="L209">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), Optional.of(stackTrace), Optional.ofNullable(cause));</span>
+    }
+
+    public Error withCause(Optional&lt;Error&gt; cause) {
+<span class="nc" id="L213">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), cause);</span>
+    }
+
+    public Error withCause(Error cause) {
+<span class="nc" id="L217">        return new Error(Optional.ofNullable(statusCode), Optional.ofNullable(errorMessage), Optional.ofNullable(errorType), Optional.ofNullable(stackTrace), Optional.of(cause));</span>
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class StackTrace {
+
+        @JsonValue
+        private final List&lt;String&gt; value;
+
+        @JsonCreator
+        @ConstructorBinding
+        public StackTrace(
+<span class="nc" id="L230">                List&lt;String&gt; value) {</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(StackTrace.class)) {</span>
+<span class="nc" id="L232">                Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+            }
+<span class="nc" id="L234">            this.value = value;</span>
+<span class="nc" id="L235">        }</span>
+
+        public static StackTrace value(List&lt;String&gt; value) {
+<span class="nc" id="L238">            return new StackTrace(value);</span>
+        }
+
+        public List&lt;String&gt; value() {
+<span class="nc" id="L242">            return value;</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L248">                return true;</span>
+            }
+<span class="nc bnc" id="L250" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L251">                return false;</span>
+            }
+<span class="nc" id="L253">            StackTrace other = (StackTrace) o;</span>
+<span class="nc" id="L254">            return </span>
+<span class="nc" id="L255">                Objects.equals(this.value, other.value);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L260">            return Objects.hash(value);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L265">            return Util.toString(StackTrace.class, &quot;value&quot;, value);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L272">            return true;</span>
+        }
+<span class="nc bnc" id="L274" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L275">            return false;</span>
+        }
+<span class="nc" id="L277">        Error other = (Error) o;</span>
+<span class="nc" id="L278">        return </span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            Objects.equals(this.statusCode, other.statusCode) &amp;&amp; </span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            Objects.equals(this.errorMessage, other.errorMessage) &amp;&amp; </span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            Objects.equals(this.errorType, other.errorType) &amp;&amp; </span>
+<span class="nc bnc" id="L282" title="All 2 branches missed.">            Objects.equals(this.stackTrace, other.stackTrace) &amp;&amp; </span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">            Objects.equals(this.cause, other.cause);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L288">        return Objects.hash(</span>
+                statusCode, 
+                errorMessage, 
+                errorType, 
+                stackTrace, 
+                cause);
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L298">        return Util.toString(Error.class,</span>
+                &quot;statusCode&quot;, statusCode,
+                &quot;errorMessage&quot;, errorMessage,
+                &quot;errorType&quot;, errorType,
+                &quot;stackTrace&quot;, stackTrace,
+                &quot;cause&quot;, cause);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

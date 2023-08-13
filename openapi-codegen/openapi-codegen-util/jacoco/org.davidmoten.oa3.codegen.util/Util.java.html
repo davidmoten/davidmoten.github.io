@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-util</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.util</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.util;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.util.Optional;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+<span class="nc" id="L11">public final class Util {</span>
+
+    public static String encodeOctets(byte[] a) {
+<span class="nc bnc" id="L14" title="All 2 branches missed.">        if (a == null) {</span>
+<span class="nc" id="L15">            return &quot;&quot;;</span>
+        } else {
+<span class="nc" id="L17">            return new BigInteger(a).toString(16);</span>
+        }
+    }
+    
+    public static String encodeOctets(Optional&lt;byte[]&gt; a) {
+<span class="nc" id="L22">        return a.map(Util::encodeOctets).orElse(&quot;&quot;);</span>
+    }
+
+    public static byte[] decodeOctets(String s) {
+<span class="nc" id="L26">        return new BigInteger(s, 16).toByteArray();</span>
+    }
+
+    public static &lt;T&gt; T orElse(T value, T defaultValue) {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        return value == null ? defaultValue : value;</span>
+    }
+
+    public static String toString(Class&lt;?&gt; cls, Object... items) {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        Preconditions.checkArgument(items.length % 2 == 0);</span>
+<span class="nc" id="L35">        StringBuilder s = new StringBuilder();</span>
+<span class="nc" id="L36">        int i = 0;</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        while (i &lt; items.length) {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L39">                s.append(&quot;, &quot;);</span>
+            }
+<span class="nc" id="L41">            s.append(items[i]);</span>
+<span class="nc" id="L42">            s.append(&quot;=&quot;);</span>
+<span class="nc" id="L43">            s.append(items[i + 1]);</span>
+<span class="nc" id="L44">            i += 2;</span>
+        }
+<span class="nc" id="L46">        return cls.getSimpleName() + &quot;[&quot; + s + &quot;]&quot;;</span>
+    }
+
+    public static byte[] read(InputStream in) throws IOException {
+<span class="nc" id="L50">        byte[] buffer = new byte[8192];</span>
+<span class="nc" id="L51">        int n = 0;</span>
+<span class="nc" id="L52">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="nc" id="L54">            bytes.write(buffer, 0, n);</span>
+        }
+<span class="nc" id="L56">        return bytes.toByteArray();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

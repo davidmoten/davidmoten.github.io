@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Headers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http</a> &gt; <span class="el_source">Headers.java</span></div><h1>Headers.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+/**
+ * Stores a map of header keys and values. Keys are case-insensitive, iterating
+ * the key values will return the latest key value conserved in submitted case.
+ */
+public final class Headers {
+
+    private final Map&lt;String, KeyAndList&gt; map;
+
+<span class="fc" id="L22">    public Headers() {</span>
+<span class="fc" id="L23">        this.map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L24">    }</span>
+
+<span class="fc" id="L26">    public Headers(Headers headers) {</span>
+<span class="fc" id="L27">        this.map = new HashMap&lt;&gt;(headers.map);</span>
+<span class="fc" id="L28">    }</span>
+
+    public static Headers create() {
+<span class="fc" id="L31">        return new Headers();</span>
+    }
+
+    public Optional&lt;List&lt;String&gt;&gt; get(String key) {
+<span class="pc" id="L35">        return Optional.ofNullable(map.get(key.toUpperCase(Locale.ENGLISH))).map(x -&gt; x.list);</span>
+    }
+
+    public Headers put(String key, String value) {
+<span class="fc" id="L39">        Preconditions.checkArgumentNotNull(key);</span>
+<span class="fc" id="L40">        Preconditions.checkArgumentNotNull(value);</span>
+<span class="pc bpc" id="L41" title="1 of 4 branches missed.">        if (key.equalsIgnoreCase(&quot;Content-Type&quot;) &amp;&amp; get(key).isPresent()) {</span>
+            // replace
+<span class="nc" id="L43">            get(key).get().clear();</span>
+        }
+<span class="fc" id="L45">        Optional&lt;List&lt;String&gt;&gt; v = get(key);</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (!v.isPresent()) {</span>
+<span class="fc" id="L47">            KeyAndList x = new KeyAndList(key);</span>
+<span class="fc" id="L48">            map.put(key.toUpperCase(Locale.ENGLISH), x);</span>
+<span class="fc" id="L49">            v = Optional.of(x.list);</span>
+        }
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (!v.get().contains(value)) {</span>
+<span class="fc" id="L52">            v.get().add(value);</span>
+        }
+<span class="fc" id="L54">        return this;</span>
+    }
+
+    public Headers remove(String key) {
+<span class="nc" id="L58">        map.remove(key.toUpperCase(Locale.ENGLISH));</span>
+<span class="nc" id="L59">        return this;</span>
+    }
+
+    public boolean contains(String name, String value) {
+<span class="nc" id="L63">        Preconditions.checkArgumentNotNull(name);</span>
+<span class="nc" id="L64">        Preconditions.checkArgumentNotNull(value);</span>
+<span class="nc" id="L65">        return get(name).map(list -&gt; list.contains(value)).orElse(false);</span>
+    }
+
+    public static Headers create(Map&lt;String, List&lt;String&gt;&gt; headers) {
+<span class="fc" id="L69">        Headers h = create();</span>
+<span class="fc" id="L70">        headers.forEach((key, list) -&gt; {</span>
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">            if (key != null &amp;&amp; list != null)</span>
+<span class="fc" id="L72">                list.forEach(v -&gt; h.put(key, v));</span>
+<span class="fc" id="L73">        });</span>
+<span class="fc" id="L74">        return h;</span>
+    }
+
+    public List&lt;String&gt; keys() {
+<span class="nc" id="L78">        return map.values().stream().map(x -&gt; x.key).collect(Collectors.toList());</span>
+    }
+
+    public void forEach(BiConsumer&lt;? super String, ? super List&lt;String&gt;&gt; consumer) {
+<span class="fc" id="L82">        map.values().forEach(v -&gt; consumer.accept(v.key, v.list));</span>
+<span class="fc" id="L83">    }</span>
+
+    private static final class KeyAndList {
+        final String key;
+        final List&lt;String&gt; list;
+
+<span class="fc" id="L89">        KeyAndList(String key, List&lt;String&gt; list) {</span>
+<span class="fc" id="L90">            this.key = key;</span>
+<span class="fc" id="L91">            this.list = list;</span>
+<span class="fc" id="L92">        }</span>
+
+        KeyAndList(String key) {
+<span class="fc" id="L95">            this(key, new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L96">        }</span>
+
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L102">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L103">        b.append(&quot;Headers [&quot;);</span>
+<span class="fc" id="L104">        b.append(map.values().stream().map(x -&gt; x.key + &quot; -&gt; &quot; + x.list).collect(Collectors.joining(&quot;, &quot;)));</span>
+<span class="fc" id="L105">        b.append(&quot;]&quot;);</span>
+<span class="fc" id="L106">        return b.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

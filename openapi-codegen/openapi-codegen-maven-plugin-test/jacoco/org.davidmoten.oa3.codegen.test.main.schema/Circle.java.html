@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Circle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Circle.java</span></div><h1>Circle.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.util.Objects;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class Circle {
+
+    @JsonProperty(&quot;lat&quot;)
+    private final Latitude lat;
+
+    @JsonProperty(&quot;lon&quot;)
+    private final Longitude lon;
+
+    @JsonProperty(&quot;radiusNm&quot;)
+    private final float radiusNm;
+
+    @JsonCreator
+    @ConstructorBinding
+    public Circle(
+            @JsonProperty(&quot;lat&quot;) Latitude lat,
+            @JsonProperty(&quot;lon&quot;) Longitude lon,
+<span class="fc" id="L40">            @JsonProperty(&quot;radiusNm&quot;) float radiusNm) {</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(Circle.class)) {</span>
+<span class="fc" id="L42">            Preconditions.checkNotNull(lat, &quot;lat&quot;);</span>
+<span class="fc" id="L43">            Preconditions.checkNotNull(lon, &quot;lon&quot;);</span>
+<span class="fc" id="L44">            Preconditions.checkMinimum(radiusNm, &quot;0&quot;, &quot;radiusNm&quot;, false);</span>
+        }
+<span class="fc" id="L46">        this.lat = lat;</span>
+<span class="fc" id="L47">        this.lon = lon;</span>
+<span class="fc" id="L48">        this.radiusNm = radiusNm;</span>
+<span class="fc" id="L49">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L52">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private Latitude lat;
+        private Longitude lon;
+        private float radiusNm;
+
+<span class="fc" id="L61">        Builder() {</span>
+<span class="fc" id="L62">        }</span>
+
+        public BuilderWithLat lat(Latitude lat) {
+<span class="fc" id="L65">            this.lat = lat;</span>
+<span class="fc" id="L66">            return new BuilderWithLat(this);</span>
+        }
+    }
+
+    public static final class BuilderWithLat {
+
+        private final Builder b;
+
+<span class="fc" id="L74">        BuilderWithLat(Builder b) {</span>
+<span class="fc" id="L75">            this.b = b;</span>
+<span class="fc" id="L76">        }</span>
+
+        public BuilderWithLon lon(Longitude lon) {
+<span class="fc" id="L79">            this.b.lon = lon;</span>
+<span class="fc" id="L80">            return new BuilderWithLon(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithLon {
+
+        private final Builder b;
+
+<span class="fc" id="L88">        BuilderWithLon(Builder b) {</span>
+<span class="fc" id="L89">            this.b = b;</span>
+<span class="fc" id="L90">        }</span>
+
+        public BuilderWithRadiusNm radiusNm(float radiusNm) {
+<span class="fc" id="L93">            this.b.radiusNm = radiusNm;</span>
+<span class="fc" id="L94">            return new BuilderWithRadiusNm(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithRadiusNm {
+
+        private final Builder b;
+
+<span class="fc" id="L102">        BuilderWithRadiusNm(Builder b) {</span>
+<span class="fc" id="L103">            this.b = b;</span>
+<span class="fc" id="L104">        }</span>
+
+        public Circle build() {
+<span class="fc" id="L107">            return new Circle(this.b.lat, this.b.lon, this.b.radiusNm);</span>
+        }
+    }
+
+    public static BuilderWithLat lat(Latitude lat) {
+<span class="fc" id="L112">        return builder().lat(lat);</span>
+    }
+
+    public Latitude lat() {
+<span class="fc" id="L116">        return lat;</span>
+    }
+
+    public Longitude lon() {
+<span class="nc" id="L120">        return lon;</span>
+    }
+
+    public float radiusNm() {
+<span class="nc" id="L124">        return radiusNm;</span>
+    }
+
+    public Circle withLat(Latitude lat) {
+<span class="nc" id="L128">        return new Circle(lat, lon, radiusNm);</span>
+    }
+
+    public Circle withLon(Longitude lon) {
+<span class="nc" id="L132">        return new Circle(lat, lon, radiusNm);</span>
+    }
+
+    public Circle withRadiusNm(float radiusNm) {
+<span class="nc" id="L136">        return new Circle(lat, lon, radiusNm);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="fc" id="L142">            return true;</span>
+        }
+<span class="nc bnc" id="L144" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L145">            return false;</span>
+        }
+<span class="nc" id="L147">        Circle other = (Circle) o;</span>
+<span class="nc" id="L148">        return </span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            Objects.equals(this.lat, other.lat) &amp;&amp; </span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            Objects.equals(this.lon, other.lon) &amp;&amp; </span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            Objects.equals(this.radiusNm, other.radiusNm);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L156">        return Objects.hash(lat, lon, radiusNm);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L161">        return Util.toString(Circle.class, &quot;lat&quot;, lat, &quot;lon&quot;, lon, &quot;radiusNm&quot;, radiusNm);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

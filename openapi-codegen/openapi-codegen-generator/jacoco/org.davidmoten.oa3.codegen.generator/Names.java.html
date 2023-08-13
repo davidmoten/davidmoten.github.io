@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Names.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator</a> &gt; <span class="el_source">Names.java</span></div><h1>Names.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.davidmoten.oa3.codegen.util.ImmutableList;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.Sets;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
+
+public final class Names {
+
+    // note that hashCode and toString added to this set so that generated getters
+    // without a get prefix don't get into trouble
+<span class="fc" id="L36">    private static final Set&lt;String&gt; javaReservedWords = Sets.newHashSet(&quot;abstract&quot;, &quot;assert&quot;, &quot;boolean&quot;, &quot;break&quot;,</span>
+            &quot;byte&quot;, &quot;case&quot;, &quot;catch&quot;, &quot;char&quot;, &quot;class&quot;, &quot;const&quot;, &quot;continue&quot;, &quot;default&quot;, &quot;do&quot;, &quot;double&quot;, &quot;else&quot;, &quot;extends&quot;,
+            &quot;false&quot;, &quot;final&quot;, &quot;finally&quot;, &quot;float&quot;, &quot;for&quot;, &quot;goto&quot;, &quot;if&quot;, &quot;implements&quot;, &quot;import&quot;, &quot;instanceof&quot;, &quot;int&quot;,
+            &quot;interface&quot;, &quot;long&quot;, &quot;native&quot;, &quot;new&quot;, &quot;null&quot;, &quot;package&quot;, &quot;private&quot;, &quot;protected&quot;, &quot;public&quot;, &quot;return&quot;,
+            &quot;short&quot;, &quot;static&quot;, &quot;strictfp&quot;, &quot;super&quot;, &quot;switch&quot;, &quot;synchronized&quot;, &quot;this&quot;, &quot;throw&quot;, &quot;throws&quot;, &quot;transient&quot;,
+            &quot;true&quot;, &quot;try&quot;, &quot;void&quot;, &quot;volatile&quot;, &quot;while&quot;, &quot;var&quot;, &quot;hashCode&quot;, &quot;toString&quot;);
+
+    private static final boolean LOG_SCHEMA_PATHS = false;
+
+    private final Definition definition;
+
+    private final OpenAPI api;
+
+    private final ServerGeneratorType generatorType;
+
+<span class="fc" id="L51">    Names(Definition definition) {</span>
+<span class="fc" id="L52">        this.definition = definition;</span>
+<span class="pc" id="L53">        this.generatorType = definition.generator().map(x -&gt; ServerGeneratorType.valueOf(x.toUpperCase(Locale.ENGLISH)))</span>
+<span class="fc" id="L54">                .orElse(ServerGeneratorType.SPRING2);</span>
+<span class="fc" id="L55">        ParseOptions options = new ParseOptions();</span>
+<span class="fc" id="L56">        options.setResolve(true);</span>
+        // github api goes over snake yaml parser max code points
+<span class="fc" id="L58">        System.setProperty(&quot;maxYamlCodePoints&quot;, &quot;999999999&quot;);</span>
+<span class="fc" id="L59">        OpenAPIParser parser = new OpenAPIParser();</span>
+<span class="fc" id="L60">        SwaggerParseResult result = parser.readLocation(definition.definition(), null, options);</span>
+<span class="fc" id="L61">        String errors = result.getMessages().stream().collect(Collectors.joining(&quot;\n&quot;));</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (!errors.isEmpty()) {</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (definition.failOnParseErrors()) {</span>
+<span class="nc" id="L64">                throw new RuntimeException(errors);</span>
+            } else {
+                // Destined for maven plugin output so following their logging format
+<span class="nc" id="L67">                System.out.println(&quot;[WARNING] Swagger Parse Errors:\n&quot; + errors);</span>
+            }
+        }
+<span class="fc" id="L70">        this.api = result.getOpenAPI();</span>
+<span class="fc" id="L71">        superSchemas(api);</span>
+<span class="fc" id="L72">        logSchemaFullClassNames(api);</span>
+<span class="fc" id="L73">    }</span>
+
+    private static void logSchemaFullClassNames(OpenAPI api) {
+        if (LOG_SCHEMA_PATHS) {
+            Apis.visitSchemas(api, (category, schemaPath) -&gt; {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (!Apis.isComplexSchema(schemaPath.last().schema)) {</span>
+<span class="nc" id="L79">                    System.out.println(schemaPath);</span>
+                }
+<span class="nc" id="L81">            });</span>
+            System.out.println(&quot;////////////////////////////////////////////////&quot;);
+        }
+<span class="fc" id="L84">    }</span>
+
+    public OpenAPI api() {
+<span class="fc" id="L87">        return api;</span>
+    }
+
+    public String schemaNameToFullClassName(SchemaCategory category, String schemaName) {
+<span class="fc" id="L91">        return definition.packages().basePackage() + &quot;.&quot; + category.getPackageFragment() + &quot;.&quot;</span>
+<span class="fc" id="L92">                + schemaNameToSimpleClassName(schemaName);</span>
+    }
+
+    public String schemaNameToSimpleClassName(String schemaName) {
+<span class="fc" id="L96">        return simpleClassNameFromSimpleName(schemaName);</span>
+    }
+
+    public File fullClassNameToJavaFile(String fullClassName) {
+<span class="fc" id="L100">        return new File(definition.generatedSourceDirectory(), fullClassName.replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
+    }
+
+    public String refToFullClassName(String ref) {
+<span class="fc" id="L104">        Preconditions.checkNotNull(ref);</span>
+        final String fullClassName;
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (!ref.startsWith(&quot;#&quot;)) {</span>
+<span class="nc" id="L107">            fullClassName = externalRefClassName(ref);</span>
+        } else {
+            final SchemaCategory category;
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
+<span class="fc" id="L111">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
+<span class="nc" id="L113">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/responses&quot;)) {</span>
+<span class="nc" id="L115">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/parameters&quot;)) {</span>
+<span class="nc" id="L117">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/requestBodies&quot;)) {</span>
+<span class="nc" id="L119">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/pathItems&quot;)) {</span>
+<span class="nc" id="L121">                category = SchemaCategory.SCHEMA;</span>
+            } else {
+<span class="nc" id="L123">                throw new RuntimeException(&quot;unexpected ref: &quot; + ref);</span>
+            }
+<span class="fc" id="L125">            String schemaName = ref.substring(ref.lastIndexOf(&quot;/&quot;) + 1);</span>
+<span class="fc" id="L126">            fullClassName = schemaNameToFullClassName(category, schemaName);</span>
+        }
+<span class="fc" id="L128">        return fullClassName;</span>
+    }
+
+    public static String simpleClassName(String fullClassName) {
+<span class="fc" id="L132">        return getLastItemInDotDelimitedString(fullClassName);</span>
+    }
+
+    public static String pkg(String className) {
+<span class="fc" id="L136">        return className.substring(0, className.lastIndexOf(&quot;.&quot;));</span>
+    }
+
+    public static String toIdentifier(String s) {
+<span class="fc" id="L140">        String candidate = lowerFirst(identifierCandidate(s));</span>
+<span class="fc" id="L141">        return adjustIfReservedWord(candidate);</span>
+    }
+
+    private static String adjustIfReservedWord(String candidate) {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (javaReservedWords.contains(candidate)) {</span>
+<span class="fc" id="L146">            return candidate + &quot;_&quot;;</span>
+        } else {
+<span class="fc" id="L148">            return candidate;</span>
+        }
+    }
+    
+    public static String toEnumIdentifier(String s) {
+<span class="fc" id="L153">        String candidate = identifierCandidate(s);</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (javaReservedWords.contains(candidate.toUpperCase(Locale.ENGLISH))) {</span>
+<span class="nc" id="L155">            return candidate + &quot;_&quot;;</span>
+        } else {
+<span class="fc" id="L157">            return candidate;</span>
+        }
+    }
+
+    private static String identifierCandidate(String s) {
+<span class="fc" id="L162">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L163">        char lastCh = ' ';</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc" id="L165">            char ch = s.charAt(i);</span>
+<span class="fc bfc" id="L166" title="All 4 branches covered.">            if (i == 0 &amp;&amp; !Character.isJavaIdentifierStart(ch)) {</span>
+<span class="fc" id="L167">                b.append(&quot;_&quot;);</span>
+            }
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            if (Character.isJavaIdentifierPart(ch)) {</span>
+<span class="fc" id="L170">                b.append(ch);</span>
+            } else {
+<span class="fc" id="L172">                ch = '_';</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                if (lastCh != ch) {</span>
+<span class="fc" id="L174">                    b.append(ch);</span>
+                }
+            }
+<span class="fc" id="L177">            lastCh = ch;</span>
+        }
+<span class="fc" id="L179">        String candidate = b.toString();</span>
+<span class="fc" id="L180">        return candidate;</span>
+    }
+
+    public static String propertyNameToClassSimpleName(String propertyName) {
+<span class="nc" id="L184">        return upperFirst(toIdentifier(propertyName));</span>
+    }
+
+    public static String upperFirst(String name) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (name.isEmpty()) {</span>
+<span class="fc" id="L189">            return name;</span>
+        } else {
+<span class="fc" id="L191">            return name.substring(0, 1).toUpperCase(Locale.ENGLISH) + name.substring(1);</span>
+        }
+    }
+
+    private static String lowerFirst(String name) {
+<span class="fc" id="L196">        return name.substring(0, 1).toLowerCase(Locale.ENGLISH) + name.substring(1);</span>
+    }
+
+    private static String getLastItemInDotDelimitedString(String name) {
+<span class="fc" id="L200">        int i = name.lastIndexOf(&quot;.&quot;);</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (i == -1) {</span>
+<span class="nc" id="L202">            return name;</span>
+        } else {
+<span class="fc" id="L204">            return name.substring(i + 1);</span>
+        }
+    }
+
+    public String clientClassName() {
+<span class="nc" id="L209">        return definition.packages().basePackage() + &quot;client.Client&quot;;</span>
+    }
+
+    public File clientClassJavaFile() {
+<span class="nc" id="L213">        return new File(definition.generatedSourceDirectory(),</span>
+<span class="nc" id="L214">                clientClassName().replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
+    }
+
+    public static String propertyNameToFieldName(String propertyName) {
+<span class="nc" id="L218">        return lowerFirst(toIdentifier(propertyName));</span>
+    }
+
+    public static String schemaNameToFieldName(String schemaName) {
+<span class="nc" id="L222">        return lowerFirst(toIdentifier(schemaName));</span>
+    }
+
+    public static String toFieldName(String name) {
+<span class="fc" id="L226">        return lowerFirst(toIdentifier(name));</span>
+    }
+
+    public static String simpleClassNameFromSimpleName(String name) {
+<span class="fc" id="L230">        return upperFirst(underscoreToCamel(toIdentifier(skipUnderscoresAtStart(name))));</span>
+    }
+
+    @VisibleForTesting
+    static String underscoreToCamel(String s) {
+<span class="fc" id="L235">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L236">        b.append(s.charAt(0));</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        for (int i = 1; i &lt; s.length() - 1; i++) {</span>
+<span class="fc" id="L238">            char ch = s.charAt(i);</span>
+<span class="fc" id="L239">            char next = s.charAt(i + 1);</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            if (ch == '_') {</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                if (next != '_') {</span>
+<span class="fc" id="L242">                    b.append(Character.toUpperCase(next));</span>
+<span class="fc" id="L243">                    i++;</span>
+                }
+            } else {
+<span class="fc" id="L246">                b.append(ch);</span>
+            }
+        }
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (s.length() &gt; 1) {</span>
+<span class="fc" id="L250">            char ch = s.charAt(s.length() - 1);</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">            if (ch != '_') {</span>
+<span class="fc" id="L252">                b.append(ch);</span>
+            }
+        }
+<span class="fc" id="L255">        return b.toString();</span>
+    }
+
+    private static String skipUnderscoresAtStart(String s) {
+<span class="fc" id="L259">        int i = 0;</span>
+<span class="pc bpc" id="L260" title="1 of 4 branches missed.">        while (s.charAt(i) == '_' &amp;&amp; i &lt; s.length() - 1) {</span>
+<span class="fc" id="L261">            i++;</span>
+        }
+<span class="fc" id="L263">        return s.substring(i);</span>
+    }
+
+    public static String enumNameToEnumConstant(String s) {
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (s.isEmpty()) {</span>
+<span class="fc" id="L268">            return &quot;BLANK&quot;;</span>
+        } else {
+<span class="fc" id="L270">            return camelToUpper(toEnumIdentifier(s));</span>
+        }
+    }
+
+    public static String camelToUpper(String s) {
+<span class="fc" id="L275">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc bfc" id="L277" title="All 6 branches covered.">            if (i &gt; 0 &amp;&amp; i &lt; s.length() - 1 &amp;&amp; Character.isUpperCase(s.charAt(i))</span>
+<span class="pc bpc" id="L278" title="1 of 4 branches missed.">                    &amp;&amp; Character.isLowerCase(s.charAt(i + 1)) &amp;&amp; s.charAt(i - 1) != '_') {</span>
+<span class="fc" id="L279">                b.append(&quot;_&quot;);</span>
+            }
+<span class="fc" id="L281">            b.append(Character.toUpperCase(s.charAt(i)));</span>
+        }
+<span class="fc" id="L283">        return b.toString();</span>
+    }
+
+    private static Map&lt;Schema&lt;?&gt;, Set&lt;Schema&lt;?&gt;&gt;&gt; superSchemas(OpenAPI api) {
+<span class="fc bfc" id="L287" title="All 4 branches covered.">        Predicate&lt;Schema&lt;?&gt;&gt; predicate = x -&gt; x instanceof ComposedSchema &amp;&amp; ((ComposedSchema) x).getOneOf() != null;</span>
+<span class="fc" id="L288">        Map&lt;Schema&lt;?&gt;, Set&lt;Schema&lt;?&gt;&gt;&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L289">        schemas(api) //</span>
+<span class="fc" id="L290">                .entrySet() //</span>
+<span class="fc" id="L291">                .stream() //</span>
+<span class="fc" id="L292">                .flatMap(x -&gt; findSchemas(SchemaCategory.SCHEMA, x.getKey(), x.getValue(), predicate).stream()) //</span>
+<span class="fc" id="L293">                .map(x -&gt; (ComposedSchema) x) //</span>
+<span class="fc" id="L294">                .forEach(x -&gt; {</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">                    for (Schema&lt;?&gt; sch : x.getOneOf()) {</span>
+<span class="fc" id="L296">                        Set&lt;Schema&lt;?&gt;&gt; set = map.get(sch);</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">                        if (set == null) {</span>
+<span class="fc" id="L298">                            set = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L299">                            map.put(sch, set);</span>
+                        }
+<span class="fc" id="L301">                        set.add(x);</span>
+<span class="fc" id="L302">                    }</span>
+<span class="fc" id="L303">                });</span>
+<span class="fc" id="L304">        return map;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static Map&lt;String, Schema&lt;?&gt;&gt; schemas(OpenAPI api) {
+<span class="pc bpc" id="L309" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getSchemas() == null) {</span>
+<span class="nc" id="L310">            return Collections.emptyMap();</span>
+        } else {
+<span class="fc" id="L312">            return (Map&lt;String, Schema&lt;?&gt;&gt;) (Map&lt;?, ?&gt;) api.getComponents() //</span>
+<span class="fc" id="L313">                    .getSchemas();</span>
+        }
+    }
+
+    private static List&lt;Schema&lt;?&gt;&gt; findSchemas(SchemaCategory category, String name, Schema&lt;?&gt; schema,
+            Predicate&lt;Schema&lt;?&gt;&gt; predicate) {
+<span class="fc" id="L319">        List&lt;Schema&lt;?&gt;&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L320">        Apis.visitSchemas(category, ImmutableList.of(new SchemaWithName(name, schema)), (c, schemaPath) -&gt; {</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">            if (predicate.test(schemaPath.last().schema)) {</span>
+<span class="fc" id="L322">                list.add(schemaPath.last().schema);</span>
+            }
+<span class="fc" id="L324">        });</span>
+<span class="fc" id="L325">        return list;</span>
+    }
+
+    public String externalRefClassName(String ref) {
+<span class="nc" id="L329">        return definition.externalRefClassName(ref);</span>
+    }
+
+    public String globalsFullClassName() {
+<span class="fc" id="L333">        return definition.packages().basePackage() + &quot;.Globals&quot;;</span>
+    }
+
+    static Map&lt;String, String&gt; getEnumValueToIdentifierMap(List&lt;?&gt; values) {
+<span class="fc" id="L337">        Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L338">        Set&lt;String&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L339">        values.forEach(o -&gt; set.add(String.valueOf(o)));</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">        for (String o : set) {</span>
+<span class="fc" id="L341">            int i = 0;</span>
+<span class="fc" id="L342">            String name = enumNameToEnumConstant(o);</span>
+            while (true) {
+<span class="fc bfc" id="L344" title="All 2 branches covered.">                String candidate = name + (i == 0 ? &quot;&quot; : &quot;_&quot; + i);</span>
+<span class="fc bfc" id="L345" title="All 2 branches covered.">                if (!map.containsValue(candidate)) {</span>
+<span class="fc" id="L346">                    map.put(o, candidate);</span>
+<span class="fc" id="L347">                    break;</span>
+                }
+<span class="fc" id="L349">                i++;</span>
+<span class="fc" id="L350">            }</span>
+<span class="fc" id="L351">        }</span>
+<span class="fc" id="L352">        return map;</span>
+    }
+
+    public boolean mapIntegerToBigInteger() {
+<span class="fc" id="L356">        return definition.mapIntegerToBigInteger();</span>
+    }
+
+    public static String toIdentifier(ImmutableList&lt;String&gt; list) {
+<span class="fc" id="L360">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        for (String s : list) {</span>
+<span class="fc" id="L362">            b.append(Names.upperFirst(camelifyOnSeparatorCharacters(s)));</span>
+<span class="fc" id="L363">        }</span>
+<span class="fc" id="L364">        return Names.toIdentifier(b.toString());</span>
+    }
+
+    private static String camelifyOnSeparatorCharacters(String s) {
+<span class="fc" id="L368">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L369">        boolean start = true;</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc" id="L371">            char ch = s.charAt(i);</span>
+<span class="pc bpc" id="L372" title="2 of 12 branches missed.">            if (ch == '/' || ch == '{' || ch == '}' || ch == '-' || ch == '_' || ch == '.') {</span>
+<span class="fc" id="L373">                start = true;</span>
+            } else {
+<span class="fc bfc" id="L375" title="All 2 branches covered.">                if (start) {</span>
+<span class="fc" id="L376">                    b.append(Character.toUpperCase(ch));</span>
+                } else {
+<span class="fc" id="L378">                    b.append(ch);</span>
+                }
+<span class="fc" id="L380">                start = false;</span>
+            }
+        }
+<span class="fc" id="L383">        return b.toString();</span>
+    }
+
+    public String serviceControllerFullClassName() {
+<span class="fc" id="L387">        return definition.packages().basePackage() + &quot;.service.ServiceController&quot;;</span>
+    }
+
+    public String serviceInterfaceFullClassName() {
+<span class="fc" id="L391">        return definition.packages().basePackage() + &quot;.service.Service&quot;;</span>
+    }
+
+    public String applicationFullClassName() {
+<span class="fc" id="L395">        return definition.packages().basePackage() + &quot;.Application&quot;;</span>
+    }
+
+    public String clientFullClassName() {
+<span class="fc" id="L399">        return definition.packages().basePackage() + &quot;.client.Client&quot;;</span>
+    }
+
+    public String jacksonConfigurationFullClassName() {
+<span class="fc" id="L403">        return definition.packages().basePackage() + &quot;.service.JacksonConfiguration&quot;;</span>
+    }
+
+    public Parameter lookupParameter(String name) {
+<span class="nc" id="L407">        return parameters(api).get(lastComponent(name));</span>
+    }
+
+    private static Map&lt;String, Parameter&gt; parameters(OpenAPI api) {
+<span class="nc bnc" id="L411" title="All 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getParameters() == null) {</span>
+<span class="nc" id="L412">            return Collections.emptyMap();</span>
+        } else {
+<span class="nc" id="L414">            return api.getComponents().getParameters();</span>
+        }
+    }
+
+    public static String lastComponent(String ref) {
+<span class="fc" id="L419">        int i = ref.lastIndexOf('/');</span>
+<span class="fc" id="L420">        return ref.substring(i + 1);</span>
+    }
+
+    public RequestBody lookupRequestBody(String ref) {
+<span class="fc" id="L424">        return requestBodies(api).get(lastComponent(ref));</span>
+    }
+
+    private static Map&lt;String, RequestBody&gt; requestBodies(OpenAPI api) {
+<span class="pc bpc" id="L428" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getRequestBodies() == null) {</span>
+<span class="nc" id="L429">            return Collections.emptyMap();</span>
+        } else {
+<span class="fc" id="L431">            return api.getComponents().getRequestBodies();</span>
+        }
+    }
+
+    public ApiResponse lookupResponse(String ref) {
+<span class="nc" id="L436">        return responses(api).get(lastComponent(ref));</span>
+    }
+
+    private Map&lt;String, ApiResponse&gt; responses(OpenAPI api) {
+<span class="nc bnc" id="L440" title="All 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getResponses() == null) {</span>
+<span class="nc" id="L441">            return Collections.emptyMap();</span>
+        } else {
+<span class="nc" id="L443">            return api.getComponents().getResponses();</span>
+        }
+    }
+
+    public ServerGeneratorType generatorType() {
+<span class="fc" id="L448">        return generatorType;</span>
+    }
+
+    public boolean mapNumberToBigDecimal() {
+<span class="fc" id="L452">        return definition.mapNumberToBigDecimal();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

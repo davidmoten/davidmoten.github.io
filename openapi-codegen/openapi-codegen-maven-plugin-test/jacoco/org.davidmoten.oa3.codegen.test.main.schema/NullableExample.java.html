@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NullableExample.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">NullableExample.java</span></div><h1>NullableExample.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import jakarta.annotation.Generated;
+
+import java.lang.IllegalArgumentException;
+import java.lang.Integer;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class NullableExample {
+
+    @JsonProperty(&quot;req&quot;)
+    private final JsonNullable&lt;Integer&gt; req;
+
+    @JsonProperty(&quot;a&quot;)
+    private final long a;
+
+    @JsonProperty(&quot;notReq&quot;)
+    private final JsonNullable&lt;String&gt; notReq;
+
+    @JsonProperty(&quot;b&quot;)
+    private final B b;
+
+    @JsonCreator
+    private NullableExample(
+            @JsonProperty(&quot;req&quot;) JsonNullable&lt;Integer&gt; req,
+            @JsonProperty(&quot;a&quot;) long a,
+            @JsonProperty(&quot;notReq&quot;) JsonNullable&lt;String&gt; notReq,
+<span class="fc" id="L49">            @JsonProperty(&quot;b&quot;) B b) {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(NullableExample.class)) {</span>
+<span class="fc" id="L51">            Preconditions.checkMinLength(notReq, 4, &quot;notReq&quot;);</span>
+        }
+<span class="fc" id="L53">        this.req = req;</span>
+<span class="fc" id="L54">        this.a = a;</span>
+<span class="fc" id="L55">        this.notReq = notReq;</span>
+<span class="fc" id="L56">        this.b = b;</span>
+<span class="fc" id="L57">    }</span>
+
+    @ConstructorBinding
+    public NullableExample(
+            Optional&lt;Integer&gt; req,
+            long a,
+            JsonNullable&lt;String&gt; notReq,
+<span class="fc" id="L64">            B b) {</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(NullableExample.class)) {</span>
+<span class="fc" id="L66">            Preconditions.checkNotNull(notReq, &quot;notReq&quot;);</span>
+<span class="fc" id="L67">            Preconditions.checkMinLength(notReq, 4, &quot;notReq&quot;);</span>
+<span class="fc" id="L68">            Preconditions.checkNotNull(b, &quot;b&quot;);</span>
+        }
+<span class="fc" id="L70">        this.req = JsonNullable.of(req.orElse(null));</span>
+<span class="fc" id="L71">        this.a = a;</span>
+<span class="fc" id="L72">        this.notReq = notReq;</span>
+<span class="fc" id="L73">        this.b = b;</span>
+<span class="fc" id="L74">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L77">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private long a;
+        private B b;
+<span class="fc" id="L84">        private Optional&lt;Integer&gt; req = Optional.empty();</span>
+<span class="fc" id="L85">        private JsonNullable&lt;String&gt; notReq = JsonNullable.undefined();</span>
+
+<span class="fc" id="L87">        Builder() {</span>
+<span class="fc" id="L88">        }</span>
+
+        public BuilderWithA a(long a) {
+<span class="fc" id="L91">            this.a = a;</span>
+<span class="fc" id="L92">            return new BuilderWithA(this);</span>
+        }
+    }
+
+    public static final class BuilderWithA {
+
+        private final Builder b;
+
+<span class="fc" id="L100">        BuilderWithA(Builder b) {</span>
+<span class="fc" id="L101">            this.b = b;</span>
+<span class="fc" id="L102">        }</span>
+
+        public BuilderWithB b(B b) {
+<span class="fc" id="L105">            this.b.b = b;</span>
+<span class="fc" id="L106">            return new BuilderWithB(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithB {
+
+        private final Builder b;
+
+<span class="fc" id="L114">        BuilderWithB(Builder b) {</span>
+<span class="fc" id="L115">            this.b = b;</span>
+<span class="fc" id="L116">        }</span>
+
+        public BuilderWithB req(int req) {
+<span class="nc" id="L119">            this.b.req = Optional.of(req);</span>
+<span class="nc" id="L120">            return this;</span>
+        }
+
+        public BuilderWithB req(Optional&lt;Integer&gt; req) {
+<span class="nc" id="L124">            this.b.req = req;</span>
+<span class="nc" id="L125">            return this;</span>
+        }
+
+        public BuilderWithB notReq(String notReq) {
+<span class="nc" id="L129">            this.b.notReq = JsonNullable.of(notReq);</span>
+<span class="nc" id="L130">            return this;</span>
+        }
+
+        public BuilderWithB notReq(JsonNullable&lt;String&gt; notReq) {
+<span class="fc" id="L134">            this.b.notReq = notReq;</span>
+<span class="fc" id="L135">            return this;</span>
+        }
+
+        public NullableExample build() {
+<span class="fc" id="L139">            return new NullableExample(this.b.req, this.b.a, this.b.notReq, this.b.b);</span>
+        }
+    }
+
+    public static BuilderWithA a(long a) {
+<span class="fc" id="L144">        return builder().a(a);</span>
+    }
+
+    public Optional&lt;Integer&gt; req() {
+<span class="nc" id="L148">        return Optional.ofNullable(req.get());</span>
+    }
+
+    public long a() {
+<span class="nc" id="L152">        return a;</span>
+    }
+
+    public JsonNullable&lt;String&gt; notReq() {
+<span class="nc" id="L156">        return notReq;</span>
+    }
+
+    public B b() {
+<span class="nc" id="L160">        return b;</span>
+    }
+
+    public NullableExample withReq(Optional&lt;Integer&gt; req) {
+<span class="nc" id="L164">        return new NullableExample(req, a, notReq, b);</span>
+    }
+
+    public NullableExample withReq(Integer req) {
+<span class="nc" id="L168">        return new NullableExample(Optional.of(req), a, notReq, b);</span>
+    }
+
+    public NullableExample withA(long a) {
+<span class="nc" id="L172">        return new NullableExample(Optional.ofNullable(req.get()), a, notReq, b);</span>
+    }
+
+    public NullableExample withNotReq(JsonNullable&lt;String&gt; notReq) {
+<span class="nc" id="L176">        return new NullableExample(Optional.ofNullable(req.get()), a, JsonNullable.of(notReq.orElse(null)), b);</span>
+    }
+
+    public NullableExample withNotReq(String notReq) {
+<span class="nc" id="L180">        return new NullableExample(Optional.ofNullable(req.get()), a, JsonNullable.of(notReq), b);</span>
+    }
+
+    public NullableExample withB(B b) {
+<span class="nc" id="L184">        return new NullableExample(Optional.ofNullable(req.get()), a, notReq, b);</span>
+    }
+
+<span class="fc" id="L187">    public enum B {</span>
+
+<span class="fc" id="L189">        HELLO(&quot;hello&quot;),</span>
+<span class="fc" id="L190">        THERE(&quot;there&quot;);</span>
+
+        @JsonValue
+        private final String value;
+
+        private B(
+<span class="fc" id="L196">                String value) {</span>
+<span class="fc" id="L197">            this.value = value;</span>
+<span class="fc" id="L198">        }</span>
+
+        public String value() {
+<span class="nc" id="L201">            return value;</span>
+        }
+
+        @JsonCreator
+        public static B fromValue(Object value) {
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">            for (B x: B.values()) {</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                if (Objects.equals(value, x.value)) {</span>
+<span class="fc" id="L208">                    return x;</span>
+                }
+            }
+<span class="nc" id="L211">            throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L218">            return true;</span>
+        }
+<span class="pc bpc" id="L220" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L221">            return false;</span>
+        }
+<span class="fc" id="L223">        NullableExample other = (NullableExample) o;</span>
+<span class="fc" id="L224">        return </span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">            Objects.equals(this.req, other.req) &amp;&amp; </span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">            Objects.equals(this.a, other.a) &amp;&amp; </span>
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            Objects.equals(this.notReq, other.notReq) &amp;&amp; </span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            Objects.equals(this.b, other.b);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L233">        return Objects.hash(</span>
+                req, 
+<span class="nc" id="L235">                a, </span>
+                notReq, 
+                b);
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L242">        return Util.toString(NullableExample.class,</span>
+                &quot;req&quot;, req,
+<span class="nc" id="L244">                &quot;a&quot;, a,</span>
+                &quot;notReq&quot;, notReq,
+                &quot;b&quot;, b);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

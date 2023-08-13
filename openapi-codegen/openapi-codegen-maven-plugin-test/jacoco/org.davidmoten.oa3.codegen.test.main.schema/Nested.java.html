@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Nested.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Nested.java</span></div><h1>Nested.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class Nested {
+
+    @JsonProperty(&quot;first&quot;)
+    private final First first;
+
+    @JsonProperty(&quot;second&quot;)
+    private final String second;
+
+    @JsonCreator
+    private Nested(
+            @JsonProperty(&quot;first&quot;) First first,
+<span class="nc" id="L39">            @JsonProperty(&quot;second&quot;) String second) {</span>
+<span class="nc" id="L40">        this.first = first;</span>
+<span class="nc" id="L41">        this.second = second;</span>
+<span class="nc" id="L42">    }</span>
+
+    @ConstructorBinding
+    public Nested(
+            Optional&lt;First&gt; first,
+<span class="nc" id="L47">            Optional&lt;String&gt; second) {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Nested.class)) {</span>
+<span class="nc" id="L49">            Preconditions.checkNotNull(first, &quot;first&quot;);</span>
+<span class="nc" id="L50">            Preconditions.checkNotNull(second, &quot;second&quot;);</span>
+        }
+<span class="nc" id="L52">        this.first = first.orElse(null);</span>
+<span class="nc" id="L53">        this.second = second.orElse(null);</span>
+<span class="nc" id="L54">    }</span>
+
+    public static Builder builder() {
+<span class="nc" id="L57">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="nc" id="L62">        private Optional&lt;First&gt; first = Optional.empty();</span>
+<span class="nc" id="L63">        private Optional&lt;String&gt; second = Optional.empty();</span>
+
+<span class="nc" id="L65">        Builder() {</span>
+<span class="nc" id="L66">        }</span>
+
+        public Builder first(First first) {
+<span class="nc" id="L69">            this.first = Optional.of(first);</span>
+<span class="nc" id="L70">            return this;</span>
+        }
+
+        public Builder first(Optional&lt;First&gt; first) {
+<span class="nc" id="L74">            this.first = first;</span>
+<span class="nc" id="L75">            return this;</span>
+        }
+
+        public Builder second(String second) {
+<span class="nc" id="L79">            this.second = Optional.of(second);</span>
+<span class="nc" id="L80">            return this;</span>
+        }
+
+        public Builder second(Optional&lt;String&gt; second) {
+<span class="nc" id="L84">            this.second = second;</span>
+<span class="nc" id="L85">            return this;</span>
+        }
+
+        public Nested build() {
+<span class="nc" id="L89">            return new Nested(this.first, this.second);</span>
+        }
+    }
+
+    public Optional&lt;First&gt; first() {
+<span class="nc" id="L94">        return Optional.ofNullable(first);</span>
+    }
+
+    public Optional&lt;String&gt; second() {
+<span class="nc" id="L98">        return Optional.ofNullable(second);</span>
+    }
+
+    public Nested withFirst(Optional&lt;First&gt; first) {
+<span class="nc" id="L102">        return new Nested(first, Optional.ofNullable(second));</span>
+    }
+
+    public Nested withFirst(First first) {
+<span class="nc" id="L106">        return new Nested(Optional.of(first), Optional.ofNullable(second));</span>
+    }
+
+    public Nested withSecond(Optional&lt;String&gt; second) {
+<span class="nc" id="L110">        return new Nested(Optional.ofNullable(first), second);</span>
+    }
+
+    public Nested withSecond(String second) {
+<span class="nc" id="L114">        return new Nested(Optional.ofNullable(first), Optional.of(second));</span>
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class First {
+
+        @JsonProperty(&quot;first2&quot;)
+        private final First2 first2;
+
+        @JsonProperty(&quot;second2&quot;)
+        private final Second2 second2;
+
+        @JsonCreator
+        private First(
+                @JsonProperty(&quot;first2&quot;) First2 first2,
+<span class="nc" id="L130">                @JsonProperty(&quot;second2&quot;) Second2 second2) {</span>
+<span class="nc" id="L131">            this.first2 = first2;</span>
+<span class="nc" id="L132">            this.second2 = second2;</span>
+<span class="nc" id="L133">        }</span>
+
+        @ConstructorBinding
+        public First(
+                Optional&lt;First2&gt; first2,
+<span class="nc" id="L138">                Optional&lt;Second2&gt; second2) {</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(First.class)) {</span>
+<span class="nc" id="L140">                Preconditions.checkNotNull(first2, &quot;first2&quot;);</span>
+<span class="nc" id="L141">                Preconditions.checkNotNull(second2, &quot;second2&quot;);</span>
+            }
+<span class="nc" id="L143">            this.first2 = first2.orElse(null);</span>
+<span class="nc" id="L144">            this.second2 = second2.orElse(null);</span>
+<span class="nc" id="L145">        }</span>
+
+        public static Builder builder() {
+<span class="nc" id="L148">            return new Builder();</span>
+        }
+
+        public static final class Builder {
+
+<span class="nc" id="L153">            private Optional&lt;First2&gt; first2 = Optional.empty();</span>
+<span class="nc" id="L154">            private Optional&lt;Second2&gt; second2 = Optional.empty();</span>
+
+<span class="nc" id="L156">            Builder() {</span>
+<span class="nc" id="L157">            }</span>
+
+            public Builder first2(First2 first2) {
+<span class="nc" id="L160">                this.first2 = Optional.of(first2);</span>
+<span class="nc" id="L161">                return this;</span>
+            }
+
+            public Builder first2(Optional&lt;First2&gt; first2) {
+<span class="nc" id="L165">                this.first2 = first2;</span>
+<span class="nc" id="L166">                return this;</span>
+            }
+
+            public Builder second2(Second2 second2) {
+<span class="nc" id="L170">                this.second2 = Optional.of(second2);</span>
+<span class="nc" id="L171">                return this;</span>
+            }
+
+            public Builder second2(Optional&lt;Second2&gt; second2) {
+<span class="nc" id="L175">                this.second2 = second2;</span>
+<span class="nc" id="L176">                return this;</span>
+            }
+
+            public First build() {
+<span class="nc" id="L180">                return new First(this.first2, this.second2);</span>
+            }
+        }
+
+        public Optional&lt;First2&gt; first2() {
+<span class="nc" id="L185">            return Optional.ofNullable(first2);</span>
+        }
+
+        public Optional&lt;Second2&gt; second2() {
+<span class="nc" id="L189">            return Optional.ofNullable(second2);</span>
+        }
+
+        public First withFirst2(Optional&lt;First2&gt; first2) {
+<span class="nc" id="L193">            return new First(first2, Optional.ofNullable(second2));</span>
+        }
+
+        public First withFirst2(First2 first2) {
+<span class="nc" id="L197">            return new First(Optional.of(first2), Optional.ofNullable(second2));</span>
+        }
+
+        public First withSecond2(Optional&lt;Second2&gt; second2) {
+<span class="nc" id="L201">            return new First(Optional.ofNullable(first2), second2);</span>
+        }
+
+        public First withSecond2(Second2 second2) {
+<span class="nc" id="L205">            return new First(Optional.ofNullable(first2), Optional.of(second2));</span>
+        }
+
+        @JsonInclude(Include.NON_NULL)
+        @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+        public static final class First2 {
+
+            @JsonProperty(&quot;first3&quot;)
+            private final String first3;
+
+            @JsonCreator
+            private First2(
+<span class="nc" id="L217">                    @JsonProperty(&quot;first3&quot;) String first3) {</span>
+<span class="nc" id="L218">                this.first3 = first3;</span>
+<span class="nc" id="L219">            }</span>
+
+            @ConstructorBinding
+            public First2(
+<span class="nc" id="L223">                    Optional&lt;String&gt; first3) {</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                if (Globals.config().validateInConstructor().test(First2.class)) {</span>
+<span class="nc" id="L225">                    Preconditions.checkNotNull(first3, &quot;first3&quot;);</span>
+                }
+<span class="nc" id="L227">                this.first3 = first3.orElse(null);</span>
+<span class="nc" id="L228">            }</span>
+
+            public static First2 first3(Optional&lt;String&gt; first3) {
+<span class="nc" id="L231">                return new First2(first3);</span>
+            }
+
+            public static First2 first3(String first3) {
+<span class="nc" id="L235">                return new First2(Optional.of(first3));</span>
+            }
+
+            public Optional&lt;String&gt; first3() {
+<span class="nc" id="L239">                return Optional.ofNullable(first3);</span>
+            }
+
+            @Override
+            public boolean equals(Object o) {
+<span class="nc bnc" id="L244" title="All 2 branches missed.">                if (this == o) {</span>
+<span class="nc" id="L245">                    return true;</span>
+                }
+<span class="nc bnc" id="L247" title="All 4 branches missed.">                if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L248">                    return false;</span>
+                }
+<span class="nc" id="L250">                First2 other = (First2) o;</span>
+<span class="nc" id="L251">                return </span>
+<span class="nc" id="L252">                    Objects.equals(this.first3, other.first3);</span>
+            }
+
+            @Override
+            public int hashCode() {
+<span class="nc" id="L257">                return Objects.hash(first3);</span>
+            }
+
+            @Override
+            public String toString() {
+<span class="nc" id="L262">                return Util.toString(First2.class, &quot;first3&quot;, first3);</span>
+            }
+        }
+
+        @JsonInclude(Include.NON_NULL)
+        @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+        public static final class Second2 {
+
+            @JsonValue
+            private final List&lt;Second2Item&gt; value;
+
+            @JsonCreator
+            @ConstructorBinding
+            public Second2(
+<span class="nc" id="L276">                    List&lt;Second2Item&gt; value) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">                if (Globals.config().validateInConstructor().test(Second2.class)) {</span>
+<span class="nc" id="L278">                    Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+                }
+<span class="nc" id="L280">                this.value = value;</span>
+<span class="nc" id="L281">            }</span>
+
+            public static Second2 value(List&lt;Second2Item&gt; value) {
+<span class="nc" id="L284">                return new Second2(value);</span>
+            }
+
+            public List&lt;Second2Item&gt; value() {
+<span class="nc" id="L288">                return value;</span>
+            }
+
+            @JsonInclude(Include.NON_NULL)
+            @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+            public static final class Second2Item {
+
+                @JsonProperty(&quot;partNumber&quot;)
+                private final int partNumber;
+
+                @JsonCreator
+                @ConstructorBinding
+                public Second2Item(
+<span class="nc" id="L301">                        @JsonProperty(&quot;partNumber&quot;) int partNumber) {</span>
+<span class="nc" id="L302">                    this.partNumber = partNumber;</span>
+<span class="nc" id="L303">                }</span>
+
+                public static Second2Item partNumber(int partNumber) {
+<span class="nc" id="L306">                    return new Second2Item(partNumber);</span>
+                }
+
+                public int partNumber() {
+<span class="nc" id="L310">                    return partNumber;</span>
+                }
+
+                @Override
+                public boolean equals(Object o) {
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (this == o) {</span>
+<span class="nc" id="L316">                        return true;</span>
+                    }
+<span class="nc bnc" id="L318" title="All 4 branches missed.">                    if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L319">                        return false;</span>
+                    }
+<span class="nc" id="L321">                    Second2Item other = (Second2Item) o;</span>
+<span class="nc" id="L322">                    return </span>
+<span class="nc" id="L323">                        Objects.equals(this.partNumber, other.partNumber);</span>
+                }
+
+                @Override
+                public int hashCode() {
+<span class="nc" id="L328">                    return Objects.hash(partNumber);</span>
+                }
+
+                @Override
+                public String toString() {
+<span class="nc" id="L333">                    return Util.toString(Second2Item.class, &quot;partNumber&quot;, partNumber);</span>
+                }
+            }
+
+            @Override
+            public boolean equals(Object o) {
+<span class="nc bnc" id="L339" title="All 2 branches missed.">                if (this == o) {</span>
+<span class="nc" id="L340">                    return true;</span>
+                }
+<span class="nc bnc" id="L342" title="All 4 branches missed.">                if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L343">                    return false;</span>
+                }
+<span class="nc" id="L345">                Second2 other = (Second2) o;</span>
+<span class="nc" id="L346">                return </span>
+<span class="nc" id="L347">                    Objects.equals(this.value, other.value);</span>
+            }
+
+            @Override
+            public int hashCode() {
+<span class="nc" id="L352">                return Objects.hash(value);</span>
+            }
+
+            @Override
+            public String toString() {
+<span class="nc" id="L357">                return Util.toString(Second2.class, &quot;value&quot;, value);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L363" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L364">                return true;</span>
+            }
+<span class="nc bnc" id="L366" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L367">                return false;</span>
+            }
+<span class="nc" id="L369">            First other = (First) o;</span>
+<span class="nc" id="L370">            return </span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">                Objects.equals(this.first2, other.first2) &amp;&amp; </span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">                Objects.equals(this.second2, other.second2);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L377">            return Objects.hash(first2, second2);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L382">            return Util.toString(First.class, &quot;first2&quot;, first2, &quot;second2&quot;, second2);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L388" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L389">            return true;</span>
+        }
+<span class="nc bnc" id="L391" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L392">            return false;</span>
+        }
+<span class="nc" id="L394">        Nested other = (Nested) o;</span>
+<span class="nc" id="L395">        return </span>
+<span class="nc bnc" id="L396" title="All 2 branches missed.">            Objects.equals(this.first, other.first) &amp;&amp; </span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">            Objects.equals(this.second, other.second);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L402">        return Objects.hash(first, second);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L407">        return Util.toString(Nested.class, &quot;first&quot;, first, &quot;second&quot;, second);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

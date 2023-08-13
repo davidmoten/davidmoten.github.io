@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnonymousOneOfDiscriminated.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">AnonymousOneOfDiscriminated.java</span></div><h1>AnonymousOneOfDiscriminated.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Objects;
+
+import org.davidmoten.oa3.codegen.runtime.DiscriminatorHelper;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonTypeInfo(use = Id.NAME, property = &quot;idName&quot;, include = As.EXISTING_PROPERTY, visible = true)
+@JsonSubTypes({
+        @Type(value = AnonymousOneOfDiscriminated.Object1.class, name = &quot;Object1&quot;), 
+        @Type(value = AnonymousOneOfDiscriminated.Object2.class, name = &quot;Object2&quot;)})
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public interface AnonymousOneOfDiscriminated {
+
+    String idName();
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class Object1 implements AnonymousOneOfDiscriminated {
+
+        @JsonProperty(&quot;idName&quot;)
+        private final String idName;
+
+        @JsonProperty(&quot;name&quot;)
+        private final String name;
+
+        @JsonCreator
+        private Object1(
+                @JsonProperty(&quot;idName&quot;) String idName,
+<span class="nc" id="L50">                @JsonProperty(&quot;name&quot;) String name) {</span>
+<span class="nc" id="L51">            this.idName = idName;</span>
+<span class="nc" id="L52">            this.name = name;</span>
+<span class="nc" id="L53">        }</span>
+
+        @ConstructorBinding
+        public Object1(
+<span class="nc" id="L57">                String name) {</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Object1.class)) {</span>
+<span class="nc" id="L59">                Preconditions.checkNotNull(name, &quot;name&quot;);</span>
+            }
+<span class="nc" id="L61">            this.idName = DiscriminatorHelper.value(String.class, &quot;Object1&quot;);</span>
+<span class="nc" id="L62">            this.name = name;</span>
+<span class="nc" id="L63">        }</span>
+
+        public static Object1 name(String name) {
+<span class="nc" id="L66">            return new Object1(name);</span>
+        }
+
+        @Override
+        public String idName() {
+<span class="nc" id="L71">            return DiscriminatorHelper.value(idName);</span>
+        }
+
+        public String name() {
+<span class="nc" id="L75">            return name;</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L81">                return true;</span>
+            }
+<span class="nc bnc" id="L83" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L84">                return false;</span>
+            }
+<span class="nc" id="L86">            Object1 other = (Object1) o;</span>
+<span class="nc" id="L87">            return </span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                Objects.equals(this.idName, other.idName) &amp;&amp; </span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                Objects.equals(this.name, other.name);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L94">            return Objects.hash(idName, name);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L99">            return Util.toString(Object1.class, &quot;idName&quot;, idName, &quot;name&quot;, name);</span>
+        }
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class Object2 implements AnonymousOneOfDiscriminated {
+
+        @JsonProperty(&quot;idName&quot;)
+        private final String idName;
+
+        @JsonProperty(&quot;nom&quot;)
+        private final String nom;
+
+        @JsonCreator
+        private Object2(
+                @JsonProperty(&quot;idName&quot;) String idName,
+<span class="nc" id="L116">                @JsonProperty(&quot;nom&quot;) String nom) {</span>
+<span class="nc" id="L117">            this.idName = idName;</span>
+<span class="nc" id="L118">            this.nom = nom;</span>
+<span class="nc" id="L119">        }</span>
+
+        @ConstructorBinding
+        public Object2(
+<span class="nc" id="L123">                String nom) {</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Object2.class)) {</span>
+<span class="nc" id="L125">                Preconditions.checkNotNull(nom, &quot;nom&quot;);</span>
+            }
+<span class="nc" id="L127">            this.idName = DiscriminatorHelper.value(String.class, &quot;Object2&quot;);</span>
+<span class="nc" id="L128">            this.nom = nom;</span>
+<span class="nc" id="L129">        }</span>
+
+        public static Object2 nom(String nom) {
+<span class="nc" id="L132">            return new Object2(nom);</span>
+        }
+
+        @Override
+        public String idName() {
+<span class="nc" id="L137">            return DiscriminatorHelper.value(idName);</span>
+        }
+
+        public String nom() {
+<span class="nc" id="L141">            return nom;</span>
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L147">                return true;</span>
+            }
+<span class="nc bnc" id="L149" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L150">                return false;</span>
+            }
+<span class="nc" id="L152">            Object2 other = (Object2) o;</span>
+<span class="nc" id="L153">            return </span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                Objects.equals(this.idName, other.idName) &amp;&amp; </span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                Objects.equals(this.nom, other.nom);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L160">            return Objects.hash(idName, nom);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L165">            return Util.toString(Object2.class, &quot;idName&quot;, idName, &quot;nom&quot;, nom);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

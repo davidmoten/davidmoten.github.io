@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClientCodeWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.writer</a> &gt; <span class="el_source">ClientCodeWriter.java</span></div><h1>ClientCodeWriter.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.writer;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
+import org.davidmoten.oa3.codegen.generator.ClientServerGenerator.Method;
+import org.davidmoten.oa3.codegen.generator.Names;
+import org.davidmoten.oa3.codegen.generator.ParamType;
+import org.davidmoten.oa3.codegen.generator.internal.CodePrintWriter;
+import org.davidmoten.oa3.codegen.generator.internal.WriterUtil;
+import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.HttpMethod;
+import org.davidmoten.oa3.codegen.http.HttpResponse;
+import org.davidmoten.oa3.codegen.http.Interceptor;
+import org.davidmoten.oa3.codegen.http.Serializer;
+
+<span class="nc" id="L19">public class ClientCodeWriter {</span>
+
+    public static void writeClientClass(Names names, List&lt;Method&gt; methods) {
+<span class="fc" id="L22">        String fullClassName = names.clientFullClassName();</span>
+<span class="fc" id="L23">        CodePrintWriter out = CodePrintWriter.create(fullClassName);</span>
+<span class="fc" id="L24">        writeClientClass(out, names, methods);</span>
+<span class="fc" id="L25">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L26">    }</span>
+
+    private static void writeClientClass(CodePrintWriter out, Names names, List&lt;Method&gt; methods) {
+<span class="fc" id="L29">        out.line(&quot;package %s;&quot;, out.pkg());</span>
+<span class="fc" id="L30">        out.println();</span>
+<span class="fc" id="L31">        out.format(&quot;%s&quot;, WriterUtil.IMPORTS_HERE);</span>
+<span class="fc" id="L32">        WriterUtil.writeApiJavadoc(out, names);</span>
+<span class="fc" id="L33">        WriterUtil.addGeneratedAnnotation(out);</span>
+<span class="fc" id="L34">        out.line(&quot;public class %s {&quot;, out.simpleClassName());</span>
+<span class="fc" id="L35">        writeClientClassFieldsConstructorAndBuilder(out, names);</span>
+<span class="fc" id="L36">        writeClientClassMethods(out, methods);</span>
+<span class="fc" id="L37">        out.closeParen();</span>
+<span class="fc" id="L38">    }</span>
+
+    private static void writeClientClassFieldsConstructorAndBuilder(CodePrintWriter out, Names names) {
+        // add fields
+<span class="fc" id="L42">        out.println();</span>
+<span class="fc" id="L43">        out.line(&quot;private final %s serializer;&quot;, Serializer.class);</span>
+<span class="fc" id="L44">        out.line(&quot;private final %s&lt;%s&gt; interceptors;&quot;, List.class, Interceptor.class);</span>
+<span class="fc" id="L45">        out.line(&quot;private final %s basePath;&quot;, String.class);</span>
+
+        // write constructor
+<span class="fc" id="L48">        out.println();</span>
+<span class="fc" id="L49">        out.line(&quot;private %s(%s serializer, %s&lt;%s&gt; interceptors, %s basePath) {&quot;, out.simpleClassName(),</span>
+                Serializer.class, List.class, Interceptor.class, String.class);
+<span class="fc" id="L51">        out.line(&quot;this.serializer = serializer;&quot;);</span>
+<span class="fc" id="L52">        out.line(&quot;this.interceptors = interceptors;&quot;);</span>
+<span class="fc" id="L53">        out.line(&quot;this.basePath = basePath;&quot;);</span>
+<span class="fc" id="L54">        out.closeParen();</span>
+
+        // write builder
+<span class="fc" id="L57">        out.println();</span>
+<span class="fc" id="L58">        out.line(&quot;public static %s&lt;%s&gt; basePath(%s basePath) {&quot;, ClientBuilder.class, out.simpleClassName(),</span>
+                String.class);
+<span class="fc" id="L60">        out.line(&quot;return new %s&lt;&gt;(b -&gt; new %s(b.serializer(), b.interceptors(), b.basePath()), %s.config(), basePath);&quot;,</span>
+<span class="fc" id="L61">                ClientBuilder.class, out.simpleClassName(), out.add(names.globalsFullClassName()));</span>
+<span class="fc" id="L62">        out.closeParen();</span>
+<span class="fc" id="L63">    }</span>
+
+    private static final String FULL_RESPONSE_SUFFIX = &quot;FullResponse&quot;;
+
+    private static void writeClientClassMethods(CodePrintWriter out, List&lt;Method&gt; methods) {
+<span class="fc" id="L68">        methods.forEach(m -&gt; {</span>
+<span class="fc" id="L69">            out.right().right();</span>
+<span class="fc" id="L70">            String params = m.parameters //</span>
+<span class="fc" id="L71">                    .stream() //</span>
+<span class="fc" id="L72">                    .map(p -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(),</span>
+<span class="fc" id="L73">                            ServerCodeWriterSpringBoot.toImportedType(p, out.imports()), p.identifier)) //</span>
+<span class="fc" id="L74">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L75">            out.left().left();</span>
+            final String importedReturnType;
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (!m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L78">                importedReturnType = &quot;void&quot;;</span>
+            } else {
+<span class="fc" id="L80">                importedReturnType = out.add(m.returnFullClassName.get());</span>
+            }
+<span class="fc bfc" id="L82" title="All 4 branches covered.">            if (m.primaryStatusCode.isPresent() &amp;&amp; m.primaryMediaType.isPresent()) {</span>
+                final Optional&lt;String&gt; returns;
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                if (m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L85">                    returns = m.primaryStatusCode.map(x -&gt; &quot;primary response with status code &quot; + x);</span>
+                } else {
+<span class="nc" id="L87">                    returns = Optional.empty();</span>
+                }
+<span class="fc" id="L89">                ServerCodeWriterSpringBoot.writeMethodJavadoc(out, m, returns);</span>
+<span class="fc" id="L90">                out.line(&quot;public %s %s(%s) {&quot;, importedReturnType, m.methodName, params);</span>
+                final String paramIdentifiers;
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                if (m.parameters.size() &lt;= 3) {</span>
+<span class="fc" id="L93">                    paramIdentifiers = m.parameters.stream().map(p -&gt; p.identifier).collect(Collectors.joining(&quot;, &quot;));</span>
+                } else {
+<span class="fc" id="L95">                    out.right().right().right();</span>
+<span class="fc" id="L96">                    paramIdentifiers = m.parameters.stream()</span>
+<span class="fc" id="L97">                            .map(p -&gt; String.format(&quot;\n%s%s&quot;, out.indent(), p.identifier))</span>
+<span class="fc" id="L98">                            .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="fc" id="L99">                    out.left().left().left();</span>
+                }
+<span class="fc" id="L101">                out.line(&quot;return %s%s(%s)&quot;, m.methodName, FULL_RESPONSE_SUFFIX, paramIdentifiers);</span>
+<span class="fc" id="L102">                out.right().right();</span>
+<span class="fc" id="L103">                out.line(&quot;.assertStatusCodeMatches(\&quot;%s\&quot;)&quot;, m.primaryStatusCode.get());</span>
+<span class="fc" id="L104">                out.line(&quot;.assertContentTypeMatches(\&quot;%s\&quot;)&quot;, m.primaryMediaType.get());</span>
+<span class="fc" id="L105">                out.line(&quot;.dataUnwrapped();&quot;);</span>
+<span class="fc" id="L106">                out.left().left();</span>
+<span class="fc" id="L107">                out.closeParen();</span>
+            }
+<span class="fc" id="L109">            ServerCodeWriterSpringBoot.writeMethodJavadoc(out, m,</span>
+<span class="fc" id="L110">                    Optional.of(&quot;full response with status code, body and headers&quot;));</span>
+<span class="fc" id="L111">            out.line(&quot;public %s %s%s(%s) {&quot;, HttpResponse.class, m.methodName, FULL_RESPONSE_SUFFIX, params);</span>
+<span class="fc" id="L112">            out.line(&quot;return %s&quot;, Http.class);</span>
+<span class="fc" id="L113">            out.right().right();</span>
+<span class="fc" id="L114">            out.line(&quot;.method(%s.%s)&quot;, HttpMethod.class, m.httpMethod.name());</span>
+<span class="fc" id="L115">            out.line(&quot;.basePath(this.basePath)&quot;);</span>
+<span class="fc" id="L116">            out.line(&quot;.path(\&quot;%s\&quot;)&quot;, m.path);</span>
+<span class="fc" id="L117">            out.line(&quot;.serializer(this.serializer)&quot;);</span>
+<span class="fc" id="L118">            out.line(&quot;.interceptors(this.interceptors)&quot;);</span>
+<span class="fc" id="L119">            out.line(&quot;.acceptApplicationJson()&quot;);</span>
+<span class="fc" id="L120">            m.parameters.forEach(p -&gt; {</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                if (p.type == ParamType.QUERY) {</span>
+<span class="fc" id="L122">                    out.line(&quot;.queryParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                } else if (p.type == ParamType.PATH) {</span>
+<span class="fc" id="L124">                    out.line(&quot;.pathParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                } else if (p.type == ParamType.BODY) {</span>
+<span class="fc" id="L126">                    out.line(&quot;.body(%s)&quot;, p.identifier);</span>
+<span class="fc" id="L127">                    out.line(&quot;.contentTypeApplicationJson()&quot;);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                } else if (p.type == ParamType.COOKIE) {</span>
+<span class="fc" id="L129">                    out.line(&quot;.cookie(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                } else if (p.type == ParamType.HEADER) {</span>
+<span class="fc" id="L131">                    out.line(&quot;.header(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+                }
+<span class="fc" id="L133">            });</span>
+<span class="fc" id="L134">            m.responseDescriptors.forEach(r -&gt; {</span>
+<span class="fc" id="L135">                out.line(&quot;.responseAs(%s.class)&quot;, out.add(r.fullClassName()));</span>
+<span class="fc" id="L136">                out.line(&quot;.whenStatusCodeMatches(\&quot;%s\&quot;)&quot;, r.statusCode());</span>
+<span class="fc" id="L137">                out.line(&quot;.whenContentTypeMatches(\&quot;%s\&quot;)&quot;, r.mediaType());</span>
+<span class="fc" id="L138">            });</span>
+<span class="fc" id="L139">            out.line(&quot;.call();&quot;);</span>
+<span class="fc" id="L140">            out.left().left();</span>
+<span class="fc" id="L141">            out.closeParen();</span>
+<span class="fc" id="L142">        });</span>
+<span class="fc" id="L143">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

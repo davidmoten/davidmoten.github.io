@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ResponseDescriptor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http</a> &gt; <span class="el_source">ResponseDescriptor.java</span></div><h1>ResponseDescriptor.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http;
+
+import java.util.Comparator;
+import java.util.regex.Pattern;
+
+public final class ResponseDescriptor {
+    private final String statusCode; // can be a pattern like `2*`
+    private final String mediaType;
+    private final Class&lt;?&gt; cls;
+
+<span class="fc" id="L11">    public ResponseDescriptor(String statusCode, String mediaType, Class&lt;?&gt; cls) {</span>
+<span class="fc" id="L12">        this.statusCode = statusCode;</span>
+<span class="fc" id="L13">        this.mediaType = mediaType;</span>
+<span class="fc" id="L14">        this.cls = cls;</span>
+<span class="fc" id="L15">    }</span>
+
+    public String statusCode() {
+<span class="fc" id="L18">        return statusCode;</span>
+    }
+
+    public String mediaType() {
+<span class="nc" id="L22">        return mediaType;</span>
+    }
+
+    public Class&lt;?&gt; cls() {
+<span class="fc" id="L26">        return cls;</span>
+    }
+
+    private static int countX(String s) {
+<span class="nc" id="L30">        return count(s, 'X');</span>
+    }
+
+    private static int count(String s, char ch) {
+<span class="nc" id="L34">        int count = 0;</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            if (s.charAt(i) == ch) {</span>
+<span class="nc" id="L37">                count++;</span>
+            }
+        }
+<span class="nc" id="L40">        return count;</span>
+    }
+
+    public static boolean matchesStatusCode(String statusCodePattern, int statusCode) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        return statusCodePattern.equals(&quot;default&quot;)</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                || Pattern.matches(statusCodePattern.replace(&quot;X&quot;, &quot;\\d&quot;), statusCode + &quot;&quot;);</span>
+    }
+
+    public static boolean matchesMediaType(String mediaTypePattern, String mediaType) {
+<span class="fc" id="L49">        return Pattern.matches(mediaTypePattern.replace(&quot;*&quot;, &quot;.*&quot;), mediaType);</span>
+    }
+
+    public boolean matches(int statusCode, String mediaType) {
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">        return matchesStatusCode(this.statusCode, statusCode) &amp;&amp; matchesMediaType(this.mediaType, mediaType);</span>
+    }
+
+    public static Comparator&lt;ResponseDescriptor&gt; specificity() {
+<span class="fc" id="L57">        return (a, b) -&gt; {</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (!a.statusCode().equals(b.statusCode())) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                if (a.statusCode.equals(&quot;default&quot;)) {</span>
+<span class="fc" id="L60">                    return 1;</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                } else if (b.statusCode().equals(&quot;default&quot;)) {</span>
+<span class="fc" id="L62">                    return -1;</span>
+                }
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                if (countX(a.statusCode) != countX(b.statusCode)) {</span>
+<span class="nc" id="L65">                    return Integer.compare(countX(a.statusCode), countX(b.statusCode));</span>
+                }
+            }
+            // otherwise check mediaType length, longer is more specific (so b is compared
+            // to a rather than a to b)
+<span class="nc" id="L70">            return Integer.compare(b.mediaType.length(), a.mediaType.length());</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

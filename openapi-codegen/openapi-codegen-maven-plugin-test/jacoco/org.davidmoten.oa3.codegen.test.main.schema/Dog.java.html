@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Dog.java</span></div><h1>Dog.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import jakarta.annotation.Generated;
+
+import java.lang.IllegalArgumentException;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.PolymorphicDeserializer;
+import org.davidmoten.oa3.codegen.runtime.PolymorphicType;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.boot.context.properties.ConstructorBinding;
+
+@JsonDeserialize(using = Dog.Deserializer.class)
+@JsonInclude(Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+public final class Dog {
+
+    @JsonUnwrapped
+    private final Pet pet;
+
+    @JsonUnwrapped
+    private final Object1 object1;
+
+    public Dog(
+            Pet pet,
+<span class="fc" id="L44">            Object1 object1) {</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(Dog.class)) {</span>
+<span class="fc" id="L46">            Preconditions.checkNotNull(pet, &quot;pet&quot;);</span>
+<span class="fc" id="L47">            Preconditions.checkNotNull(object1, &quot;object1&quot;);</span>
+        }
+<span class="fc" id="L49">        this.pet = pet;</span>
+<span class="fc" id="L50">        this.object1 = object1;</span>
+<span class="fc" id="L51">    }</span>
+
+    public static Builder builder() {
+<span class="fc" id="L54">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private Pet pet;
+        private Object1 object1;
+
+<span class="fc" id="L62">        Builder() {</span>
+<span class="fc" id="L63">        }</span>
+
+        public BuilderWithPet pet(Pet pet) {
+<span class="fc" id="L66">            this.pet = pet;</span>
+<span class="fc" id="L67">            return new BuilderWithPet(this);</span>
+        }
+    }
+
+    public static final class BuilderWithPet {
+
+        private final Builder b;
+
+<span class="fc" id="L75">        BuilderWithPet(Builder b) {</span>
+<span class="fc" id="L76">            this.b = b;</span>
+<span class="fc" id="L77">        }</span>
+
+        public BuilderWithObject1 object1(Object1 object1) {
+<span class="fc" id="L80">            this.b.object1 = object1;</span>
+<span class="fc" id="L81">            return new BuilderWithObject1(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithObject1 {
+
+        private final Builder b;
+
+<span class="fc" id="L89">        BuilderWithObject1(Builder b) {</span>
+<span class="fc" id="L90">            this.b = b;</span>
+<span class="fc" id="L91">        }</span>
+
+        public Dog build() {
+<span class="fc" id="L94">            return new Dog(this.b.pet, this.b.object1);</span>
+        }
+    }
+
+    public static BuilderWithPet pet(Pet pet) {
+<span class="fc" id="L99">        return builder().pet(pet);</span>
+    }
+
+    public Pet pet() {
+<span class="fc" id="L103">        return pet;</span>
+    }
+
+    public Object1 object1() {
+<span class="fc" id="L107">        return object1;</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class Deserializer extends PolymorphicDeserializer&lt;Dog&gt; {
+
+        public Deserializer() {
+<span class="fc" id="L114">            super(Globals.config(), PolymorphicType.ALL_OF, Dog.class, Pet.class, Object1.class);</span>
+<span class="fc" id="L115">        }</span>
+    }
+
+    @JsonInclude(Include.NON_NULL)
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    public static final class Object1 {
+
+        @JsonProperty(&quot;breed&quot;)
+        private final Breed breed;
+
+        @JsonCreator
+        private Object1(
+<span class="fc" id="L127">                @JsonProperty(&quot;breed&quot;) Breed breed) {</span>
+<span class="fc" id="L128">            this.breed = breed;</span>
+<span class="fc" id="L129">        }</span>
+
+        @ConstructorBinding
+        public Object1(
+<span class="fc" id="L133">                Optional&lt;Breed&gt; breed) {</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">            if (Globals.config().validateInConstructor().test(Object1.class)) {</span>
+<span class="fc" id="L135">                Preconditions.checkNotNull(breed, &quot;breed&quot;);</span>
+            }
+<span class="fc" id="L137">            this.breed = breed.orElse(null);</span>
+<span class="fc" id="L138">        }</span>
+
+        public static Object1 breed(Optional&lt;Breed&gt; breed) {
+<span class="nc" id="L141">            return new Object1(breed);</span>
+        }
+
+        public static Object1 breed(Breed breed) {
+<span class="fc" id="L145">            return new Object1(Optional.of(breed));</span>
+        }
+
+        public Optional&lt;Breed&gt; breed() {
+<span class="fc" id="L149">            return Optional.ofNullable(breed);</span>
+        }
+
+<span class="fc" id="L152">        public enum Breed {</span>
+
+<span class="fc" id="L154">            POODLE(&quot;poodle&quot;),</span>
+<span class="fc" id="L155">            CROSS(&quot;cross&quot;);</span>
+
+            @JsonValue
+            private final String value;
+
+            private Breed(
+<span class="fc" id="L161">                    String value) {</span>
+<span class="fc" id="L162">                this.value = value;</span>
+<span class="fc" id="L163">            }</span>
+
+            public String value() {
+<span class="nc" id="L166">                return value;</span>
+            }
+
+            @JsonCreator
+            public static Breed fromValue(Object value) {
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                for (Breed x: Breed.values()) {</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                    if (Objects.equals(value, x.value)) {</span>
+<span class="fc" id="L173">                        return x;</span>
+                    }
+                }
+<span class="nc" id="L176">                throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L183">                return true;</span>
+            }
+<span class="nc bnc" id="L185" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L186">                return false;</span>
+            }
+<span class="nc" id="L188">            Object1 other = (Object1) o;</span>
+<span class="nc" id="L189">            return </span>
+<span class="nc" id="L190">                Objects.equals(this.breed, other.breed);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L195">            return Objects.hash(breed);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L200">            return Util.toString(Object1.class, &quot;breed&quot;, breed);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L207">            return true;</span>
+        }
+<span class="nc bnc" id="L209" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L210">            return false;</span>
+        }
+<span class="nc" id="L212">        Dog other = (Dog) o;</span>
+<span class="nc" id="L213">        return </span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            Objects.equals(this.pet, other.pet) &amp;&amp; </span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            Objects.equals(this.object1, other.object1);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L220">        return Objects.hash(pet, object1);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L225">        return Util.toString(Dog.class, &quot;pet&quot;, pet, &quot;object1&quot;, object1);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
