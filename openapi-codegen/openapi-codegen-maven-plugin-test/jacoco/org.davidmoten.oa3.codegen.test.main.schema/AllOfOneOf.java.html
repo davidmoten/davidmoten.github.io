@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllOfOneOf.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">AllOfOneOf.java</span></div><h1>AllOfOneOf.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.PolymorphicDeserializer;
+import org.davidmoten.oa3.codegen.runtime.PolymorphicType;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = AllOfOneOf._Deserializer.class)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
+public final class AllOfOneOf {
+
+    @JsonUnwrapped
+    private final Option1 option1;
+
+    @JsonUnwrapped
+    private final Geometry geometry;
+
+    public AllOfOneOf(
+            Option1 option1,
+<span class="nc" id="L47">            Geometry geometry) {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(AllOfOneOf.class)) {</span>
+<span class="nc" id="L49">            Preconditions.checkNotNull(option1, &quot;option1&quot;);</span>
+<span class="nc" id="L50">            Preconditions.checkNotNull(geometry, &quot;geometry&quot;);</span>
+        }
+<span class="nc" id="L52">        this.option1 = option1;</span>
+<span class="nc" id="L53">        this.geometry = geometry;</span>
+<span class="nc" id="L54">    }</span>
+
+    public Option1 asOption1() {
+<span class="nc" id="L57">        return option1;</span>
+    }
+
+    public Geometry asGeometry() {
+<span class="nc" id="L61">        return geometry;</span>
+    }
+
+    public Optional&lt;Option1.Items&gt; items() {
+<span class="nc" id="L65">        return option1.items();</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L69">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private Option1 option1;
+        private Geometry geometry;
+
+<span class="nc" id="L77">        Builder() {</span>
+<span class="nc" id="L78">        }</span>
+
+        public BuilderWithOption1 option1(Option1 option1) {
+<span class="nc" id="L81">            this.option1 = option1;</span>
+<span class="nc" id="L82">            return new BuilderWithOption1(this);</span>
+        }
+    }
+
+    public static final class BuilderWithOption1 {
+
+        private final Builder b;
+
+<span class="nc" id="L90">        BuilderWithOption1(Builder b) {</span>
+<span class="nc" id="L91">            this.b = b;</span>
+<span class="nc" id="L92">        }</span>
+
+        public BuilderWithGeometry geometry(Geometry geometry) {
+<span class="nc" id="L95">            this.b.geometry = geometry;</span>
+<span class="nc" id="L96">            return new BuilderWithGeometry(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithGeometry {
+
+        private final Builder b;
+
+<span class="nc" id="L104">        BuilderWithGeometry(Builder b) {</span>
+<span class="nc" id="L105">            this.b = b;</span>
+<span class="nc" id="L106">        }</span>
+
+        public AllOfOneOf build() {
+<span class="nc" id="L109">            return new AllOfOneOf(this.b.option1, this.b.geometry);</span>
+        }
+    }
+
+    public static BuilderWithOption1 option1(Option1 option1) {
+<span class="nc" id="L114">        return builder().option1(option1);</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends PolymorphicDeserializer&lt;AllOfOneOf&gt; {
+
+        public _Deserializer() {
+<span class="nc" id="L121">            super(Globals.config(), PolymorphicType.ALL_OF, AllOfOneOf.class, Option1.class, Geometry.class);</span>
+<span class="nc" id="L122">        }</span>
+    }
+
+    @JsonInclude(Include.NON_ABSENT)
+    @JsonAutoDetect(
+            fieldVisibility = JsonAutoDetect.Visibility.ANY,
+            creatorVisibility = JsonAutoDetect.Visibility.ANY,
+            setterVisibility = JsonAutoDetect.Visibility.ANY)
+    public static final class Option1 {
+
+        @JsonProperty(&quot;items&quot;)
+        private final Optional&lt;Option1.Items&gt; items;
+
+        @JsonCreator
+        public Option1(
+<span class="nc" id="L137">                @JsonProperty(&quot;items&quot;) Optional&lt;Option1.Items&gt; items) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Option1.class)) {</span>
+<span class="nc" id="L139">                Preconditions.checkNotNull(items, &quot;items&quot;);</span>
+            }
+<span class="nc" id="L141">            this.items = items;</span>
+<span class="nc" id="L142">        }</span>
+
+        public Optional&lt;Option1.Items&gt; items() {
+<span class="nc" id="L145">            return items;</span>
+        }
+
+        Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L149">            return Maps</span>
+<span class="nc" id="L150">                    .put(&quot;items&quot;, (Object) items)</span>
+<span class="nc" id="L151">                    .build();</span>
+        }
+
+        public static Option1 items(Optional&lt;Option1.Items&gt; items) {
+<span class="nc" id="L155">            return new Option1(items);</span>
+        }
+
+        public static Option1 items(Option1.Items items) {
+<span class="nc" id="L159">            return new Option1(Optional.of(items));</span>
+        }
+
+        @JsonInclude(Include.NON_ABSENT)
+        @JsonAutoDetect(
+                fieldVisibility = JsonAutoDetect.Visibility.ANY,
+                creatorVisibility = JsonAutoDetect.Visibility.ANY,
+                setterVisibility = JsonAutoDetect.Visibility.ANY)
+        public static final class Items {
+
+            @JsonValue
+            private final List&lt;Pet&gt; value;
+
+            @JsonCreator
+            public Items(
+<span class="nc" id="L174">                    List&lt;Pet&gt; value) {</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                if (Globals.config().validateInConstructor().test(Items.class)) {</span>
+<span class="nc" id="L176">                    Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+                }
+<span class="nc" id="L178">                this.value = value;</span>
+<span class="nc" id="L179">            }</span>
+
+            public List&lt;Pet&gt; value() {
+<span class="nc" id="L182">                return value;</span>
+            }
+
+            Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L186">                return Maps</span>
+<span class="nc" id="L187">                        .put(&quot;itemsItem&quot;, (Object) value)</span>
+<span class="nc" id="L188">                        .build();</span>
+            }
+
+            public static Items of(List&lt;Pet&gt; value) {
+<span class="nc" id="L192">                return new Items(value);</span>
+            }
+
+            @Override
+            public boolean equals(Object o) {
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                if (this == o) {</span>
+<span class="nc" id="L198">                    return true;</span>
+                }
+<span class="nc bnc" id="L200" title="All 4 branches missed.">                if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L201">                    return false;</span>
+                }
+<span class="nc" id="L203">                Items other = (Items) o;</span>
+<span class="nc" id="L204">                return </span>
+<span class="nc" id="L205">                    Objects.deepEquals(this.value, other.value);</span>
+            }
+
+            @Override
+            public int hashCode() {
+<span class="nc" id="L210">                return Objects.hash(value);</span>
+            }
+
+            @Override
+            public String toString() {
+<span class="nc" id="L215">                return Util.toString(Items.class, &quot;value&quot;, value);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L222">                return true;</span>
+            }
+<span class="nc bnc" id="L224" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L225">                return false;</span>
+            }
+<span class="nc" id="L227">            Option1 other = (Option1) o;</span>
+<span class="nc" id="L228">            return </span>
+<span class="nc" id="L229">                Objects.deepEquals(this.items, other.items);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L234">            return Objects.hash(items);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L239">            return Util.toString(Option1.class, &quot;items&quot;, items);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L246">            return true;</span>
+        }
+<span class="nc bnc" id="L248" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L249">            return false;</span>
+        }
+<span class="nc" id="L251">        AllOfOneOf other = (AllOfOneOf) o;</span>
+<span class="nc" id="L252">        return </span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">            Objects.deepEquals(this.option1, other.option1) &amp;&amp; </span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            Objects.deepEquals(this.geometry, other.geometry);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L259">        return Objects.hash(option1, geometry);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L264">        return Util.toString(AllOfOneOf.class, &quot;option1&quot;, option1, &quot;geometry&quot;, geometry);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

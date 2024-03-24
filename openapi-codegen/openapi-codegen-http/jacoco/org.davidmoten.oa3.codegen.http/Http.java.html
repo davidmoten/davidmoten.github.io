@@ -6,10 +6,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -17,25 +17,40 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import org.davidmoten.oa3.codegen.http.service.DefaultHttpService;
+import org.davidmoten.oa3.codegen.http.service.HttpConnection;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
+import org.davidmoten.oa3.codegen.http.service.Option;
+import org.davidmoten.oa3.codegen.http.service.Response;
+import org.davidmoten.oa3.codegen.http.service.StandardOption;
 import org.davidmoten.oa3.codegen.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.davidmoten.guavamini.Maps;
 import com.github.davidmoten.guavamini.Preconditions;
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
-<span class="nc" id="L33">public final class Http {</span>
+<span class="nc" id="L45">public final class Http {</span>
 
-<span class="fc" id="L35">    private static Logger log = LoggerFactory.getLogger(Http.class);</span>
+<span class="fc" id="L47">	private static Logger log = LoggerFactory.getLogger(Http.class);</span>
+
+	private static final long DEFAULT_CONNECT_TIMEOUT_MS = 30000L;
+    private static final long DEFAULT_READ_TIMEOUT_MS = 180000L;
 
     public static Builder method(HttpMethod method) {
-<span class="fc" id="L38">        return new Builder(method);</span>
+<span class="fc" id="L53">        return new Builder(method);</span>
     }
 
     public static final class Builder {
@@ -43,123 +58,239 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
         private final HttpMethod method;
         private String basePath;
         private String path;
-<span class="fc" id="L46">        private final Headers headers = Headers.create();</span>
-<span class="fc" id="L47">        private final List&lt;ParameterValue&gt; values = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L48">        private final List&lt;ResponseDescriptor&gt; responseDescriptors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L61">        private final Headers headers = Headers.create();</span>
+<span class="fc" id="L62">        private final List&lt;ParameterValue&gt; values = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L63">        private final List&lt;ResponseDescriptor&gt; responseDescriptors = new ArrayList&lt;&gt;();</span>
         private Serializer serializer;
-<span class="fc" id="L50">        private List&lt;Interceptor&gt; interceptors = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L51">        private boolean allowPatch = false;</span>
+<span class="fc" id="L65">        private List&lt;Interceptor&gt; interceptors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L66">        private boolean allowPatch = false;</span>
+<span class="fc" id="L67">        private HttpService httpService = DefaultHttpService.INSTANCE;</span>
+<span class="fc" id="L68">		private Optional&lt;String&gt; assertStatusCodeMatches = Optional.empty();</span>
+<span class="fc" id="L69">		private Optional&lt;String&gt; assertContentTypeMatches = Optional.empty();</span>
+<span class="fc" id="L70">		public Optional&lt;Long&gt; connectTimeoutMs = Optional.empty();</span>
+<span class="fc" id="L71">		public Optional&lt;Long&gt; readTimeoutMs = Optional.empty();</span>
 
-<span class="fc" id="L53">        Builder(HttpMethod method) {</span>
-<span class="fc" id="L54">            this.method = method;</span>
-<span class="fc" id="L55">        }</span>
+<span class="fc" id="L73">        Builder(HttpMethod method) {</span>
+<span class="fc" id="L74">            this.method = method;</span>
+<span class="fc" id="L75">        }</span>
 
         public BuilderWithBasePath basePath(String basePath) {
-<span class="fc" id="L58">            this.basePath = basePath;</span>
-<span class="fc" id="L59">            return new BuilderWithBasePath(this);</span>
+<span class="fc" id="L78">            this.basePath = basePath;</span>
+<span class="fc" id="L79">            return new BuilderWithBasePath(this);</span>
         }
-
+        
+        public Builder httpService(HttpService httpService) {
+<span class="nc" id="L83">            this.httpService = httpService;</span>
+<span class="nc" id="L84">            return this;</span>
+        }
+        
         public Builder header(String key, Object value) {
-<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if (&quot;CONTENT-TYPE&quot;.equals(key.toUpperCase(Locale.ENGLISH))) {</span>
-<span class="nc" id="L64">                throw new IllegalArgumentException(&quot;set content type in the builder just after setting the body&quot;);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (&quot;CONTENT-TYPE&quot;.equals(key.toUpperCase(Locale.ENGLISH))) {</span>
+<span class="nc" id="L89">                throw new IllegalArgumentException(&quot;set content type in the builder just after setting the body&quot;);</span>
             }
-<span class="pc bpc" id="L66" title="1 of 2 branches missed.">            if (value != null) {</span>
-<span class="fc" id="L67">                headers.put(key, value.toString());</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            if (value != null) {</span>
+<span class="fc" id="L92">                headers.put(key, value.toString());</span>
             }
-<span class="fc" id="L69">            return this;</span>
+<span class="fc" id="L94">            return this;</span>
         }
 
         public Builder header(String key, Optional&lt;?&gt; value) {
-<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (value.isPresent()) {</span>
-<span class="nc" id="L74">                return header(key, value.get());</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (value.isPresent()) {</span>
+<span class="nc" id="L99">                return header(key, value.get());</span>
             } else {
-<span class="nc" id="L76">                return this;</span>
+<span class="nc" id="L101">                return this;</span>
             }
+        }
+        
+        public Builder connectTimeout(long duration, TimeUnit unit) {
+<span class="nc" id="L106">        	Preconditions.checkArgumentNotNull(duration, &quot;duration&quot;);</span>
+<span class="nc" id="L107">        	Preconditions.checkArgumentNotNull(unit, &quot;unit&quot;);</span>
+<span class="nc" id="L108">        	this.connectTimeoutMs = Optional.of(unit.toMillis(duration));</span>
+<span class="nc" id="L109">        	return this;</span>
+        }
+        
+        public Builder readTimeout(long duration, TimeUnit unit) {
+<span class="nc" id="L113">        	Preconditions.checkArgumentNotNull(duration, &quot;duration&quot;);</span>
+<span class="nc" id="L114">        	Preconditions.checkArgumentNotNull(unit, &quot;unit&quot;);</span>
+<span class="nc" id="L115">        	this.readTimeoutMs = Optional.of(unit.toMillis(duration));</span>
+<span class="nc" id="L116">        	return this;</span>
         }
 
         public Builder allowPatch() {
-<span class="nc" id="L81">            return allowPatch(true);</span>
+<span class="nc" id="L120">            return allowPatch(true);</span>
         }
 
         private Builder allowPatch(boolean allowPatch) {
-<span class="nc" id="L85">            this.allowPatch = allowPatch;</span>
-<span class="nc" id="L86">            return this;</span>
+<span class="nc" id="L124">            this.allowPatch = allowPatch;</span>
+<span class="nc" id="L125">            return this;</span>
         }
 
         public Builder interceptor(Interceptor interceptor) {
-<span class="nc" id="L90">            this.interceptors.add(interceptor);</span>
-<span class="nc" id="L91">            return this;</span>
+<span class="nc" id="L129">            this.interceptors.add(interceptor);</span>
+<span class="nc" id="L130">            return this;</span>
         }
 
         public Builder interceptors(Iterable&lt;? extends Interceptor&gt; list) {
-<span class="nc" id="L95">            interceptors.forEach(x -&gt; interceptor(x));</span>
-<span class="nc" id="L96">            return this;</span>
+<span class="nc" id="L134">            list.forEach(x -&gt; interceptor(x));</span>
+<span class="nc" id="L135">            return this;</span>
         }
 
         public Builder acceptApplicationJson() {
-<span class="fc" id="L100">            return header(&quot;Accept&quot;, &quot;application/json&quot;);</span>
+<span class="fc" id="L139">            return accept(&quot;application/json&quot;);</span>
         }
 
         public Builder acceptAny() {
-<span class="nc" id="L104">            return header(&quot;Accept&quot;, &quot;*/*&quot;);</span>
+<span class="nc" id="L143">            return accept(&quot;*/*&quot;);</span>
+        }
+        
+        public Builder accept(String mediaType) {
+<span class="fc" id="L147">            return header(&quot;Accept&quot;, mediaType);</span>
         }
 
-        public Builder param(String name, Optional&lt;Object&gt; value, ParameterType type, Optional&lt;String&gt; contentType) {
-<span class="nc" id="L108">            values.add(new ParameterValue(name, value, type, contentType));</span>
-<span class="nc" id="L109">            return this;</span>
+        public Builder param(String name, Optional&lt;?&gt; value, ParameterType type, Optional&lt;String&gt; contentType) {
+<span class="nc" id="L151">            return param(name, value, type, contentType, Optional.empty());</span>
+        }
+
+        public Builder param(String name, Optional&lt;?&gt; value, ParameterType type, Optional&lt;String&gt; contentType,
+                Optional&lt;String&gt; filename) {
+<span class="nc" id="L156">            values.add(new ParameterValue(name, value, type, contentType, filename));</span>
+<span class="nc" id="L157">            return this;</span>
         }
 
         public Builder queryParam(String name, Optional&lt;?&gt; value) {
-<span class="nc" id="L113">            values.add(ParameterValue.query(name, value));</span>
-<span class="nc" id="L114">            return this;</span>
+<span class="nc" id="L161">            values.add(ParameterValue.query(name, value));</span>
+<span class="nc" id="L162">            return this;</span>
         }
 
         public Builder queryParam(String name, Object value) {
-<span class="fc" id="L118">            values.add(ParameterValue.query(name, value));</span>
-<span class="fc" id="L119">            return this;</span>
+<span class="fc" id="L166">            values.add(ParameterValue.query(name, value));</span>
+<span class="fc" id="L167">            return this;</span>
         }
 
         public Builder pathParam(String name, Optional&lt;?&gt; value) {
-<span class="nc" id="L123">            values.add(ParameterValue.path(name, value));</span>
-<span class="nc" id="L124">            return this;</span>
+<span class="nc" id="L171">            values.add(ParameterValue.path(name, value));</span>
+<span class="nc" id="L172">            return this;</span>
         }
 
         public Builder pathParam(String name, Object value) {
-<span class="nc" id="L128">            values.add(ParameterValue.path(name, value));</span>
-<span class="nc" id="L129">            return this;</span>
+<span class="nc" id="L176">            values.add(ParameterValue.path(name, value));</span>
+<span class="nc" id="L177">            return this;</span>
         }
 
         public Builder cookie(String name, Object value) {
-<span class="nc" id="L133">            values.add(ParameterValue.cookie(name, value));</span>
-<span class="nc" id="L134">            return this;</span>
+<span class="nc" id="L181">            values.add(ParameterValue.cookie(name, value));</span>
+<span class="nc" id="L182">            return this;</span>
         }
 
         public BuilderWithBody body(Object value) {
-<span class="fc" id="L138">            return new BuilderWithBody(this, value);</span>
+<span class="fc" id="L186">            return new BuilderWithBody(this, value);</span>
+        }
+
+        public Builder multipartFormData(Object formData) {
+<span class="nc" id="L190">            return new BuilderWithBody(this, formData).contentTypeMultipartFormData();</span>
+        }
+
+        public Builder formUrlEncoded(Object formData) {
+<span class="nc" id="L194">            return new BuilderWithBody(this, formData).contentTypeFormUrlEncoded();</span>
         }
 
         public BuilderWithReponseDescriptor responseAs(Class&lt;?&gt; cls) {
-<span class="fc" id="L142">            return new BuilderWithReponseDescriptor(this, cls);</span>
+<span class="fc" id="L198">            return new BuilderWithReponseDescriptor(this, cls);</span>
+        }
+        
+        public &lt;T&gt; RequestBuilder&lt;T&gt; requestBuilder() {
+<span class="nc" id="L202">        	return new RequestBuilder&lt;&gt;(this);</span>
+        }
+        
+        public &lt;T&gt; RequestBuilder&lt;T&gt; requestBuilder(String primaryStatusCode, String primaryMediaType) {
+<span class="nc" id="L206">        	Preconditions.checkArgumentNotNull(primaryStatusCode);</span>
+<span class="nc" id="L207">        	Preconditions.checkArgumentNotNull(primaryMediaType);</span>
+<span class="nc" id="L208">        	this.assertStatusCodeMatches = Optional.of(primaryStatusCode);</span>
+<span class="nc" id="L209">            this.assertContentTypeMatches = Optional.of(primaryMediaType);</span>
+<span class="nc" id="L210">        	return new RequestBuilder&lt;T&gt;(this);</span>
         }
 
         public HttpResponse call() {
-<span class="fc" id="L146">            return Http.call(method, basePath, path, serializer, interceptors, headers, values, responseDescriptors,</span>
-                    allowPatch);
+<span class="fc" id="L214">        	return Http.call(httpService, method, basePath, path, serializer, interceptors, headers, values, responseDescriptors,</span>
+                    allowPatch, connectTimeoutMs, readTimeoutMs);
+        }
+        
+        public HttpResponse callAssertIsPrimaryResponse() {
+<span class="nc" id="L219">            HttpResponse r = call();</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (assertStatusCodeMatches.isPresent()) {</span>
+<span class="nc" id="L221">            	r.assertStatusCodeMatches(assertStatusCodeMatches.get());</span>
+            }
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (assertContentTypeMatches.isPresent()) {</span>
+<span class="nc" id="L224">            	r.assertContentTypeMatches(assertContentTypeMatches.get());</span>
+            }
+<span class="nc" id="L226">            return r;</span>
         }
 
+    }
+    
+    public static final class RequestBuilder&lt;T&gt; {
+
+		private Builder builder;
+
+<span class="nc" id="L235">		public RequestBuilder(Builder builder) {</span>
+<span class="nc" id="L236">			this.builder = builder;</span>
+<span class="nc" id="L237">		}</span>
+    	
+		public RequestBuilder&lt;T&gt; acceptApplicationJson() {
+<span class="nc" id="L240">            builder.accept(&quot;application/json&quot;);</span>
+<span class="nc" id="L241">            return this;</span>
+        }
+
+        public RequestBuilder&lt;T&gt; acceptAny() {
+<span class="nc" id="L245">            builder.accept(&quot;*/*&quot;);</span>
+<span class="nc" id="L246">            return this;</span>
+        }
+        
+        public RequestBuilder&lt;T&gt; accept(String mediaType) {
+<span class="nc" id="L250">            builder.header(&quot;Accept&quot;, mediaType);</span>
+<span class="nc" id="L251">            return this;</span>
+        }
+        
+        public RequestBuilder&lt;T&gt; header(String name, String value) {
+<span class="nc" id="L255">            builder.header(name, value);</span>
+<span class="nc" id="L256">            return this;</span>
+        }
+        
+        public RequestBuilder&lt;T&gt; interceptor(Interceptor interceptor) {
+<span class="nc" id="L260">        	builder.interceptor(interceptor);</span>
+<span class="nc" id="L261">        	return this;</span>
+        }
+        
+        public RequestBuilder&lt;T&gt; connectTimeout(long duration, TimeUnit unit) {
+<span class="nc" id="L265">        	builder.connectTimeout(duration, unit);</span>
+<span class="nc" id="L266">        	return this;</span>
+        }
+        
+        public RequestBuilder&lt;T&gt; readTimeout(long duration, TimeUnit unit) {
+<span class="nc" id="L270">        	builder.readTimeout(duration, unit);</span>
+<span class="nc" id="L271">        	return this;</span>
+        }
+        
+        public HttpResponse fullResponse() {
+<span class="nc" id="L275">        	return builder.call();</span>
+        }
+        
+        public T get() {
+<span class="nc" id="L279">        	return builder.callAssertIsPrimaryResponse().dataUnwrapped();</span>
+        }
     }
 
     public static final class BuilderWithBasePath {
 
         private final Builder b;
 
-<span class="fc" id="L156">        BuilderWithBasePath(Builder b) {</span>
-<span class="fc" id="L157">            this.b = b;</span>
-<span class="fc" id="L158">        }</span>
+<span class="fc" id="L287">        BuilderWithBasePath(Builder b) {</span>
+<span class="fc" id="L288">            this.b = b;</span>
+<span class="fc" id="L289">        }</span>
 
         public BuilderWithPath path(String path) {
-<span class="fc" id="L161">            b.path = path;</span>
-<span class="fc" id="L162">            return new BuilderWithPath(b);</span>
+<span class="fc" id="L292">            b.path = path;</span>
+<span class="fc" id="L293">            return new BuilderWithPath(b);</span>
         }
     }
 
@@ -167,13 +298,13 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
         private final Builder b;
 
-<span class="fc" id="L170">        BuilderWithPath(Builder b) {</span>
-<span class="fc" id="L171">            this.b = b;</span>
-<span class="fc" id="L172">        }</span>
+<span class="fc" id="L301">        BuilderWithPath(Builder b) {</span>
+<span class="fc" id="L302">            this.b = b;</span>
+<span class="fc" id="L303">        }</span>
 
         public Builder serializer(Serializer serializer) {
-<span class="fc" id="L175">            b.serializer = serializer;</span>
-<span class="fc" id="L176">            return b;</span>
+<span class="fc" id="L306">            b.serializer = serializer;</span>
+<span class="fc" id="L307">            return b;</span>
         }
     }
 
@@ -182,20 +313,27 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
         private final Builder b;
         private final Object body;
 
-<span class="fc" id="L185">        BuilderWithBody(Builder b, Object body) {</span>
-<span class="fc" id="L186">            this.b = b;</span>
-<span class="fc" id="L187">            this.body = body;</span>
-<span class="fc" id="L188">        }</span>
+<span class="fc" id="L316">        BuilderWithBody(Builder b, Object body) {</span>
+<span class="fc" id="L317">            this.b = b;</span>
+<span class="fc" id="L318">            this.body = body;</span>
+<span class="fc" id="L319">        }</span>
+
+        public Builder contentTypeFormUrlEncoded() {
+<span class="nc" id="L322">            return contentType(&quot;application/x-www-form-urlencoded&quot;);</span>
+        }
 
         public Builder contentType(String value) {
-<span class="fc" id="L191">            b.values.add(ParameterValue.body(body, value));</span>
-<span class="fc" id="L192">            return b;</span>
+<span class="fc" id="L326">            b.values.add(ParameterValue.body(body, value));</span>
+<span class="fc" id="L327">            return b;</span>
         }
 
         public Builder contentTypeApplicationJson() {
-<span class="fc" id="L196">            return contentType(&quot;application/json&quot;);</span>
+<span class="fc" id="L331">            return contentType(&quot;application/json&quot;);</span>
         }
 
+        public Builder contentTypeMultipartFormData() {
+<span class="nc" id="L335">            return contentType(&quot;multipart/form-data&quot;);</span>
+        }
     }
 
     public static final class BuilderWithReponseDescriptor {
@@ -204,19 +342,19 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
         private String statusCode;
         private Class&lt;?&gt; cls;
 
-<span class="fc" id="L207">        BuilderWithReponseDescriptor(Builder b, Class&lt;?&gt; cls) {</span>
-<span class="fc" id="L208">            this.b = b;</span>
-<span class="fc" id="L209">            this.cls = cls;</span>
-<span class="fc" id="L210">        }</span>
+<span class="fc" id="L345">        BuilderWithReponseDescriptor(Builder b, Class&lt;?&gt; cls) {</span>
+<span class="fc" id="L346">            this.b = b;</span>
+<span class="fc" id="L347">            this.cls = cls;</span>
+<span class="fc" id="L348">        }</span>
 
         public BuilderWithStatusCodeMatch whenStatusCodeMatches(String statusCode) {
-<span class="fc" id="L213">            this.statusCode = statusCode;</span>
-<span class="fc" id="L214">            return new BuilderWithStatusCodeMatch(this);</span>
+<span class="fc" id="L351">            this.statusCode = statusCode;</span>
+<span class="fc" id="L352">            return new BuilderWithStatusCodeMatch(this);</span>
         }
 
         public BuilderWithStatusCodeMatch whenStatusCodeDefault() {
-<span class="fc" id="L218">            this.statusCode = &quot;default&quot;;</span>
-<span class="fc" id="L219">            return new BuilderWithStatusCodeMatch(this);</span>
+<span class="fc" id="L356">            this.statusCode = &quot;default&quot;;</span>
+<span class="fc" id="L357">            return new BuilderWithStatusCodeMatch(this);</span>
         }
 
     }
@@ -225,18 +363,19 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
         private final BuilderWithReponseDescriptor brd;
 
-<span class="fc" id="L228">        public BuilderWithStatusCodeMatch(BuilderWithReponseDescriptor brd) {</span>
-<span class="fc" id="L229">            this.brd = brd;</span>
-<span class="fc" id="L230">        }</span>
+<span class="fc" id="L366">        public BuilderWithStatusCodeMatch(BuilderWithReponseDescriptor brd) {</span>
+<span class="fc" id="L367">            this.brd = brd;</span>
+<span class="fc" id="L368">        }</span>
 
         public Builder whenContentTypeMatches(String contentType) {
-<span class="fc" id="L233">            brd.b.responseDescriptors.add(new ResponseDescriptor(brd.statusCode, contentType, brd.cls));</span>
-<span class="fc" id="L234">            return brd.b;</span>
+<span class="fc" id="L371">            brd.b.responseDescriptors.add(new ResponseDescriptor(brd.statusCode, contentType, brd.cls));</span>
+<span class="fc" id="L372">            return brd.b;</span>
         }
 
     }
 
     public static HttpResponse call(//
+            HttpService httpService, //
             HttpMethod method, //
             String basePath, //
             String pathTemplate, //
@@ -245,24 +384,25 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
             Headers requestHeaders, //
             List&lt;ParameterValue&gt; parameters, //
             // (statusCode, contentType, class)
-            List&lt;ResponseDescriptor&gt; descriptors, boolean allowPatch) {
-<span class="fc" id="L249">        return call(method, basePath, pathTemplate, serializer, interceptors, requestHeaders, parameters,</span>
-<span class="fc" id="L250">                (statusCode, contentType) -&gt; match(descriptors, statusCode, contentType), allowPatch);</span>
+            List&lt;ResponseDescriptor&gt; descriptors, boolean allowPatch, Optional&lt;Long&gt; connectTimeoutMs, Optional&lt;Long&gt; readTimeoutMs) {
+<span class="fc" id="L388">        return call(httpService, method, basePath, pathTemplate, serializer, interceptors, requestHeaders, parameters,</span>
+<span class="fc" id="L389">                (statusCode, contentType) -&gt; match(descriptors, statusCode, contentType), allowPatch, connectTimeoutMs, readTimeoutMs);</span>
     }
 
     private static Optional&lt;Class&lt;?&gt;&gt; match(List&lt;ResponseDescriptor&gt; descriptors, Integer statusCode,
             String contentType) {
-<span class="fc" id="L255">        List&lt;ResponseDescriptor&gt; matches = new ArrayList&lt;&gt;();</span>
-<span class="fc bfc" id="L256" title="All 2 branches covered.">        for (ResponseDescriptor d : descriptors) {</span>
-<span class="fc bfc" id="L257" title="All 2 branches covered.">            if (d.matches(statusCode, contentType)) {</span>
-<span class="fc" id="L258">                matches.add(d);</span>
+<span class="fc" id="L394">        List&lt;ResponseDescriptor&gt; matches = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">        for (ResponseDescriptor d : descriptors) {</span>
+<span class="fc bfc" id="L396" title="All 2 branches covered.">            if (d.matches(statusCode, contentType)) {</span>
+<span class="fc" id="L397">                matches.add(d);</span>
             }
-<span class="fc" id="L260">        }</span>
-<span class="fc" id="L261">        Collections.sort(matches, ResponseDescriptor.specificity());</span>
-<span class="fc" id="L262">        return matches.stream().findFirst().map(d -&gt; d.cls());</span>
+<span class="fc" id="L399">        }</span>
+<span class="fc" id="L400">        Collections.sort(matches, ResponseDescriptor.specificity());</span>
+<span class="fc" id="L401">        return matches.stream().findFirst().map(d -&gt; d.cls());</span>
     }
 
     private static HttpResponse call(//
+            HttpService httpService, //
             HttpMethod method, //
             String basePath, //
             String pathTemplate, //
@@ -271,89 +411,162 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
             Headers requestHeaders, //
             List&lt;ParameterValue&gt; parameters, //
             // (statusCode x contentType) -&gt; class
-            BiFunction&lt;? super Integer, ? super String, Optional&lt;Class&lt;?&gt;&gt;&gt; responseCls, boolean allowPatch) {
-<span class="fc" id="L275">        String url = buildUrl(basePath, pathTemplate, parameters);</span>
-<span class="fc bfc" id="L276" title="All 2 branches covered.">        Optional&lt;ParameterValue&gt; requestBody = parameters.stream().filter(x -&gt; x.type() == ParameterType.BODY)</span>
-<span class="fc" id="L277">                .findFirst();</span>
+            BiFunction&lt;? super Integer, ? super String, Optional&lt;Class&lt;?&gt;&gt;&gt; responseCls, boolean allowPatch,
+            		Optional&lt;Long&gt; connectTimeoutMs, Optional&lt;Long&gt; readTimeoutMs) {
+<span class="fc" id="L416">        String url = buildUrl(basePath, pathTemplate, parameters);</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">        Optional&lt;ParameterValue&gt; requestBody = parameters.stream().filter(x -&gt; x.type() == ParameterType.BODY)</span>
+<span class="fc" id="L418">                .findFirst();</span>
         try {
-<span class="fc" id="L279">            Headers headers = new Headers(requestHeaders);</span>
-            final HttpMethod requestMethod;
-<span class="pc bpc" id="L281" title="2 of 4 branches missed.">            if (!allowPatch &amp;&amp; method.equals(HttpMethod.PATCH)) {</span>
-<span class="nc" id="L282">                headers.put(&quot;X-HTTP-Method-Override&quot;, HttpMethod.PATCH.name());</span>
-<span class="nc" id="L283">                requestMethod = HttpMethod.POST;</span>
-            } else {
-<span class="fc" id="L285">                requestMethod = method;</span>
-            }
+<span class="fc" id="L420">            Headers headers = new Headers(requestHeaders);</span>
+
             // modify request metadata (like insert auth related headers)
-<span class="fc" id="L288">            RequestBase r = new RequestBase(requestMethod, url, headers);</span>
-<span class="pc bpc" id="L289" title="1 of 2 branches missed.">            for (Interceptor interceptor : interceptors) {</span>
-<span class="nc" id="L290">                r = interceptor.intercept(r);</span>
-<span class="nc" id="L291">            }</span>
-<span class="fc" id="L292">            log.debug(&quot;connecting to method=&quot; + r.method() + &quot;, url=&quot; + url + &quot;, headers=&quot; + r.headers());</span>
-<span class="fc" id="L293">            return connectAndProcess(serializer, parameters, responseCls, r.url(), requestBody, r.headers(),</span>
-<span class="fc" id="L294">                    r.method());</span>
-<span class="nc" id="L295">        } catch (IOException e) {</span>
-<span class="nc" id="L296">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L423">            RequestBase r = new RequestBase(method, url, headers);</span>
+<span class="pc bpc" id="L424" title="1 of 2 branches missed.">            for (Interceptor interceptor : interceptors) {</span>
+<span class="nc" id="L425">                r = interceptor.intercept(r);</span>
+<span class="nc" id="L426">            }</span>
+            final Option[] options;
+<span class="pc bpc" id="L428" title="1 of 2 branches missed.">            if (allowPatch) {</span>
+<span class="nc" id="L429">                options = new Option[] {};</span>
+            } else {
+<span class="fc" id="L431">                options = new Option[] { StandardOption.PATCH_USING_HEADER };</span>
+            }
+<span class="fc" id="L433">            log.debug(&quot;connecting to method=&quot; + r.method() + &quot;, url=&quot; + url + &quot;, headers=&quot; + r.headers());</span>
+<span class="fc" id="L434">            return connectAndProcess(serializer, parameters, responseCls, r.url(), requestBody, r.headers(), r.method(),</span>
+                    httpService, connectTimeoutMs, readTimeoutMs, options);
+<span class="nc" id="L436">        } catch (IOException e) {</span>
+<span class="nc" id="L437">            throw new UncheckedIOException(e);</span>
         }
     }
 
     private static HttpResponse connectAndProcess(Serializer serializer, List&lt;ParameterValue&gt; parameters,
             BiFunction&lt;? super Integer, ? super String, Optional&lt;Class&lt;?&gt;&gt;&gt; responseCls, String url,
-            Optional&lt;ParameterValue&gt; requestBody, Headers headers, final HttpMethod method)
+            Optional&lt;ParameterValue&gt; requestBody, Headers headers, final HttpMethod method, HttpService httpService,
+            Optional&lt;Long&gt; connectTimeoutMs, Optional&lt;Long&gt; readTimeoutMs,
+            Option... options)
             throws IOException, MalformedURLException, ProtocolException, StreamReadException, DatabindException {
-<span class="fc" id="L304">        log.debug(&quot;Http.headers={}&quot;, headers);</span>
-<span class="fc" id="L305">        HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();</span>
-<span class="fc" id="L306">        con.setRequestMethod(method.name());</span>
-<span class="fc" id="L307">        parameters.stream() //</span>
-<span class="pc bpc" id="L308" title="3 of 4 branches missed.">                .filter(p -&gt; p.type() == ParameterType.HEADER &amp;&amp; p.value().isPresent()) //</span>
-<span class="pc" id="L309">                .forEach(p -&gt; headers.put(p.name(), String.valueOf(p.value().get())));</span>
-        // add request body content type (should just be one)
-<span class="fc" id="L311">        parameters.stream().filter(p -&gt; p.contentType().isPresent())</span>
-<span class="fc" id="L312">                .forEach(p -&gt; headers.put(&quot;Content-Type&quot;, p.contentType().get()));</span>
-<span class="fc" id="L313">        headers.forEach((key, list) -&gt; {</span>
-<span class="fc" id="L314">            con.setRequestProperty(key, list.stream().collect(Collectors.joining(&quot;, &quot;)));</span>
-<span class="fc" id="L315">        });</span>
-<span class="fc" id="L316">        con.setDoInput(true);</span>
-<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (requestBody.isPresent()) {</span>
-<span class="fc" id="L318">            con.setDoOutput(true);</span>
-<span class="fc" id="L319">            Optional&lt;?&gt; body = requestBody.get().value();</span>
-<span class="pc bpc" id="L320" title="1 of 2 branches missed.">            if (body.isPresent()) {</span>
-<span class="fc" id="L321">                try (OutputStream out = con.getOutputStream()) {</span>
-<span class="fc" id="L322">                    serializer.serialize(body.get(), requestBody.get().contentType().get(), out);</span>
+<span class="fc" id="L447">        log.debug(&quot;Http.headers={}&quot;, headers);</span>
+<span class="fc" id="L448">        HttpConnection con = httpService.connection(url, method, options);</span>
+<span class="fc" id="L449">        con.setConnectTimeoutMs(connectTimeoutMs.orElse(DEFAULT_CONNECT_TIMEOUT_MS));</span>
+<span class="fc" id="L450">        con.setReadTimeoutMs(readTimeoutMs.orElse(DEFAULT_READ_TIMEOUT_MS));</span>
+<span class="fc" id="L451">        parameters.stream() //</span>
+<span class="pc bpc" id="L452" title="3 of 4 branches missed.">                .filter(p -&gt; p.type() == ParameterType.HEADER &amp;&amp; p.value().isPresent()) //</span>
+<span class="pc" id="L453">                .forEach(p -&gt; headers.put(p.name(), String.valueOf(p.value().get())));</span>
+<span class="fc" id="L454">        headers.forEach((key, list) -&gt; {</span>
+<span class="fc" id="L455">            con.header(key, list.stream().collect(Collectors.joining(&quot;, &quot;)));</span>
+<span class="fc" id="L456">        });</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">        if (requestBody.isPresent()) {</span>
+<span class="fc" id="L458">            Optional&lt;?&gt; body = requestBody.get().value();</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">            if (body.isPresent()) {</span>
+<span class="fc" id="L460">                String contentType = requestBody.get().contentType().orElse(&quot;&quot;);</span>
+<span class="pc bpc" id="L461" title="1 of 2 branches missed.">                if (MediaType.isMultipartFormData(contentType)) {</span>
+<span class="nc" id="L462">                    String boundary = Multipart.randomBoundary();</span>
+<span class="nc" id="L463">                    String ct = &quot;multipart/form-data; boundary=&quot;+ boundary;</span>
+                    // TODO stream content rather than build in memory?
+                    // TODO support parts without names?
+<span class="nc" id="L466">                    byte[] multipartContent = multipartContent(serializer, body, boundary);</span>
+<span class="nc" id="L467">                    con.output(out -&gt; write(out, multipartContent), ct, Optional.empty(), false);</span>
+<span class="pc bpc" id="L468" title="1 of 2 branches missed.">                } else if (MediaType.isWwwFormUrlEncoded(contentType)) {</span>
+<span class="nc" id="L469">                    byte[] encoded = wwwFormUrlEncodedContent(serializer, body).getBytes(StandardCharsets.UTF_8);</span>
+<span class="nc" id="L470">                    con.output(out -&gt; write(out, encoded), contentType, Optional.empty(), false);</span>
+<span class="nc" id="L471">                } else {</span>
+<span class="fc" id="L472">                    con.output(out -&gt; serializer.serialize(body.get(), contentType, out),</span>
+<span class="fc" id="L473">                            requestBody.get().contentType().get(), Optional.empty(), false);</span>
                 }
             }
         }
-<span class="fc" id="L326">        int statusCode = con.getResponseCode();</span>
-<span class="fc" id="L327">        Headers responseHeaders = Headers.create(con.getHeaderFields());</span>
-<span class="fc" id="L328">        String responseContentType = Optional.ofNullable(con.getHeaderField(&quot;Content-Type&quot;))</span>
-<span class="fc" id="L329">                .orElse(&quot;application/octet-stream&quot;);</span>
+<span class="fc" id="L477">        Response response = con.response();</span>
+<span class="fc" id="L478">        int statusCode = response.statusCode();</span>
+<span class="fc" id="L479">        Headers responseHeaders = Headers.create(response.headers());</span>
+<span class="fc" id="L480">        String responseContentType = last(response.headers().get(&quot;Content-Type&quot;)).orElse(&quot;application/octet-stream&quot;);</span>
         Object data;
-<span class="fc" id="L331">        Optional&lt;Class&lt;?&gt;&gt; responseClass = responseCls.apply(statusCode, responseContentType);</span>
-<span class="fc" id="L332">        try (InputStream in = log(con.getInputStream())) {</span>
-<span class="fc" id="L333">            data = readResponse(serializer, responseClass, responseContentType, in);</span>
-<span class="fc" id="L334">        } catch (IOException e) {</span>
-<span class="fc" id="L335">            try (InputStream err = log(con.getErrorStream())) {</span>
-<span class="fc" id="L336">                data = readResponse(serializer, responseClass, responseContentType, err);</span>
+<span class="fc" id="L482">        Optional&lt;Class&lt;?&gt;&gt; responseClass = responseCls.apply(statusCode, responseContentType);</span>
+<span class="fc" id="L483">        try (InputStream in = log(response.inputStream())) {</span>
+<span class="fc" id="L484">            data = readResponse(serializer, responseClass, responseContentType, in);</span>
+        }
+<span class="fc" id="L486">        return new HttpResponse(statusCode, responseHeaders, Optional.of(data));</span>
+    }
+
+    private static void write(OutputStream out, byte[] bytes) {
+        try {
+<span class="nc" id="L491">            out.write(bytes);</span>
+<span class="nc" id="L492">        } catch (IOException e) {</span>
+<span class="nc" id="L493">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L494">        }</span>
+<span class="nc" id="L495">    }</span>
+
+    private static &lt;T&gt; Optional&lt;T&gt; last(List&lt;T&gt; list) {
+<span class="pc bpc" id="L498" title="1 of 2 branches missed.">        if (list.isEmpty()) {</span>
+<span class="nc" id="L499">            return Optional.empty();</span>
+        } else {
+<span class="fc" id="L501">            return Optional.of(list.get(list.size() - 1));</span>
+        }
+    }
+
+    private static String wwwFormUrlEncodedContent(Serializer serializer, Optional&lt;?&gt; body) {
+<span class="nc" id="L506">        Map&lt;String, Object&gt; map = properties(body.get());</span>
+<span class="nc" id="L507">        String encoded = map.entrySet().stream().map(entry -&gt; {</span>
+<span class="nc" id="L508">            String json = new String(serializer.serialize(entry.getValue(), &quot;application/json&quot;),</span>
+                    StandardCharsets.UTF_8);
+<span class="nc" id="L510">            ObjectMapper m = new ObjectMapper();</span>
+            try {
+<span class="nc" id="L512">                JsonNode tree = m.readTree(json);</span>
+<span class="nc" id="L513">                String v = tree.asText();</span>
+<span class="nc" id="L514">                return URLEncoder.encode(entry.getKey(), &quot;UTF-8&quot;) + &quot;=&quot; + URLEncoder.encode(v, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L515">            } catch (JsonProcessingException | UnsupportedEncodingException e) {</span>
+<span class="nc" id="L516">                throw new RuntimeException(e);</span>
             }
-<span class="fc" id="L338">        }</span>
-<span class="fc" id="L339">        return new HttpResponse(statusCode, responseHeaders, Optional.of(data));</span>
+<span class="nc" id="L518">        }).collect(Collectors.joining(&quot;&amp;&quot;));</span>
+<span class="nc" id="L519">        return encoded;</span>
+    }
+
+    private static byte[] multipartContent(Serializer serializer, Optional&lt;?&gt; body, String boundary) {
+<span class="nc" id="L523">        Map&lt;String, Object&gt; map = properties(body.get());</span>
+<span class="nc" id="L524">        Multipart.Builder b = Multipart.builder();</span>
+<span class="nc" id="L525">        map.forEach((name, value) -&gt; {</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">            if (value != null) {</span>
+                final String contentType;
+                final Object v;
+<span class="nc bnc" id="L529" title="All 2 branches missed.">                if (value instanceof HasEncoding) {</span>
+<span class="nc" id="L530">                    contentType = ((HasStringValue) ((HasEncoding) value).contentType()).value();</span>
+<span class="nc" id="L531">                    v = ((HasEncoding) value).value();</span>
+                } else {
+<span class="nc" id="L533">                    contentType = &quot;application/json&quot;;</span>
+<span class="nc" id="L534">                    v = value;</span>
+                }
+<span class="nc" id="L536">                b.addFormEntry(name, serializer.serialize(v, contentType), Optional.empty(), Optional.of(contentType));</span>
+            }
+<span class="nc" id="L538">        });</span>
+<span class="nc" id="L539">        return b.multipartContent(boundary);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static Map&lt;String, Object&gt; properties(Object o) {
+        try {
+<span class="nc" id="L545">            Method method = o.getClass().getDeclaredMethod(&quot;_internal_properties&quot;);</span>
+<span class="nc" id="L546">            method.setAccessible(true);</span>
+<span class="nc" id="L547">            return (Map&lt;String, Object&gt;) method.invoke(o);</span>
+<span class="nc" id="L548">        } catch (IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {</span>
+<span class="nc" id="L549">            return Maps.empty();</span>
+<span class="nc" id="L550">        } catch (IllegalAccessException e) {</span>
+<span class="nc" id="L551">            throw new RuntimeException(e);</span>
+        }
     }
 
     private static InputStream log(InputStream inputStream) {
-<span class="pc bpc" id="L343" title="1 of 2 branches missed.">        if (!log.isDebugEnabled()) {</span>
-<span class="fc" id="L344">            return inputStream;</span>
+<span class="pc bpc" id="L556" title="1 of 2 branches missed.">        if (!log.isDebugEnabled()) {</span>
+<span class="fc" id="L557">            return inputStream;</span>
         }
-<span class="nc" id="L346">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
-<span class="nc" id="L347">        return new InputStream() {</span>
+<span class="nc" id="L559">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="nc" id="L560">        return new InputStream() {</span>
 
             @Override
             public int read() throws IOException {
-<span class="nc" id="L351">                int v = inputStream.read();</span>
-<span class="nc bnc" id="L352" title="All 2 branches missed.">                if (v == -1) {</span>
-<span class="nc" id="L353">                    log.debug(&quot;Http.inputStream=\n{}&quot;, new String(bytes.toByteArray(), StandardCharsets.UTF_8));</span>
+<span class="nc" id="L564">                int v = inputStream.read();</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">                if (v == -1) {</span>
+<span class="nc" id="L566">                    log.debug(&quot;Http.inputStream=\n{}&quot;, new String(bytes.toByteArray(), StandardCharsets.UTF_8));</span>
                 }
-<span class="nc" id="L355">                bytes.write(v);</span>
-<span class="nc" id="L356">                return v;</span>
+<span class="nc" id="L568">                bytes.write(v);</span>
+<span class="nc" id="L569">                return v;</span>
             }
 
         };
@@ -361,68 +574,68 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
     @VisibleForTesting
     static String buildUrl(String basePath, String pathTemplate, List&lt;ParameterValue&gt; parameters) {
-<span class="fc" id="L364">        Preconditions.checkArgument(pathTemplate.startsWith(&quot;/&quot;));</span>
+<span class="fc" id="L577">        Preconditions.checkArgument(pathTemplate.startsWith(&quot;/&quot;));</span>
         // substitute path parameters
-<span class="fc" id="L366">        String path = stripFinalSlash(basePath) + insertParametersIntoPath(pathTemplate, parameters);</span>
+<span class="fc" id="L579">        String path = stripFinalSlash(basePath) + insertParametersIntoPath(pathTemplate, parameters);</span>
         // build query string
-<span class="fc" id="L368">        String queryString = parameters //</span>
-<span class="fc" id="L369">                .stream() //</span>
-<span class="fc bfc" id="L370" title="All 2 branches covered.">                .filter(p -&gt; p.type() == ParameterType.QUERY) //</span>
-<span class="fc" id="L371">                .filter(p -&gt; p.value().isPresent()) //</span>
-<span class="fc" id="L372">                .map(p -&gt; urlEncode(p.name()) + &quot;=&quot; + p.value().map(x -&gt; valueToString(x)).orElse(&quot;&quot;)) //</span>
-<span class="fc" id="L373">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
-<span class="fc" id="L374">        return path + &quot;?&quot; + queryString;</span>
+<span class="fc" id="L581">        String queryString = parameters //</span>
+<span class="fc" id="L582">                .stream() //</span>
+<span class="fc bfc" id="L583" title="All 2 branches covered.">                .filter(p -&gt; p.type() == ParameterType.QUERY) //</span>
+<span class="fc" id="L584">                .filter(p -&gt; p.value().isPresent()) //</span>
+<span class="fc" id="L585">                .map(p -&gt; urlEncode(p.name()) + &quot;=&quot; + p.value().map(x -&gt; valueToString(x)).orElse(&quot;&quot;)) //</span>
+<span class="fc" id="L586">                .collect(Collectors.joining(&quot;&amp;&quot;));</span>
+<span class="fc" id="L587">        return path + &quot;?&quot; + queryString;</span>
     }
 
     private static Object readResponse(Serializer serializer, Optional&lt;Class&lt;?&gt;&gt; responseType,
             String responseContentType, InputStream in) throws IOException, StreamReadException, DatabindException {
-<span class="pc bpc" id="L379" title="1 of 2 branches missed.">        if (responseType.isPresent()) {</span>
-<span class="fc" id="L380">            return serializer.deserialize(responseType.get(), responseContentType, in);</span>
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">        if (responseType.isPresent()) {</span>
+<span class="fc" id="L593">            return serializer.deserialize(responseType.get(), responseContentType, in);</span>
         } else {
-<span class="nc" id="L382">            return new String(Util.read(in), StandardCharsets.UTF_8);</span>
+<span class="nc" id="L595">            return new String(Util.read(in), StandardCharsets.UTF_8);</span>
         }
     }
 
     private static String valueToString(Object value) {
-<span class="pc bpc" id="L387" title="1 of 2 branches missed.">        if (value == null) {</span>
-<span class="nc" id="L388">            return &quot;&quot;;</span>
-<span class="pc bpc" id="L389" title="1 of 2 branches missed.">        } else if (value instanceof Collection) {</span>
-<span class="nc" id="L390">            Collection&lt;?&gt; c = (Collection&lt;?&gt;) value;</span>
-<span class="nc" id="L391">            return c.stream().map(x -&gt; valueToString(x)).collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="pc bpc" id="L600" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L601">            return &quot;&quot;;</span>
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">        } else if (value instanceof Collection) {</span>
+<span class="nc" id="L603">            Collection&lt;?&gt; c = (Collection&lt;?&gt;) value;</span>
+<span class="nc" id="L604">            return c.stream().map(x -&gt; valueToString(x)).collect(Collectors.joining(&quot;,&quot;));</span>
         } else {
-<span class="fc" id="L393">            return urlEncode(value.toString());</span>
+<span class="fc" id="L606">            return urlEncode(value.toString());</span>
         }
     }
 
     private static String stripFinalSlash(String s) {
-<span class="pc bpc" id="L398" title="1 of 2 branches missed.">        if (s.endsWith(&quot;/&quot;)) {</span>
-<span class="nc" id="L399">            return s.substring(0, s.length() - 2);</span>
+<span class="pc bpc" id="L611" title="1 of 2 branches missed.">        if (s.endsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L612">            return s.substring(0, s.length() - 2);</span>
         } else {
-<span class="fc" id="L401">            return s;</span>
+<span class="fc" id="L614">            return s;</span>
         }
     }
 
     private static String urlEncode(String s) {
         try {
-<span class="fc" id="L407">            return URLEncoder.encode(s, &quot;UTF-8&quot;).replaceAll(&quot;\\+&quot;, &quot;%20&quot;);</span>
-<span class="nc" id="L408">        } catch (UnsupportedEncodingException e) {</span>
-<span class="nc" id="L409">            throw new RuntimeException(e);</span>
+<span class="fc" id="L620">            return URLEncoder.encode(s, &quot;UTF-8&quot;).replaceAll(&quot;\\+&quot;, &quot;%20&quot;);</span>
+<span class="nc" id="L621">        } catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L622">            throw new RuntimeException(e);</span>
         }
     }
 
     private static String insertParametersIntoPath(String pathTemplate, List&lt;ParameterValue&gt; parameters) {
-<span class="fc" id="L414">        String s = pathTemplate;</span>
-<span class="fc bfc" id="L415" title="All 2 branches covered.">        for (ParameterValue p : parameters) {</span>
-<span class="fc bfc" id="L416" title="All 2 branches covered.">            if (p.type() == ParameterType.PATH) {</span>
-<span class="fc" id="L417">                s = insertParameter(s, p.name(), p.value().get());</span>
+<span class="fc" id="L627">        String s = pathTemplate;</span>
+<span class="fc bfc" id="L628" title="All 2 branches covered.">        for (ParameterValue p : parameters) {</span>
+<span class="fc bfc" id="L629" title="All 2 branches covered.">            if (p.type() == ParameterType.PATH) {</span>
+<span class="fc" id="L630">                s = insertParameter(s, p.name(), p.value().get());</span>
             }
-<span class="fc" id="L419">        }</span>
-<span class="fc" id="L420">        return s;</span>
+<span class="fc" id="L632">        }</span>
+<span class="fc" id="L633">        return s;</span>
     }
 
     private static String insertParameter(String s, String name, Object object) {
-<span class="fc" id="L424">        return s.replace(&quot;{&quot; + name + &quot;}&quot;, urlEncode(object.toString()));</span>
+<span class="fc" id="L637">        return s.replace(&quot;{&quot; + name + &quot;}&quot;, urlEncode(object.toString()));</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

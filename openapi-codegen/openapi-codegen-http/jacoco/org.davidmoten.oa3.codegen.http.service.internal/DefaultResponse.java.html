@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultResponse.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http.service.internal</a> &gt; <span class="el_source">DefaultResponse.java</span></div><h1>DefaultResponse.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http.service.internal;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.util.List;
+import java.util.Map;
+
+import org.davidmoten.oa3.codegen.http.service.Response;
+
+public final class DefaultResponse implements Response {
+
+    private final int statusCode;
+    private final Map&lt;String, List&lt;String&gt;&gt; headers;
+    private final DefaultHttpConnection connection;
+
+<span class="fc" id="L17">    public DefaultResponse(int statusCode, Map&lt;String, List&lt;String&gt;&gt; headers, DefaultHttpConnection connection) {</span>
+<span class="fc" id="L18">        this.statusCode = statusCode;</span>
+<span class="fc" id="L19">        this.headers = headers;</span>
+<span class="fc" id="L20">        this.connection = connection;</span>
+<span class="fc" id="L21">    }</span>
+
+    @Override
+    public int statusCode() {
+<span class="fc" id="L25">        return statusCode;</span>
+    }
+
+    @Override
+    public InputStream inputStream() throws IOException {
+<span class="fc" id="L30">        HttpURLConnection con = connection.con;</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        return statusCode &lt; 400 ? con.getInputStream() : con.getErrorStream();</span>
+    }
+
+    @Override
+    public Map&lt;String, List&lt;String&gt;&gt; headers() {
+<span class="fc" id="L36">        return headers;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

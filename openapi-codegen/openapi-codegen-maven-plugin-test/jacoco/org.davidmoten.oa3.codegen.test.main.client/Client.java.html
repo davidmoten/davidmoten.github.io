@@ -4,16 +4,19 @@ import jakarta.annotation.Generated;
 
 import java.lang.Boolean;
 import java.lang.String;
+import java.lang.Void;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
 import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.Http.Builder;
+import org.davidmoten.oa3.codegen.http.Http.RequestBuilder;
 import org.davidmoten.oa3.codegen.http.HttpMethod;
-import org.davidmoten.oa3.codegen.http.HttpResponse;
 import org.davidmoten.oa3.codegen.http.Interceptor;
 import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
 import org.davidmoten.oa3.codegen.test.main.Globals;
 import org.davidmoten.oa3.codegen.test.main.path.GetMsis200Response;
 import org.davidmoten.oa3.codegen.test.main.schema.AuthenticationRequestBody;
@@ -169,21 +172,52 @@ import org.davidmoten.oa3.codegen.test.main.schema.Status;
  * occurs and the user should be able to see the actual broadcast times.
  * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; discuss with satellite providers
  */
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public class Client {
 
     private final Serializer serializer;
     private final List&lt;Interceptor&gt; interceptors;
     private final String basePath;
+    private final HttpService httpService;
 
-<span class="nc" id="L179">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath) {</span>
-<span class="nc" id="L180">        this.serializer = serializer;</span>
-<span class="nc" id="L181">        this.interceptors = interceptors;</span>
-<span class="nc" id="L182">        this.basePath = basePath;</span>
-<span class="nc" id="L183">    }</span>
+<span class="nc" id="L183">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath, HttpService httpService) {</span>
+<span class="nc" id="L184">        this.serializer = serializer;</span>
+<span class="nc" id="L185">        this.interceptors = interceptors;</span>
+<span class="nc" id="L186">        this.basePath = basePath;</span>
+<span class="nc" id="L187">        this.httpService = httpService;</span>
+<span class="nc" id="L188">    }</span>
 
     public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
-<span class="nc" id="L186">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath()), Globals.config(), basePath);</span>
+<span class="nc" id="L191">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), basePath);</span>
+    }
+
+    public static ClientBuilder&lt;Client&gt; basePath(Server server) {
+<span class="nc" id="L195">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), server.url());</span>
+    }
+
+<span class="nc" id="L198">    public enum Server {</span>
+
+<span class="nc" id="L200">        SERVER1(&quot;https://myservice.com/v1&quot;);</span>
+
+        private String url;
+
+<span class="nc" id="L204">        Server(String url) {</span>
+<span class="nc" id="L205">            this.url = url;</span>
+<span class="nc" id="L206">        }</span>
+
+        public String url() {
+<span class="nc" id="L209">            return url;</span>
+        }
+    }
+
+    private Builder http(HttpMethod method, String path) {
+<span class="nc" id="L214">        return Http</span>
+<span class="nc" id="L215">                .method(method)</span>
+<span class="nc" id="L216">                .basePath(this.basePath)</span>
+<span class="nc" id="L217">                .path(path)</span>
+<span class="nc" id="L218">                .serializer(this.serializer)</span>
+<span class="nc" id="L219">                .interceptors(this.interceptors)</span>
+<span class="nc" id="L220">                .httpService(this.httpService);</span>
     }
 
     /**
@@ -191,61 +225,34 @@ public class Client {
      * to other paths on this API for authentication and authorization
      * purposes.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link AuthenticationResponse}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code AuthenticationResponse}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return primary response with status code 200
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public AuthenticationResponse getToken(
+    public RequestBuilder&lt;AuthenticationResponse&gt; getToken(
             AuthenticationRequestBody requestBody) {
-<span class="nc" id="L205">        return getTokenFullResponse(requestBody)</span>
-<span class="nc" id="L206">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L207">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L208">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Obtains a token that will be passed in a request header to calls
-     * to other paths on this API for authentication and authorization
-     * purposes.
-     * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link AuthenticationResponse}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse getTokenFullResponse(
-            AuthenticationRequestBody requestBody) {
-<span class="nc" id="L227">        return Http</span>
-<span class="nc" id="L228">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L229">                .basePath(this.basePath)</span>
-<span class="nc" id="L230">                .path(&quot;/authenticate&quot;)</span>
-<span class="nc" id="L231">                .serializer(this.serializer)</span>
-<span class="nc" id="L232">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L233">                .acceptApplicationJson()</span>
-<span class="nc" id="L234">                .body(requestBody)</span>
-<span class="nc" id="L235">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L236">                .responseAs(AuthenticationResponse.class)</span>
-<span class="nc" id="L237">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L238">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L239">                .responseAs(Error.class)</span>
-<span class="nc" id="L240">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L241">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L242">                .responseAs(Error.class)</span>
-<span class="nc" id="L243">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L244">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L245">                .responseAs(Error.class)</span>
-<span class="nc" id="L246">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L247">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L248">                .call();</span>
+<span class="nc" id="L239">        return http(HttpMethod.POST, &quot;/authenticate&quot;)</span>
+<span class="nc" id="L240">                .acceptApplicationJson()</span>
+<span class="nc" id="L241">                .body(requestBody)</span>
+<span class="nc" id="L242">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L243">                .responseAs(AuthenticationResponse.class)</span>
+<span class="nc" id="L244">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L245">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L246">                .responseAs(Error.class)</span>
+<span class="nc" id="L247">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L248">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L249">                .responseAs(Error.class)</span>
+<span class="nc" id="L250">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L251">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L252">                .responseAs(Error.class)</span>
+<span class="nc" id="L253">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L254">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L255">                .&lt;AuthenticationResponse&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
@@ -262,105 +269,82 @@ public class Client {
      * by time then all pages should be requested and then sorted
      * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link GetMsis200Response}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code GetMsis200Response}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param endTimeMaxInclusive
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
-If endTimeMaxInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive not specified then has no effect.
      * @param endTimeMax
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
      * @param endTimeMin
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-     * @param limit
-     *            Requests that at most `limit` MSIs are returned in the call.
-The server may cap the requested `limit` (fewer items may be
-returned). To request the next page available include the 
-returned `continuationToken` in the next call. If there are 
-no more items available then the response will not contain
-a `continuationToken`.
-
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
      * @param startTimeMin
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param limit
+     *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
+     *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
+     *            returned). To request the next page available include the
+     *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
+     *            no more items available then the response will not contain
+     *            a &lt;code&gt;continuationToken&lt;/code&gt;.
      * @param startTimeMinInclusive
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-If startTimeMinInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive not specified then has no effect.
      * @param endTimeMinInclusive
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;gt;= endTimeMin.
-
-If endTimeMinInclusive is false then filters MSIs
-on endTime &amp;gt; endTimeMin.
-
-If endTimeMinInclusive not specified then has no effect.
-
-     * @param broadcastType
-     *            the type of broadcast
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;gt;= endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
+     *            on endTime &amp;gt; endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
      * @param startTimeMax
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-     * @param continuationToken
-     *            Describes to the server the starting point of 
-the next page of results and is obtained from 
-the current page. May contain an offset if desired
-but is at the discretion of implementer. Note that
-it is possible that a call specifying a continuation
-token may return en empty list (but an empty list return 
-should not have a continuation token on it so at 
-that point paging would stop).
-
-     * @param status
-     *            Only MSIs that have a status in the given list
-are returned. If the list is empty (or the parameter
-is not present) then no filtering on status occurs.
-**TODO** support multi-status filtering or just one?
-
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
      * @param startTimeMaxInclusive
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-If startTimeMaxInclusive not specified then has no effect.
-
-     * @return primary response with status code 200
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param continuationToken
+     *            &lt;p&gt;Describes to the server the starting point of
+     *            the next page of results and is obtained from
+     *            the current page. May contain an offset if desired
+     *            but is at the discretion of implementer. Note that
+     *            it is possible that a call specifying a continuation
+     *            token may return en empty list (but an empty list return
+     *            should not have a continuation token on it so at
+     *            that point paging would stop).
+     * @return call builder
      */
-    public GetMsis200Response getMsis(
+    public RequestBuilder&lt;GetMsis200Response&gt; getMsis(
             Optional&lt;OffsetDateTime&gt; startTimeMin, 
             boolean startTimeMinInclusive, 
             Optional&lt;OffsetDateTime&gt; startTimeMax, 
@@ -373,184 +357,36 @@ If startTimeMaxInclusive not specified then has no effect.
             Optional&lt;List&lt;String&gt;&gt; status, 
             Optional&lt;String&gt; broadcastType, 
             Optional&lt;String&gt; continuationToken) {
-<span class="nc" id="L376">        return getMsisFullResponse(</span>
-                    startTimeMin,
-                    startTimeMinInclusive,
-                    startTimeMax,
-                    startTimeMaxInclusive,
-                    endTimeMin,
-                    endTimeMinInclusive,
-                    endTimeMax,
-                    endTimeMaxInclusive,
-                    limit,
-                    status,
-                    broadcastType,
-                    continuationToken)
-<span class="nc" id="L389">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L390">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L391">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns Maritime Safety Information broadcasts requested to
-     * be sent by the user.
-     * &lt;p&gt;Note that none of the parameters are required. If no parameters
-     * are supplied then all MSIs for the current user will be returned
-     * (paged).
-     * &lt;p&gt;The &lt;code&gt;limit&lt;/code&gt; field may not be honoured exactly by the server
-     * side (in that it might exceed a maximum limit of the server).
-     * &lt;p&gt;The results of this query may return in any order and that order
-     * may vary in repeated calls (for example, the returned MSIs &lt;em&gt;may&lt;/em&gt;
-     * not be ordered by timestamp). If the client requires an ordering
-     * by time then all pages should be requested and then sorted
-     * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
-     * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link GetMsis200Response}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param endTimeMaxInclusive
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
-If endTimeMaxInclusive not specified then has no effect.
-
-     * @param endTimeMax
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
-     * @param endTimeMin
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-     * @param limit
-     *            Requests that at most `limit` MSIs are returned in the call.
-The server may cap the requested `limit` (fewer items may be
-returned). To request the next page available include the 
-returned `continuationToken` in the next call. If there are 
-no more items available then the response will not contain
-a `continuationToken`.
-
-     * @param startTimeMin
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-     * @param startTimeMinInclusive
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-If startTimeMinInclusive not specified then has no effect.
-
-     * @param endTimeMinInclusive
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;gt;= endTimeMin.
-
-If endTimeMinInclusive is false then filters MSIs
-on endTime &amp;gt; endTimeMin.
-
-If endTimeMinInclusive not specified then has no effect.
-
-     * @param broadcastType
-     *            the type of broadcast
-     * @param startTimeMax
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-     * @param continuationToken
-     *            Describes to the server the starting point of 
-the next page of results and is obtained from 
-the current page. May contain an offset if desired
-but is at the discretion of implementer. Note that
-it is possible that a call specifying a continuation
-token may return en empty list (but an empty list return 
-should not have a continuation token on it so at 
-that point paging would stop).
-
-     * @param status
-     *            Only MSIs that have a status in the given list
-are returned. If the list is empty (or the parameter
-is not present) then no filtering on status occurs.
-**TODO** support multi-status filtering or just one?
-
-     * @param startTimeMaxInclusive
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-If startTimeMaxInclusive not specified then has no effect.
-
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse getMsisFullResponse(
-            Optional&lt;OffsetDateTime&gt; startTimeMin, 
-            boolean startTimeMinInclusive, 
-            Optional&lt;OffsetDateTime&gt; startTimeMax, 
-            boolean startTimeMaxInclusive, 
-            Optional&lt;OffsetDateTime&gt; endTimeMin, 
-            Optional&lt;Boolean&gt; endTimeMinInclusive, 
-            Optional&lt;OffsetDateTime&gt; endTimeMax, 
-            boolean endTimeMaxInclusive, 
-            int limit, 
-            Optional&lt;List&lt;String&gt;&gt; status, 
-            Optional&lt;String&gt; broadcastType, 
-            Optional&lt;String&gt; continuationToken) {
-<span class="nc" id="L519">        return Http</span>
-<span class="nc" id="L520">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L521">                .basePath(this.basePath)</span>
-<span class="nc" id="L522">                .path(&quot;/msi&quot;)</span>
-<span class="nc" id="L523">                .serializer(this.serializer)</span>
-<span class="nc" id="L524">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L525">                .acceptApplicationJson()</span>
-<span class="nc" id="L526">                .queryParam(&quot;startTimeMin&quot;, startTimeMin)</span>
-<span class="nc" id="L527">                .queryParam(&quot;startTimeMinInclusive&quot;, startTimeMinInclusive)</span>
-<span class="nc" id="L528">                .queryParam(&quot;startTimeMax&quot;, startTimeMax)</span>
-<span class="nc" id="L529">                .queryParam(&quot;startTimeMaxInclusive&quot;, startTimeMaxInclusive)</span>
-<span class="nc" id="L530">                .queryParam(&quot;endTimeMin&quot;, endTimeMin)</span>
-<span class="nc" id="L531">                .queryParam(&quot;endTimeMinInclusive&quot;, endTimeMinInclusive)</span>
-<span class="nc" id="L532">                .queryParam(&quot;endTimeMax&quot;, endTimeMax)</span>
-<span class="nc" id="L533">                .queryParam(&quot;endTimeMaxInclusive&quot;, endTimeMaxInclusive)</span>
-<span class="nc" id="L534">                .queryParam(&quot;limit&quot;, limit)</span>
-<span class="nc" id="L535">                .queryParam(&quot;status&quot;, status)</span>
-<span class="nc" id="L536">                .queryParam(&quot;broadcastType&quot;, broadcastType)</span>
-<span class="nc" id="L537">                .queryParam(&quot;continuationToken&quot;, continuationToken)</span>
-<span class="nc" id="L538">                .responseAs(GetMsis200Response.class)</span>
-<span class="nc" id="L539">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L540">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L541">                .responseAs(Error.class)</span>
-<span class="nc" id="L542">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L543">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L544">                .responseAs(Error.class)</span>
-<span class="nc" id="L545">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L546">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L547">                .responseAs(Error.class)</span>
-<span class="nc" id="L548">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L549">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L550">                .responseAs(Error.class)</span>
-<span class="nc" id="L551">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L552">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L553">                .call();</span>
+<span class="nc" id="L360">        return http(HttpMethod.GET, &quot;/msi&quot;)</span>
+<span class="nc" id="L361">                .acceptApplicationJson()</span>
+<span class="nc" id="L362">                .queryParam(&quot;startTimeMin&quot;, startTimeMin)</span>
+<span class="nc" id="L363">                .queryParam(&quot;startTimeMinInclusive&quot;, startTimeMinInclusive)</span>
+<span class="nc" id="L364">                .queryParam(&quot;startTimeMax&quot;, startTimeMax)</span>
+<span class="nc" id="L365">                .queryParam(&quot;startTimeMaxInclusive&quot;, startTimeMaxInclusive)</span>
+<span class="nc" id="L366">                .queryParam(&quot;endTimeMin&quot;, endTimeMin)</span>
+<span class="nc" id="L367">                .queryParam(&quot;endTimeMinInclusive&quot;, endTimeMinInclusive)</span>
+<span class="nc" id="L368">                .queryParam(&quot;endTimeMax&quot;, endTimeMax)</span>
+<span class="nc" id="L369">                .queryParam(&quot;endTimeMaxInclusive&quot;, endTimeMaxInclusive)</span>
+<span class="nc" id="L370">                .queryParam(&quot;limit&quot;, limit)</span>
+<span class="nc" id="L371">                .queryParam(&quot;status&quot;, status)</span>
+<span class="nc" id="L372">                .queryParam(&quot;broadcastType&quot;, broadcastType)</span>
+<span class="nc" id="L373">                .queryParam(&quot;continuationToken&quot;, continuationToken)</span>
+<span class="nc" id="L374">                .responseAs(GetMsis200Response.class)</span>
+<span class="nc" id="L375">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L376">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L377">                .responseAs(Error.class)</span>
+<span class="nc" id="L378">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L379">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L380">                .responseAs(Error.class)</span>
+<span class="nc" id="L381">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L382">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L383">                .responseAs(Error.class)</span>
+<span class="nc" id="L384">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L385">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L386">                .responseAs(Error.class)</span>
+<span class="nc" id="L387">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L388">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L389">                .&lt;GetMsis200Response&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
@@ -562,137 +398,78 @@ If startTimeMaxInclusive not specified then has no effect.
      * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
      * maximum number of unsent messages so it can be documented here).
      * 
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link MsiId}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code MsiId}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return primary response with status code 201
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public MsiId createMsi(
+    public RequestBuilder&lt;MsiId&gt; createMsi(
             MsiContent requestBody) {
-<span class="nc" id="L577">        return createMsiFullResponse(requestBody)</span>
-<span class="nc" id="L578">                .assertStatusCodeMatches(&quot;201&quot;)</span>
-<span class="nc" id="L579">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L580">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Submits message content and returns a unique id (across all
-     * users) that is to be used in the send method. It is ok for
-     * a message to never be sent but the provider should have the
-     * freedom to clean up (delete) unsent messages after some
-     * reasonable period or after more than N unsent messages are created.
-     * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
-     * maximum number of unsent messages so it can be documented here).
-     * 
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link MsiId}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse createMsiFullResponse(
-            MsiContent requestBody) {
-<span class="nc" id="L604">        return Http</span>
-<span class="nc" id="L605">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L606">                .basePath(this.basePath)</span>
-<span class="nc" id="L607">                .path(&quot;/msi&quot;)</span>
-<span class="nc" id="L608">                .serializer(this.serializer)</span>
-<span class="nc" id="L609">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L610">                .acceptApplicationJson()</span>
-<span class="nc" id="L611">                .body(requestBody)</span>
-<span class="nc" id="L612">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L613">                .responseAs(MsiId.class)</span>
-<span class="nc" id="L614">                .whenStatusCodeMatches(&quot;201&quot;)</span>
-<span class="nc" id="L615">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L616">                .responseAs(Error.class)</span>
-<span class="nc" id="L617">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L618">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L619">                .responseAs(Error.class)</span>
-<span class="nc" id="L620">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L621">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L622">                .responseAs(Error.class)</span>
-<span class="nc" id="L623">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L624">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L625">                .responseAs(Error.class)</span>
-<span class="nc" id="L626">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L627">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L628">                .call();</span>
+<span class="nc" id="L413">        return http(HttpMethod.POST, &quot;/msi&quot;)</span>
+<span class="nc" id="L414">                .acceptApplicationJson()</span>
+<span class="nc" id="L415">                .body(requestBody)</span>
+<span class="nc" id="L416">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L417">                .responseAs(MsiId.class)</span>
+<span class="nc" id="L418">                .whenStatusCodeMatches(&quot;201&quot;)</span>
+<span class="nc" id="L419">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L420">                .responseAs(Error.class)</span>
+<span class="nc" id="L421">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L422">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L423">                .responseAs(Error.class)</span>
+<span class="nc" id="L424">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L425">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L426">                .responseAs(Error.class)</span>
+<span class="nc" id="L427">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L428">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L429">                .responseAs(Error.class)</span>
+<span class="nc" id="L430">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L431">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L432">                .&lt;MsiId&gt;requestBuilder(&quot;201&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Msi}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Msi}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
-     * @return primary response with status code 200
+     *            &lt;p&gt;unique msi identifier
+     * @return call builder
      */
-    public Msi getMsi(
+    public RequestBuilder&lt;Msi&gt; getMsi(
             String id) {
-<span class="nc" id="L647">        return getMsiFullResponse(id)</span>
-<span class="nc" id="L648">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L649">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L650">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
-     * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Msi}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param id
-     *            unique msi identifier
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse getMsiFullResponse(
-            String id) {
-<span class="nc" id="L669">        return Http</span>
-<span class="nc" id="L670">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L671">                .basePath(this.basePath)</span>
-<span class="nc" id="L672">                .path(&quot;/msi/{id}&quot;)</span>
-<span class="nc" id="L673">                .serializer(this.serializer)</span>
-<span class="nc" id="L674">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L675">                .acceptApplicationJson()</span>
-<span class="nc" id="L676">                .pathParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L677">                .responseAs(Msi.class)</span>
-<span class="nc" id="L678">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L679">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L680">                .responseAs(Error.class)</span>
-<span class="nc" id="L681">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L682">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L683">                .responseAs(Error.class)</span>
-<span class="nc" id="L684">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L685">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L686">                .responseAs(Error.class)</span>
-<span class="nc" id="L687">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L688">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L689">                .responseAs(Error.class)</span>
-<span class="nc" id="L690">                .whenStatusCodeMatches(&quot;404&quot;)</span>
-<span class="nc" id="L691">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L692">                .responseAs(Error.class)</span>
-<span class="nc" id="L693">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L694">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L695">                .call();</span>
+<span class="nc" id="L451">        return http(HttpMethod.GET, &quot;/msi/{id}&quot;)</span>
+<span class="nc" id="L452">                .acceptApplicationJson()</span>
+<span class="nc" id="L453">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L454">                .responseAs(Msi.class)</span>
+<span class="nc" id="L455">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L456">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L457">                .responseAs(Error.class)</span>
+<span class="nc" id="L458">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L459">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L460">                .responseAs(Error.class)</span>
+<span class="nc" id="L461">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L462">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L463">                .responseAs(Error.class)</span>
+<span class="nc" id="L464">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L465">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L466">                .responseAs(Error.class)</span>
+<span class="nc" id="L467">                .whenStatusCodeMatches(&quot;404&quot;)</span>
+<span class="nc" id="L468">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L469">                .responseAs(Error.class)</span>
+<span class="nc" id="L470">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L471">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L472">                .&lt;Msi&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
@@ -700,42 +477,37 @@ If startTimeMaxInclusive not specified then has no effect.
      * has already been sent or the MSI has been cancelled then
      * nothing occurs (this method is idempotent).
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;unique msi identifier
+     * @return call builder
      */
-    public HttpResponse sendMsiFullResponse(
+    public RequestBuilder&lt;Void&gt; sendMsi(
             String id) {
-<span class="nc" id="L715">        return Http</span>
-<span class="nc" id="L716">                .method(HttpMethod.PUT)</span>
-<span class="nc" id="L717">                .basePath(this.basePath)</span>
-<span class="nc" id="L718">                .path(&quot;/msi/{id}&quot;)</span>
-<span class="nc" id="L719">                .serializer(this.serializer)</span>
-<span class="nc" id="L720">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L721">                .acceptApplicationJson()</span>
-<span class="nc" id="L722">                .pathParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L723">                .responseAs(Error.class)</span>
-<span class="nc" id="L724">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L725">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L726">                .responseAs(Error.class)</span>
-<span class="nc" id="L727">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L728">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L729">                .responseAs(Error.class)</span>
-<span class="nc" id="L730">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L731">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L732">                .responseAs(Error.class)</span>
-<span class="nc" id="L733">                .whenStatusCodeMatches(&quot;404&quot;)</span>
-<span class="nc" id="L734">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L735">                .responseAs(Error.class)</span>
-<span class="nc" id="L736">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L737">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L738">                .call();</span>
+<span class="nc" id="L492">        return http(HttpMethod.PUT, &quot;/msi/{id}&quot;)</span>
+<span class="nc" id="L493">                .acceptApplicationJson()</span>
+<span class="nc" id="L494">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L495">                .responseAs(Error.class)</span>
+<span class="nc" id="L496">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L497">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L498">                .responseAs(Error.class)</span>
+<span class="nc" id="L499">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L500">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L501">                .responseAs(Error.class)</span>
+<span class="nc" id="L502">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L503">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L504">                .responseAs(Error.class)</span>
+<span class="nc" id="L505">                .whenStatusCodeMatches(&quot;404&quot;)</span>
+<span class="nc" id="L506">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L507">                .responseAs(Error.class)</span>
+<span class="nc" id="L508">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L509">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L510">                .&lt;Void&gt;requestBuilder();</span>
     }
 
     /**
@@ -745,109 +517,86 @@ If startTimeMaxInclusive not specified then has no effect.
      * an MSI cannot be resent. However, the broadcast details
      * are still available to be queried.
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;unique msi identifier
+     * @return call builder
      */
-    public HttpResponse cancelMsiFullResponse(
+    public RequestBuilder&lt;Void&gt; cancelMsi(
             String id) {
-<span class="nc" id="L760">        return Http</span>
-<span class="nc" id="L761">                .method(HttpMethod.DELETE)</span>
-<span class="nc" id="L762">                .basePath(this.basePath)</span>
-<span class="nc" id="L763">                .path(&quot;/msi/{id}&quot;)</span>
-<span class="nc" id="L764">                .serializer(this.serializer)</span>
-<span class="nc" id="L765">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L766">                .acceptApplicationJson()</span>
-<span class="nc" id="L767">                .pathParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L768">                .responseAs(Error.class)</span>
-<span class="nc" id="L769">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L770">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L771">                .responseAs(Error.class)</span>
-<span class="nc" id="L772">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L773">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L774">                .responseAs(Error.class)</span>
-<span class="nc" id="L775">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L776">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L777">                .responseAs(Error.class)</span>
-<span class="nc" id="L778">                .whenStatusCodeMatches(&quot;404&quot;)</span>
-<span class="nc" id="L779">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L780">                .responseAs(Error.class)</span>
-<span class="nc" id="L781">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L782">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L783">                .call();</span>
+<span class="nc" id="L532">        return http(HttpMethod.DELETE, &quot;/msi/{id}&quot;)</span>
+<span class="nc" id="L533">                .acceptApplicationJson()</span>
+<span class="nc" id="L534">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L535">                .responseAs(Error.class)</span>
+<span class="nc" id="L536">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L537">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L538">                .responseAs(Error.class)</span>
+<span class="nc" id="L539">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L540">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L541">                .responseAs(Error.class)</span>
+<span class="nc" id="L542">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L543">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L544">                .responseAs(Error.class)</span>
+<span class="nc" id="L545">                .whenStatusCodeMatches(&quot;404&quot;)</span>
+<span class="nc" id="L546">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L547">                .responseAs(Error.class)</span>
+<span class="nc" id="L548">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L549">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L550">                .&lt;Void&gt;requestBuilder();</span>
     }
 
     /**
      * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Status}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Status}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
-     * @return primary response with status code 200
+     *            &lt;p&gt;unique msi identifier
+     * @return call builder
      */
-    public Status getMsiStatus(
+    public RequestBuilder&lt;Status&gt; getMsiStatus(
             String id) {
-<span class="nc" id="L802">        return getMsiStatusFullResponse(id)</span>
-<span class="nc" id="L803">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L804">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L805">                .dataUnwrapped();</span>
+<span class="nc" id="L569">        return http(HttpMethod.GET, &quot;/msi/{id}/status&quot;)</span>
+<span class="nc" id="L570">                .acceptApplicationJson()</span>
+<span class="nc" id="L571">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L572">                .responseAs(Status.class)</span>
+<span class="nc" id="L573">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L574">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L575">                .responseAs(Error.class)</span>
+<span class="nc" id="L576">                .whenStatusCodeMatches(&quot;400&quot;)</span>
+<span class="nc" id="L577">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L578">                .responseAs(Error.class)</span>
+<span class="nc" id="L579">                .whenStatusCodeMatches(&quot;401&quot;)</span>
+<span class="nc" id="L580">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L581">                .responseAs(Error.class)</span>
+<span class="nc" id="L582">                .whenStatusCodeMatches(&quot;403&quot;)</span>
+<span class="nc" id="L583">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L584">                .responseAs(Error.class)</span>
+<span class="nc" id="L585">                .whenStatusCodeMatches(&quot;404&quot;)</span>
+<span class="nc" id="L586">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L587">                .responseAs(Error.class)</span>
+<span class="nc" id="L588">                .whenStatusCodeMatches(&quot;500&quot;)</span>
+<span class="nc" id="L589">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L590">                .&lt;Status&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
-    /**
-     * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
-     * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Status}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param id
-     *            unique msi identifier
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse getMsiStatusFullResponse(
-            String id) {
-<span class="nc" id="L824">        return Http</span>
-<span class="nc" id="L825">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L826">                .basePath(this.basePath)</span>
-<span class="nc" id="L827">                .path(&quot;/msi/{id}/status&quot;)</span>
-<span class="nc" id="L828">                .serializer(this.serializer)</span>
-<span class="nc" id="L829">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L830">                .acceptApplicationJson()</span>
-<span class="nc" id="L831">                .pathParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L832">                .responseAs(Status.class)</span>
-<span class="nc" id="L833">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L834">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L835">                .responseAs(Error.class)</span>
-<span class="nc" id="L836">                .whenStatusCodeMatches(&quot;400&quot;)</span>
-<span class="nc" id="L837">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L838">                .responseAs(Error.class)</span>
-<span class="nc" id="L839">                .whenStatusCodeMatches(&quot;401&quot;)</span>
-<span class="nc" id="L840">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L841">                .responseAs(Error.class)</span>
-<span class="nc" id="L842">                .whenStatusCodeMatches(&quot;403&quot;)</span>
-<span class="nc" id="L843">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L844">                .responseAs(Error.class)</span>
-<span class="nc" id="L845">                .whenStatusCodeMatches(&quot;404&quot;)</span>
-<span class="nc" id="L846">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L847">                .responseAs(Error.class)</span>
-<span class="nc" id="L848">                .whenStatusCodeMatches(&quot;500&quot;)</span>
-<span class="nc" id="L849">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L850">                .call();</span>
+    public Builder _custom(HttpMethod method, String path) {
+<span class="nc" id="L594">        return Http</span>
+<span class="nc" id="L595">                .method(method)</span>
+<span class="nc" id="L596">                .basePath(this.basePath)</span>
+<span class="nc" id="L597">                .path(path)</span>
+<span class="nc" id="L598">                .serializer(this.serializer)</span>
+<span class="nc" id="L599">                .httpService(this.httpService);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -3,10 +3,10 @@
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.github.davidmoten.guavamini.Maps;
 
 import jakarta.annotation.Generated;
 
@@ -21,61 +21,69 @@ import java.util.Objects;
 import org.davidmoten.oa3.codegen.util.Util;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
-@JsonInclude(Include.NON_NULL)
-@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public final class AdditionalPropertiesOnly {
 
     @JsonAnyGetter
     @JsonAnySetter
     private final Map&lt;String, Boolean&gt; properties;
 
-    @JsonCreator
-    @ConstructorBinding
-<span class="nc" id="L35">    public AdditionalPropertiesOnly() {</span>
-<span class="nc" id="L36">        this.properties = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L37">    }</span>
-
-    @ConstructorBinding
     public AdditionalPropertiesOnly(
-<span class="nc" id="L41">            Map&lt;String, Boolean&gt; properties) {</span>
-<span class="nc" id="L42">        this.properties = properties;</span>
-<span class="nc" id="L43">    }</span>
+<span class="nc" id="L37">            Map&lt;String, Boolean&gt; properties) {</span>
+<span class="nc" id="L38">        this.properties = Util.createMapIfNull(properties);</span>
+<span class="nc" id="L39">    }</span>
 
-    public static AdditionalPropertiesOnly properties(Map&lt;String, Boolean&gt; properties) {
-<span class="nc" id="L46">        return new AdditionalPropertiesOnly(properties);</span>
-    }
+    @ConstructorBinding
+    @JsonCreator
+<span class="nc" id="L43">    private AdditionalPropertiesOnly() {</span>
+<span class="nc" id="L44">        this.properties = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L45">    }</span>
+
 
     @JsonAnySetter
     private void put(String key, Boolean value) {
-<span class="nc" id="L51">        this.properties.put(key, value);</span>
-<span class="nc" id="L52">    }</span>
-
+<span class="nc" id="L50">        this.properties.put(key, value);</span>
+<span class="nc" id="L51">    }</span>
     public Map&lt;String, Boolean&gt; properties() {
-<span class="nc" id="L55">        return properties;</span>
+<span class="nc" id="L53">        return properties;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L57">        return Maps</span>
+<span class="nc" id="L58">                .put(&quot;properties&quot;, (Object) properties)</span>
+<span class="nc" id="L59">                .build();</span>
+    }
+
+    public static AdditionalPropertiesOnly properties(Map&lt;String, Boolean&gt; properties) {
+<span class="nc" id="L63">        return new AdditionalPropertiesOnly(properties);</span>
     }
 
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (this == o) {</span>
-<span class="nc" id="L61">            return true;</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L69">            return true;</span>
         }
-<span class="nc bnc" id="L63" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L64">            return false;</span>
+<span class="nc bnc" id="L71" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L72">            return false;</span>
         }
-<span class="nc" id="L66">        AdditionalPropertiesOnly other = (AdditionalPropertiesOnly) o;</span>
-<span class="nc" id="L67">        return </span>
-<span class="nc" id="L68">            Objects.equals(this.properties, other.properties);</span>
+<span class="nc" id="L74">        AdditionalPropertiesOnly other = (AdditionalPropertiesOnly) o;</span>
+<span class="nc" id="L75">        return </span>
+<span class="nc" id="L76">            Objects.deepEquals(this.properties, other.properties);</span>
     }
 
     @Override
     public int hashCode() {
-<span class="nc" id="L73">        return Objects.hash(properties);</span>
+<span class="nc" id="L81">        return Objects.hash(properties);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L78">        return Util.toString(AdditionalPropertiesOnly.class, &quot;properties&quot;, properties);</span>
+<span class="nc" id="L86">        return Util.toString(AdditionalPropertiesOnly.class, &quot;properties&quot;, properties);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

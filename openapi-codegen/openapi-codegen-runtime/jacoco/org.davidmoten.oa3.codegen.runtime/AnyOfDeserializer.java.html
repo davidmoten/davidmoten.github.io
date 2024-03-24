@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnyOfDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">AnyOfDeserializer.java</span></div><h1>AnyOfDeserializer.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.openapitools.jackson.nullable.JsonNullable;
+
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.github.davidmoten.guavamini.Sets;
+
+public class AnyOfDeserializer&lt;T&gt; extends StdDeserializer&lt;T&gt; {
+
+    private static final long serialVersionUID = -4477865921927841241L;
+    
+    private final List&lt;AnyOfMember&gt; members;
+    private final Class&lt;T&gt; cls;
+    private final ObjectMapper mapper;
+
+    protected AnyOfDeserializer(Config config, Class&lt;T&gt; cls, AnyOfMember... members) {
+<span class="nc" id="L40">        super(cls);</span>
+<span class="nc" id="L41">        this.members = Arrays.asList(members);</span>
+<span class="nc" id="L42">        this.cls = cls;</span>
+<span class="nc" id="L43">        this.mapper = config.mapper();</span>
+<span class="nc" id="L44">    }</span>
+    
+    @Override
+    public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+<span class="nc" id="L48">        TreeNode tree = p.getCodec().readTree(p);</span>
+<span class="nc" id="L49">        String json = mapper.writeValueAsString(tree);</span>
+<span class="nc" id="L50">        return deserializeAnyOf(mapper, json, members, cls);</span>
+    }
+    
+    private static &lt;T&gt; T deserializeAnyOf(ObjectMapper mapper, String json, List&lt;AnyOfMember&gt; members, Class&lt;T&gt; cls) throws JsonMappingException, JsonProcessingException {
+<span class="nc" id="L54">        ObjectMapper m = mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);</span>
+<span class="nc" id="L55">        List&lt;Object&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        for (AnyOfMember member : members) {</span>
+            try {
+<span class="nc" id="L58">                Class&lt;?&gt; c = member.cls();</span>
+                final Object o;
+                // TODO check isObject more efficiently
+<span class="nc bnc" id="L61" title="All 4 branches missed.">                if (json.trim().startsWith(&quot;{&quot;) &amp;&amp; isObject(c)) {</span>
+<span class="nc" id="L62">                    o = m.readValue(json, c);</span>
+                } else {
+<span class="nc" id="L64">                    o = mapper.readValue(json, c);</span>
+                }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                if (member.nullable()) {</span>
+<span class="nc" id="L67">                    list.add(JsonNullable.of(o));</span>
+                } else {
+<span class="nc" id="L69">                    list.add(Optional.of(o));</span>
+                }
+<span class="nc" id="L71">            } catch (DatabindException e) {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                if (member.nullable()) {</span>
+<span class="nc" id="L73">                    list.add(JsonNullable.undefined());</span>
+                } else {
+<span class="nc" id="L75">                    list.add(Optional.empty());</span>
+                }
+<span class="nc" id="L77">            }</span>
+<span class="nc" id="L78">        }</span>
+        try {
+<span class="nc" id="L80">            Class&lt;?&gt;[] argClasses = members //</span>
+<span class="nc" id="L81">                    .stream() //</span>
+<span class="nc" id="L82">                    .map(member -&gt; {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">                        if (member.nullable()) {</span>
+<span class="nc" id="L84">                            return JsonNullable.class;</span>
+                        } else {
+<span class="nc" id="L86">                            return Optional.class;</span>
+                        }
+                    }) //
+<span class="nc" id="L89">                    .collect(Collectors.toList()) //</span>
+<span class="nc" id="L90">                    .toArray(new Class&lt;?&gt;[] {});</span>
+<span class="nc" id="L91">            Constructor&lt;T&gt; con = cls.getDeclaredConstructor(argClasses);</span>
+<span class="nc" id="L92">            con.setAccessible(true);</span>
+<span class="nc" id="L93">            return con.newInstance(list.toArray());</span>
+<span class="nc" id="L94">        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException</span>
+                | NoSuchMethodException | SecurityException e) {
+<span class="nc" id="L96">            throw new RuntimeException(e);</span>
+        }
+    }
+    
+<span class="nc" id="L100">    private static final Set&lt;Class&lt;?&gt;&gt; NON_OBJECT_CLASSES = Sets.of(List.class, Map.class, String.class, Short.class,</span>
+            Integer.class, Float.class, Double.class, byte[].class, Byte.class, BigInteger.class);
+
+    private static boolean isObject(Class&lt;?&gt; c) {
+<span class="nc bnc" id="L104" title="All 4 branches missed.">        if (c.isPrimitive() || NON_OBJECT_CLASSES.contains(c)) {</span>
+<span class="nc" id="L105">            return false;</span>
+        }
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        for (Field f : c.getDeclaredFields()) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (f.isAnnotationPresent(JsonValue.class)) {</span>
+<span class="nc" id="L109">                return false;</span>
+            }
+        }
+<span class="nc" id="L112">        return true;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

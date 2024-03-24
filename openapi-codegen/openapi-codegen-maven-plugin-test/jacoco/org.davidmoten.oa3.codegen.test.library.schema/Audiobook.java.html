@@ -1,30 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Audiobook.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.library.schema</a> &gt; <span class="el_source">Audiobook.java</span></div><h1>Audiobook.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.library.schema;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.github.davidmoten.guavamini.Maps;
 
 import jakarta.annotation.Generated;
 
 import java.lang.Double;
 import java.lang.Object;
 import java.lang.Override;
+import java.lang.String;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.davidmoten.oa3.codegen.runtime.Preconditions;
 import org.davidmoten.oa3.codegen.test.library.Globals;
 import org.davidmoten.oa3.codegen.util.Util;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
-@JsonInclude(Include.NON_NULL)
-@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public final class Audiobook {
 
     @JsonProperty(&quot;book&quot;)
@@ -34,53 +38,76 @@ public final class Audiobook {
     private final Voices voices;
 
     @JsonProperty(&quot;lengthMinutes&quot;)
-    private final Double lengthMinutes;
+    private final Optional&lt;Double&gt; lengthMinutes;
 
     @JsonCreator
-    private Audiobook(
+    public Audiobook(
             @JsonProperty(&quot;book&quot;) Book book,
             @JsonProperty(&quot;voices&quot;) Voices voices,
-<span class="nc" id="L43">            @JsonProperty(&quot;lengthMinutes&quot;) Double lengthMinutes) {</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Audiobook.class)) {</span>
-<span class="nc" id="L45">            Preconditions.checkMinimum(lengthMinutes, &quot;0&quot;, &quot;lengthMinutes&quot;, false);</span>
+<span class="nc" id="L47">            @JsonProperty(&quot;lengthMinutes&quot;) Optional&lt;Double&gt; lengthMinutes) {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Audiobook.class)) {</span>
+<span class="nc" id="L49">            Preconditions.checkNotNull(book, &quot;book&quot;);</span>
+<span class="nc" id="L50">            Preconditions.checkNotNull(voices, &quot;voices&quot;);</span>
+<span class="nc" id="L51">            Preconditions.checkNotNull(lengthMinutes, &quot;lengthMinutes&quot;);</span>
+<span class="nc" id="L52">            Preconditions.checkMinimum(lengthMinutes, &quot;0&quot;, &quot;lengthMinutes&quot;, false);</span>
         }
-<span class="nc" id="L47">        this.book = book;</span>
-<span class="nc" id="L48">        this.voices = voices;</span>
-<span class="nc" id="L49">        this.lengthMinutes = lengthMinutes;</span>
-<span class="nc" id="L50">    }</span>
+<span class="nc" id="L54">        this.book = book;</span>
+<span class="nc" id="L55">        this.voices = voices;</span>
+<span class="nc" id="L56">        this.lengthMinutes = lengthMinutes;</span>
+<span class="nc" id="L57">    }</span>
 
-    @ConstructorBinding
-    public Audiobook(
-            Book book,
-            Voices voices,
-<span class="nc" id="L56">            Optional&lt;Double&gt; lengthMinutes) {</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Audiobook.class)) {</span>
-<span class="nc" id="L58">            Preconditions.checkNotNull(book, &quot;book&quot;);</span>
-<span class="nc" id="L59">            Preconditions.checkNotNull(voices, &quot;voices&quot;);</span>
-<span class="nc" id="L60">            Preconditions.checkNotNull(lengthMinutes, &quot;lengthMinutes&quot;);</span>
-<span class="nc" id="L61">            Preconditions.checkMinimum(lengthMinutes, &quot;0&quot;, &quot;lengthMinutes&quot;, false);</span>
-        }
-<span class="nc" id="L63">        this.book = book;</span>
-<span class="nc" id="L64">        this.voices = voices;</span>
-<span class="nc" id="L65">        this.lengthMinutes = lengthMinutes.orElse(null);</span>
-<span class="nc" id="L66">    }</span>
+    public Book book() {
+<span class="nc" id="L60">        return book;</span>
+    }
+
+    public Voices voices() {
+<span class="nc" id="L64">        return voices;</span>
+    }
+
+    public Optional&lt;Double&gt; lengthMinutes() {
+<span class="nc" id="L68">        return lengthMinutes;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L72">        return Maps</span>
+<span class="nc" id="L73">                .put(&quot;book&quot;, (Object) book)</span>
+<span class="nc" id="L74">                .put(&quot;voices&quot;, (Object) voices)</span>
+<span class="nc" id="L75">                .put(&quot;lengthMinutes&quot;, (Object) lengthMinutes)</span>
+<span class="nc" id="L76">                .build();</span>
+    }
+
+    public Audiobook withBook(Book book) {
+<span class="nc" id="L80">        return new Audiobook(book, voices, lengthMinutes);</span>
+    }
+
+    public Audiobook withVoices(Voices voices) {
+<span class="nc" id="L84">        return new Audiobook(book, voices, lengthMinutes);</span>
+    }
+
+    public Audiobook withLengthMinutes(Optional&lt;Double&gt; lengthMinutes) {
+<span class="nc" id="L88">        return new Audiobook(book, voices, lengthMinutes);</span>
+    }
+
+    public Audiobook withLengthMinutes(double lengthMinutes) {
+<span class="nc" id="L92">        return new Audiobook(book, voices, Optional.of(lengthMinutes));</span>
+    }
 
     public static Builder builder() {
-<span class="nc" id="L69">        return new Builder();</span>
+<span class="nc" id="L96">        return new Builder();</span>
     }
 
     public static final class Builder {
 
         private Book book;
         private Voices voices;
-<span class="nc" id="L76">        private Optional&lt;Double&gt; lengthMinutes = Optional.empty();</span>
+<span class="nc" id="L103">        private Optional&lt;Double&gt; lengthMinutes = Optional.empty();</span>
 
-<span class="nc" id="L78">        Builder() {</span>
-<span class="nc" id="L79">        }</span>
+<span class="nc" id="L105">        Builder() {</span>
+<span class="nc" id="L106">        }</span>
 
         public BuilderWithBook book(Book book) {
-<span class="nc" id="L82">            this.book = book;</span>
-<span class="nc" id="L83">            return new BuilderWithBook(this);</span>
+<span class="nc" id="L109">            this.book = book;</span>
+<span class="nc" id="L110">            return new BuilderWithBook(this);</span>
         }
     }
 
@@ -88,13 +115,13 @@ public final class Audiobook {
 
         private final Builder b;
 
-<span class="nc" id="L91">        BuilderWithBook(Builder b) {</span>
-<span class="nc" id="L92">            this.b = b;</span>
-<span class="nc" id="L93">        }</span>
+<span class="nc" id="L118">        BuilderWithBook(Builder b) {</span>
+<span class="nc" id="L119">            this.b = b;</span>
+<span class="nc" id="L120">        }</span>
 
         public BuilderWithVoices voices(Voices voices) {
-<span class="nc" id="L96">            this.b.voices = voices;</span>
-<span class="nc" id="L97">            return new BuilderWithVoices(this.b);</span>
+<span class="nc" id="L123">            this.b.voices = voices;</span>
+<span class="nc" id="L124">            return new BuilderWithVoices(this.b);</span>
         }
     }
 
@@ -102,130 +129,110 @@ public final class Audiobook {
 
         private final Builder b;
 
-<span class="nc" id="L105">        BuilderWithVoices(Builder b) {</span>
-<span class="nc" id="L106">            this.b = b;</span>
-<span class="nc" id="L107">        }</span>
+<span class="nc" id="L132">        BuilderWithVoices(Builder b) {</span>
+<span class="nc" id="L133">            this.b = b;</span>
+<span class="nc" id="L134">        }</span>
 
         public BuilderWithVoices lengthMinutes(double lengthMinutes) {
-<span class="nc" id="L110">            this.b.lengthMinutes = Optional.of(lengthMinutes);</span>
-<span class="nc" id="L111">            return this;</span>
+<span class="nc" id="L137">            this.b.lengthMinutes = Optional.of(lengthMinutes);</span>
+<span class="nc" id="L138">            return this;</span>
         }
 
         public BuilderWithVoices lengthMinutes(Optional&lt;Double&gt; lengthMinutes) {
-<span class="nc" id="L115">            this.b.lengthMinutes = lengthMinutes;</span>
-<span class="nc" id="L116">            return this;</span>
+<span class="nc" id="L142">            this.b.lengthMinutes = lengthMinutes;</span>
+<span class="nc" id="L143">            return this;</span>
         }
 
         public Audiobook build() {
-<span class="nc" id="L120">            return new Audiobook(this.b.book, this.b.voices, this.b.lengthMinutes);</span>
+<span class="nc" id="L147">            return new Audiobook(this.b.book, this.b.voices, this.b.lengthMinutes);</span>
         }
     }
 
     public static BuilderWithBook book(Book book) {
-<span class="nc" id="L125">        return builder().book(book);</span>
+<span class="nc" id="L152">        return builder().book(book);</span>
     }
 
-    public Book book() {
-<span class="nc" id="L129">        return book;</span>
-    }
-
-    public Voices voices() {
-<span class="nc" id="L133">        return voices;</span>
-    }
-
-    public Optional&lt;Double&gt; lengthMinutes() {
-<span class="nc" id="L137">        return Optional.ofNullable(lengthMinutes);</span>
-    }
-
-    public Audiobook withBook(Book book) {
-<span class="nc" id="L141">        return new Audiobook(book, voices, Optional.ofNullable(lengthMinutes));</span>
-    }
-
-    public Audiobook withVoices(Voices voices) {
-<span class="nc" id="L145">        return new Audiobook(book, voices, Optional.ofNullable(lengthMinutes));</span>
-    }
-
-    public Audiobook withLengthMinutes(Optional&lt;Double&gt; lengthMinutes) {
-<span class="nc" id="L149">        return new Audiobook(book, voices, lengthMinutes);</span>
-    }
-
-    public Audiobook withLengthMinutes(double lengthMinutes) {
-<span class="nc" id="L153">        return new Audiobook(book, voices, Optional.of(lengthMinutes));</span>
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    @JsonInclude(Include.NON_ABSENT)
+    @JsonAutoDetect(
+            fieldVisibility = JsonAutoDetect.Visibility.ANY,
+            creatorVisibility = JsonAutoDetect.Visibility.ANY,
+            setterVisibility = JsonAutoDetect.Visibility.ANY)
     public static final class Voices {
 
         @JsonValue
         private final List&lt;PersonName&gt; value;
 
         @JsonCreator
-        @ConstructorBinding
         public Voices(
-<span class="nc" id="L166">                List&lt;PersonName&gt; value) {</span>
-<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Voices.class)) {</span>
-<span class="nc" id="L168">                Preconditions.checkNotNull(value, &quot;value&quot;);</span>
-<span class="nc" id="L169">                Preconditions.checkMinSize(value, 1, &quot;value&quot;);</span>
+<span class="nc" id="L167">                List&lt;PersonName&gt; value) {</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Voices.class)) {</span>
+<span class="nc" id="L169">                Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+<span class="nc" id="L170">                Preconditions.checkMinSize(value, 1, &quot;value&quot;);</span>
             }
-<span class="nc" id="L171">            this.value = value;</span>
-<span class="nc" id="L172">        }</span>
-
-        public static Voices value(List&lt;PersonName&gt; value) {
-<span class="nc" id="L175">            return new Voices(value);</span>
-        }
+<span class="nc" id="L172">            this.value = value;</span>
+<span class="nc" id="L173">        }</span>
 
         public List&lt;PersonName&gt; value() {
-<span class="nc" id="L179">            return value;</span>
+<span class="nc" id="L176">            return value;</span>
+        }
+
+        Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L180">            return Maps</span>
+<span class="nc" id="L181">                    .put(&quot;voicesItem&quot;, (Object) value)</span>
+<span class="nc" id="L182">                    .build();</span>
+        }
+
+        public static Voices of(List&lt;PersonName&gt; value) {
+<span class="nc" id="L186">            return new Voices(value);</span>
         }
 
         @Override
         public boolean equals(Object o) {
-<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (this == o) {</span>
-<span class="nc" id="L185">                return true;</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L192">                return true;</span>
             }
-<span class="nc bnc" id="L187" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L188">                return false;</span>
+<span class="nc bnc" id="L194" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L195">                return false;</span>
             }
-<span class="nc" id="L190">            Voices other = (Voices) o;</span>
-<span class="nc" id="L191">            return </span>
-<span class="nc" id="L192">                Objects.equals(this.value, other.value);</span>
+<span class="nc" id="L197">            Voices other = (Voices) o;</span>
+<span class="nc" id="L198">            return </span>
+<span class="nc" id="L199">                Objects.deepEquals(this.value, other.value);</span>
         }
 
         @Override
         public int hashCode() {
-<span class="nc" id="L197">            return Objects.hash(value);</span>
+<span class="nc" id="L204">            return Objects.hash(value);</span>
         }
 
         @Override
         public String toString() {
-<span class="nc" id="L202">            return Util.toString(Voices.class, &quot;value&quot;, value);</span>
+<span class="nc" id="L209">            return Util.toString(Voices.class, &quot;value&quot;, value);</span>
         }
     }
 
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (this == o) {</span>
-<span class="nc" id="L209">            return true;</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L216">            return true;</span>
         }
-<span class="nc bnc" id="L211" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L212">            return false;</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L219">            return false;</span>
         }
-<span class="nc" id="L214">        Audiobook other = (Audiobook) o;</span>
-<span class="nc" id="L215">        return </span>
-<span class="nc bnc" id="L216" title="All 2 branches missed.">            Objects.equals(this.book, other.book) &amp;&amp; </span>
-<span class="nc bnc" id="L217" title="All 2 branches missed.">            Objects.equals(this.voices, other.voices) &amp;&amp; </span>
-<span class="nc bnc" id="L218" title="All 2 branches missed.">            Objects.equals(this.lengthMinutes, other.lengthMinutes);</span>
+<span class="nc" id="L221">        Audiobook other = (Audiobook) o;</span>
+<span class="nc" id="L222">        return </span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            Objects.deepEquals(this.book, other.book) &amp;&amp; </span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">            Objects.deepEquals(this.voices, other.voices) &amp;&amp; </span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            Objects.deepEquals(this.lengthMinutes, other.lengthMinutes);</span>
     }
 
     @Override
     public int hashCode() {
-<span class="nc" id="L223">        return Objects.hash(book, voices, lengthMinutes);</span>
+<span class="nc" id="L230">        return Objects.hash(book, voices, lengthMinutes);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L228">        return Util.toString(Audiobook.class, &quot;book&quot;, book, &quot;voices&quot;, voices, &quot;lengthMinutes&quot;, lengthMinutes);</span>
+<span class="nc" id="L235">        return Util.toString(Audiobook.class, &quot;book&quot;, book, &quot;voices&quot;, voices, &quot;lengthMinutes&quot;, lengthMinutes);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

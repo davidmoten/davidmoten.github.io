@@ -31,13 +31,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public class ServiceController implements ControllerExceptionHandler {
 
     private final Service service;
 
 <span class="nc" id="L39">    public ServiceController(@Autowired(required = false) Service service) {</span>
-<span class="nc" id="L40">        this.service = Util.orElse(service, new Service() {});</span>
+<span class="nc" id="L40">        this.service = Util.orElse(service, Service.DEFAULT);</span>
 <span class="nc" id="L41">    }</span>
 
     /**
@@ -45,13 +45,13 @@ public class ServiceController implements ControllerExceptionHandler {
      * to other paths on this API for authentication and authorization
      * purposes.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link AuthenticationResponse}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code AuthenticationResponse}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -82,102 +82,79 @@ public class ServiceController implements ControllerExceptionHandler {
      * by time then all pages should be requested and then sorted
      * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link GetMsis200Response}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code GetMsis200Response}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param endTimeMaxInclusive
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
-If endTimeMaxInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive not specified then has no effect.
      * @param endTimeMax
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
      * @param endTimeMin
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-     * @param limit
-     *            Requests that at most `limit` MSIs are returned in the call.
-The server may cap the requested `limit` (fewer items may be
-returned). To request the next page available include the 
-returned `continuationToken` in the next call. If there are 
-no more items available then the response will not contain
-a `continuationToken`.
-
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
      * @param startTimeMin
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param limit
+     *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
+     *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
+     *            returned). To request the next page available include the
+     *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
+     *            no more items available then the response will not contain
+     *            a &lt;code&gt;continuationToken&lt;/code&gt;.
      * @param startTimeMinInclusive
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-If startTimeMinInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive not specified then has no effect.
      * @param endTimeMinInclusive
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;gt;= endTimeMin.
-
-If endTimeMinInclusive is false then filters MSIs
-on endTime &amp;gt; endTimeMin.
-
-If endTimeMinInclusive not specified then has no effect.
-
-     * @param broadcastType
-     *            the type of broadcast
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;gt;= endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
+     *            on endTime &amp;gt; endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
      * @param startTimeMax
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-     * @param continuationToken
-     *            Describes to the server the starting point of 
-the next page of results and is obtained from 
-the current page. May contain an offset if desired
-but is at the discretion of implementer. Note that
-it is possible that a call specifying a continuation
-token may return en empty list (but an empty list return 
-should not have a continuation token on it so at 
-that point paging would stop).
-
-     * @param status
-     *            Only MSIs that have a status in the given list
-are returned. If the list is empty (or the parameter
-is not present) then no filtering on status occurs.
-**TODO** support multi-status filtering or just one?
-
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
      * @param startTimeMaxInclusive
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-If startTimeMaxInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param continuationToken
+     *            &lt;p&gt;Describes to the server the starting point of
+     *            the next page of results and is obtained from
+     *            the current page. May contain an offset if desired
+     *            but is at the discretion of implementer. Note that
+     *            it is possible that a call specifying a continuation
+     *            token may return en empty list (but an empty list return
+     *            should not have a continuation token on it so at
+     *            that point paging would stop).
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -198,14 +175,14 @@ If startTimeMaxInclusive not specified then has no effect.
             @RequestParam(name = &quot;broadcastType&quot;, required = false) Optional&lt;String&gt; broadcastType, 
             @RequestParam(name = &quot;continuationToken&quot;, required = false) Optional&lt;String&gt; continuationToken) {
         try {
-<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsis&quot;)) {</span>
-<span class="nc" id="L202">                RequestPreconditions.checkMinimum(limit, &quot;1&quot;, &quot;limit&quot;, false);</span>
-<span class="nc" id="L203">                RequestPreconditions.checkMinLength(continuationToken, 1, &quot;continuationToken&quot;);</span>
-<span class="nc" id="L204">                RequestPreconditions.checkMaxLength(continuationToken, 4096, &quot;continuationToken&quot;);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsis&quot;)) {</span>
+<span class="nc" id="L179">                RequestPreconditions.checkMinimum(limit, &quot;1&quot;, &quot;limit&quot;, false);</span>
+<span class="nc" id="L180">                RequestPreconditions.checkMinLength(continuationToken, 1, &quot;continuationToken&quot;);</span>
+<span class="nc" id="L181">                RequestPreconditions.checkMaxLength(continuationToken, 4096, &quot;continuationToken&quot;);</span>
             }
-<span class="nc" id="L206">            return ResponseEntity.status(200).body(service.getMsis(startTimeMin, startTimeMinInclusive, startTimeMax, startTimeMaxInclusive, endTimeMin, endTimeMinInclusive, endTimeMax, endTimeMaxInclusive, limit, status, broadcastType, continuationToken));</span>
-<span class="nc" id="L207">        } catch (Throwable e) {</span>
-<span class="nc" id="L208">            return service.errorResponse(e);</span>
+<span class="nc" id="L183">            return ResponseEntity.status(200).body(service.getMsis(startTimeMin, startTimeMinInclusive, startTimeMax, startTimeMaxInclusive, endTimeMin, endTimeMinInclusive, endTimeMax, endTimeMaxInclusive, limit, status, broadcastType, continuationToken));</span>
+<span class="nc" id="L184">        } catch (Throwable e) {</span>
+<span class="nc" id="L185">            return service.errorResponse(e);</span>
         }
     }
 
@@ -218,14 +195,14 @@ If startTimeMaxInclusive not specified then has no effect.
      * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
      * maximum number of unsent messages so it can be documented here).
      * 
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link MsiId}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code MsiId}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 201
      */
     @RequestMapping(
@@ -236,24 +213,24 @@ If startTimeMaxInclusive not specified then has no effect.
     public ResponseEntity&lt;?&gt; createMsi(
             @RequestBody MsiContent requestBody) {
         try {
-<span class="nc" id="L239">            return ResponseEntity.status(201).body(service.createMsi(requestBody));</span>
-<span class="nc" id="L240">        } catch (Throwable e) {</span>
-<span class="nc" id="L241">            return service.errorResponse(e);</span>
+<span class="nc" id="L216">            return ResponseEntity.status(201).body(service.createMsi(requestBody));</span>
+<span class="nc" id="L217">        } catch (Throwable e) {</span>
+<span class="nc" id="L218">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Msi}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Msi}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -263,13 +240,13 @@ If startTimeMaxInclusive not specified then has no effect.
     public ResponseEntity&lt;?&gt; getMsi(
             @PathVariable(name = &quot;id&quot;, required = true) String id) {
         try {
-<span class="nc bnc" id="L266" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsi&quot;)) {</span>
-<span class="nc" id="L267">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
-<span class="nc" id="L268">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsi&quot;)) {</span>
+<span class="nc" id="L244">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L245">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
             }
-<span class="nc" id="L270">            return ResponseEntity.status(200).body(service.getMsi(id));</span>
-<span class="nc" id="L271">        } catch (Throwable e) {</span>
-<span class="nc" id="L272">            return service.errorResponse(e);</span>
+<span class="nc" id="L247">            return ResponseEntity.status(200).body(service.getMsi(id));</span>
+<span class="nc" id="L248">        } catch (Throwable e) {</span>
+<span class="nc" id="L249">            return service.errorResponse(e);</span>
         }
     }
 
@@ -278,14 +255,14 @@ If startTimeMaxInclusive not specified then has no effect.
      * has already been sent or the MSI has been cancelled then
      * nothing occurs (this method is idempotent).
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      */
     @RequestMapping(
         method = RequestMethod.PUT,
@@ -293,14 +270,14 @@ If startTimeMaxInclusive not specified then has no effect.
     public ResponseEntity&lt;?&gt; sendMsi(
             @PathVariable(name = &quot;id&quot;, required = true) String id) {
         try {
-<span class="nc bnc" id="L296" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;sendMsi&quot;)) {</span>
-<span class="nc" id="L297">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
-<span class="nc" id="L298">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;sendMsi&quot;)) {</span>
+<span class="nc" id="L274">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L275">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
             }
-<span class="nc" id="L300">            service.sendMsi(id);</span>
-<span class="nc" id="L301">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L302">        } catch (Throwable e) {</span>
-<span class="nc" id="L303">            return service.errorResponse(e);</span>
+<span class="nc" id="L277">            service.sendMsi(id);</span>
+<span class="nc" id="L278">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L279">        } catch (Throwable e) {</span>
+<span class="nc" id="L280">            return service.errorResponse(e);</span>
         }
     }
 
@@ -311,14 +288,14 @@ If startTimeMaxInclusive not specified then has no effect.
      * an MSI cannot be resent. However, the broadcast details
      * are still available to be queried.
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      */
     @RequestMapping(
         method = RequestMethod.DELETE,
@@ -326,29 +303,29 @@ If startTimeMaxInclusive not specified then has no effect.
     public ResponseEntity&lt;?&gt; cancelMsi(
             @PathVariable(name = &quot;id&quot;, required = true) String id) {
         try {
-<span class="nc bnc" id="L329" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;cancelMsi&quot;)) {</span>
-<span class="nc" id="L330">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
-<span class="nc" id="L331">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;cancelMsi&quot;)) {</span>
+<span class="nc" id="L307">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L308">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
             }
-<span class="nc" id="L333">            service.cancelMsi(id);</span>
-<span class="nc" id="L334">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L335">        } catch (Throwable e) {</span>
-<span class="nc" id="L336">            return service.errorResponse(e);</span>
+<span class="nc" id="L310">            service.cancelMsi(id);</span>
+<span class="nc" id="L311">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L312">        } catch (Throwable e) {</span>
+<span class="nc" id="L313">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Status}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Status}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -358,14 +335,14 @@ If startTimeMaxInclusive not specified then has no effect.
     public ResponseEntity&lt;?&gt; getMsiStatus(
             @PathVariable(name = &quot;id&quot;, required = true) String id) {
         try {
-<span class="nc bnc" id="L361" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsiStatus&quot;)) {</span>
-<span class="nc" id="L362">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
-<span class="nc" id="L363">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsiStatus&quot;)) {</span>
+<span class="nc" id="L339">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L340">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
             }
-<span class="nc" id="L365">            return ResponseEntity.status(200).body(service.getMsiStatus(id));</span>
-<span class="nc" id="L366">        } catch (Throwable e) {</span>
-<span class="nc" id="L367">            return service.errorResponse(e);</span>
+<span class="nc" id="L342">            return ResponseEntity.status(200).body(service.getMsiStatus(id));</span>
+<span class="nc" id="L343">        } catch (Throwable e) {</span>
+<span class="nc" id="L344">            return service.errorResponse(e);</span>
         }
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

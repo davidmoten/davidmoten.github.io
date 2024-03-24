@@ -30,13 +30,13 @@
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  @Primary
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a name="PetStoreService" href="../../../pet/store/test/PetStoreService.html#PetStoreService">PetStoreService</a> <strong class="jxr_keyword">implements</strong> Service {
 <a class="jxr_linenumber" name="L24" href="#L24">24</a>  
-<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> List&lt;Pet&gt; pets = Lists.newArrayList( <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>      <strong class="jxr_keyword">private</strong> List&lt;Pet&gt; pets = Lists.of( <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>              <strong class="jxr_keyword">new</strong> Pet(NewPet.builder().name(<span class="jxr_string">"fido"</span>).tag(<span class="jxr_string">"A0123"</span>).build(), <em class="jxr_comment">//</em>
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>                      PetId.id(321L)));
 <a class="jxr_linenumber" name="L28" href="#L28">28</a>  
 <a class="jxr_linenumber" name="L29" href="#L29">29</a>      @Override
 <a class="jxr_linenumber" name="L30" href="#L30">30</a>      <strong class="jxr_keyword">public</strong> FindPets200Response findPets(Optional&lt;List&lt;String&gt;&gt; tags, <strong class="jxr_keyword">int</strong> limit) <strong class="jxr_keyword">throws</strong> ServiceException {
-<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">return</strong> FindPets200Response.value(pets);
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>          <strong class="jxr_keyword">return</strong> FindPets200Response.of(pets);
 <a class="jxr_linenumber" name="L32" href="#L32">32</a>      }
 <a class="jxr_linenumber" name="L33" href="#L33">33</a>  
 <a class="jxr_linenumber" name="L34" href="#L34">34</a>      @Override
@@ -48,7 +48,7 @@
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>  
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>      @Override
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>      <strong class="jxr_keyword">public</strong> Pet find_pet_by_id(<strong class="jxr_keyword">long</strong> id) <strong class="jxr_keyword">throws</strong> ServiceException {
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          Optional&lt;Pet&gt; pet = pets.stream().filter(p -&gt; p.petId().id() == id).findAny();
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          Optional&lt;Pet&gt; pet = pets.stream().filter(p -&gt; p.id() == id).findAny();
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          <strong class="jxr_keyword">if</strong> (pet.isPresent()) {
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>              <strong class="jxr_keyword">return</strong> pet.get();
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>          } <strong class="jxr_keyword">else</strong> {
@@ -58,7 +58,7 @@
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>      @Override
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deletePet(<strong class="jxr_keyword">long</strong> id) <strong class="jxr_keyword">throws</strong> ServiceException {
-<a class="jxr_linenumber" name="L53" href="#L53">53</a>          Optional&lt;Pet&gt; pet = pets.stream().filter(p -&gt; p.petId().id() == id).findAny();
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>          Optional&lt;Pet&gt; pet = pets.stream().filter(p -&gt; p.id() == id).findAny();
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>          <strong class="jxr_keyword">if</strong> (pet.isPresent()) {
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>              pets.remove(pet.get());
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>          } <strong class="jxr_keyword">else</strong> {
@@ -74,6 +74,6 @@
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>  }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2023. All rights reserved.</div>
+<div id="footer">Copyright &#169; 2023&#x2013;2024. All rights reserved.</div>
 </body>
 </html>

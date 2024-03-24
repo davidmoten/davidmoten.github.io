@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Multipart.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http</a> &gt; <span class="el_source">Multipart.java</span></div><h1>Multipart.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+public final class Multipart {
+    
+    private Multipart() {
+        // prevent instantiation
+    }
+
+    public static String randomBoundary() {
+<span class="nc" id="L19">        return nextId();</span>
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L23">        return new Builder();</span>
+    }
+
+<span class="fc" id="L26">    public static final class Builder {</span>
+
+<span class="fc" id="L28">        private final List&lt;FormEntry&gt; formEntries = new ArrayList&lt;&gt;();</span>
+
+        public Builder addFormEntry(String key, byte[] value, Optional&lt;String&gt; filename, Optional&lt;String&gt; contentType) {
+<span class="fc" id="L31">            formEntries.add(new FormEntry(key, value, filename, contentType));</span>
+<span class="fc" id="L32">            return this;</span>
+        }
+
+        public Builder addFormEntry(String key, String value, Optional&lt;String&gt; filename, Optional&lt;String&gt; contentType) {
+<span class="fc" id="L36">            return addFormEntry(key, value.getBytes(StandardCharsets.UTF_8), filename, contentType);</span>
+        }
+        
+        /**
+         * Includes leading CRLF for http content.
+         * 
+         * @return multipart content bytes
+         */
+        public byte[] multipartContent(String boundary) {
+<span class="fc" id="L45">            try (BytesOutputStream w = new BytesOutputStream()) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                for (FormEntry entry : formEntries) {</span>
+<span class="fc" id="L47">                    w.write(&quot;--&quot;);</span>
+<span class="fc" id="L48">                    w.write(boundary);</span>
+<span class="fc" id="L49">                    w.eol();</span>
+<span class="pc" id="L50">                    String fname = entry.filename.map(x -&gt; &quot;; filename=\&quot;&quot; + x + &quot;\&quot;&quot;).orElse(&quot;&quot;);</span>
+<span class="fc" id="L51">                    w.write(&quot;Content-Disposition: form-data; name=\&quot;&quot; + entry.key + &quot;\&quot;&quot; + fname);</span>
+<span class="fc" id="L52">                    w.eol();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                    if (entry.contentType.isPresent()) {</span>
+<span class="nc" id="L54">                        w.write(&quot;Content-Type: &quot; + entry.contentType.get());</span>
+<span class="nc" id="L55">                        w.eol();</span>
+                    }
+<span class="fc" id="L57">                    w.eol();</span>
+<span class="fc" id="L58">                    w.write(entry.value);</span>
+<span class="fc" id="L59">                    w.eol();</span>
+<span class="fc" id="L60">                }</span>
+<span class="fc" id="L61">                w.write(&quot;--&quot;);</span>
+<span class="fc" id="L62">                w.write(boundary);</span>
+<span class="fc" id="L63">                w.write(&quot;--&quot;);</span>
+<span class="fc" id="L64">                w.flush();</span>
+<span class="fc" id="L65">                return w.toByteArray();</span>
+<span class="nc" id="L66">            } catch (IOException e) {</span>
+<span class="nc" id="L67">                throw new UncheckedIOException(e);</span>
+            }
+        }
+
+    }
+
+    private static final class FormEntry {
+        final String key;
+        final byte[] value;
+        final Optional&lt;String&gt; filename;
+        final Optional&lt;String&gt; contentType;
+
+<span class="fc" id="L79">        FormEntry(String key, byte[] value, Optional&lt;String&gt; filename, Optional&lt;String&gt; contentType) {</span>
+<span class="fc" id="L80">            this.key = key;</span>
+<span class="fc" id="L81">            this.value = value;</span>
+<span class="fc" id="L82">            this.filename = filename;</span>
+<span class="fc" id="L83">            this.contentType = contentType;</span>
+<span class="fc" id="L84">        }</span>
+    }
+
+    private static final class BytesOutputStream extends ByteArrayOutputStream {
+
+        void write(String s) throws IOException {
+<span class="fc" id="L90">            write(s.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L91">        }</span>
+
+        void eol() throws IOException {
+<span class="fc" id="L94">            write(&quot;\r\n&quot;);</span>
+<span class="fc" id="L95">        }</span>
+    }
+
+<span class="fc" id="L98">    private static final Random RANDOM = new Random();</span>
+    private static final String ID_CHARS = &quot;abcdefghijkmnopqrstuvwxyz23456789&quot;; // remove 1, l, 0 because hard to
+                                                                                // distinguish
+    private static final int ID_LENGTH = 16;
+
+    /**
+     * Returns a new random id that is guaranteed unique given the expected number
+     * of calls for use multipart boundaries.
+     *
+     * &lt;p&gt;
+     * Number of id permutations is ID_CHARS.length()&lt;sup&gt;ID_LENGTH&lt;/sup&gt;.
+     *
+     * &lt;p&gt;
+     * Probability of collision after k calls to this method and given n
+     * permutations is approximately 1 - e&lt;sup&gt;-k&lt;sup&gt;2&lt;/sup&gt;/2n.
+     *
+     * &lt;p&gt;
+     * For k = 1 million, 33 characters, id length 16, probability of collision is 2
+     * x 10&lt;sup&gt;-13&lt;/sup&gt;. That is one in 20 million million chance.
+     *
+     * @return next unique identifier (for egc broadcast id )
+     */
+    private static String nextId() {
+<span class="nc" id="L121">        char[] a = new char[ID_LENGTH];</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        for (int i = 0; i &lt; a.length; i++) {</span>
+<span class="nc" id="L123">            a[i] = ID_CHARS.charAt(RANDOM.nextInt(Integer.MAX_VALUE) % ID_CHARS.length());</span>
+        }
+<span class="nc" id="L125">        return new String(a);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

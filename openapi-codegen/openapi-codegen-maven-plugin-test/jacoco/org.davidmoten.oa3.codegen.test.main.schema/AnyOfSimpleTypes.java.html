@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnyOfSimpleTypes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">AnyOfSimpleTypes.java</span></div><h1>AnyOfSimpleTypes.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.AnyOfDeserializer;
+import org.davidmoten.oa3.codegen.runtime.AnyOfMember;
+import org.davidmoten.oa3.codegen.runtime.AnyOfSerializer;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.runtime.RuntimeUtil;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = AnyOfSimpleTypes._Deserializer.class)
+@JsonSerialize(using = AnyOfSimpleTypes._Serializer.class)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
+public final class AnyOfSimpleTypes {
+
+    private final Optional&lt;SmallInt&gt; smallInt;
+
+    private final Optional&lt;LargeInt&gt; largeInt;
+
+    private AnyOfSimpleTypes(
+            Optional&lt;SmallInt&gt; smallInt,
+<span class="fc" id="L34">            Optional&lt;LargeInt&gt; largeInt) {</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(AnyOfSimpleTypes.class)) {</span>
+<span class="fc" id="L36">            Preconditions.checkNotNull(smallInt, &quot;smallInt&quot;);</span>
+<span class="fc" id="L37">            Preconditions.checkNotNull(largeInt, &quot;largeInt&quot;);</span>
+        }
+<span class="fc" id="L39">        this.smallInt = smallInt;</span>
+<span class="fc" id="L40">        this.largeInt = largeInt;</span>
+<span class="fc" id="L41">    }</span>
+
+    public static AnyOfSimpleTypes of(
+            Optional&lt;SmallInt&gt; smallInt,
+            Optional&lt;LargeInt&gt; largeInt) {
+<span class="fc" id="L46">        AnyOfSimpleTypes $o = new AnyOfSimpleTypes(smallInt, largeInt);</span>
+<span class="fc" id="L47">        RuntimeUtil.checkCanSerialize(Globals.config(), $o);</span>
+<span class="fc" id="L48">        return $o;</span>
+    }
+
+    public Optional&lt;SmallInt&gt; smallInt() {
+<span class="nc" id="L52">        return smallInt;</span>
+    }
+
+    public Optional&lt;LargeInt&gt; largeInt() {
+<span class="nc" id="L56">        return largeInt;</span>
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L60">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="fc" id="L65">        private Optional&lt;SmallInt&gt; smallInt = Optional.empty();</span>
+<span class="fc" id="L66">        private Optional&lt;LargeInt&gt; largeInt = Optional.empty();</span>
+
+<span class="fc" id="L68">        Builder() {</span>
+<span class="fc" id="L69">        }</span>
+
+        public Builder smallInt(SmallInt smallInt) {
+<span class="fc" id="L72">            this.smallInt = Optional.of(smallInt);</span>
+<span class="fc" id="L73">            return this;</span>
+        }
+
+        public Builder smallInt(Optional&lt;SmallInt&gt; smallInt) {
+<span class="nc" id="L77">            this.smallInt = smallInt;</span>
+<span class="nc" id="L78">            return this;</span>
+        }
+
+        public Builder largeInt(LargeInt largeInt) {
+<span class="fc" id="L82">            this.largeInt = Optional.of(largeInt);</span>
+<span class="fc" id="L83">            return this;</span>
+        }
+
+        public Builder largeInt(Optional&lt;LargeInt&gt; largeInt) {
+<span class="nc" id="L87">            this.largeInt = largeInt;</span>
+<span class="nc" id="L88">            return this;</span>
+        }
+
+        public AnyOfSimpleTypes build() {
+<span class="fc" id="L92">            return AnyOfSimpleTypes.of(this.smallInt, this.largeInt);</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends AnyOfDeserializer&lt;AnyOfSimpleTypes&gt; {
+
+        public _Deserializer() {
+<span class="fc" id="L100">            super(Globals.config(), AnyOfSimpleTypes.class, AnyOfMember.nonNullable(SmallInt.class), AnyOfMember.nonNullable(LargeInt.class));</span>
+<span class="fc" id="L101">        }</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Serializer extends AnyOfSerializer&lt;AnyOfSimpleTypes&gt; {
+
+        public _Serializer() {
+<span class="fc" id="L108">            super(Globals.config(), AnyOfSimpleTypes.class);</span>
+<span class="fc" id="L109">        }</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L115">            return true;</span>
+        }
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L118">            return false;</span>
+        }
+<span class="fc" id="L120">        AnyOfSimpleTypes other = (AnyOfSimpleTypes) o;</span>
+<span class="fc" id="L121">        return </span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            Objects.deepEquals(this.smallInt, other.smallInt) &amp;&amp; </span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            Objects.deepEquals(this.largeInt, other.largeInt);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L128">        return Objects.hash(smallInt, largeInt);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L133">        return Util.toString(AnyOfSimpleTypes.class, &quot;smallInt&quot;, smallInt, &quot;largeInt&quot;, largeInt);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

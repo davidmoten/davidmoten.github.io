@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrictFloatDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">StrictFloatDeserializer.java</span></div><h1>StrictFloatDeserializer.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import java.io.IOException;
+
+public final class StrictFloatDeserializer extends StdDeserializer&lt;Float&gt; {
+
+    private static final long serialVersionUID = 2207323065789635630L;
+
+    public StrictFloatDeserializer() {
+<span class="fc" id="L15">        super(Float.class);</span>
+<span class="fc" id="L16">    }</span>
+
+    @Override
+    public Float deserialize(JsonParser p, DeserializationContext ctxt)
+            throws IOException, JacksonException {
+<span class="fc" id="L21">        JsonToken t = p.currentToken();</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (t == JsonToken.VALUE_NUMBER_INT) {</span>
+<span class="fc" id="L23">            return p.getFloatValue();</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        } else if (t == JsonToken.VALUE_NUMBER_FLOAT) {</span>
+<span class="fc" id="L25">            return p.getFloatValue();</span>
+        } else {
+<span class="nc" id="L27">            return (Float) ctxt.handleUnexpectedToken(Float.class, p);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -35,22 +35,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public class ServiceController implements ControllerExceptionHandler {
 
     private final Service service;
 
 <span class="fc" id="L43">    public ServiceController(@Autowired(required = false) Service service) {</span>
-<span class="fc" id="L44">        this.service = Util.orElse(service, new Service() {});</span>
+<span class="fc" id="L44">        this.service = Util.orElse(service, Service.DEFAULT);</span>
 <span class="fc" id="L45">    }</span>
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -69,11 +69,11 @@ public class ServiceController implements ControllerExceptionHandler {
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -92,11 +92,11 @@ public class ServiceController implements ControllerExceptionHandler {
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -115,14 +115,14 @@ public class ServiceController implements ControllerExceptionHandler {
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
      * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; byte[]
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @param username
-     *            username
      * @param accept
-     *            accept
+     *            &lt;p&gt;accept
+     * @param username
+     *            &lt;p&gt;username
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -144,8 +144,8 @@ public class ServiceController implements ControllerExceptionHandler {
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@link RequestBodyMultiTypePostRequestApplicationOctetStream}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@code RequestBodyMultiTypePostRequestApplicationOctetStream}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -169,12 +169,12 @@ public class ServiceController implements ControllerExceptionHandler {
      */
     @RequestMapping(
         method = RequestMethod.POST,
-        value = &quot;/upload&quot;,
-        consumes = {&quot;multipart/form-data&quot;},
+        value = &quot;/uploadImage&quot;,
+        consumes = {&quot;image/png&quot;},
         produces = {&quot;application/json&quot;})
-    public ResponseEntity&lt;?&gt; uploadPost() {
+    public ResponseEntity&lt;?&gt; uploadImagePost() {
         try {
-<span class="nc" id="L177">            return ResponseEntity.status(200).body(service.uploadPost());</span>
+<span class="nc" id="L177">            return ResponseEntity.status(200).body(service.uploadImagePost());</span>
 <span class="nc" id="L178">        } catch (Throwable e) {</span>
 <span class="nc" id="L179">            return service.errorResponse(e);</span>
         }
@@ -182,27 +182,8 @@ public class ServiceController implements ControllerExceptionHandler {
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
-     * 
-     * @return primary response status code 200
-     */
-    @RequestMapping(
-        method = RequestMethod.POST,
-        value = &quot;/uploadImage&quot;,
-        consumes = {&quot;image/png&quot;},
-        produces = {&quot;application/json&quot;})
-    public ResponseEntity&lt;?&gt; uploadImagePost() {
-        try {
-<span class="nc" id="L196">            return ResponseEntity.status(200).body(service.uploadImagePost());</span>
-<span class="nc" id="L197">        } catch (Throwable e) {</span>
-<span class="nc" id="L198">            return service.errorResponse(e);</span>
-        }
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -212,16 +193,16 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; defaultErrorGet() {
         try {
-<span class="nc" id="L215">            return ResponseEntity.status(200).body(service.defaultErrorGet());</span>
-<span class="fc" id="L216">        } catch (Throwable e) {</span>
-<span class="fc" id="L217">            return service.errorResponse(e);</span>
+<span class="nc" id="L196">            return ResponseEntity.status(200).body(service.defaultErrorGet());</span>
+<span class="fc" id="L197">        } catch (Throwable e) {</span>
+<span class="fc" id="L198">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -231,16 +212,16 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;text/plain&quot;})
     public ResponseEntity&lt;?&gt; textGet() {
         try {
-<span class="fc" id="L234">            return ResponseEntity.status(200).body(service.textGet());</span>
-<span class="nc" id="L235">        } catch (Throwable e) {</span>
-<span class="nc" id="L236">            return service.errorResponse(e);</span>
+<span class="fc" id="L215">            return ResponseEntity.status(200).body(service.textGet());</span>
+<span class="nc" id="L216">        } catch (Throwable e) {</span>
+<span class="nc" id="L217">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -250,19 +231,19 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; jsonStringGet() {
         try {
-<span class="fc" id="L253">            return ResponseEntity.status(200).body(service.jsonStringGet());</span>
-<span class="nc" id="L254">        } catch (Throwable e) {</span>
-<span class="nc" id="L255">            return service.errorResponse(e);</span>
+<span class="fc" id="L234">            return ResponseEntity.status(200).body(service.jsonStringGet());</span>
+<span class="nc" id="L235">        } catch (Throwable e) {</span>
+<span class="nc" id="L236">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -273,16 +254,16 @@ public class ServiceController implements ControllerExceptionHandler {
     public ResponseEntity&lt;?&gt; requestBodyMultiTypePost(
             @RequestBody RequestBody1 requestBody) {
         try {
-<span class="nc" id="L276">            return ResponseEntity.status(200).body(service.requestBodyMultiTypePost(requestBody));</span>
-<span class="nc" id="L277">        } catch (Throwable e) {</span>
-<span class="nc" id="L278">            return service.errorResponse(e);</span>
+<span class="nc" id="L257">            return ResponseEntity.status(200).body(service.requestBodyMultiTypePost(requestBody));</span>
+<span class="nc" id="L258">        } catch (Throwable e) {</span>
+<span class="nc" id="L259">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -292,16 +273,16 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; itemGet() {
         try {
-<span class="fc" id="L295">            return ResponseEntity.status(200).body(service.itemGet());</span>
-<span class="nc" id="L296">        } catch (Throwable e) {</span>
-<span class="nc" id="L297">            return service.errorResponse(e);</span>
+<span class="fc" id="L276">            return ResponseEntity.status(200).body(service.itemGet());</span>
+<span class="nc" id="L277">        } catch (Throwable e) {</span>
+<span class="nc" id="L278">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 201
      */
@@ -311,16 +292,16 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; item201Get() {
         try {
-<span class="nc" id="L314">            return ResponseEntity.status(201).body(service.item201Get());</span>
-<span class="fc" id="L315">        } catch (Throwable e) {</span>
-<span class="fc" id="L316">            return service.errorResponse(e);</span>
+<span class="nc" id="L295">            return ResponseEntity.status(201).body(service.item201Get());</span>
+<span class="fc" id="L296">        } catch (Throwable e) {</span>
+<span class="fc" id="L297">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -330,16 +311,16 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; responseRefGet() {
         try {
-<span class="nc" id="L333">            return ResponseEntity.status(200).body(service.responseRefGet());</span>
-<span class="fc" id="L334">        } catch (Throwable e) {</span>
-<span class="fc" id="L335">            return service.errorResponse(e);</span>
+<span class="nc" id="L314">            return ResponseEntity.status(200).body(service.responseRefGet());</span>
+<span class="fc" id="L315">        } catch (Throwable e) {</span>
+<span class="fc" id="L316">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response4}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @return primary response status code 200
      */
@@ -349,41 +330,87 @@ public class ServiceController implements ControllerExceptionHandler {
         produces = {&quot;application/json&quot;})
     public ResponseEntity&lt;?&gt; responseRef2Get() {
         try {
-<span class="nc" id="L352">            return ResponseEntity.status(200).body(service.responseRef2Get());</span>
-<span class="nc" id="L353">        } catch (Throwable e) {</span>
-<span class="nc" id="L354">            return service.errorResponse(e);</span>
+<span class="nc" id="L333">            return ResponseEntity.status(200).body(service.responseRef2Get());</span>
+<span class="nc" id="L334">        } catch (Throwable e) {</span>
+<span class="nc" id="L335">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      */
     @RequestMapping(
         method = RequestMethod.GET,
         value = &quot;/empty&quot;)
     public ResponseEntity&lt;?&gt; emptyGet() {
         try {
-<span class="nc" id="L367">            service.emptyGet();</span>
-<span class="nc" id="L368">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L369">        } catch (Throwable e) {</span>
-<span class="nc" id="L370">            return service.errorResponse(e);</span>
+<span class="nc" id="L348">            service.emptyGet();</span>
+<span class="nc" id="L349">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L350">        } catch (Throwable e) {</span>
+<span class="nc" id="L351">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=2XX, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 2XX
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/wildcardStatusCode&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; wildcardStatusCodeGet() {
+        try {
+<span class="nc" id="L368">            return ResponseEntity.status(200).body(service.wildcardStatusCodeGet());</span>
+<span class="fc" id="L369">        } catch (Throwable e) {</span>
+<span class="fc" id="L370">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param third
-     *            third
+     *            &lt;p&gt;third
      * @param id
-     *            id
+     *            &lt;h2&gt;heading&lt;/h2&gt;
+     *            &lt;h3&gt;subheading&lt;/h3&gt;
+     *            &lt;p&gt;Here's a long identifier description that is &lt;em&gt;more&lt;/em&gt; of an &lt;strong&gt;essay&lt;/strong&gt;
+     *            written in &lt;code&gt;markdown&lt;/code&gt; and is expected to be converted to html at generation time
+     *            when appearing in javadoc and is &amp;gt; 80 chars with an illegal javadoc char
+     *            &lt;p&gt;And a &lt;em&gt;table&lt;/em&gt;
+     *            &lt;p&gt;| Item Type  | Description                    |
+     *            | ---        | ---                            |
+     *            | vehicle    | car, truck, bike, motorbike    |
+     *            | aircraft   | monoplane, biplane, helicopter |
+     *            &lt;pre&gt;&lt;code&gt;what happens to stuff like &amp;lt;this&amp;gt;?
+     *            &lt;/code&gt;&lt;/pre&gt;
+     *            &lt;p&gt;Note that tables in commonMark are done with html not like with GitHub flavoured mark
+     *            down
+     *            &lt;table&gt;
+     *              &lt;thead&gt;
+     *                &lt;tr&gt;
+     *                  &lt;th&gt;Header&lt;/th&gt;
+     *                  &lt;th&gt;Another Header&lt;/th&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/thead&gt;
+     *              &lt;tbody&gt;
+     *                &lt;tr&gt;
+     *                  &lt;td&gt;field 1&lt;/td&gt;
+     *                  &lt;td&gt;value one&lt;/td&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/tbody&gt;
+     *            &lt;/table&gt;
      * @param first
-     *            first
+     *            &lt;p&gt;first
      * @param second
-     *            second
+     *            &lt;p&gt;second
      * @return primary response status code 203
      */
     @RequestMapping(
@@ -396,26 +423,26 @@ public class ServiceController implements ControllerExceptionHandler {
             @RequestParam(name = &quot;second&quot;, required = false) Optional&lt;Long&gt; second, 
             @RequestParam(name = &quot;third&quot;, defaultValue = &quot;10&quot;, required = false) int third) {
         try {
-<span class="pc bpc" id="L399" title="1 of 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsGet&quot;)) {</span>
-<span class="fc" id="L400">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsGet&quot;)) {</span>
+<span class="fc" id="L427">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
             }
-<span class="fc" id="L402">            return ResponseEntity.status(203).body(service.paramsGet(id, first, second, third));</span>
-<span class="nc" id="L403">        } catch (Throwable e) {</span>
-<span class="nc" id="L404">            return service.errorResponse(e);</span>
+<span class="fc" id="L429">            return ResponseEntity.status(203).body(service.paramsGet(id, first, second, third));</span>
+<span class="nc" id="L430">        } catch (Throwable e) {</span>
+<span class="nc" id="L431">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param apiKey
-     *            apiKey
+     *            &lt;p&gt;apiKey
      * @param bickie
-     *            bickie
+     *            &lt;p&gt;bickie
      * @param id
-     *            id
+     *            &lt;p&gt;id
      * @return primary response status code 200
      */
     @RequestMapping(
@@ -427,14 +454,14 @@ public class ServiceController implements ControllerExceptionHandler {
             @RequestHeader(name = &quot;ApiKey&quot;, required = true) String apiKey, 
             @CookieValue(name = &quot;bickie&quot;, required = true) String bickie) {
         try {
-<span class="nc bnc" id="L430" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsIdGet&quot;)) {</span>
-<span class="nc" id="L431">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
-<span class="nc" id="L432">                RequestPreconditions.checkMinLength(apiKey, 1, &quot;apiKey&quot;);</span>
-<span class="nc" id="L433">                RequestPreconditions.checkMinLength(bickie, 1, &quot;bickie&quot;);</span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsIdGet&quot;)) {</span>
+<span class="nc" id="L458">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L459">                RequestPreconditions.checkMinLength(apiKey, 1, &quot;apiKey&quot;);</span>
+<span class="nc" id="L460">                RequestPreconditions.checkMinLength(bickie, 1, &quot;bickie&quot;);</span>
             }
-<span class="nc" id="L435">            return ResponseEntity.status(200).body(service.paramsIdGet(id, apiKey, bickie));</span>
-<span class="nc" id="L436">        } catch (Throwable e) {</span>
-<span class="nc" id="L437">            return service.errorResponse(e);</span>
+<span class="nc" id="L462">            return ResponseEntity.status(200).body(service.paramsIdGet(id, apiKey, bickie));</span>
+<span class="nc" id="L463">        } catch (Throwable e) {</span>
+<span class="nc" id="L464">            return service.errorResponse(e);</span>
         }
     }
 
@@ -442,7 +469,7 @@ public class ServiceController implements ControllerExceptionHandler {
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
      * @param id
-     *            id
+     *            &lt;p&gt;id
      */
     @RequestMapping(
         method = RequestMethod.GET,
@@ -450,10 +477,10 @@ public class ServiceController implements ControllerExceptionHandler {
     public ResponseEntity&lt;?&gt; queryObjectGet(
             @ModelAttribute(name = &quot;id&quot;) QueryObjectGetIdParameterId id) {
         try {
-<span class="fc" id="L453">            service.queryObjectGet(id);</span>
-<span class="fc" id="L454">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L455">        } catch (Throwable e) {</span>
-<span class="nc" id="L456">            return service.errorResponse(e);</span>
+<span class="fc" id="L480">            service.queryObjectGet(id);</span>
+<span class="fc" id="L481">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L482">        } catch (Throwable e) {</span>
+<span class="nc" id="L483">            return service.errorResponse(e);</span>
         }
     }
 
@@ -461,9 +488,9 @@ public class ServiceController implements ControllerExceptionHandler {
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
      * @param a
-     *            a
+     *            &lt;p&gt;a
      * @param b
-     *            b
+     *            &lt;p&gt;b
      */
     @RequestMapping(
         method = RequestMethod.GET,
@@ -472,22 +499,22 @@ public class ServiceController implements ControllerExceptionHandler {
             @ModelAttribute(name = &quot;a&quot;) Point a, 
             @ModelAttribute(name = &quot;b&quot;) Point b) {
         try {
-<span class="nc" id="L475">            service.pointsGet(a, b);</span>
-<span class="nc" id="L476">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L477">        } catch (Throwable e) {</span>
-<span class="nc" id="L478">            return service.errorResponse(e);</span>
+<span class="nc" id="L502">            service.pointsGet(a, b);</span>
+<span class="nc" id="L503">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L504">        } catch (Throwable e) {</span>
+<span class="nc" id="L505">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            id
+     *            &lt;p&gt;id
      * @param first
-     *            first
+     *            &lt;p&gt;first
      * @return primary response status code 203
      */
     @RequestMapping(
@@ -498,22 +525,22 @@ public class ServiceController implements ControllerExceptionHandler {
             @RequestParam(name = &quot;id&quot;, required = true) String id, 
             @RequestParam(name = &quot;first&quot;, required = true) OffsetDateTime first) {
         try {
-<span class="nc bnc" id="L501" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramRefGet&quot;)) {</span>
-<span class="nc" id="L502">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc bnc" id="L528" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramRefGet&quot;)) {</span>
+<span class="nc" id="L529">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
             }
-<span class="nc" id="L504">            return ResponseEntity.status(203).body(service.paramRefGet(id, first));</span>
-<span class="nc" id="L505">        } catch (Throwable e) {</span>
-<span class="nc" id="L506">            return service.errorResponse(e);</span>
+<span class="nc" id="L531">            return ResponseEntity.status(203).body(service.paramRefGet(id, first));</span>
+<span class="nc" id="L532">        } catch (Throwable e) {</span>
+<span class="nc" id="L533">            return service.errorResponse(e);</span>
         }
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
-     * @param a2
-     *            a2
      * @param a
-     *            a
+     *            &lt;p&gt;a
+     * @param a2
+     *            &lt;p&gt;a2
      */
     @RequestMapping(
         method = RequestMethod.GET,
@@ -522,11 +549,11 @@ public class ServiceController implements ControllerExceptionHandler {
             @RequestParam(name = &quot;a&quot;, required = true) String a, 
             @RequestParam(name = &quot;A&quot;, required = true) String a2) {
         try {
-<span class="nc" id="L525">            service.parameterNameCollisionGet(a, a2);</span>
-<span class="nc" id="L526">            return ResponseEntity.status(200).build();</span>
-<span class="nc" id="L527">        } catch (Throwable e) {</span>
-<span class="nc" id="L528">            return service.errorResponse(e);</span>
+<span class="nc" id="L552">            service.parameterNameCollisionGet(a, a2);</span>
+<span class="nc" id="L553">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L554">        } catch (Throwable e) {</span>
+<span class="nc" id="L555">            return service.errorResponse(e);</span>
         }
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

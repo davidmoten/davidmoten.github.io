@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"pet.store"},{"l":"pet.store.client"},{"l":"pet.store.path"},{"l":"pet.store.schema"},{"l":"pet.store.service"}];updateSearchResults();

@@ -1,28 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Loan.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.library.schema</a> &gt; <span class="el_source">Loan.java</span></div><h1>Loan.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.library.schema;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.davidmoten.guavamini.Maps;
 
 import jakarta.annotation.Generated;
 
 import java.lang.Object;
 import java.lang.Override;
+import java.lang.String;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.davidmoten.oa3.codegen.runtime.Preconditions;
 import org.davidmoten.oa3.codegen.test.library.Globals;
 import org.davidmoten.oa3.codegen.util.Util;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
-@JsonInclude(Include.NON_NULL)
-@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public final class Loan {
 
     @JsonProperty(&quot;userId&quot;)
@@ -38,45 +42,85 @@ public final class Loan {
     private final LocalDate dueDate;
 
     @JsonProperty(&quot;dateReturned&quot;)
-    private final LocalDate dateReturned;
+    private final Optional&lt;LocalDate&gt; dateReturned;
 
     @JsonCreator
-    private Loan(
+    public Loan(
             @JsonProperty(&quot;userId&quot;) UserId userId,
             @JsonProperty(&quot;itemId&quot;) ItemId itemId,
             @JsonProperty(&quot;startDate&quot;) LocalDate startDate,
             @JsonProperty(&quot;dueDate&quot;) LocalDate dueDate,
-<span class="nc" id="L49">            @JsonProperty(&quot;dateReturned&quot;) LocalDate dateReturned) {</span>
-<span class="nc" id="L50">        this.userId = userId;</span>
-<span class="nc" id="L51">        this.itemId = itemId;</span>
-<span class="nc" id="L52">        this.startDate = startDate;</span>
-<span class="nc" id="L53">        this.dueDate = dueDate;</span>
-<span class="nc" id="L54">        this.dateReturned = dateReturned;</span>
-<span class="nc" id="L55">    }</span>
-
-    @ConstructorBinding
-    public Loan(
-            UserId userId,
-            ItemId itemId,
-            LocalDate startDate,
-            LocalDate dueDate,
-<span class="nc" id="L63">            Optional&lt;LocalDate&gt; dateReturned) {</span>
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Loan.class)) {</span>
-<span class="nc" id="L65">            Preconditions.checkNotNull(userId, &quot;userId&quot;);</span>
-<span class="nc" id="L66">            Preconditions.checkNotNull(itemId, &quot;itemId&quot;);</span>
-<span class="nc" id="L67">            Preconditions.checkNotNull(startDate, &quot;startDate&quot;);</span>
-<span class="nc" id="L68">            Preconditions.checkNotNull(dueDate, &quot;dueDate&quot;);</span>
-<span class="nc" id="L69">            Preconditions.checkNotNull(dateReturned, &quot;dateReturned&quot;);</span>
+<span class="nc" id="L53">            @JsonProperty(&quot;dateReturned&quot;) Optional&lt;LocalDate&gt; dateReturned) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Loan.class)) {</span>
+<span class="nc" id="L55">            Preconditions.checkNotNull(userId, &quot;userId&quot;);</span>
+<span class="nc" id="L56">            Preconditions.checkNotNull(itemId, &quot;itemId&quot;);</span>
+<span class="nc" id="L57">            Preconditions.checkNotNull(startDate, &quot;startDate&quot;);</span>
+<span class="nc" id="L58">            Preconditions.checkNotNull(dueDate, &quot;dueDate&quot;);</span>
+<span class="nc" id="L59">            Preconditions.checkNotNull(dateReturned, &quot;dateReturned&quot;);</span>
         }
-<span class="nc" id="L71">        this.userId = userId;</span>
-<span class="nc" id="L72">        this.itemId = itemId;</span>
-<span class="nc" id="L73">        this.startDate = startDate;</span>
-<span class="nc" id="L74">        this.dueDate = dueDate;</span>
-<span class="nc" id="L75">        this.dateReturned = dateReturned.orElse(null);</span>
-<span class="nc" id="L76">    }</span>
+<span class="nc" id="L61">        this.userId = userId;</span>
+<span class="nc" id="L62">        this.itemId = itemId;</span>
+<span class="nc" id="L63">        this.startDate = startDate;</span>
+<span class="nc" id="L64">        this.dueDate = dueDate;</span>
+<span class="nc" id="L65">        this.dateReturned = dateReturned;</span>
+<span class="nc" id="L66">    }</span>
+
+    public UserId userId() {
+<span class="nc" id="L69">        return userId;</span>
+    }
+
+    public ItemId itemId() {
+<span class="nc" id="L73">        return itemId;</span>
+    }
+
+    public LocalDate startDate() {
+<span class="nc" id="L77">        return startDate;</span>
+    }
+
+    public LocalDate dueDate() {
+<span class="nc" id="L81">        return dueDate;</span>
+    }
+
+    public Optional&lt;LocalDate&gt; dateReturned() {
+<span class="nc" id="L85">        return dateReturned;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L89">        return Maps</span>
+<span class="nc" id="L90">                .put(&quot;userId&quot;, (Object) userId)</span>
+<span class="nc" id="L91">                .put(&quot;itemId&quot;, (Object) itemId)</span>
+<span class="nc" id="L92">                .put(&quot;startDate&quot;, (Object) startDate)</span>
+<span class="nc" id="L93">                .put(&quot;dueDate&quot;, (Object) dueDate)</span>
+<span class="nc" id="L94">                .put(&quot;dateReturned&quot;, (Object) dateReturned)</span>
+<span class="nc" id="L95">                .build();</span>
+    }
+
+    public Loan withUserId(UserId userId) {
+<span class="nc" id="L99">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
+    }
+
+    public Loan withItemId(ItemId itemId) {
+<span class="nc" id="L103">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
+    }
+
+    public Loan withStartDate(LocalDate startDate) {
+<span class="nc" id="L107">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
+    }
+
+    public Loan withDueDate(LocalDate dueDate) {
+<span class="nc" id="L111">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
+    }
+
+    public Loan withDateReturned(Optional&lt;LocalDate&gt; dateReturned) {
+<span class="nc" id="L115">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
+    }
+
+    public Loan withDateReturned(LocalDate dateReturned) {
+<span class="nc" id="L119">        return new Loan(userId, itemId, startDate, dueDate, Optional.of(dateReturned));</span>
+    }
 
     public static Builder builder() {
-<span class="nc" id="L79">        return new Builder();</span>
+<span class="nc" id="L123">        return new Builder();</span>
     }
 
     public static final class Builder {
@@ -85,14 +129,14 @@ public final class Loan {
         private ItemId itemId;
         private LocalDate startDate;
         private LocalDate dueDate;
-<span class="nc" id="L88">        private Optional&lt;LocalDate&gt; dateReturned = Optional.empty();</span>
+<span class="nc" id="L132">        private Optional&lt;LocalDate&gt; dateReturned = Optional.empty();</span>
 
-<span class="nc" id="L90">        Builder() {</span>
-<span class="nc" id="L91">        }</span>
+<span class="nc" id="L134">        Builder() {</span>
+<span class="nc" id="L135">        }</span>
 
         public BuilderWithUserId userId(UserId userId) {
-<span class="nc" id="L94">            this.userId = userId;</span>
-<span class="nc" id="L95">            return new BuilderWithUserId(this);</span>
+<span class="nc" id="L138">            this.userId = userId;</span>
+<span class="nc" id="L139">            return new BuilderWithUserId(this);</span>
         }
     }
 
@@ -100,13 +144,13 @@ public final class Loan {
 
         private final Builder b;
 
-<span class="nc" id="L103">        BuilderWithUserId(Builder b) {</span>
-<span class="nc" id="L104">            this.b = b;</span>
-<span class="nc" id="L105">        }</span>
+<span class="nc" id="L147">        BuilderWithUserId(Builder b) {</span>
+<span class="nc" id="L148">            this.b = b;</span>
+<span class="nc" id="L149">        }</span>
 
         public BuilderWithItemId itemId(ItemId itemId) {
-<span class="nc" id="L108">            this.b.itemId = itemId;</span>
-<span class="nc" id="L109">            return new BuilderWithItemId(this.b);</span>
+<span class="nc" id="L152">            this.b.itemId = itemId;</span>
+<span class="nc" id="L153">            return new BuilderWithItemId(this.b);</span>
         }
     }
 
@@ -114,13 +158,13 @@ public final class Loan {
 
         private final Builder b;
 
-<span class="nc" id="L117">        BuilderWithItemId(Builder b) {</span>
-<span class="nc" id="L118">            this.b = b;</span>
-<span class="nc" id="L119">        }</span>
+<span class="nc" id="L161">        BuilderWithItemId(Builder b) {</span>
+<span class="nc" id="L162">            this.b = b;</span>
+<span class="nc" id="L163">        }</span>
 
         public BuilderWithStartDate startDate(LocalDate startDate) {
-<span class="nc" id="L122">            this.b.startDate = startDate;</span>
-<span class="nc" id="L123">            return new BuilderWithStartDate(this.b);</span>
+<span class="nc" id="L166">            this.b.startDate = startDate;</span>
+<span class="nc" id="L167">            return new BuilderWithStartDate(this.b);</span>
         }
     }
 
@@ -128,13 +172,13 @@ public final class Loan {
 
         private final Builder b;
 
-<span class="nc" id="L131">        BuilderWithStartDate(Builder b) {</span>
-<span class="nc" id="L132">            this.b = b;</span>
-<span class="nc" id="L133">        }</span>
+<span class="nc" id="L175">        BuilderWithStartDate(Builder b) {</span>
+<span class="nc" id="L176">            this.b = b;</span>
+<span class="nc" id="L177">        }</span>
 
         public BuilderWithDueDate dueDate(LocalDate dueDate) {
-<span class="nc" id="L136">            this.b.dueDate = dueDate;</span>
-<span class="nc" id="L137">            return new BuilderWithDueDate(this.b);</span>
+<span class="nc" id="L180">            this.b.dueDate = dueDate;</span>
+<span class="nc" id="L181">            return new BuilderWithDueDate(this.b);</span>
         }
     }
 
@@ -142,71 +186,27 @@ public final class Loan {
 
         private final Builder b;
 
-<span class="nc" id="L145">        BuilderWithDueDate(Builder b) {</span>
-<span class="nc" id="L146">            this.b = b;</span>
-<span class="nc" id="L147">        }</span>
+<span class="nc" id="L189">        BuilderWithDueDate(Builder b) {</span>
+<span class="nc" id="L190">            this.b = b;</span>
+<span class="nc" id="L191">        }</span>
 
         public BuilderWithDueDate dateReturned(LocalDate dateReturned) {
-<span class="nc" id="L150">            this.b.dateReturned = Optional.of(dateReturned);</span>
-<span class="nc" id="L151">            return this;</span>
+<span class="nc" id="L194">            this.b.dateReturned = Optional.of(dateReturned);</span>
+<span class="nc" id="L195">            return this;</span>
         }
 
         public BuilderWithDueDate dateReturned(Optional&lt;LocalDate&gt; dateReturned) {
-<span class="nc" id="L155">            this.b.dateReturned = dateReturned;</span>
-<span class="nc" id="L156">            return this;</span>
+<span class="nc" id="L199">            this.b.dateReturned = dateReturned;</span>
+<span class="nc" id="L200">            return this;</span>
         }
 
         public Loan build() {
-<span class="nc" id="L160">            return new Loan(this.b.userId, this.b.itemId, this.b.startDate, this.b.dueDate, this.b.dateReturned);</span>
+<span class="nc" id="L204">            return new Loan(this.b.userId, this.b.itemId, this.b.startDate, this.b.dueDate, this.b.dateReturned);</span>
         }
     }
 
     public static BuilderWithUserId userId(UserId userId) {
-<span class="nc" id="L165">        return builder().userId(userId);</span>
-    }
-
-    public UserId userId() {
-<span class="nc" id="L169">        return userId;</span>
-    }
-
-    public ItemId itemId() {
-<span class="nc" id="L173">        return itemId;</span>
-    }
-
-    public LocalDate startDate() {
-<span class="nc" id="L177">        return startDate;</span>
-    }
-
-    public LocalDate dueDate() {
-<span class="nc" id="L181">        return dueDate;</span>
-    }
-
-    public Optional&lt;LocalDate&gt; dateReturned() {
-<span class="nc" id="L185">        return Optional.ofNullable(dateReturned);</span>
-    }
-
-    public Loan withUserId(UserId userId) {
-<span class="nc" id="L189">        return new Loan(userId, itemId, startDate, dueDate, Optional.ofNullable(dateReturned));</span>
-    }
-
-    public Loan withItemId(ItemId itemId) {
-<span class="nc" id="L193">        return new Loan(userId, itemId, startDate, dueDate, Optional.ofNullable(dateReturned));</span>
-    }
-
-    public Loan withStartDate(LocalDate startDate) {
-<span class="nc" id="L197">        return new Loan(userId, itemId, startDate, dueDate, Optional.ofNullable(dateReturned));</span>
-    }
-
-    public Loan withDueDate(LocalDate dueDate) {
-<span class="nc" id="L201">        return new Loan(userId, itemId, startDate, dueDate, Optional.ofNullable(dateReturned));</span>
-    }
-
-    public Loan withDateReturned(Optional&lt;LocalDate&gt; dateReturned) {
-<span class="nc" id="L205">        return new Loan(userId, itemId, startDate, dueDate, dateReturned);</span>
-    }
-
-    public Loan withDateReturned(LocalDate dateReturned) {
-<span class="nc" id="L209">        return new Loan(userId, itemId, startDate, dueDate, Optional.of(dateReturned));</span>
+<span class="nc" id="L209">        return builder().userId(userId);</span>
     }
 
     @Override
@@ -219,11 +219,11 @@ public final class Loan {
         }
 <span class="nc" id="L220">        Loan other = (Loan) o;</span>
 <span class="nc" id="L221">        return </span>
-<span class="nc bnc" id="L222" title="All 2 branches missed.">            Objects.equals(this.userId, other.userId) &amp;&amp; </span>
-<span class="nc bnc" id="L223" title="All 2 branches missed.">            Objects.equals(this.itemId, other.itemId) &amp;&amp; </span>
-<span class="nc bnc" id="L224" title="All 2 branches missed.">            Objects.equals(this.startDate, other.startDate) &amp;&amp; </span>
-<span class="nc bnc" id="L225" title="All 2 branches missed.">            Objects.equals(this.dueDate, other.dueDate) &amp;&amp; </span>
-<span class="nc bnc" id="L226" title="All 2 branches missed.">            Objects.equals(this.dateReturned, other.dateReturned);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            Objects.deepEquals(this.userId, other.userId) &amp;&amp; </span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            Objects.deepEquals(this.itemId, other.itemId) &amp;&amp; </span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">            Objects.deepEquals(this.startDate, other.startDate) &amp;&amp; </span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            Objects.deepEquals(this.dueDate, other.dueDate) &amp;&amp; </span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            Objects.deepEquals(this.dateReturned, other.dateReturned);</span>
     }
 
     @Override
@@ -246,4 +246,4 @@ public final class Loan {
                 &quot;dateReturned&quot;, dateReturned);
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

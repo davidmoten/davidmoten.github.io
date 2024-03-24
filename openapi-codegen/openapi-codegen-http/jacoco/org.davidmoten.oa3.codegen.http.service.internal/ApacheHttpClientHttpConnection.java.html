@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApacheHttpClientHttpConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-http</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.http.service.internal</a> &gt; <span class="el_source">ApacheHttpClientHttpConnection.java</span></div><h1>ApacheHttpClientHttpConnection.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.http.service.internal;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.config.RequestConfig.Builder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityTemplate;
+import org.davidmoten.oa3.codegen.http.service.HttpConnection;
+import org.davidmoten.oa3.codegen.http.service.Response;
+import org.davidmoten.oa3.codegen.util.Util;
+
+public class ApacheHttpClientHttpConnection implements HttpConnection {
+
+    private final HttpUriRequestBase request;
+<span class="nc" id="L31">	private Optional&lt;Long&gt; connectTimeoutMs = Optional.empty();</span>
+<span class="nc" id="L32">	private Optional&lt;Long&gt; readTimeoutMs = Optional.empty();</span>
+
+<span class="nc" id="L34">    public ApacheHttpClientHttpConnection(HttpUriRequestBase request) {</span>
+<span class="nc" id="L35">        this.request = request;</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    public void header(String key, String value) {
+<span class="nc" id="L40">        request.addHeader(key, value);</span>
+<span class="nc" id="L41">    }</span>
+    
+	@Override
+	public void setConnectTimeoutMs(long connectTimeoutMs) {
+<span class="nc" id="L45">		this.connectTimeoutMs = Optional.of(connectTimeoutMs);</span>
+<span class="nc" id="L46">	}</span>
+
+	@Override
+	public void setReadTimeoutMs(long readTimeoutMs) {
+<span class="nc" id="L50">		this.readTimeoutMs = Optional.of(readTimeoutMs);</span>
+<span class="nc" id="L51">	}</span>
+
+    @Override
+    public void output(Consumer&lt;? super OutputStream&gt; consumer, String contentType, Optional&lt;String&gt; contentEncoding,
+            boolean chunked) {
+<span class="nc" id="L56">        NoCopyByteArrayOutputStream bytes = new NoCopyByteArrayOutputStream(256);</span>
+<span class="nc" id="L57">        consumer.accept(bytes);</span>
+        
+<span class="nc" id="L59">        request.setEntity(new EntityTemplate(bytes.size(), ContentType.parse(contentType),</span>
+<span class="nc" id="L60">                contentEncoding.orElse(null), out -&gt; out.write(bytes.buffer(), 0, bytes.size())));</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public Response response() throws IOException {
+<span class="nc" id="L65">    	Builder b = RequestConfig.custom();</span>
+<span class="nc" id="L66">    	connectTimeoutMs.ifPresent(timeoutMs -&gt; b.setConnectionRequestTimeout(0, TimeUnit.MILLISECONDS));</span>
+<span class="nc" id="L67">    	readTimeoutMs.ifPresent(timeoutMs -&gt; b.setResponseTimeout(timeoutMs, TimeUnit.MILLISECONDS));</span>
+<span class="nc" id="L68">    	RequestConfig config = b.build();</span>
+<span class="nc" id="L69">        try (CloseableHttpClient client = HttpClients.custom().setDefaultRequestConfig(config).build()) {</span>
+<span class="nc" id="L70">            HttpClientResponseHandler&lt;Response&gt; handler = r -&gt; {</span>
+                final InputStream in;
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                if (r.getEntity() != null) {</span>
+<span class="nc" id="L73">                    in = new ByteArrayInputStream(Util.read(r.getEntity().getContent()));</span>
+                } else {
+<span class="nc" id="L75">                    in = null;</span>
+                }
+<span class="nc" id="L77">                Map&lt;String, List&lt;String&gt;&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                for (Header header : r.getHeaders()) {</span>
+<span class="nc" id="L79">                    List&lt;String&gt; list = map.get(header.getName());</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                    if (list == null) {</span>
+<span class="nc" id="L81">                        list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L82">                        map.put(header.getName(), list);</span>
+                    }
+<span class="nc" id="L84">                    list.add(header.getValue());</span>
+                }
+<span class="nc" id="L86">                return new ApacheHttpClientResponse(r.getCode(), in, map);</span>
+            };
+<span class="nc" id="L88">            return client.execute(request, handler);</span>
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        // TODO what here?
+<span class="nc" id="L95">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

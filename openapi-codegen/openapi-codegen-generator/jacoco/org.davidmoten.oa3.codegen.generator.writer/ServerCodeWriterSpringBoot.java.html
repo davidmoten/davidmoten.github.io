@@ -29,6 +29,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,165 +42,178 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.davidmoten.guavamini.Maps;
 
-<span class="nc" id="L45">public final class ServerCodeWriterSpringBoot {</span>
+<span class="nc" id="L47">public final class ServerCodeWriterSpringBoot {</span>
 
     public static void writeServiceClasses(Names names, List&lt;Method&gt; methods) {
-<span class="fc" id="L48">        writeApplicationClass(names);</span>
-<span class="fc" id="L49">        writeJacksonConfigurationClass(names);</span>
-<span class="fc" id="L50">        writeServiceControllerClass(names, methods);</span>
-<span class="fc" id="L51">        writeServiceInterfaceClass(names, methods);</span>
-<span class="fc" id="L52">    }</span>
-
-    private static void writeApplicationClass(Names names) {
-<span class="fc" id="L55">        CodePrintWriter out = CodePrintWriter.create(names.applicationFullClassName());</span>
-<span class="fc" id="L56">        writeApplicationClass(out);</span>
-<span class="fc" id="L57">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L50">        writeApplicationClass(names);</span>
+<span class="fc" id="L51">        writeJacksonConfigurationClass(names);</span>
+<span class="fc" id="L52">        List&lt;Method&gt; includedMethods = methods //</span>
+<span class="fc" id="L53">                .stream() //</span>
+<span class="fc" id="L54">                .filter(x-&gt; x.includeForServerGeneration) //</span>
+<span class="fc" id="L55">                .collect(Collectors.toList());</span>
+<span class="fc" id="L56">        writeServiceControllerClass(names, includedMethods);</span>
+<span class="fc" id="L57">        writeServiceInterfaceClass(names, includedMethods);</span>
 <span class="fc" id="L58">    }</span>
 
+    private static void writeApplicationClass(Names names) {
+<span class="fc" id="L61">        CodePrintWriter out = CodePrintWriter.create(names.applicationFullClassName(), names.simpleNameInPackage(names.applicationFullClassName()));</span>
+<span class="fc" id="L62">        writeApplicationClass(out);</span>
+<span class="fc" id="L63">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L64">    }</span>
+
     private static void writeApplicationClass(CodePrintWriter out) {
-<span class="fc" id="L61">        out.line(&quot;package %s;&quot;, out.pkg());</span>
-<span class="fc" id="L62">        out.println();</span>
-<span class="fc" id="L63">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
-<span class="fc" id="L64">        out.println();</span>
-<span class="fc" id="L65">        out.line(&quot;@%s&quot;, SpringBootApplication.class);</span>
-<span class="fc" id="L66">        WriterUtil.addGeneratedAnnotation(out);</span>
-<span class="fc" id="L67">        out.line(&quot;public class %s {&quot;, out.simpleClassName());</span>
+<span class="fc" id="L67">        out.line(&quot;package %s;&quot;, out.pkg());</span>
 <span class="fc" id="L68">        out.println();</span>
-<span class="fc" id="L69">        out.line(&quot;public static void main(%s[] args) {&quot;, String.class);</span>
-<span class="fc" id="L70">        out.line(&quot;%s.run(%s.class, args);&quot;, SpringApplication.class, out.simpleClassName());</span>
-<span class="fc" id="L71">        out.closeParen();</span>
-<span class="fc" id="L72">        out.left();</span>
-<span class="fc" id="L73">        out.println();</span>
-<span class="fc" id="L74">        out.line(&quot;}&quot;);</span>
-<span class="fc" id="L75">    }</span>
+<span class="fc" id="L69">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
+<span class="fc" id="L70">        out.println();</span>
+<span class="fc" id="L71">        out.line(&quot;@%s&quot;, SpringBootApplication.class);</span>
+<span class="fc" id="L72">        WriterUtil.addGeneratedAnnotation(out);</span>
+<span class="fc" id="L73">        out.line(&quot;public class %s {&quot;, out.simpleClassName());</span>
+<span class="fc" id="L74">        out.println();</span>
+<span class="fc" id="L75">        out.line(&quot;public static void main(%s[] args) {&quot;, String.class);</span>
+<span class="fc" id="L76">        out.line(&quot;%s.run(%s.class, args);&quot;, SpringApplication.class, out.simpleClassName());</span>
+<span class="fc" id="L77">        out.closeParen();</span>
+<span class="fc" id="L78">        out.left();</span>
+<span class="fc" id="L79">        out.println();</span>
+<span class="fc" id="L80">        out.line(&quot;}&quot;);</span>
+<span class="fc" id="L81">    }</span>
 
     private static void writeJacksonConfigurationClass(Names names) {
-<span class="fc" id="L78">        String fullClassName = names.jacksonConfigurationFullClassName();</span>
-<span class="fc" id="L79">        CodePrintWriter out = CodePrintWriter.create(fullClassName);</span>
-<span class="fc" id="L80">        writeJacksonConfigurationClass(out, names);</span>
-<span class="fc" id="L81">        WriterUtil.writeContent(names, out);</span>
-<span class="fc" id="L82">    }</span>
+<span class="fc" id="L84">        String fullClassName = names.jacksonConfigurationFullClassName();</span>
+<span class="fc" id="L85">        CodePrintWriter out = CodePrintWriter.create(fullClassName, names.simpleNameInPackage(fullClassName));</span>
+<span class="fc" id="L86">        writeJacksonConfigurationClass(out, names);</span>
+<span class="fc" id="L87">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L88">    }</span>
 
     private static void writeJacksonConfigurationClass(CodePrintWriter out, Names names) {
-<span class="fc" id="L85">        out.line(&quot;package %s;&quot;, out.pkg());</span>
-<span class="fc" id="L86">        out.println();</span>
-<span class="fc" id="L87">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
-<span class="fc" id="L88">        out.println();</span>
-<span class="fc" id="L89">        out.line(&quot;@%s&quot;, Configuration.class);</span>
-<span class="fc" id="L90">        WriterUtil.addGeneratedAnnotation(out);</span>
-<span class="fc" id="L91">        out.line(&quot;public class %s {&quot;, out.simpleClassName());</span>
+<span class="fc" id="L91">        out.line(&quot;package %s;&quot;, out.pkg());</span>
 <span class="fc" id="L92">        out.println();</span>
-<span class="fc" id="L93">        out.line(&quot;private final %s config;&quot;, Config.class);</span>
+<span class="fc" id="L93">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
 <span class="fc" id="L94">        out.println();</span>
-<span class="fc" id="L95">        out.line(&quot;public %s(@%s(required = false) %s config) {&quot;, out.simpleClassName(), Autowired.class, Config.class);</span>
-<span class="fc" id="L96">        out.line(&quot;this.config = config == null ? %s.config() : config;&quot;, out.add(names.globalsFullClassName()));</span>
-<span class="fc" id="L97">        out.closeParen();</span>
+<span class="fc" id="L95">        out.line(&quot;@%s&quot;, Configuration.class);</span>
+<span class="fc" id="L96">        WriterUtil.addGeneratedAnnotation(out);</span>
+<span class="fc" id="L97">        out.line(&quot;public class %s {&quot;, out.simpleClassName());</span>
 <span class="fc" id="L98">        out.println();</span>
-<span class="fc" id="L99">        out.line(&quot;@%s&quot;, Bean.class);</span>
-<span class="fc" id="L100">        out.line(&quot;@%s&quot;, Primary.class);</span>
-<span class="fc" id="L101">        out.line(&quot;public %s objectMapper() {&quot;, ObjectMapper.class);</span>
-<span class="fc" id="L102">        out.line(&quot;return config.mapper();&quot;);</span>
+<span class="fc" id="L99">        out.line(&quot;private final %s config;&quot;, Config.class);</span>
+<span class="fc" id="L100">        out.println();</span>
+<span class="fc" id="L101">        out.line(&quot;public %s(@%s(required = false) %s config) {&quot;, out.simpleClassName(), Autowired.class, Config.class);</span>
+<span class="fc" id="L102">        out.line(&quot;this.config = config == null ? %s.config() : config;&quot;, out.add(names.globalsFullClassName()));</span>
 <span class="fc" id="L103">        out.closeParen();</span>
-<span class="fc" id="L104">        out.left();</span>
-<span class="fc" id="L105">        out.println();</span>
-<span class="fc" id="L106">        out.line(&quot;}&quot;);</span>
-<span class="fc" id="L107">    }</span>
+<span class="fc" id="L104">        out.println();</span>
+<span class="fc" id="L105">        out.line(&quot;@%s&quot;, Bean.class);</span>
+<span class="fc" id="L106">        out.line(&quot;@%s&quot;, Primary.class);</span>
+<span class="fc" id="L107">        out.line(&quot;public %s objectMapper() {&quot;, ObjectMapper.class);</span>
+<span class="fc" id="L108">        out.line(&quot;return config.mapper();&quot;);</span>
+<span class="fc" id="L109">        out.closeParen();</span>
+<span class="fc" id="L110">        out.left();</span>
+<span class="fc" id="L111">        out.println();</span>
+<span class="fc" id="L112">        out.line(&quot;}&quot;);</span>
+<span class="fc" id="L113">    }</span>
 
     private static void writeServiceControllerClass(Names names, List&lt;Method&gt; methods) {
-<span class="fc" id="L110">        String fullClassName = names.serviceControllerFullClassName();</span>
-<span class="fc" id="L111">        CodePrintWriter out = CodePrintWriter.create(fullClassName);</span>
-<span class="fc" id="L112">        writeServiceControllerClass(out, names, methods);</span>
-<span class="fc" id="L113">        WriterUtil.writeContent(names, out);</span>
-<span class="fc" id="L114">    }</span>
+<span class="fc" id="L116">        String fullClassName = names.serviceControllerFullClassName();</span>
+<span class="fc" id="L117">        CodePrintWriter out = CodePrintWriter.create(fullClassName, names.simpleNameInPackage(fullClassName));</span>
+<span class="fc" id="L118">        writeServiceControllerClass(out, names, methods);</span>
+<span class="fc" id="L119">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L120">    }</span>
 
     private static void writeServiceInterfaceClass(Names names, List&lt;Method&gt; methods) {
-<span class="fc" id="L117">        String fullClassName = names.serviceInterfaceFullClassName();</span>
-<span class="fc" id="L118">        CodePrintWriter out = CodePrintWriter.create(fullClassName);</span>
-<span class="fc" id="L119">        writeServiceInterfaceClass(out, names, methods);</span>
-<span class="fc" id="L120">        WriterUtil.writeContent(names, out);</span>
-<span class="fc" id="L121">    }</span>
+<span class="fc" id="L123">        String fullClassName = names.serviceInterfaceFullClassName();</span>
+<span class="fc" id="L124">        CodePrintWriter out = CodePrintWriter.create(fullClassName, names.simpleNameInPackage(fullClassName));</span>
+<span class="fc" id="L125">        writeServiceInterfaceClass(out, names, methods);</span>
+<span class="fc" id="L126">        WriterUtil.writeContent(names, out);</span>
+<span class="fc" id="L127">    }</span>
 
     private static void writeServiceInterfaceClass(CodePrintWriter out, Names names, List&lt;Method&gt; methods) {
-<span class="fc" id="L124">        out.line(&quot;package %s;&quot;, out.pkg());</span>
-<span class="fc" id="L125">        out.println();</span>
-<span class="fc" id="L126">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
-<span class="fc" id="L127">        WriterUtil.writeApiJavadoc(out, names);</span>
-<span class="fc" id="L128">        WriterUtil.addGeneratedAnnotation(out);</span>
-<span class="fc" id="L129">        out.line(&quot;public interface %s extends %s {&quot;, out.simpleClassName(), ErrorHandler.class);</span>
-<span class="fc" id="L130">        writeServiceMethods(out, methods, false, names);</span>
-<span class="fc" id="L131">        out.closeParen();</span>
-<span class="fc" id="L132">    }</span>
+<span class="fc" id="L130">        out.line(&quot;package %s;&quot;, out.pkg());</span>
+<span class="fc" id="L131">        out.println();</span>
+<span class="fc" id="L132">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
+<span class="fc" id="L133">        WriterUtil.writeApiJavadoc(out, names);</span>
+<span class="fc" id="L134">        WriterUtil.addGeneratedAnnotation(out);</span>
+<span class="fc" id="L135">        out.line(&quot;public interface %s extends %s {&quot;, out.simpleClassName(), ErrorHandler.class);</span>
+<span class="fc" id="L136">        out.println();</span>
+<span class="fc" id="L137">        out.line(&quot;Service DEFAULT = new Service() {};&quot;);</span>
+<span class="fc" id="L138">        writeServiceMethods(out, methods, false, names);</span>
+<span class="fc" id="L139">        out.closeParen();</span>
+<span class="fc" id="L140">    }</span>
 
     private static void writeServiceControllerClass(CodePrintWriter out, Names names, List&lt;Method&gt; methods) {
-<span class="fc" id="L135">        out.line(&quot;package %s;&quot;, out.pkg());</span>
-<span class="fc" id="L136">        out.println();</span>
-<span class="fc" id="L137">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
-<span class="fc" id="L138">        out.println();</span>
-<span class="fc" id="L139">        out.line(&quot;@%s&quot;, RestController.class);</span>
-<span class="fc" id="L140">        WriterUtil.addGeneratedAnnotation(out);</span>
-<span class="fc" id="L141">        out.line(&quot;public class %s implements %s {&quot;, out.simpleClassName(), ControllerExceptionHandler.class);</span>
-<span class="fc" id="L142">        out.println();</span>
-<span class="fc" id="L143">        out.line(&quot;private final %s service;&quot;, out.add(names.serviceInterfaceFullClassName()));</span>
+<span class="fc" id="L143">        out.line(&quot;package %s;&quot;, out.pkg());</span>
 <span class="fc" id="L144">        out.println();</span>
-<span class="fc" id="L145">        out.line(&quot;public %s(@%s(required = false) %s service) {&quot;, out.simpleClassName(), Autowired.class,</span>
-<span class="fc" id="L146">                out.add(names.serviceInterfaceFullClassName()));</span>
-<span class="fc" id="L147">        out.line(&quot;this.service = %s.orElse(service, new %s() {});&quot;, org.davidmoten.oa3.codegen.util.Util.class,</span>
-<span class="fc" id="L148">                out.add(names.serviceInterfaceFullClassName()));</span>
-<span class="fc" id="L149">        out.closeParen();</span>
-<span class="fc" id="L150">        writeServiceMethods(out, methods, true, names);</span>
-<span class="fc" id="L151">        out.closeParen();</span>
-<span class="fc" id="L152">    }</span>
+<span class="fc" id="L145">        out.format(&quot;%s&quot;, IMPORTS_HERE);</span>
+<span class="fc" id="L146">        out.println();</span>
+<span class="fc" id="L147">        out.line(&quot;@%s&quot;, RestController.class);</span>
+<span class="fc" id="L148">        WriterUtil.addGeneratedAnnotation(out);</span>
+<span class="fc" id="L149">        out.line(&quot;public class %s implements %s {&quot;, out.simpleClassName(), ControllerExceptionHandler.class);</span>
+<span class="fc" id="L150">        out.println();</span>
+<span class="fc" id="L151">        out.line(&quot;private final %s service;&quot;, out.add(names.serviceInterfaceFullClassName()));</span>
+<span class="fc" id="L152">        out.println();</span>
+<span class="fc" id="L153">        out.line(&quot;public %s(@%s(required = false) %s service) {&quot;, out.simpleClassName(), Autowired.class,</span>
+<span class="fc" id="L154">                out.add(names.serviceInterfaceFullClassName()));</span>
+<span class="fc" id="L155">        out.line(&quot;this.service = %s.orElse(service, %s.DEFAULT);&quot;, org.davidmoten.oa3.codegen.util.Util.class,</span>
+<span class="fc" id="L156">                out.add(names.serviceInterfaceFullClassName()));</span>
+<span class="fc" id="L157">        out.closeParen();</span>
+<span class="fc" id="L158">        writeServiceMethods(out, methods, true, names);</span>
+<span class="fc" id="L159">        out.closeParen();</span>
+<span class="fc" id="L160">    }</span>
 
     private static void writeServiceMethods(CodePrintWriter out, List&lt;Method&gt; methods, boolean isController,
             Names names) {
-<span class="fc" id="L156">        methods.forEach(m -&gt; {</span>
+<span class="fc" id="L164">        methods.forEach(m -&gt; {</span>
             final Optional&lt;String&gt; returns;
-<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (m.returnFullClassName.isPresent()) {</span>
-<span class="fc" id="L159">                returns = m.primaryStatusCode.map(x -&gt; &quot;primary response status code &quot; + x);</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            if (m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L167">                returns = m.primaryStatusCode.map(x -&gt; &quot;primary response status code &quot; + x);</span>
             } else {
-<span class="fc" id="L161">                returns = Optional.empty();</span>
+<span class="fc" id="L169">                returns = Optional.empty();</span>
             }
-<span class="fc" id="L163">            writeMethodJavadoc(out, m, returns);</span>
-<span class="fc" id="L164">            out.right().right();</span>
-<span class="fc" id="L165">            String params = m.parameters.stream().map(p -&gt; {</span>
-<span class="fc bfc" id="L166" title="All 2 branches covered.">                if (p.isRequestBody) {</span>
+<span class="fc" id="L171">            writeMethodJavadoc(out, m, returns, Maps.empty());</span>
+<span class="fc" id="L172">            out.right().right();</span>
+<span class="fc" id="L173">            String params = m.parameters.stream().map(p -&gt; {</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                if (p.isRequestBody) {</span>
                     final String annotations;
-<span class="fc bfc" id="L168" title="All 2 branches covered.">                    if (isController) {</span>
-<span class="fc" id="L169">                        annotations = String.format(&quot;@%s &quot;, out.add(RequestBody.class));</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                    if (isController) {</span>
+<span class="fc" id="L177">                        annotations = String.format(&quot;@%s &quot;, out.add(RequestBody.class));</span>
                     } else {
-<span class="fc" id="L171">                        annotations = &quot;&quot;;</span>
+<span class="fc" id="L179">                        annotations = &quot;&quot;;</span>
                     }
-<span class="fc" id="L173">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, toImportedType(p, out.imports()),</span>
+<span class="fc" id="L181">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, toImportedType(p, out.imports()),</span>
                             &quot;requestBody&quot;);
                 } else {
                     final String annotations;
-<span class="fc bfc" id="L177" title="All 2 branches covered.">                    if (isController) {</span>
-<span class="fc" id="L178">                        String defValue = p.defaultValue.map(x -&gt; &quot;, defaultValue = \&quot;&quot; + x + &quot;\&quot;&quot;).orElse(&quot;&quot;);</span>
-<span class="fc" id="L179">                        String required = &quot;, required = &quot; + p.required;</span>
-<span class="fc" id="L180">                        Class&lt;?&gt; ann = annotation(p.type);</span>
-<span class="fc bfc" id="L181" title="All 4 branches covered.">                        if (ann.equals(RequestParam.class) &amp;&amp; p.isComplexQueryParameter) {</span>
-<span class="fc" id="L182">                            ann = ModelAttribute.class;</span>
-<span class="fc" id="L183">                            required = &quot;&quot;;</span>
-<span class="fc" id="L184">                            defValue = &quot;&quot;;</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                    if (isController) {</span>
+<span class="fc" id="L186">                        String defValue = p.defaultValue.map(x -&gt; &quot;, defaultValue = \&quot;&quot; + x + &quot;\&quot;&quot;).orElse(&quot;&quot;);</span>
+<span class="fc" id="L187">                        String required = &quot;, required = &quot; + p.required;</span>
+<span class="fc" id="L188">                        Class&lt;?&gt; ann = annotation(p.type);</span>
+<span class="fc bfc" id="L189" title="All 4 branches covered.">                        if (ann.equals(RequestParam.class) &amp;&amp; p.isComplexQueryParameter) {</span>
+<span class="fc" id="L190">                            ann = ModelAttribute.class;</span>
+<span class="fc" id="L191">                            required = &quot;&quot;;</span>
+<span class="fc" id="L192">                            defValue = &quot;&quot;;</span>
                         }
-<span class="fc" id="L186">                        annotations = String.format(&quot;@%s(name = \&quot;%s\&quot;%s%s) &quot;, out.add(ann), p.name, defValue,</span>
+<span class="fc" id="L194">                        annotations = String.format(&quot;@%s(name = \&quot;%s\&quot;%s%s) &quot;, out.add(ann), p.name, defValue,</span>
                                 required);
-<span class="fc" id="L188">                    } else {</span>
-<span class="fc" id="L189">                        annotations = &quot;&quot;;</span>
+<span class="fc" id="L196">                    } else {</span>
+<span class="fc" id="L197">                        annotations = &quot;&quot;;</span>
                     }
-<span class="fc" id="L191">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, toImportedType(p, out.imports()),</span>
+<span class="fc" id="L199">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, toImportedType(p, out.imports()),</span>
                             p.identifier);
                 }
-<span class="fc" id="L194">            }).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L195">            out.left().left();</span>
+<span class="fc" id="L202">            }).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L203">            out.left().left();</span>
             final String importedReturnType;
-<span class="fc bfc" id="L197" title="All 2 branches covered.">            if (isController) {</span>
-<span class="fc" id="L198">                importedReturnType = String.format(&quot;%s&lt;?&gt;&quot;, out.add(ResponseEntity.class));</span>
-<span class="fc bfc" id="L199" title="All 2 branches covered.">            } else if (!m.returnFullClassName.isPresent()) {</span>
-<span class="fc" id="L200">                importedReturnType = &quot;void&quot;;</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            if (isController) {</span>
+<span class="fc" id="L206">                importedReturnType = String.format(&quot;%s&lt;?&gt;&quot;, out.add(ResponseEntity.class));</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            } else if (!m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L208">                importedReturnType = &quot;void&quot;;</span>
             } else {
-<span class="fc" id="L202">                importedReturnType = out.add(m.returnFullClassName.get());</span>
+                final String fullClassName;
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                if (m.returnFullClassName.orElse(&quot;&quot;).equals(byte[].class.getCanonicalName())) {</span>
+<span class="fc" id="L212">                    fullClassName = Resource.class.getCanonicalName();</span>
+                } else {
+<span class="fc" id="L214">                    fullClassName = m.returnFullClassName.get();</span>
+                }
+<span class="fc" id="L216">                importedReturnType = out.add(fullClassName);</span>
             }
 //            @RequestMapping(
 //                    method = RequestMethod.POST,
@@ -207,149 +221,147 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 //                    produces = { &quot;application/json&quot; },
 //                    consumes = { &quot;application/json&quot; }
 //                )
-<span class="fc bfc" id="L210" title="All 2 branches covered.">            if (isController) {</span>
-<span class="fc" id="L211">                out.line(&quot;@%s(&quot;, RequestMapping.class);</span>
-<span class="fc" id="L212">                out.right();</span>
-<span class="fc" id="L213">                String consumes = m.consumes.stream().map(x -&gt; &quot;\&quot;&quot; + x + &quot;\&quot;&quot;).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">                if (!consumes.isEmpty()) {</span>
-<span class="fc" id="L215">                    consumes = String.format(&quot;,\n%sconsumes = {%s}&quot;, out.indent(), consumes);</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            if (isController) {</span>
+<span class="fc" id="L225">                out.line(&quot;@%s(&quot;, RequestMapping.class);</span>
+<span class="fc" id="L226">                out.right();</span>
+<span class="fc" id="L227">                String consumes = m.consumes.stream().map(x -&gt; &quot;\&quot;&quot; + x + &quot;\&quot;&quot;).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                if (!consumes.isEmpty()) {</span>
+<span class="fc" id="L229">                    consumes = String.format(&quot;,\n%sconsumes = {%s}&quot;, out.indent(), consumes);</span>
                 }
-<span class="fc" id="L217">                String produces = m.produces.stream().map(x -&gt; &quot;\&quot;&quot; + x + &quot;\&quot;&quot;).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc bfc" id="L218" title="All 2 branches covered.">                if (!produces.isEmpty()) {</span>
-<span class="fc" id="L219">                    produces = String.format(&quot;,\n%sproduces = {%s}&quot;, out.indent(), produces);</span>
+<span class="fc" id="L231">                String produces = m.produces.stream().map(x -&gt; &quot;\&quot;&quot; + x + &quot;\&quot;&quot;).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">                if (!produces.isEmpty()) {</span>
+<span class="fc" id="L233">                    produces = String.format(&quot;,\n%sproduces = {%s}&quot;, out.indent(), produces);</span>
                 }
-<span class="fc" id="L221">                out.line(&quot;method = %s.%s,&quot;, RequestMethod.class, m.httpMethod);</span>
-<span class="fc" id="L222">                out.line(&quot;value = \&quot;%s\&quot;%s%s)&quot;, m.path, consumes, produces);</span>
-<span class="fc" id="L223">                out.left();</span>
-<span class="fc" id="L224">                out.line(&quot;public %s %s(%s) {&quot;, importedReturnType, m.methodName, params);</span>
-<span class="fc" id="L225">                out.line(&quot;try {&quot;);</span>
-<span class="fc" id="L226">                addValidationChecks(out, m, names);</span>
-<span class="fc bfc" id="L227" title="All 2 branches covered.">                if (m.returnFullClassName.isPresent()) {</span>
-<span class="fc" id="L228">                    out.line(&quot;return %s.status(%s).body(service.%s(%s));&quot;, ResponseEntity.class, //</span>
-<span class="fc" id="L229">                            m.statusCode.get(), //</span>
-                            m.methodName, //
-<span class="fc" id="L231">                            m.parameters.stream().map(p -&gt; p.identifier).collect(Collectors.joining(&quot;, &quot;)));</span>
-                } else {
-<span class="fc" id="L233">                    out.line(&quot;service.%s(%s);&quot;, m.methodName,</span>
-<span class="fc" id="L234">                            m.parameters.stream().map(p -&gt; p.identifier).collect(Collectors.joining(&quot;, &quot;)));</span>
-<span class="fc" id="L235">                    out.line(&quot;return %s.status(%s).build();&quot;, ResponseEntity.class, m.statusCode.orElse(200));</span>
-                }
+<span class="fc" id="L235">                out.line(&quot;method = %s.%s,&quot;, RequestMethod.class, m.httpMethod);</span>
+<span class="fc" id="L236">                out.line(&quot;value = \&quot;%s\&quot;%s%s)&quot;, m.path, consumes, produces);</span>
 <span class="fc" id="L237">                out.left();</span>
-<span class="fc" id="L238">                out.line(&quot;} catch (%s e) {&quot;, Throwable.class);</span>
-<span class="fc" id="L239">                out.line(&quot;return service.errorResponse(e);&quot;);</span>
-<span class="fc" id="L240">                out.closeParen();</span>
-<span class="fc" id="L241">                out.closeParen();</span>
-<span class="fc" id="L242">            } else {</span>
-<span class="fc" id="L243">                out.line(&quot;default %s %s(%s) throws %s {&quot;, importedReturnType, m.methodName, params,</span>
+<span class="fc" id="L238">                out.line(&quot;public %s %s(%s) {&quot;, importedReturnType, m.methodName, params);</span>
+<span class="fc" id="L239">                out.line(&quot;try {&quot;);</span>
+<span class="fc" id="L240">                addValidationChecks(out, m, names);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                if (m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L242">                    out.line(&quot;return %s.status(%s).body(service.%s(%s));&quot;, ResponseEntity.class, //</span>
+<span class="fc" id="L243">                            m.statusCodeFirstInRange().orElse(200), //</span>
+                            m.methodName, //
+<span class="fc" id="L245">                            m.parameters.stream().map(p -&gt; p.identifier).collect(Collectors.joining(&quot;, &quot;)));</span>
+                } else {
+<span class="fc" id="L247">                    out.line(&quot;service.%s(%s);&quot;, m.methodName,</span>
+<span class="fc" id="L248">                            m.parameters.stream().map(p -&gt; p.identifier).collect(Collectors.joining(&quot;, &quot;)));</span>
+<span class="fc" id="L249">                    out.line(&quot;return %s.status(%s).build();&quot;, ResponseEntity.class, m.statusCodeFirstInRange().orElse(200));</span>
+                }
+<span class="fc" id="L251">                out.left();</span>
+<span class="fc" id="L252">                out.line(&quot;} catch (%s e) {&quot;, Throwable.class);</span>
+<span class="fc" id="L253">                out.line(&quot;return service.errorResponse(e);&quot;);</span>
+<span class="fc" id="L254">                out.closeParen();</span>
+<span class="fc" id="L255">                out.closeParen();</span>
+<span class="fc" id="L256">            } else {</span>
+<span class="fc" id="L257">                out.line(&quot;default %s %s(%s) throws %s {&quot;, importedReturnType, m.methodName, params,</span>
                         ServiceException.class);
-<span class="fc" id="L245">                out.line(&quot;throw notImplemented();&quot;);</span>
-<span class="fc" id="L246">                out.closeParen();</span>
+<span class="fc" id="L259">                out.line(&quot;throw notImplemented();&quot;);</span>
+<span class="fc" id="L260">                out.closeParen();</span>
             }
-<span class="fc" id="L248">        });</span>
-<span class="fc" id="L249">    }</span>
+<span class="fc" id="L262">        });</span>
+<span class="fc" id="L263">    }</span>
 
-    static void writeMethodJavadoc(CodePrintWriter out, Method m, Optional&lt;String&gt; returns) {
-<span class="fc" id="L252">        Map&lt;String, String&gt; parameterDescriptions = m.parameters //</span>
-<span class="fc" id="L253">                .stream() //</span>
-<span class="fc" id="L254">                .collect(Collectors.toMap(x -&gt; x.identifier,</span>
-<span class="fc" id="L255">                        x -&gt; x.description.orElse(x.identifier).replace(&quot;\\n\\s*&quot;, &quot; &quot;).replace(&quot;&amp;&quot;, &quot;&amp;amp;&quot;)</span>
-<span class="fc" id="L256">                                .replace(&quot;/&quot;, &quot;&amp;#47;&quot;).replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;).replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;)));</span>
-
-<span class="pc" id="L258">        String html = m.description.map(x -&gt; WriterUtil.markdownToHtml(x))</span>
-<span class="fc" id="L259">                .orElse(&quot;&lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.&lt;/p&gt;&quot;);</span>
-<span class="fc" id="L260">        String more = m.responseDescriptors.stream() //</span>
-<span class="fc" id="L261">                .map(rd -&gt; {</span>
-<span class="fc" id="L262">                    String full = rd.fullClassName();</span>
-<span class="pc bpc" id="L263" title="1 of 4 branches missed.">                    String link = Util.isPrimitiveFullClassName(full) || full.equals(&quot;byte[]&quot;) ? full</span>
-<span class="fc" id="L264">                            : String.format(&quot;{@link %s}&quot;, out.add(full));</span>
-<span class="fc" id="L265">                    return String.format(&quot;\n&lt;p&gt;[status=%s, %s] --&amp;gt; %s&lt;/p&gt;&quot;, rd.statusCode(), rd.mediaType(), link);</span>
-<span class="fc" id="L266">                }).collect(Collectors.joining());</span>
-<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        if (!Javadoc.printJavadoc(out, Optional.of(html + more), Collections.emptyList(), Optional.empty(), returns,</span>
-                parameterDescriptions, true)) {
-<span class="nc" id="L269">            out.println();</span>
+    static void writeMethodJavadoc(CodePrintWriter out, Method m, Optional&lt;String&gt; returns, Map&lt;String, String&gt; throwing) {
+<span class="fc" id="L266">        Map&lt;String, String&gt; parameterDescriptions = m.parameters //</span>
+<span class="fc" id="L267">                .stream() //</span>
+<span class="fc" id="L268">                .collect(Collectors.toMap(x -&gt; x.identifier,</span>
+<span class="fc" id="L269">                        x -&gt; WriterUtil.markdownToHtml(x.description.orElse(x.identifier))));</span>
+<span class="fc" id="L270">        String html = m.description.map(x -&gt; WriterUtil.markdownToHtml(x))</span>
+<span class="fc" id="L271">                .orElse(&quot;&lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.&lt;/p&gt;&quot;);</span>
+<span class="fc" id="L272">        String more = m.responseDescriptors.stream() //</span>
+<span class="fc" id="L273">                .map(rd -&gt; {</span>
+<span class="fc" id="L274">                    String full = rd.fullClassName();</span>
+<span class="pc bpc" id="L275" title="1 of 4 branches missed.">                    String link = Util.isPrimitiveFullClassName(full) || full.equals(&quot;byte[]&quot;) ? full</span>
+<span class="fc" id="L276">                            : String.format(&quot;{@link %s}&quot;, out.add(full));</span>
+<span class="fc" id="L277">                    return String.format(&quot;\n&lt;p&gt;[status=%s, %s] --&amp;gt; %s&lt;/p&gt;&quot;, rd.statusCode(), rd.mediaType(), link);</span>
+<span class="fc" id="L278">                }).collect(Collectors.joining());</span>
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">        if (!Javadoc.printJavadoc(out, Optional.of(html + more), Collections.emptyList(), Optional.empty(), returns,</span>
+                parameterDescriptions, true, throwing)) {
+<span class="nc" id="L281">            out.println();</span>
         }
-<span class="fc" id="L271">    }</span>
+<span class="fc" id="L283">    }</span>
 
     private static Class&lt;?&gt; annotation(ParamType t) {
-<span class="pc bpc" id="L274" title="1 of 2 branches missed.">        if (t == ParamType.BODY) {</span>
-<span class="nc" id="L275">            return RequestBody.class;</span>
-<span class="fc bfc" id="L276" title="All 2 branches covered.">        } else if (t == ParamType.QUERY) {</span>
-<span class="fc" id="L277">            return RequestParam.class;</span>
-<span class="fc bfc" id="L278" title="All 2 branches covered.">        } else if (t == ParamType.PATH) {</span>
-<span class="fc" id="L279">            return PathVariable.class;</span>
-<span class="fc bfc" id="L280" title="All 2 branches covered.">        } else if (t == ParamType.HEADER) {</span>
-<span class="fc" id="L281">            return RequestHeader.class;</span>
-<span class="pc bpc" id="L282" title="1 of 2 branches missed.">        } else if (t == ParamType.COOKIE) {</span>
-<span class="fc" id="L283">            return CookieValue.class;</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        if (t == ParamType.BODY) {</span>
+<span class="nc" id="L287">            return RequestBody.class;</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        } else if (t == ParamType.QUERY) {</span>
+<span class="fc" id="L289">            return RequestParam.class;</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">        } else if (t == ParamType.PATH) {</span>
+<span class="fc" id="L291">            return PathVariable.class;</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        } else if (t == ParamType.HEADER) {</span>
+<span class="fc" id="L293">            return RequestHeader.class;</span>
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        } else if (t == ParamType.COOKIE) {</span>
+<span class="fc" id="L295">            return CookieValue.class;</span>
         } else {
-<span class="nc" id="L285">            throw new IllegalArgumentException(&quot;unexpected &quot; + t);</span>
+<span class="nc" id="L297">            throw new IllegalArgumentException(&quot;unexpected &quot; + t);</span>
         }
     }
 
     private static void addValidationChecks(CodePrintWriter out, Method m, Names names) {
-<span class="fc" id="L290">        boolean found = m.parameters.stream().anyMatch(p -&gt; p.constraints.atLeastOnePresent());</span>
-<span class="fc bfc" id="L291" title="All 2 branches covered.">        if (found) {</span>
-<span class="fc" id="L292">            out.line(&quot;if (%s.config().validateInControllerMethod().test(\&quot;%s\&quot;)) {&quot;,</span>
-<span class="fc" id="L293">                    out.add(names.globalsFullClassName()), m.methodName);</span>
-<span class="fc" id="L294">            m.parameters.forEach(p -&gt; {</span>
-<span class="fc" id="L295">                Constraints x = p.constraints;</span>
-<span class="fc bfc" id="L296" title="All 2 branches covered.">                if (x.atLeastOnePresent()) {</span>
-<span class="pc bpc" id="L297" title="1 of 2 branches missed.">                    if (x.minLength.isPresent()) {</span>
-<span class="fc" id="L298">                        out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="fc" id="L299">                                x.minLength.get(), p.identifier);</span>
+<span class="fc" id="L302">        boolean found = m.parameters.stream().anyMatch(p -&gt; p.constraints.atLeastOnePresent());</span>
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (found) {</span>
+<span class="fc" id="L304">            out.line(&quot;if (%s.config().validateInControllerMethod().test(\&quot;%s\&quot;)) {&quot;,</span>
+<span class="fc" id="L305">                    out.add(names.globalsFullClassName()), m.methodName);</span>
+<span class="fc" id="L306">            m.parameters.forEach(p -&gt; {</span>
+<span class="fc" id="L307">                Constraints x = p.constraints;</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                if (x.atLeastOnePresent()) {</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">                    if (x.minLength.isPresent()) {</span>
+<span class="fc" id="L310">                        out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="fc" id="L311">                                x.minLength.get(), p.identifier);</span>
                     }
-<span class="pc bpc" id="L301" title="1 of 2 branches missed.">                    if (x.maxLength.isPresent()) {</span>
-<span class="nc" id="L302">                        out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L303">                                x.maxLength.get(), p.identifier);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                    if (x.maxLength.isPresent()) {</span>
+<span class="fc" id="L314">                        out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="fc" id="L315">                                x.maxLength.get(), p.identifier);</span>
                     }
-<span class="pc bpc" id="L305" title="1 of 2 branches missed.">                    if (x.pattern.isPresent()) {</span>
-<span class="nc" id="L306">                        out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, RequestPreconditions.class,</span>
-<span class="nc" id="L307">                                p.identifier, WriterUtil.escapePattern(x.pattern.get()), p.identifier);</span>
+<span class="pc bpc" id="L317" title="1 of 2 branches missed.">                    if (x.pattern.isPresent()) {</span>
+<span class="nc" id="L318">                        out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, RequestPreconditions.class,</span>
+<span class="nc" id="L319">                                p.identifier, WriterUtil.escapePattern(x.pattern.get()), p.identifier);</span>
                     }
-<span class="pc bpc" id="L309" title="1 of 2 branches missed.">                    if (x.min.isPresent()) {</span>
-<span class="nc" id="L310">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L311">                                x.min.get().toString(), p.identifier, false);</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">                    if (x.min.isPresent()) {</span>
+<span class="fc" id="L322">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="fc" id="L323">                                x.min.get().toString(), p.identifier, false);</span>
                     }
-<span class="pc bpc" id="L313" title="1 of 2 branches missed.">                    if (x.max.isPresent()) {</span>
-<span class="nc" id="L314">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L315">                                x.max.get().toString(), p.identifier, false);</span>
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">                    if (x.max.isPresent()) {</span>
+<span class="nc" id="L326">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L327">                                x.max.get().toString(), p.identifier, false);</span>
                     }
-<span class="pc bpc" id="L317" title="1 of 2 branches missed.">                    if (x.minExclusive.isPresent()) {</span>
-<span class="nc" id="L318">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L319">                                x.minExclusive.get().toString(), p.identifier, true);</span>
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">                    if (x.minExclusive.isPresent()) {</span>
+<span class="nc" id="L330">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L331">                                x.minExclusive.get().toString(), p.identifier, true);</span>
                     }
-<span class="pc bpc" id="L321" title="1 of 2 branches missed.">                    if (x.maxExclusive.isPresent()) {</span>
-<span class="nc" id="L322">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L323">                                x.maxExclusive.get().toString(), p.identifier, true);</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">                    if (x.maxExclusive.isPresent()) {</span>
+<span class="nc" id="L334">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L335">                                x.maxExclusive.get().toString(), p.identifier, true);</span>
                     }
-<span class="pc bpc" id="L325" title="3 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.minItems.isPresent()) {</span>
-<span class="nc" id="L326">                        out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L327">                                x.minItems.get(), p.identifier);</span>
+<span class="pc bpc" id="L337" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.minItems.isPresent()) {</span>
+<span class="nc" id="L338">                        out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L339">                                x.minItems.get(), p.identifier);</span>
                     }
-<span class="pc bpc" id="L329" title="3 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
-<span class="nc" id="L330">                        out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L331">                                x.maxItems.get(), p.identifier);</span>
+<span class="pc bpc" id="L341" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
+<span class="nc" id="L342">                        out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L343">                                x.maxItems.get(), p.identifier);</span>
                     }
                 }
-<span class="fc" id="L334">            });</span>
-<span class="fc" id="L335">            out.closeParen();</span>
+<span class="fc" id="L346">            });</span>
+<span class="fc" id="L347">            out.closeParen();</span>
         }
-<span class="fc" id="L337">    }</span>
+<span class="fc" id="L349">    }</span>
 
     static String toImportedType(Param p, Imports imports) {
-<span class="pc bpc" id="L340" title="1 of 2 branches missed.">        if (p.isArray) {</span>
-<span class="nc bnc" id="L341" title="All 2 branches missed.">            if (p.required) {</span>
-<span class="nc" id="L342">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(p.fullClassName));</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (p.isArray) {</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">            if (p.required) {</span>
+<span class="nc" id="L354">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(p.fullClassName));</span>
             } else {
-<span class="nc" id="L344">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
-<span class="nc" id="L345">                        imports.add(p.fullClassName));</span>
+<span class="fc" id="L356">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
+<span class="fc" id="L357">                        imports.add(p.fullClassName));</span>
             }
-<span class="fc bfc" id="L347" title="All 4 branches covered.">        } else if (p.required || p.defaultValue.isPresent()) {</span>
-<span class="fc" id="L348">            return imports.add(Util.toPrimitive(p.fullClassName));</span>
+<span class="fc bfc" id="L359" title="All 4 branches covered.">        } else if (p.required || p.defaultValue.isPresent()) {</span>
+<span class="fc" id="L360">            return imports.add(Util.toPrimitive(p.fullClassName));</span>
         } else {
-<span class="fc" id="L350">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(p.fullClassName));</span>
+<span class="fc" id="L362">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(p.fullClassName));</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

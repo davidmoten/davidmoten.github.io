@@ -5,6 +5,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.davidmoten.oa3.codegen.util.Util;
 
@@ -14,52 +17,70 @@ public class DefaultSerializer implements Serializer {
 
     private final ObjectMapper m;
 
-<span class="fc" id="L17">    public DefaultSerializer(ObjectMapper m) {</span>
-<span class="fc" id="L18">        this.m = m;</span>
-<span class="fc" id="L19">    }</span>
+<span class="fc" id="L20">    public DefaultSerializer(ObjectMapper m) {</span>
+<span class="fc" id="L21">        this.m = m;</span>
+<span class="fc" id="L22">    }</span>
 
     @Override
     public void serialize(Object o, String contentType, OutputStream out) {
         try {
-<span class="pc bpc" id="L24" title="1 of 2 branches missed.">            if (MediaType.isJson(contentType)) {</span>
-<span class="fc" id="L25">                m.writeValue(out, o);</span>
-<span class="nc bnc" id="L26" title="All 2 branches missed.">            } else if (MediaType.isText(contentType)) {</span>
-<span class="nc bnc" id="L27" title="All 2 branches missed.">                if (o != null) {</span>
-<span class="nc" id="L28">                    out.write(String.valueOf(o).getBytes(StandardCharsets.UTF_8));</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">            if (MediaType.isJson(contentType)) {</span>
+<span class="fc" id="L28">                m.writeValue(out, o);</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">            } else if (MediaType.isText(contentType)) {</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">                if (o != null) {</span>
+<span class="nc" id="L31">                    out.write(String.valueOf(o).getBytes(StandardCharsets.UTF_8));</span>
                 }
-<span class="nc bnc" id="L30" title="All 4 branches missed.">            } else if (o instanceof byte[] &amp;&amp; MediaType.isOctetStream(contentType)) {</span>
-<span class="nc" id="L31">                out.write((byte[]) o);</span>
+<span class="nc bnc" id="L33" title="All 4 branches missed.">            } else if (o instanceof byte[] &amp;&amp; MediaType.isOctetStream(contentType)) {</span>
+<span class="nc" id="L34">                out.write((byte[]) o);</span>
             } else {
-<span class="nc" id="L33">                throw new RuntimeException(</span>
-<span class="nc" id="L34">                        &quot;unsupported serialization of &quot; + o.getClass() + &quot; with contentType=&quot; + contentType);</span>
+<span class="nc" id="L36">                throw new RuntimeException(</span>
+<span class="nc" id="L37">                        &quot;unsupported serialization of &quot; + o.getClass() + &quot; with contentType=&quot; + contentType);</span>
             }
-<span class="nc" id="L36">        } catch (IOException e) {</span>
-<span class="nc" id="L37">            throw new UncheckedIOException(e);</span>
-<span class="fc" id="L38">        }</span>
-<span class="fc" id="L39">    }</span>
+<span class="nc" id="L39">        } catch (IOException e) {</span>
+<span class="nc" id="L40">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L41">        }</span>
+<span class="fc" id="L42">    }</span>
 
     @SuppressWarnings(&quot;unchecked&quot;)
     @Override
     public &lt;T&gt; T deserialize(Class&lt;T&gt; cls, String contentType, InputStream in) {
         try {
-<span class="pc bpc" id="L45" title="1 of 2 branches missed.">            if (MediaType.isJson(contentType)) {</span>
-<span class="fc" id="L46">                return m.readValue(in, cls);</span>
-<span class="nc bnc" id="L47" title="All 4 branches missed.">            } else if (cls.equals(String.class) &amp;&amp; MediaType.isText(contentType)) {</span>
-<span class="nc" id="L48">                try (InputStream is = in) {</span>
-<span class="nc" id="L49">                    return (T) new String(Util.read(is), StandardCharsets.UTF_8);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">            if (MediaType.isJson(contentType)) {</span>
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">                if (cls.equals(byte[].class)) {</span>
+<span class="nc" id="L50">                    return (T) m.readTree(in);</span>
+                } else {
+<span class="fc" id="L52">                    return m.readValue(in, cls);</span>
                 }
-<span class="nc bnc" id="L51" title="All 4 branches missed.">            } else if (cls.equals(byte[].class) &amp;&amp; MediaType.isOctetStream(contentType)) {</span>
-<span class="nc" id="L52">                try (InputStream is = in) {</span>
-<span class="nc" id="L53">                    return (T) Util.read(is);</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">            } else if (cls.equals(String.class) &amp;&amp; MediaType.isText(contentType)) {</span>
+<span class="nc" id="L55">                try (InputStream is = in) {</span>
+<span class="nc" id="L56">                    return (T) new String(Util.read(is), StandardCharsets.UTF_8);</span>
+                }
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            } else if (MediaType.isOctetStream(contentType)) {</span>
+<span class="nc" id="L59">                try (InputStream is = in) {</span>
+<span class="nc" id="L60">                    return (T) Util.read(is);</span>
                 }
             } else {
-<span class="nc" id="L56">                throw new RuntimeException(</span>
+<span class="nc" id="L63">                throw new RuntimeException(</span>
                         &quot;unsupported deserialization to &quot; + cls + &quot; with contentType=&quot; + contentType);
             }
-<span class="nc" id="L59">        } catch (IOException e) {</span>
-<span class="nc" id="L60">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L66">        } catch (IOException e) {</span>
+<span class="nc" id="L67">            throw new UncheckedIOException(e);</span>
+        }
+    }
+
+    @Override
+    public Map&lt;String, Object&gt; properties(Object o, String contentType) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (MediaType.isJson(contentType)) {</span>
+            try {
+<span class="nc" id="L75">                return m.valueToTree(o).properties().stream()</span>
+<span class="nc" id="L76">                        .collect(Collectors.toMap(x -&gt; x.getKey(), x -&gt; x.getValue()));</span>
+<span class="nc" id="L77">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L78">                return Collections.emptyMap();</span>
+            }
+        } else {
+<span class="nc" id="L81">            return Collections.emptyMap();</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

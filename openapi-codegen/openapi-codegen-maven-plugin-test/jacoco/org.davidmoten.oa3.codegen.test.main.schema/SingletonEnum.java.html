@@ -10,31 +10,37 @@ import java.lang.Object;
 import java.lang.String;
 import java.util.Objects;
 
-<span class="fc" id="L13">@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)</span>
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+
+<span class="fc" id="L16">@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)</span>
 public enum SingletonEnum {
 
-<span class="fc" id="L16">    HELLO(&quot;hello&quot;);</span>
+<span class="fc" id="L19">    HELLO(&quot;hello&quot;);</span>
 
     @JsonValue
     private final String value;
 
-    private SingletonEnum(
-<span class="fc" id="L22">            String value) {</span>
-<span class="fc" id="L23">        this.value = value;</span>
-<span class="fc" id="L24">    }</span>
+    SingletonEnum(
+<span class="fc" id="L25">            String value) {</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(SingletonEnum.class)) {</span>
+<span class="fc" id="L27">            Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+        }
+<span class="fc" id="L29">        this.value = value;</span>
+<span class="fc" id="L30">    }</span>
 
     public String value() {
-<span class="fc" id="L27">        return value;</span>
+<span class="fc" id="L33">        return value;</span>
     }
 
     @JsonCreator
     public static SingletonEnum fromValue(Object value) {
-<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        for (SingletonEnum x: SingletonEnum.values()) {</span>
-<span class="pc bpc" id="L33" title="1 of 2 branches missed.">            if (Objects.equals(value, x.value)) {</span>
-<span class="fc" id="L34">                return x;</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        for (SingletonEnum x: SingletonEnum.values()) {</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">            if (Objects.equals(value, x.value)) {</span>
+<span class="fc" id="L40">                return x;</span>
             }
         }
-<span class="nc" id="L37">        throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
+<span class="nc" id="L43">        throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

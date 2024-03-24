@@ -3,6 +3,7 @@
 import static org.davidmoten.oa3.codegen.util.Util.orElse;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -34,166 +35,201 @@ public class Generator {
 
     private final Definition definition;
 
-<span class="fc" id="L37">    public Generator(Definition definition) {</span>
-<span class="fc" id="L38">        this.definition = definition;</span>
-<span class="fc" id="L39">    }</span>
+<span class="fc" id="L38">    public Generator(Definition definition) {</span>
+<span class="fc" id="L39">        this.definition = definition;</span>
+<span class="fc" id="L40">    }</span>
 
     public void generate() {
 
         // Names object for each Packages object
-<span class="fc" id="L44">        Names names = new Names(definition);</span>
+<span class="fc" id="L45">        Names names = new Names(definition);</span>
 
         // generate model classes for schema definitions
-<span class="fc" id="L47">        writeSchemaClasses(definition, names);</span>
+<span class="fc" id="L48">        writeSchemaClasses(definition, names);</span>
 
-<span class="fc" id="L49">        SchemasCodeWriter.writeGlobalsClass(names);</span>
+<span class="fc" id="L50">        SchemasCodeWriter.writeGlobalsClass(names);</span>
 
-<span class="fc" id="L51">    }</span>
+<span class="fc" id="L52">    }</span>
 
     private static void writeSchemaClasses(Definition definition, Names names) {
-<span class="fc" id="L54">        MyVisitor v = new MyVisitor(names);</span>
-<span class="fc" id="L55">        Apis.visitSchemas(names.api(), v);</span>
+<span class="fc" id="L55">        MyVisitor v = new MyVisitor(names);</span>
+<span class="fc" id="L56">        Apis.visitSchemas(names.api(), v);</span>
 
-<span class="fc" id="L57">        Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces = new HashMap&lt;&gt;();</span>
 <span class="fc bfc" id="L58" title="All 2 branches covered.">        for (MyVisitor.Result result : v.results()) {</span>
-<span class="fc" id="L59">            findFullClassNameInterfaces(result.cls, fullClassNameInterfaces);</span>
-<span class="fc" id="L60">        }</span>
-<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (MyVisitor.Result result : v.results()) {</span>
-<span class="fc" id="L62">            Cls cls = result.cls;</span>
-<span class="fc" id="L63">            String schemaName = result.name;</span>
-<span class="pc bpc" id="L64" title="3 of 4 branches missed.">            if ((definition.includeSchemas().isEmpty() || definition.includeSchemas().contains(schemaName))</span>
-<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                    &amp;&amp; !definition.excludeSchemas().contains(schemaName)) {</span>
-<span class="fc" id="L66">                SchemasCodeWriter.writeSchemaClass(names, fullClassNameInterfaces, cls, schemaName);</span>
+<span class="fc" id="L59">            Cls cls = result.cls;</span>
+<span class="fc" id="L60">            String schemaName = result.name;</span>
+<span class="pc bpc" id="L61" title="3 of 4 branches missed.">            if ((definition.includeSchemas().isEmpty() || definition.includeSchemas().contains(schemaName))</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                    &amp;&amp; !definition.excludeSchemas().contains(schemaName)) {</span>
+<span class="fc" id="L63">                names.registerCls(cls);</span>
             }
-<span class="fc" id="L68">        }</span>
-<span class="fc" id="L69">    }</span>
+<span class="fc" id="L65">        }</span>
+        
+<span class="fc" id="L67">        Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (MyVisitor.Result result : v.results()) {</span>
+<span class="fc" id="L69">            findFullClassNameInterfaces(result.cls, fullClassNameInterfaces);</span>
+<span class="fc" id="L70">        }</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (MyVisitor.Result result : v.results()) {</span>
+<span class="fc" id="L72">            Cls cls = result.cls;</span>
+<span class="fc" id="L73">            String schemaName = result.name;</span>
+<span class="pc bpc" id="L74" title="3 of 4 branches missed.">            if ((definition.includeSchemas().isEmpty() || definition.includeSchemas().contains(schemaName))</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                    &amp;&amp; !definition.excludeSchemas().contains(schemaName)) {</span>
+<span class="fc" id="L76">                SchemasCodeWriter.writeSchemaClass(names, fullClassNameInterfaces, cls, schemaName);</span>
+            }
+<span class="fc" id="L78">        }</span>
+<span class="fc" id="L79">    }</span>
 
     private static void findFullClassNameInterfaces(Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
-<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (cls.classType == ClassType.ONE_OR_ANY_OF_DISCRIMINATED) {</span>
-<span class="fc" id="L73">            cls.fields.forEach(x -&gt; {</span>
-<span class="fc" id="L74">                Set&lt;Cls&gt; list = fullClassNameInterfaces.get(x.fullClassName);</span>
-<span class="fc bfc" id="L75" title="All 2 branches covered.">                if (list == null) {</span>
-<span class="fc" id="L76">                    list = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L77">                    fullClassNameInterfaces.put(x.fullClassName, list);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (cls.classType == ClassType.ONE_OR_ANY_OF_DISCRIMINATED) {</span>
+<span class="fc" id="L83">            cls.fields.forEach(x -&gt; {</span>
+<span class="fc" id="L84">                Set&lt;Cls&gt; list = fullClassNameInterfaces.get(x.fullClassName);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                if (list == null) {</span>
+<span class="fc" id="L86">                    list = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L87">                    fullClassNameInterfaces.put(x.fullClassName, list);</span>
                 }
-<span class="fc" id="L79">                list.add(cls);</span>
-<span class="fc" id="L80">            });</span>
+<span class="fc" id="L89">                list.add(cls);</span>
+<span class="fc" id="L90">            });</span>
         }
-<span class="fc" id="L82">    }</span>
+<span class="fc" id="L92">    }</span>
 
-<span class="fc" id="L84">    public static final class Cls {</span>
+<span class="fc" id="L94">    public static final class Cls {</span>
         public SchemaCategory category;
         public String fullClassName;
-<span class="fc" id="L87">        public Optional&lt;String&gt; description = Optional.empty();</span>
+<span class="fc" id="L97">        public Optional&lt;String&gt; description = Optional.empty();</span>
         public ClassType classType;
-<span class="fc" id="L89">        public List&lt;Field&gt; fields = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L90">        public List&lt;EnumMember&gt; enumMembers = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L91">        public List&lt;Cls&gt; classes = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L92">        public Discriminator discriminator = null;</span>
+<span class="fc" id="L99">        public List&lt;Field&gt; fields = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L100">        public List&lt;EnumMember&gt; enumMembers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L101">        public List&lt;String&gt; enumNames = Collections.emptyList();</span>
+<span class="fc" id="L102">        public List&lt;Cls&gt; classes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L103">        public Discriminator discriminator = null;</span>
         public String enumValueFullType;
-<span class="fc" id="L94">        public boolean topLevel = false;</span>
-<span class="fc" id="L95">        public boolean hasProperties = false;</span>
+<span class="fc" id="L105">        public boolean topLevel = false;</span>
+<span class="fc" id="L106">        public boolean hasProperties = false;</span>
         public PolymorphicType polymorphicType;
-<span class="fc" id="L97">        public Optional&lt;Cls&gt; owner = Optional.empty(); // the owning heirarchy, we cannot name our class any one of</span>
+<span class="fc" id="L108">        public Optional&lt;Cls&gt; owner = Optional.empty(); // the owning heirarchy, we cannot name our class any one of</span>
         // these classes (disallowed by java)
-<span class="fc" id="L99">        public Optional&lt;String&gt; name = Optional.empty();</span>
-<span class="fc" id="L100">        public Optional&lt;Schema&lt;?&gt;&gt; schema = Optional.empty();</span>
+<span class="fc" id="L110">        public Optional&lt;String&gt; name = Optional.empty();</span>
+<span class="fc" id="L111">        public Optional&lt;Schema&lt;?&gt;&gt; schema = Optional.empty();</span>
 
         public String nextAnonymousFieldName() {
-<span class="fc" id="L103">            num++;</span>
-<span class="fc" id="L104">            return &quot;object&quot; + num;</span>
+<span class="fc" id="L114">            num++;</span>
+<span class="fc" id="L115">            return &quot;option&quot; + num;</span>
         }
 
-<span class="fc" id="L107">        private int num = 0;</span>
-<span class="fc" id="L108">        private Set&lt;String&gt; fieldNames = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L118">        private int num = 0;</span>
+<span class="fc" id="L119">        private Set&lt;String&gt; fieldNames = new HashSet&lt;&gt;();</span>
 
-        public String nextFieldName(String name) {
-            final String next;
-<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (name == null) {</span>
-<span class="fc" id="L113">                next = nextAnonymousFieldName();</span>
-            } else {
-<span class="fc" id="L115">                String s = Names.toFieldName(name);</span>
-                String a;
-<span class="fc" id="L117">                int i = 0;</span>
-                while (true) {
-<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                    if (i &gt; 0) {</span>
-<span class="nc" id="L120">                        a = s + i;</span>
-                    } else {
-<span class="fc" id="L122">                        a = s;</span>
-                    }
-<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                    if (!fieldNames.contains(a)) {</span>
-<span class="fc" id="L125">                        break;</span>
-                    }
-<span class="nc" id="L127">                    i++;</span>
-                }
-<span class="fc" id="L129">                next = a;</span>
+        public String nextFieldName(String name, Schema&lt;?&gt; schema) {
+<span class="fc" id="L122">            Optional&lt;String&gt; nameOverride = extensionString(schema, ExtensionKeys.NAME);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            if (nameOverride.isPresent()) {</span>
+<span class="fc" id="L124">            	name = nameOverride.get();</span>
             }
-<span class="fc" id="L131">            fieldNames.add(next);</span>
-<span class="fc" id="L132">            return next;</span>
+            final String next;
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (name == null) {</span>
+<span class="fc" id="L128">            	next = nextAnonymousFieldName();</span>
+            } else {
+<span class="fc" id="L130">                String s = Names.toFieldName(name);</span>
+                String a;
+<span class="fc" id="L132">                int i = 0;</span>
+                while (true) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                    if (i &gt; 0) {</span>
+<span class="nc" id="L135">                        a = s + i;</span>
+                    } else {
+<span class="fc" id="L137">                        a = s;</span>
+                    }
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">                    if (!fieldNames.contains(a)) {</span>
+<span class="fc" id="L140">                        break;</span>
+                    }
+<span class="nc" id="L142">                    i++;</span>
+                }
+<span class="fc" id="L144">                next = a;</span>
+            }
+<span class="fc" id="L146">            fieldNames.add(next);</span>
+<span class="fc" id="L147">            return next;</span>
         }
 
         public String fieldName(Field f) {
-<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (unwrapSingleField()) {</span>
-<span class="fc" id="L137">                return &quot;value&quot;;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">            if (unwrapSingleField()) {</span>
+<span class="fc" id="L152">                return &quot;value&quot;;</span>
             } else {
-<span class="fc" id="L139">                return f.fieldName;</span>
+<span class="fc" id="L154">                return f.fieldName;</span>
             }
         }
 
         void addField(String fullType, String name, String fieldName, boolean required, boolean isArray,
                 Optional&lt;MapType&gt; mapType, boolean nullable) {
-<span class="fc" id="L145">            addField(fullType, name, fieldName, required, isArray, Optional.empty(), Optional.empty(), Optional.empty(),</span>
-<span class="fc" id="L146">                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false,</span>
+<span class="fc" id="L160">            addField(fullType, name, fieldName, required, isArray, Optional.empty(), Optional.empty(), Optional.empty(),</span>
+<span class="fc" id="L161">                    Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false,</span>
                     Encoding.DEFAULT, mapType, nullable);
-<span class="fc" id="L148">        }</span>
+<span class="fc" id="L163">        }</span>
 
         void addField(String fullType, String name, String fieldName, boolean required, boolean isArray,
                 Optional&lt;Integer&gt; minItems, Optional&lt;Integer&gt; maxItems, Optional&lt;Integer&gt; minLength,
                 Optional&lt;Integer&gt; maxLength, Optional&lt;String&gt; pattern, Optional&lt;BigDecimal&gt; min,
                 Optional&lt;BigDecimal&gt; max, boolean exclusiveMin, boolean exclusiveMax, Encoding encoding,
                 Optional&lt;MapType&gt; mapType, boolean nullable) {
-<span class="fc" id="L155">            fields.add(new Field(fullType, name, fieldName, required, isArray, minItems, maxItems, minLength, maxLength,</span>
+<span class="fc" id="L170">            fields.add(new Field(fullType, name, fieldName, required, isArray, minItems, maxItems, minLength, maxLength,</span>
                     pattern, min, max, exclusiveMin, exclusiveMax, encoding, mapType, nullable));
 //            if (WriterUtil.DEBUG &amp;&amp; mapType.isPresent()) {
 //                System.err.println(fullClassName);
 //                System.err.println(fields.get(fields.size() - 1));
 //                Thread.dumpStack();
 //            }
-<span class="fc" id="L162">        }</span>
+<span class="fc" id="L177">        }</span>
 
         public String pkg() {
-<span class="fc" id="L165">            return Names.pkg(fullClassName);</span>
+<span class="fc" id="L180">            return Names.pkg(fullClassName);</span>
         }
 
         public String simpleName() {
-<span class="fc" id="L169">            return Names.simpleClassName(fullClassName);</span>
+<span class="fc" id="L184">            return Names.simpleClassName(fullClassName);</span>
         }
 
         public boolean unwrapSingleField() {
-<span class="fc bfc" id="L173" title="All 8 branches covered.">            return !hasProperties</span>
+<span class="fc bfc" id="L188" title="All 8 branches covered.">            return !hasProperties</span>
                     &amp;&amp; (classType == ClassType.ENUM || classType == ClassType.ARRAY_WRAPPER
-<span class="fc bfc" id="L175" title="All 4 branches covered.">                            || topLevel &amp;&amp; fields.size() == 1)</span>
-                    || classType == ClassType.ONE_OR_ANY_OF_NON_DISCRIMINATED;
+<span class="fc bfc" id="L190" title="All 4 branches covered.">                            || topLevel &amp;&amp; fields.size() == 1)</span>
+                    || classType == ClassType.ONE_OF_NON_DISCRIMINATED;
         }
 
         public Set&lt;String&gt; ownersAndSiblingsSimpleNames() {
-<span class="fc" id="L180">            Cls c = this;</span>
-<span class="fc" id="L181">            Set&lt;String&gt; set = new HashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L182" title="All 2 branches covered.">            while (c.owner.isPresent()) {</span>
-<span class="fc" id="L183">                set.add(c.owner.get().simpleName());</span>
-<span class="fc" id="L184">                c = c.owner.get();</span>
+<span class="fc" id="L195">            Cls c = this;</span>
+<span class="fc" id="L196">            Set&lt;String&gt; set = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            while (c.owner.isPresent()) {</span>
+<span class="fc" id="L198">                set.add(c.owner.get().simpleName());</span>
+<span class="fc" id="L199">                c = c.owner.get();</span>
             }
-<span class="fc bfc" id="L186" title="All 2 branches covered.">            classes.stream().filter(x -&gt; x.fullClassName != null).forEach(x -&gt; set.add(x.simpleName()));</span>
-<span class="fc" id="L187">            return set;</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            classes.stream().filter(x -&gt; x.fullClassName != null).forEach(x -&gt; set.add(x.simpleName()));</span>
+<span class="fc" id="L202">            return set;</span>
         }
 
         public boolean isNullableEnum() {
-<span class="pc bpc" id="L191" title="1 of 4 branches missed.">            return !enumMembers.isEmpty() &amp;&amp; enumMembers.get(0).nullable;</span>
+<span class="pc bpc" id="L206" title="1 of 4 branches missed.">            return !enumMembers.isEmpty() &amp;&amp; enumMembers.get(0).nullable;</span>
         }
 
         public boolean hasEnumNullValue() {
-<span class="fc bfc" id="L195" title="All 2 branches covered.">            return enumMembers.stream().anyMatch(x -&gt; x.parameter == null);</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            return enumMembers.stream().anyMatch(x -&gt; x.parameter == null);</span>
         }
+        
+        public boolean hasEncoding() {
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            return schema.isPresent() //</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">                    &amp;&amp; schema.get().getExtensions() != null //</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                    &amp;&amp; Boolean.TRUE.equals(extension(schema.get(), ExtensionKeys.HAS_ENCODING).orElse(null));</span>
+        }
+    }
+    
+    private static Optional&lt;Object&gt; extension(Schema&lt;?&gt; schema, String key) {
+<span class="fc" id="L221">    	Preconditions.checkNotNull(key);</span>
+<span class="fc" id="L222">    	Map&lt;String, Object&gt; map = schema.getExtensions();</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">    	if (map == null) {</span>
+<span class="fc" id="L224">    		return Optional.empty();</span>
+    	} else {
+<span class="fc" id="L226">    		return Optional.ofNullable(map.get(key));</span>
+    	}
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+	public static Optional&lt;String&gt; extensionString(Schema&lt;?&gt; schema, String key) {
+<span class="fc" id="L232">    	return (Optional&lt;String&gt;) (Optional&lt;?&gt;) extension(schema, key);</span>
     }
 
     public static class EnumMember {
@@ -201,44 +237,56 @@ public class Generator {
         public final Object parameter;
         public final boolean nullable;
 
-<span class="fc" id="L204">        public EnumMember(String name, Object parameter, boolean nullable) {</span>
-<span class="fc" id="L205">            this.name = name;</span>
-<span class="fc" id="L206">            this.parameter = parameter;</span>
-<span class="fc" id="L207">            this.nullable = nullable;</span>
-<span class="fc" id="L208">        }</span>
+<span class="fc" id="L240">        public EnumMember(String name, Object parameter, boolean nullable) {</span>
+<span class="fc" id="L241">            this.name = name;</span>
+<span class="fc" id="L242">            this.parameter = parameter;</span>
+<span class="fc" id="L243">            this.nullable = nullable;</span>
+<span class="fc" id="L244">        }</span>
     }
 
-<span class="fc" id="L211">    public enum ClassType {</span>
-<span class="fc" id="L212">        CLASS(&quot;class&quot;), //</span>
-<span class="fc" id="L213">        ENUM(&quot;enum&quot;), //</span>
-<span class="fc" id="L214">        ONE_OR_ANY_OF_DISCRIMINATED(&quot;interface&quot;), //</span>
-<span class="fc" id="L215">        ONE_OR_ANY_OF_NON_DISCRIMINATED(&quot;class&quot;), //</span>
-<span class="fc" id="L216">        ALL_OF(&quot;class&quot;), //</span>
-<span class="fc" id="L217">        ARRAY_WRAPPER(&quot;class&quot;);</span>
+<span class="fc" id="L247">    public enum ClassType {</span>
+<span class="fc" id="L248">        CLASS(&quot;class&quot;), //</span>
+<span class="fc" id="L249">        ENUM(&quot;enum&quot;), //</span>
+<span class="fc" id="L250">        ONE_OR_ANY_OF_DISCRIMINATED(&quot;interface&quot;), //</span>
+<span class="fc" id="L251">        ONE_OF_NON_DISCRIMINATED(&quot;class&quot;), //</span>
+<span class="fc" id="L252">        ANY_OF_NON_DISCRIMINATED(&quot;class&quot;), //</span>
+<span class="fc" id="L253">        ALL_OF(&quot;class&quot;), //</span>
+<span class="fc" id="L254">        ARRAY_WRAPPER(&quot;class&quot;);</span>
 
         private final String word;
 
-<span class="fc" id="L221">        ClassType(String word) {</span>
-<span class="fc" id="L222">            this.word = word;</span>
-<span class="fc" id="L223">        }</span>
+<span class="fc" id="L258">        ClassType(String word) {</span>
+<span class="fc" id="L259">            this.word = word;</span>
+<span class="fc" id="L260">        }</span>
 
         public String word() {
-<span class="fc" id="L226">            return word;</span>
+<span class="fc" id="L263">            return word;</span>
         }
     }
 
-<span class="fc" id="L230">    private static final Set&lt;String&gt; PRIMITIVE_CLASS_NAMES = Sets.newHashSet(&quot;int&quot;, &quot;long&quot;, &quot;byte&quot;, &quot;float&quot;, &quot;double&quot;,</span>
+<span class="fc" id="L267">    private static final Set&lt;String&gt; PRIMITIVE_CLASS_NAMES = Sets.of(&quot;int&quot;, &quot;long&quot;, &quot;byte&quot;, &quot;float&quot;, &quot;double&quot;,</span>
             &quot;boolean&quot;, &quot;short&quot;);
 
-<span class="fc" id="L233">    public enum MapType {</span>
-<span class="fc" id="L234">        ADDITIONAL_PROPERTIES, FIELD;</span>
+<span class="fc" id="L270">    public enum MapType {</span>
+<span class="fc" id="L271">        ADDITIONAL_PROPERTIES, FIELD;</span>
     }
 
+    
+    
     public final static class Field {
         public final String fullClassName;
         public final String name;
         public final String fieldName;
 
+<span class="fc" id="L281">        private static final Set&lt;String&gt; NUMERIC_CLASS_NAMES = Sets.of(&quot;int&quot;, &quot;long&quot;, &quot;float&quot;, &quot;double&quot;, &quot;short&quot;, //</span>
+<span class="fc" id="L282">                Integer.class.getCanonicalName(), //</span>
+<span class="fc" id="L283">                Long.class.getCanonicalName(), //</span>
+<span class="fc" id="L284">                Float.class.getCanonicalName(), //</span>
+<span class="fc" id="L285">                Double.class.getCanonicalName(), //</span>
+<span class="fc" id="L286">                Short.class.getCanonicalName(), //</span>
+<span class="fc" id="L287">                BigInteger.class.getCanonicalName(), //</span>
+<span class="fc" id="L288">                BigDecimal.class.getCanonicalName());</span>
+        
         // note that when isArray is true, required does not apply to the arrray item
         // but rather to the array itself (as an object property for example)
         public final boolean required;
@@ -262,491 +310,459 @@ public class Generator {
                 Optional&lt;Integer&gt; minItems, Optional&lt;Integer&gt; maxItems, Optional&lt;Integer&gt; minLength,
                 Optional&lt;Integer&gt; maxLength, Optional&lt;String&gt; pattern, Optional&lt;BigDecimal&gt; min,
                 Optional&lt;BigDecimal&gt; max, boolean exclusiveMin, boolean exclusiveMax, Encoding encoding,
-<span class="fc" id="L265">                Optional&lt;MapType&gt; mapType, boolean nullable) {</span>
-<span class="fc" id="L266">            this.fullClassName = fullClassName;</span>
-<span class="fc" id="L267">            this.name = name;</span>
-<span class="fc" id="L268">            this.fieldName = fieldName;</span>
-<span class="fc" id="L269">            this.required = required;</span>
-<span class="fc" id="L270">            this.isArray = isArray;</span>
-<span class="fc" id="L271">            this.minItems = minItems;</span>
-<span class="fc" id="L272">            this.maxItems = maxItems;</span>
-<span class="fc" id="L273">            this.minLength = minLength;</span>
-<span class="fc" id="L274">            this.maxLength = maxLength;</span>
-<span class="fc" id="L275">            this.pattern = pattern;</span>
-<span class="fc" id="L276">            this.exclusiveMin = exclusiveMin;</span>
-<span class="fc" id="L277">            this.exclusiveMax = exclusiveMax;</span>
-<span class="fc" id="L278">            this.encoding = encoding;</span>
-<span class="fc" id="L279">            this.min = min;</span>
-<span class="fc" id="L280">            this.max = max;</span>
-<span class="fc" id="L281">            this.mapType = mapType;</span>
-<span class="fc" id="L282">            this.nullable = nullable;</span>
-<span class="fc" id="L283">        }</span>
+<span class="fc" id="L313">                Optional&lt;MapType&gt; mapType, boolean nullable) {</span>
+<span class="fc" id="L314">            this.fullClassName = fullClassName;</span>
+<span class="fc" id="L315">            this.name = name;</span>
+<span class="fc" id="L316">            this.fieldName = fieldName;</span>
+<span class="fc" id="L317">            this.required = required;</span>
+<span class="fc" id="L318">            this.isArray = isArray;</span>
+<span class="fc" id="L319">            this.minItems = minItems;</span>
+<span class="fc" id="L320">            this.maxItems = maxItems;</span>
+<span class="fc" id="L321">            this.minLength = minLength;</span>
+<span class="fc" id="L322">            this.maxLength = maxLength;</span>
+<span class="fc" id="L323">            this.pattern = pattern;</span>
+<span class="fc" id="L324">            this.exclusiveMin = exclusiveMin;</span>
+<span class="fc" id="L325">            this.exclusiveMax = exclusiveMax;</span>
+<span class="fc" id="L326">            this.encoding = encoding;</span>
+<span class="fc" id="L327">            this.min = min;</span>
+<span class="fc" id="L328">            this.max = max;</span>
+<span class="fc" id="L329">            this.mapType = mapType;</span>
+<span class="fc" id="L330">            this.nullable = nullable;</span>
+<span class="fc" id="L331">        }</span>
 
         public String fieldName(Cls cls) {
-<span class="fc" id="L286">            return cls.fieldName(this);</span>
+<span class="fc" id="L334">            return cls.fieldName(this);</span>
         }
 
         public Optional&lt;String&gt; resolvedTypePublicConstructorNonOptional(Imports imports) {
-<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (isOctets()) {</span>
-<span class="fc bfc" id="L291" title="All 2 branches covered.">                if (required) {</span>
-<span class="fc" id="L292">                    return Optional.empty();</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">            if (isOctets()) {</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">                if (required) {</span>
+<span class="fc" id="L340">                    return Optional.empty();</span>
                 } else {
-<span class="fc" id="L294">                    return Optional.of(&quot;byte[]&quot;);</span>
+<span class="fc" id="L342">                    return Optional.of(&quot;byte[]&quot;);</span>
                 }
-<span class="pc bpc" id="L296" title="1 of 2 branches missed.">            } else if (isArray) {</span>
-<span class="nc" id="L297">                return Optional.empty();</span>
-<span class="fc bfc" id="L298" title="All 2 branches covered.">            } else if (nullable) {</span>
-<span class="fc" id="L299">                return Optional.of(imports.add(fullClassName));</span>
-<span class="fc bfc" id="L300" title="All 2 branches covered.">            } else if (required) {</span>
-<span class="fc" id="L301">                return Optional.empty();</span>
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">            } else if (isArray) {</span>
+<span class="nc" id="L345">                return Optional.empty();</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            } else if (nullable) {</span>
+<span class="fc" id="L347">                return Optional.of(imports.add(fullClassName));</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">            } else if (required) {</span>
+<span class="fc" id="L349">                return Optional.empty();</span>
             } else {
-<span class="fc" id="L303">                return Optional.of(imports.add(Util.toPrimitive(fullClassName)));</span>
+<span class="fc" id="L351">                return Optional.of(imports.add(Util.toPrimitive(fullClassName)));</span>
+            }
+        }
+        
+        public String resolvedType(Imports imports) {
+<span class="fc bfc" id="L356" title="All 2 branches covered.">            if (mapType.isPresent()) {</span>
+<span class="fc" id="L357">                return resolvedTypeMapPublic(imports);</span>
+            } else {
+<span class="fc" id="L359">                return resolvedTypePublicConstructor(imports);</span>
             }
         }
         
         public String resolvedTypePublicConstructor(Imports imports) {
-<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (isOctets()) {</span>
-<span class="fc bfc" id="L309" title="All 2 branches covered.">                if (required) {</span>
-<span class="fc" id="L310">                    return &quot;byte[]&quot;;</span>
-                } else {
-<span class="fc" id="L312">                    return String.format(&quot;%s&lt;byte[]&gt;&quot;, imports.add(Optional.class));</span>
-                }
-<span class="fc bfc" id="L314" title="All 2 branches covered.">            } else if (isArray) {</span>
-<span class="fc bfc" id="L315" title="All 2 branches covered.">                if (nullable) {</span>
-<span class="fc" id="L316">                    return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
-<span class="fc" id="L317">                            imports.add(fullClassName));</span>
-                } else {
-<span class="pc bpc" id="L319" title="1 of 2 branches missed.">                    return toList(fullClassName, imports, !required);</span>
-                }
-<span class="fc bfc" id="L321" title="All 2 branches covered.">            } else if (nullable) {</span>
-<span class="fc bfc" id="L322" title="All 2 branches covered.">                if (required) {</span>
-<span class="fc" id="L323">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(fullClassName));</span>
-                } else {
-<span class="fc" id="L325">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
-                }
-<span class="fc bfc" id="L327" title="All 2 branches covered.">            } else if (required) {</span>
-<span class="fc" id="L328">                return imports.add(Util.toPrimitive(fullClassName));</span>
-            } else {
-<span class="fc" id="L330">                return imports.add(Optional.class) + &quot;&lt;&quot; + imports.add(fullClassName) + &quot;&gt;&quot;;</span>
-            }
-        }
-
-        public String resolvedTypeNullable(Imports imports) {
-<span class="fc bfc" id="L335" title="All 2 branches covered.">            if (encoding == Encoding.OCTET) {</span>
-<span class="fc" id="L336">                return imports.add(String.class);</span>
-<span class="fc bfc" id="L337" title="All 2 branches covered.">            } else if (mapType.isPresent()) {</span>
-<span class="fc bfc" id="L338" title="All 2 branches covered.">                if (isArray) {</span>
-<span class="fc bfc" id="L339" title="All 2 branches covered.">                    if (nullable) {</span>
-<span class="fc" id="L340">                        return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(List.class),</span>
-<span class="fc" id="L341">                                imports.add(JsonNullable.class), imports.add(Map.class), imports.add(String.class),</span>
-<span class="fc" id="L342">                                imports.add(fullClassName));</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">            if (isOctets()) {</span>
+<span class="fc bfc" id="L365" title="All 2 branches covered.">                if (isArray) {</span>
+<span class="pc bpc" id="L366" title="1 of 2 branches missed.">                    if (required) {</span>
+<span class="fc" id="L367">                        return String.format(&quot;%s&lt;byte[]&gt;&quot;, imports.add(List.class));</span>
                     } else {
-<span class="fc" id="L344">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(List.class), imports.add(Map.class),</span>
-<span class="fc" id="L345">                                imports.add(String.class), imports.add(fullClassName));</span>
+<span class="nc" id="L369">                        return String.format(&quot;%s&lt;%s&lt;byte[]&gt;&gt;&quot;,imports.add(Optional.class), imports.add(List.class));</span>
                     }
-<span class="fc bfc" id="L347" title="All 2 branches covered.">                } else if (nullable) {</span>
-<span class="fc" id="L348">                    return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
-<span class="fc" id="L349">                            imports.add(String.class), imports.add(fullClassName));</span>
+<span class="pc bpc" id="L371" title="1 of 4 branches missed.">                } else if (!required &amp;&amp; nullable) {</span>
+<span class="nc" id="L372">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), &quot;byte[]&quot;);</span>
+<span class="pc bpc" id="L373" title="1 of 4 branches missed.">                } else if (!required || nullable) {</span>
+<span class="fc" id="L374">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), &quot;byte[]&quot;);</span>
                 } else {
-<span class="fc" id="L351">                    return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
-<span class="fc" id="L352">                            imports.add(fullClassName));</span>
-                }
-<span class="fc bfc" id="L354" title="All 2 branches covered.">            } else if (isArray) {</span>
-<span class="fc bfc" id="L355" title="All 2 branches covered.">                if (nullable) {</span>
-<span class="fc" id="L356">                    return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
-<span class="fc" id="L357">                            imports.add(fullClassName));</span>
+<span class="fc" id="L376">                    return &quot;byte[]&quot;;</span>
+                }  
+<span class="fc bfc" id="L378" title="All 2 branches covered.">            } else if (isArray) {</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">                if (nullable) {</span>
+<span class="fc" id="L380">                    return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
+<span class="fc" id="L381">                            imports.add(fullClassName));</span>
                 } else {
-<span class="fc" id="L359">                    return toList(fullClassName, imports, false);</span>
+<span class="pc bpc" id="L383" title="1 of 2 branches missed.">                    return toList(fullClassName, imports, !required);</span>
                 }
-<span class="fc bfc" id="L361" title="All 2 branches covered.">            } else if (nullable) {</span>
-<span class="fc" id="L362">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
-<span class="fc bfc" id="L363" title="All 2 branches covered.">            } else if (required) {</span>
-<span class="fc" id="L364">                return imports.add(Util.toPrimitive(fullClassName));</span>
-            } else {
-<span class="fc" id="L366">                return imports.add(fullClassName);</span>
-            }
-        }
-
-        public String resolvedTypeMapPrivate(Imports imports) {
-            final String t;
-<span class="pc bpc" id="L372" title="1 of 2 branches missed.">            if (isOctets()) {</span>
-<span class="nc" id="L373">                t = &quot;byte[]&quot;;</span>
-<span class="fc bfc" id="L374" title="All 4 branches covered.">            } else if (isMapType(MapType.ADDITIONAL_PROPERTIES) &amp;&amp; nullable) {</span>
-<span class="fc" id="L375">                t = String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
-            } else {
-<span class="fc" id="L377">                t = imports.add(fullClassName);</span>
-            }
-<span class="fc bfc" id="L379" title="All 2 branches covered.">            if (isArray) {</span>
-<span class="fc" id="L380">                return resolvedTypeMapIsArray(imports, t);</span>
-            } else {
-<span class="fc bfc" id="L382" title="All 4 branches covered.">                if (nullable &amp;&amp; !isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="fc" id="L383">                    return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
-<span class="fc" id="L384">                            imports.add(String.class), t);</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">            } else if (nullable) {</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">                if (required) {</span>
+<span class="fc" id="L387">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(fullClassName));</span>
                 } else {
-<span class="fc" id="L386">                    return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class), t);</span>
+<span class="fc" id="L389">                    return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
                 }
+<span class="fc bfc" id="L391" title="All 2 branches covered.">            } else if (required) {</span>
+<span class="fc" id="L392">                return imports.add(Util.toPrimitive(fullClassName));</span>
+            } else {
+<span class="fc" id="L394">                return imports.add(Optional.class) + &quot;&lt;&quot; + imports.add(fullClassName) + &quot;&gt;&quot;;</span>
             }
         }
 
         private String resolvedTypeMapIsArray(Imports imports, final String t) {
-<span class="fc bfc" id="L392" title="All 2 branches covered.">            if (nullable) {</span>
-<span class="fc" id="L393">                return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
-<span class="fc" id="L394">                        imports.add(Map.class), imports.add(String.class), t);</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            if (nullable) {</span>
+<span class="fc" id="L400">                return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
+<span class="fc" id="L401">                        imports.add(Map.class), imports.add(String.class), t);</span>
             } else {
-<span class="fc" id="L396">                return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(List.class), imports.add(Map.class),</span>
-<span class="fc" id="L397">                        imports.add(String.class), t);</span>
+<span class="fc" id="L403">                return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(List.class), imports.add(Map.class),</span>
+<span class="fc" id="L404">                        imports.add(String.class), t);</span>
             }
         }
 
         public String resolvedTypeMapPublic(Imports imports) {
             final String t;
-<span class="pc bpc" id="L403" title="1 of 2 branches missed.">            if (isOctets()) {</span>
-<span class="nc" id="L404">                t = &quot;byte[]&quot;;</span>
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">            if (isOctets()) {</span>
+<span class="nc" id="L411">                t = &quot;byte[]&quot;;</span>
             } else {
-<span class="fc bfc" id="L406" title="All 4 branches covered.">                if (isMapType(MapType.ADDITIONAL_PROPERTIES) &amp;&amp; nullable) {</span>
-<span class="fc" id="L407">                    t = String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
+<span class="fc bfc" id="L413" title="All 4 branches covered.">                if (isMapType(MapType.ADDITIONAL_PROPERTIES) &amp;&amp; nullable) {</span>
+<span class="fc" id="L414">                    t = String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(fullClassName));</span>
                 } else {
-<span class="fc" id="L409">                    t = imports.add(fullClassName);</span>
+<span class="fc" id="L416">                    t = imports.add(fullClassName);</span>
                 }
             }
-<span class="fc bfc" id="L412" title="All 2 branches covered.">            if (isArray) {</span>
-<span class="fc" id="L413">                return resolvedTypeMapIsArray(imports, t);</span>
+<span class="fc bfc" id="L419" title="All 2 branches covered.">            if (isArray) {</span>
+<span class="fc" id="L420">                return resolvedTypeMapIsArray(imports, t);</span>
             } else {
-<span class="fc bfc" id="L415" title="All 4 branches covered.">                if (nullable &amp;&amp; !isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="fc bfc" id="L416" title="All 2 branches covered.">                    if (required) {</span>
-<span class="fc" id="L417">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
-<span class="fc" id="L418">                                imports.add(String.class), t);</span>
+<span class="fc bfc" id="L422" title="All 4 branches covered.">                if (nullable &amp;&amp; !isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
+<span class="fc bfc" id="L423" title="All 2 branches covered.">                    if (required) {</span>
+<span class="fc" id="L424">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
+<span class="fc" id="L425">                                imports.add(String.class), t);</span>
                     } else {
-<span class="fc" id="L420">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
-<span class="fc" id="L421">                                imports.add(String.class), t);</span>
-                    }
-                } else {
-<span class="fc bfc" id="L424" title="All 2 branches covered.">                    if (required) {</span>
-<span class="fc" id="L425">                        return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class), t);</span>
-                    } else {
-<span class="fc" id="L427">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
+<span class="fc" id="L427">                        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
 <span class="fc" id="L428">                                imports.add(String.class), t);</span>
                     }
+<span class="fc bfc" id="L430" title="All 2 branches covered.">                } else if (required) {</span>
+<span class="fc" id="L431">                    return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class), t);</span>
+                } else {
+<span class="fc" id="L433">                    return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
+<span class="fc" id="L434">                            imports.add(String.class), t);</span>
                 }
             }
         }
 
         public boolean isPrimitive() {
-<span class="fc bfc" id="L435" title="All 4 branches covered.">            return required &amp;&amp; PRIMITIVE_CLASS_NAMES.contains(Util.toPrimitive(fullClassName));</span>
+<span class="fc bfc" id="L440" title="All 4 branches covered.">            return required &amp;&amp; PRIMITIVE_CLASS_NAMES.contains(Util.toPrimitive(fullClassName));</span>
         }
 
         public boolean isOctets() {
-<span class="fc bfc" id="L439" title="All 2 branches covered.">            return encoding == Encoding.OCTET;</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">            return encoding == Encoding.OCTET;</span>
         }
 
         public boolean isByteArray() {
-<span class="fc" id="L443">            return fullClassName.equals(&quot;byte[]&quot;);</span>
+<span class="fc" id="L448">            return fullClassName.equals(&quot;byte[]&quot;);</span>
         }
 
         public boolean isAdditionalProperties() {
-<span class="fc" id="L447">            return mapType.equals(Optional.of(MapType.ADDITIONAL_PROPERTIES));</span>
+<span class="fc" id="L452">            return mapType.equals(Optional.of(MapType.ADDITIONAL_PROPERTIES));</span>
         }
 
         public boolean isMapType(MapType mt) {
-<span class="fc" id="L451">            Preconditions.checkNotNull(mt);</span>
-<span class="fc" id="L452">            return this.mapType.equals(Optional.of(mt));</span>
+<span class="fc" id="L456">            Preconditions.checkNotNull(mt);</span>
+<span class="fc" id="L457">            return this.mapType.equals(Optional.of(mt));</span>
         }
 
         @Override
         public String toString() {
-<span class="nc" id="L457">            StringBuilder builder = new StringBuilder();</span>
-<span class="nc" id="L458">            builder.append(&quot;Field [fullClassName=&quot;);</span>
-<span class="nc" id="L459">            builder.append(fullClassName);</span>
-<span class="nc" id="L460">            builder.append(&quot;, name=&quot;);</span>
-<span class="nc" id="L461">            builder.append(name);</span>
-<span class="nc" id="L462">            builder.append(&quot;, fieldName=&quot;);</span>
-<span class="nc" id="L463">            builder.append(fieldName);</span>
-<span class="nc" id="L464">            builder.append(&quot;, required=&quot;);</span>
-<span class="nc" id="L465">            builder.append(required);</span>
-<span class="nc" id="L466">            builder.append(&quot;, isArray=&quot;);</span>
-<span class="nc" id="L467">            builder.append(isArray);</span>
-<span class="nc" id="L468">            builder.append(&quot;, mapType=&quot;);</span>
-<span class="nc" id="L469">            builder.append(mapType);</span>
-<span class="nc" id="L470">            builder.append(&quot;, nullable=&quot;);</span>
-<span class="nc" id="L471">            builder.append(nullable);</span>
-<span class="nc" id="L472">            builder.append(&quot;]&quot;);</span>
-<span class="nc" id="L473">            return builder.toString();</span>
+<span class="nc" id="L462">            StringBuilder builder = new StringBuilder();</span>
+<span class="nc" id="L463">            builder.append(&quot;Field [fullClassName=&quot;);</span>
+<span class="nc" id="L464">            builder.append(fullClassName);</span>
+<span class="nc" id="L465">            builder.append(&quot;, name=&quot;);</span>
+<span class="nc" id="L466">            builder.append(name);</span>
+<span class="nc" id="L467">            builder.append(&quot;, fieldName=&quot;);</span>
+<span class="nc" id="L468">            builder.append(fieldName);</span>
+<span class="nc" id="L469">            builder.append(&quot;, required=&quot;);</span>
+<span class="nc" id="L470">            builder.append(required);</span>
+<span class="nc" id="L471">            builder.append(&quot;, isArray=&quot;);</span>
+<span class="nc" id="L472">            builder.append(isArray);</span>
+<span class="nc" id="L473">            builder.append(&quot;, mapType=&quot;);</span>
+<span class="nc" id="L474">            builder.append(mapType);</span>
+<span class="nc" id="L475">            builder.append(&quot;, nullable=&quot;);</span>
+<span class="nc" id="L476">            builder.append(nullable);</span>
+<span class="nc" id="L477">            builder.append(&quot;]&quot;);</span>
+<span class="nc" id="L478">            return builder.toString();</span>
         }
 
         public boolean isDateOrTime() {
-<span class="pc bpc" id="L477" title="1 of 2 branches missed.">            return fullClassName.equals(LocalDate.class.getCanonicalName())</span>
-<span class="pc bpc" id="L478" title="1 of 2 branches missed.">                    || fullClassName.equals(OffsetDateTime.class.getCanonicalName());</span>
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">            return fullClassName.equals(LocalDate.class.getCanonicalName())</span>
+<span class="pc bpc" id="L483" title="1 of 2 branches missed.">                    || fullClassName.equals(OffsetDateTime.class.getCanonicalName());</span>
         }
 
+        public boolean isNumber() {
+<span class="fc" id="L487">            return NUMERIC_CLASS_NAMES.contains(fullClassName);</span>
+        }
     }
-
+    
     public static final class MyVisitor implements Visitor {
         private final Names names;
-<span class="fc" id="L485">        private final LinkedStack&lt;Cls&gt; stack = new LinkedStack&lt;&gt;();</span>
-<span class="fc" id="L486">        private final List&lt;Result&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L493">        private final LinkedStack&lt;Cls&gt; stack = new LinkedStack&lt;&gt;();</span>
+<span class="fc" id="L494">        private final List&lt;Result&gt; results = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L488">        public MyVisitor(Names names) {</span>
-<span class="fc" id="L489">            this.names = names;</span>
-<span class="fc" id="L490">        }</span>
+<span class="fc" id="L496">        public MyVisitor(Names names) {</span>
+<span class="fc" id="L497">            this.names = names;</span>
+<span class="fc" id="L498">        }</span>
 
         @Override
         public void startSchema(SchemaCategory category, ImmutableList&lt;SchemaWithName&gt; schemaPath) {
-<span class="fc" id="L494">            SchemaWithName last = schemaPath.last();</span>
-<span class="fc" id="L495">            Schema&lt;?&gt; schema = last.schema;</span>
-<span class="fc" id="L496">            final Cls cls = new Cls();</span>
-<span class="fc" id="L497">            cls.category = category;</span>
-<span class="fc" id="L498">            cls.description = Optional.ofNullable(schema.getDescription());</span>
-<span class="fc bfc" id="L499" title="All 2 branches covered.">            if (stack.isEmpty()) {</span>
+<span class="fc" id="L502">            SchemaWithName last = schemaPath.last();</span>
+<span class="fc" id="L503">            Schema&lt;?&gt; schema = last.schema;</span>
+<span class="fc" id="L504">            final Cls cls = new Cls();</span>
+<span class="fc" id="L505">            cls.category = category;</span>
+<span class="fc" id="L506">            cls.description = Optional.ofNullable(schema.getDescription());</span>
+<span class="fc bfc" id="L507" title="All 2 branches covered.">            if (stack.isEmpty()) {</span>
                 // should be top-level class
-<span class="fc" id="L501">                cls.fullClassName = names.schemaNameToFullClassName(cls.category, last.name);</span>
-<span class="fc" id="L502">                cls.name = Optional.of(last.name);</span>
-<span class="fc" id="L503">                cls.schema = Optional.of(schema);</span>
-<span class="fc" id="L504">                cls.classType = classType(schema);</span>
-<span class="fc" id="L505">                cls.topLevel = true;</span>
+<span class="fc" id="L509">                cls.fullClassName = names.schemaNameToFullClassName(cls.category, last.name);</span>
+<span class="fc" id="L510">                cls.name = Optional.of(last.name);</span>
+<span class="fc" id="L511">                cls.schema = Optional.of(schema);</span>
+<span class="fc" id="L512">                cls.classType = classType(schema);</span>
+<span class="fc" id="L513">                cls.topLevel = true;</span>
             }
-<span class="fc bfc" id="L507" title="All 2 branches covered.">            if (Util.isArray(schema)) {</span>
-<span class="fc" id="L508">                Optional&lt;Cls&gt; previous = Optional.ofNullable(stack.peek());</span>
-<span class="fc" id="L509">                updateLinks(cls, previous);</span>
-<span class="fc bfc" id="L510" title="All 2 branches covered.">                if (previous.isPresent()) {</span>
-<span class="fc" id="L511">                    Optional&lt;String&gt; fieldName = Optional.of(previous.get().nextFieldName(last.name));</span>
-<span class="fc" id="L512">                    String candidate = previous.get().fullClassName + &quot;.&quot;</span>
-<span class="fc" id="L513">                            + Names.simpleClassNameFromSimpleName(fieldName.get());</span>
-<span class="fc" id="L514">                    cls.fullClassName = resolveCandidateFullClassName(cls, candidate);</span>
-<span class="fc" id="L515">                    boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L516">                    previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required,</span>
-<span class="fc bfc" id="L517" title="All 2 branches covered.">                            previous.get().classType == ClassType.ARRAY_WRAPPER, mapType(schemaPath),</span>
-<span class="fc" id="L518">                            isNullable(schema)));</span>
-<span class="fc" id="L519">                } else {</span>
-<span class="fc" id="L520">                    cls.fullClassName = names.schemaNameToFullClassName(cls.category, last.name);</span>
+<span class="fc bfc" id="L515" title="All 2 branches covered.">            if (Util.isArray(schema)) {</span>
+<span class="fc" id="L516">                Optional&lt;Cls&gt; previous = Optional.ofNullable(stack.peek());</span>
+<span class="fc" id="L517">                updateLinks(cls, previous);</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">                if (previous.isPresent()) {</span>
+<span class="fc" id="L519">                    Optional&lt;String&gt; fieldName = Optional.of(previous.get().nextFieldName(last.name, schema));</span>
+<span class="fc" id="L520">                    String candidate = previous.get().fullClassName + &quot;.&quot;</span>
+<span class="fc" id="L521">                            + Names.simpleClassNameFromSimpleName(fieldName.get());</span>
+<span class="fc" id="L522">                    cls.fullClassName = resolveCandidateFullClassName(cls, candidate);</span>
+<span class="fc" id="L523">                    boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L524">                    previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required,</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">                            previous.get().classType == ClassType.ARRAY_WRAPPER, mapType(schemaPath),</span>
+<span class="fc" id="L526">                            isNullable(schema)));</span>
+<span class="fc" id="L527">                } else {</span>
+<span class="fc" id="L528">                    cls.fullClassName = names.schemaNameToFullClassName(cls.category, last.name);</span>
                 }
-<span class="fc" id="L522">                cls.classType = ClassType.ARRAY_WRAPPER;</span>
-<span class="fc" id="L523">                stack.push(cls);</span>
-<span class="fc" id="L524">                return;</span>
+<span class="fc" id="L530">                cls.classType = ClassType.ARRAY_WRAPPER;</span>
+<span class="fc" id="L531">                stack.push(cls);</span>
+<span class="fc" id="L532">                return;</span>
             }
-<span class="fc bfc" id="L526" title="All 4 branches covered.">            boolean isArray = schemaPath.size() &gt;= 2 &amp;&amp; schemaPath.secondLast().schema instanceof ArraySchema;</span>
-<span class="fc bfc" id="L527" title="All 2 branches covered.">            Optional&lt;Integer&gt; minItems = isArray ? Optional.ofNullable(schemaPath.secondLast().schema.getMinItems())</span>
-<span class="fc" id="L528">                    : Optional.empty();</span>
-<span class="fc bfc" id="L529" title="All 2 branches covered.">            Optional&lt;Integer&gt; maxItems = isArray ? Optional.ofNullable(schemaPath.secondLast().schema.getMaxItems())</span>
-<span class="fc" id="L530">                    : Optional.empty();</span>
-<span class="pc bpc" id="L531" title="1 of 8 branches missed.">            if (Util.isObject(schema) || Util.isMap(schema) || Util.isEnum(schema) || Util.isOneOf(schema)</span>
-<span class="pc bpc" id="L532" title="1 of 4 branches missed.">                    || Util.isAnyOf(schema) || Util.isAllOf(schema)) {</span>
-<span class="fc" id="L533">                Optional&lt;Cls&gt; previous = Optional.ofNullable(stack.peek());</span>
-<span class="fc" id="L534">                stack.push(cls);</span>
-<span class="fc" id="L535">                updateLinks(cls, previous);</span>
+<span class="fc bfc" id="L534" title="All 4 branches covered.">            boolean isArray = schemaPath.size() &gt;= 2 &amp;&amp; schemaPath.secondLast().schema instanceof ArraySchema;</span>
+<span class="fc bfc" id="L535" title="All 2 branches covered.">            Optional&lt;Integer&gt; minItems = isArray ? Optional.ofNullable(schemaPath.secondLast().schema.getMinItems())</span>
+<span class="fc" id="L536">                    : Optional.empty();</span>
+<span class="fc bfc" id="L537" title="All 2 branches covered.">            Optional&lt;Integer&gt; maxItems = isArray ? Optional.ofNullable(schemaPath.secondLast().schema.getMaxItems())</span>
+<span class="fc" id="L538">                    : Optional.empty();</span>
+<span class="pc bpc" id="L539" title="1 of 8 branches missed.">            if (Util.isObject(schema) || Util.isMap(schema) || Util.isEnum(schema) || Util.isOneOf(schema)</span>
+<span class="fc bfc" id="L540" title="All 4 branches covered.">                    || Util.isAnyOf(schema) || Util.isAllOf(schema)) {</span>
+<span class="fc" id="L541">                Optional&lt;Cls&gt; previous = Optional.ofNullable(stack.peek());</span>
+<span class="fc" id="L542">                stack.push(cls);</span>
+<span class="fc" id="L543">                updateLinks(cls, previous);</span>
                 final Optional&lt;String&gt; fieldName;
-<span class="fc bfc" id="L537" title="All 2 branches covered.">                if (previous.isPresent()) {</span>
-<span class="fc" id="L538">                    fieldName = Optional.of(previous.get().nextFieldName(last.name));</span>
-                    // Now get the wrapping class name using the field name and avoiding collisions
+<span class="fc bfc" id="L545" title="All 2 branches covered.">                if (previous.isPresent()) {</span>
+<span class="fc" id="L546">                    fieldName = Optional.of(previous.get().nextFieldName(last.name, schema));</span>
+                    // Now get the wrapping class name using the field name and avoid collisions
                     // both with the owning class heirarchy and with siblings
-<span class="fc" id="L541">                    String candidate = previous.get().fullClassName + &quot;.&quot;</span>
-<span class="fc" id="L542">                            + Names.simpleClassNameFromSimpleName(fieldName.get());</span>
-<span class="fc" id="L543">                    String candidate2 = resolveCandidateFullClassName(cls, candidate);</span>
-<span class="fc" id="L544">                    cls.fullClassName = resolveCandidateFullClassName(cls.owner.get(), candidate2);</span>
-<span class="fc" id="L545">                } else {</span>
-<span class="fc" id="L546">                    fieldName = Optional.empty();</span>
-<span class="fc" id="L547">                    String candidate = names.schemaNameToFullClassName(cls.category, last.name);</span>
-<span class="fc" id="L548">                    cls.fullClassName = candidate;</span>
+<span class="fc" id="L549">                    String candidate = previous.get().fullClassName + &quot;.&quot;</span>
+<span class="fc" id="L550">                            + Names.simpleClassNameFromSimpleName(fieldName.get());</span>
+<span class="fc" id="L551">                    String candidate2 = resolveCandidateFullClassName(cls, candidate);</span>
+<span class="fc" id="L552">                    cls.fullClassName = resolveCandidateFullClassName(cls.owner.get(), candidate2);</span>
+<span class="fc" id="L553">                } else {</span>
+<span class="fc" id="L554">                    fieldName = Optional.empty();</span>
+<span class="fc" id="L555">                    String candidate = names.schemaNameToFullClassName(cls.category, last.name);</span>
+<span class="fc" id="L556">                    cls.fullClassName = candidate;</span>
                 }
-<span class="fc bfc" id="L550" title="All 2 branches covered.">                if (Util.isEnum(schema)) {</span>
-<span class="fc" id="L551">                    handleEnum(schemaPath, cls, previous, isArray, fieldName, names);</span>
-<span class="fc bfc" id="L552" title="All 2 branches covered.">                } else if (Util.isObject(schema)) {</span>
-<span class="fc" id="L553">                    handleObject(schemaPath, last, schema, cls, isArray, previous, fieldName);</span>
-<span class="pc bpc" id="L554" title="2 of 6 branches missed.">                } else if (Util.isOneOf(schema) || Util.isAnyOf(schema) || Util.isAllOf(schema)) {</span>
-<span class="fc" id="L555">                    handlePolymorphism(schemaPath, cls, names, previous, fieldName, isArray);</span>
+<span class="fc bfc" id="L558" title="All 2 branches covered.">                if (Util.isEnum(schema)) {</span>
+<span class="fc" id="L559">                    handleEnum(schemaPath, cls, previous, isArray, fieldName, names);</span>
+<span class="fc bfc" id="L560" title="All 2 branches covered.">                } else if (Util.isObject(schema)) {</span>
+<span class="fc" id="L561">                    handleObject(schemaPath, last, schema, cls, isArray, previous, fieldName);</span>
+<span class="pc bpc" id="L562" title="1 of 6 branches missed.">                } else if (Util.isOneOf(schema) || Util.isAnyOf(schema) || Util.isAllOf(schema)) {</span>
+<span class="fc" id="L563">                    handlePolymorphism(schemaPath, cls, names, previous, fieldName, isArray);</span>
                 } else {
                     // TODO
-<span class="nc" id="L558">                    cls.fullClassName = previous + &quot;.Unknown&quot;;</span>
-<span class="nc" id="L559">                    cls.classType = ClassType.CLASS;</span>
+<span class="nc" id="L566">                    cls.fullClassName = previous + &quot;.Unknown&quot;;</span>
+<span class="nc" id="L567">                    cls.classType = ClassType.CLASS;</span>
                 }
-<span class="fc" id="L561">            } else {</span>
-<span class="fc bfc" id="L562" title="All 2 branches covered.">                if (stack.isEmpty()) {</span>
-<span class="fc" id="L563">                    stack.push(cls);</span>
+<span class="fc" id="L569">            } else {</span>
+<span class="fc bfc" id="L570" title="All 2 branches covered.">                if (stack.isEmpty()) {</span>
+<span class="fc" id="L571">                    stack.push(cls);</span>
                 }
-<span class="fc" id="L565">                Cls current = stack.peek();</span>
+<span class="fc" id="L573">                Cls current = stack.peek();</span>
                 final String fullClassName;
-<span class="fc bfc" id="L567" title="All 2 branches covered.">                if (Util.isPrimitive(schema)) {</span>
-<span class="fc" id="L568">                    Class&lt;?&gt; c = Util.toClass(schema.getType(), schema.getFormat(), schema.getExtensions(),</span>
-<span class="fc" id="L569">                            names.mapIntegerToBigInteger(), names.mapNumberToBigDecimal());</span>
-<span class="fc" id="L570">                    fullClassName = c.getCanonicalName();</span>
+<span class="fc bfc" id="L575" title="All 2 branches covered.">                if (Util.isPrimitive(schema)) {</span>
+<span class="fc" id="L576">                    Class&lt;?&gt; c = Util.toClass(Util.getTypeOrThrow(schema), schema.getFormat(), schema.getExtensions(),</span>
+<span class="fc" id="L577">                            names.mapIntegerToBigInteger(), names.mapNumberToBigDecimal());</span>
+<span class="fc" id="L578">                    fullClassName = c.getCanonicalName();</span>
                     final Optional&lt;Integer&gt; minLength;
                     final Optional&lt;Integer&gt; maxLength;
                     final Optional&lt;String&gt; pattern;
-<span class="fc bfc" id="L574" title="All 2 branches covered.">                    if (isString(schema)) {</span>
-<span class="fc" id="L575">                        minLength = Optional.ofNullable(schema.getMinLength());</span>
-<span class="fc" id="L576">                        maxLength = Optional.ofNullable(schema.getMaxLength());</span>
-<span class="fc" id="L577">                        pattern = Optional.ofNullable(schema.getPattern());</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">                    if (isString(schema)) {</span>
+<span class="fc" id="L583">                        minLength = Optional.ofNullable(schema.getMinLength());</span>
+<span class="fc" id="L584">                        maxLength = Optional.ofNullable(schema.getMaxLength());</span>
+<span class="fc" id="L585">                        pattern = Optional.ofNullable(schema.getPattern());</span>
                     } else {
-<span class="fc" id="L579">                        minLength = Optional.empty();</span>
-<span class="fc" id="L580">                        maxLength = Optional.empty();</span>
-<span class="fc" id="L581">                        pattern = Optional.empty();</span>
+<span class="fc" id="L587">                        minLength = Optional.empty();</span>
+<span class="fc" id="L588">                        maxLength = Optional.empty();</span>
+<span class="fc" id="L589">                        pattern = Optional.empty();</span>
                     }
-<span class="fc bfc" id="L583" title="All 2 branches covered.">                    String fieldName = schemaPath.size() == 1 ? &quot;value&quot; : current.nextFieldName(last.name);</span>
-<span class="fc" id="L584">                    boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L585">                    Encoding encoding = encoding(schema);</span>
-<span class="fc" id="L586">                    Optional&lt;BigDecimal&gt; min = Optional.ofNullable(schema.getMinimum());</span>
-<span class="fc" id="L587">                    Optional&lt;BigDecimal&gt; max = Optional.ofNullable(schema.getMaximum());</span>
-<span class="fc" id="L588">                    boolean exclusiveMin = orElse(schema.getExclusiveMinimum(), false);</span>
-<span class="fc" id="L589">                    boolean exclusiveMax = orElse(schema.getExclusiveMaximum(), false);</span>
-<span class="fc" id="L590">                    current.addField(fullClassName, last.name, fieldName, required, isArray, minItems, maxItems,</span>
+<span class="fc bfc" id="L591" title="All 2 branches covered.">                    String fieldName = schemaPath.size() == 1 ? &quot;value&quot; : current.nextFieldName(last.name, schema);</span>
+<span class="fc" id="L592">                    boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L593">                    Encoding encoding = encoding(schema);</span>
+<span class="fc" id="L594">                    Optional&lt;BigDecimal&gt; min = Optional.ofNullable(schema.getMinimum());</span>
+<span class="fc" id="L595">                    Optional&lt;BigDecimal&gt; max = Optional.ofNullable(schema.getMaximum());</span>
+<span class="fc" id="L596">                    boolean exclusiveMin = orElse(schema.getExclusiveMinimum(), false);</span>
+<span class="fc" id="L597">                    boolean exclusiveMax = orElse(schema.getExclusiveMaximum(), false);</span>
+<span class="fc" id="L598">                    current.addField(fullClassName, last.name, fieldName, required, isArray, minItems, maxItems,</span>
                             minLength, maxLength, pattern, min, max, exclusiveMin, exclusiveMax, encoding,
-<span class="fc" id="L592">                            mapType(schemaPath), isNullable(schema));</span>
-<span class="fc bfc" id="L593" title="All 2 branches covered.">                } else if (Util.isRef(schema)) {</span>
-<span class="fc" id="L594">                    fullClassName = names.refToFullClassName(schema.get$ref());</span>
-<span class="fc" id="L595">                    final String fieldNameCandidate = orElse(last.name, Names.simpleClassName(fullClassName));</span>
-<span class="fc" id="L596">                    String fieldName = current.nextFieldName(fieldNameCandidate);</span>
-<span class="fc" id="L597">                    boolean required = fieldIsRequired(schemaPath);</span>
-                    // TODO pick up other constraints
-<span class="fc" id="L599">                    current.addField(fullClassName, last.name, fieldName, required, isArray, minItems, maxItems,</span>
-<span class="fc" id="L600">                            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),</span>
-<span class="fc" id="L601">                            false, false, Encoding.DEFAULT, mapType(schemaPath), isNullable(schema));</span>
-<span class="fc" id="L602">                } else {</span>
-                    // any object
-<span class="fc" id="L604">                    String fieldName = current.nextFieldName(last.name);</span>
+<span class="fc" id="L600">                            mapType(schemaPath), isNullable(schema));</span>
+<span class="fc bfc" id="L601" title="All 2 branches covered.">                } else if (Util.isRef(schema)) {</span>
+<span class="fc" id="L602">                    fullClassName = names.refToFullClassName(schema.get$ref());</span>
+<span class="fc" id="L603">                    final String fieldNameCandidate = orElse(last.name, Names.simpleClassName(fullClassName));</span>
+<span class="fc" id="L604">                    String fieldName = current.nextFieldName(fieldNameCandidate, schema);</span>
 <span class="fc" id="L605">                    boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L606">                    current.addField(Object.class.getCanonicalName(), last.name, fieldName, required, isArray,</span>
-<span class="fc" id="L607">                            mapType(schemaPath), isNullable(schema));</span>
+                    // TODO pick up other constraints
+<span class="fc" id="L607">                    current.addField(fullClassName, last.name, fieldName, required, isArray, minItems, maxItems,</span>
+<span class="fc" id="L608">                            Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),</span>
+<span class="fc" id="L609">                            false, false, Encoding.DEFAULT, mapType(schemaPath), isNullable(schema));</span>
+<span class="fc" id="L610">                } else {</span>
+                    // any object
+<span class="fc" id="L612">                    String fieldName = current.nextFieldName(last.name, schema);</span>
+<span class="fc" id="L613">                    boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L614">                    current.addField(Object.class.getCanonicalName(), last.name, fieldName, required, isArray,</span>
+<span class="fc" id="L615">                            mapType(schemaPath), isNullable(schema));</span>
                 }
             }
-<span class="fc" id="L610">        }</span>
+<span class="fc" id="L618">        }</span>
 
         @Override
         public void finishSchema(SchemaCategory category, ImmutableList&lt;SchemaWithName&gt; schemaPath) {
-<span class="fc" id="L614">            final Cls cls = stack.peek();</span>
-<span class="fc bfc" id="L615" title="All 4 branches covered.">            if (Apis.isComplexSchema(schemaPath.last().schema) || Util.isEnum(schemaPath.last().schema)</span>
-<span class="fc bfc" id="L616" title="All 2 branches covered.">                    || schemaPath.size() == 1) {</span>
-<span class="fc" id="L617">                stack.pop();</span>
-<span class="fc bfc" id="L618" title="All 2 branches covered.">                if (stack.isEmpty()) {</span>
-<span class="fc" id="L619">                    this.results.add(new Result(cls, schemaPath.first().name));</span>
+<span class="fc" id="L622">            final Cls cls = stack.peek();</span>
+<span class="fc bfc" id="L623" title="All 4 branches covered.">            if (Apis.isComplexSchema(schemaPath.last().schema) || Util.isEnum(schemaPath.last().schema)</span>
+<span class="fc bfc" id="L624" title="All 2 branches covered.">                    || schemaPath.size() == 1) {</span>
+<span class="fc" id="L625">                stack.pop();</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">                if (stack.isEmpty()) {</span>
+<span class="fc" id="L627">                    this.results.add(new Result(cls, schemaPath.first().name));</span>
                 }
             }
-<span class="fc" id="L622">        }</span>
+<span class="fc" id="L630">        }</span>
 
         List&lt;Result&gt; results() {
-<span class="fc" id="L625">            return results;</span>
+<span class="fc" id="L633">            return results;</span>
         }
 
         static final class Result {
             final Cls cls;
             final String name;
 
-<span class="fc" id="L632">            Result(Cls cls, String name) {</span>
-<span class="fc" id="L633">                this.cls = cls;</span>
-<span class="fc" id="L634">                this.name = name;</span>
-<span class="fc" id="L635">            }</span>
+<span class="fc" id="L640">            Result(Cls cls, String name) {</span>
+<span class="fc" id="L641">                this.cls = cls;</span>
+<span class="fc" id="L642">                this.name = name;</span>
+<span class="fc" id="L643">            }</span>
         }
     }
 
     private static boolean isNullable(Schema&lt;?&gt; schema) {
-<span class="fc bfc" id="L640" title="All 2 branches covered.">        return Boolean.TRUE.equals(schema.getNullable())</span>
-<span class="pc bpc" id="L641" title="1 of 4 branches missed.">                || schema.getTypes() != null &amp;&amp; schema.getTypes().contains(&quot;null&quot;);</span>
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        return Boolean.TRUE.equals(schema.getNullable())</span>
+<span class="pc bpc" id="L649" title="1 of 4 branches missed.">                || schema.getTypes() != null &amp;&amp; schema.getTypes().contains(&quot;null&quot;);</span>
     }
 
     private static Encoding encoding(Schema&lt;?&gt; schema) {
-<span class="fc bfc" id="L645" title="All 2 branches covered.">        if (&quot;binary&quot;.equals(schema.getFormat())) {</span>
-<span class="fc" id="L646">            return Encoding.OCTET;</span>
+<span class="fc bfc" id="L653" title="All 2 branches covered.">        if (&quot;binary&quot;.equals(schema.getFormat())) {</span>
+<span class="fc" id="L654">            return Encoding.OCTET;</span>
         } else {
-<span class="fc" id="L648">            return Encoding.DEFAULT;</span>
+<span class="fc" id="L656">            return Encoding.DEFAULT;</span>
         }
     }
 
     private static void updateLinks(final Cls cls, Optional&lt;Cls&gt; previous) {
-<span class="fc" id="L653">        previous.ifPresent(p -&gt; {</span>
-<span class="fc" id="L654">            p.classes.add(cls);</span>
-<span class="fc" id="L655">            cls.owner = Optional.of(p);</span>
-<span class="fc" id="L656">        });</span>
-<span class="fc" id="L657">    }</span>
+<span class="fc" id="L661">        previous.ifPresent(p -&gt; {</span>
+<span class="fc" id="L662">            p.classes.add(cls);</span>
+<span class="fc" id="L663">            cls.owner = Optional.of(p);</span>
+<span class="fc" id="L664">        });</span>
+<span class="fc" id="L665">    }</span>
 
     private static void handleObject(ImmutableList&lt;SchemaWithName&gt; schemaPath, SchemaWithName last, Schema&lt;?&gt; schema,
             final Cls cls, boolean isArray, Optional&lt;Cls&gt; previous, final Optional&lt;String&gt; fieldName) {
-<span class="fc" id="L661">        cls.classType = ClassType.CLASS;</span>
-<span class="fc" id="L662">        cls.hasProperties = Util.isObject(schema);</span>
-<span class="fc" id="L663">        boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L664">        Optional&lt;MapType&gt; mt = mapType(schemaPath);</span>
-<span class="fc bfc" id="L665" title="All 4 branches covered.">        if (mt.isPresent() &amp;&amp; mt.get() == MapType.FIELD) {</span>
-<span class="fc" id="L666">            mt = Optional.empty();</span>
+<span class="fc" id="L669">        cls.classType = ClassType.CLASS;</span>
+<span class="fc" id="L670">        cls.hasProperties = Util.isObject(schema);</span>
+<span class="fc bfc" id="L671" title="All 2 branches covered.">        if (!cls.schema.isPresent()) {</span>
+            // make sure that cls.schema.extensions is available for inspection
+<span class="fc" id="L673">            cls.schema = Optional.of(schema);</span>
         }
-<span class="fc" id="L668">        Optional&lt;MapType&gt; mt2 = mt;</span>
-<span class="fc" id="L669">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required, isArray, mt2,</span>
-<span class="fc" id="L670">                isNullable(schema)));</span>
-<span class="fc" id="L671">    }</span>
+<span class="fc" id="L675">        boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L676">        Optional&lt;MapType&gt; mt = mapType(schemaPath);</span>
+<span class="fc bfc" id="L677" title="All 4 branches covered.">        if (mt.isPresent() &amp;&amp; mt.get() == MapType.FIELD) {</span>
+<span class="fc" id="L678">            mt = Optional.empty();</span>
+        }
+<span class="fc" id="L680">        Optional&lt;MapType&gt; mt2 = mt;</span>
+<span class="fc" id="L681">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required, isArray, mt2,</span>
+<span class="fc" id="L682">                isNullable(schema)));</span>
+<span class="fc" id="L683">    }</span>
 
-<span class="fc" id="L673">    public enum Encoding {</span>
-<span class="fc" id="L674">        DEFAULT, OCTET;</span>
+<span class="fc" id="L685">    public enum Encoding {</span>
+<span class="fc" id="L686">        DEFAULT, OCTET;</span>
     }
 
     private static boolean isString(Schema&lt;?&gt; schema) {
-<span class="fc" id="L678">        return &quot;string&quot;.equals(schema.getType());</span>
+<span class="fc" id="L690">        return &quot;string&quot;.equals(Util.getType(schema).orElse(&quot;object&quot;));</span>
     }
 
     private static boolean fieldIsRequired(ImmutableList&lt;SchemaWithName&gt; schemaPath) {
-<span class="fc" id="L682">        SchemaWithName last = schemaPath.last();</span>
-<span class="fc bfc" id="L683" title="All 2 branches covered.">        if (schemaPath.size() &lt;= 1) {</span>
-<span class="pc bpc" id="L684" title="1 of 6 branches missed.">            return Util.isPrimitive(last.schema) || Util.isRef(last.schema) || Util.isArray(last.schema);</span>
+<span class="fc" id="L694">        SchemaWithName last = schemaPath.last();</span>
+<span class="fc bfc" id="L695" title="All 2 branches covered.">        if (schemaPath.size() &lt;= 1) {</span>
+<span class="pc bpc" id="L696" title="1 of 6 branches missed.">            return Util.isPrimitive(last.schema) || Util.isRef(last.schema) || Util.isArray(last.schema);</span>
         } else {
-<span class="fc bfc" id="L686" title="All 2 branches covered.">            return contains(schemaPath.secondLast().schema.getRequired(), last.name)</span>
-<span class="fc bfc" id="L687" title="All 4 branches covered.">                    || Util.isAllOf(schemaPath.secondLast().schema) || Util.isArray(schemaPath.secondLast().schema)</span>
+<span class="fc bfc" id="L698" title="All 2 branches covered.">            return contains(schemaPath.secondLast().schema.getRequired(), last.name)</span>
+<span class="fc bfc" id="L699" title="All 4 branches covered.">                    || Util.isAllOf(schemaPath.secondLast().schema) || Util.isArray(schemaPath.secondLast().schema)</span>
                     // or is additional properties schema
-<span class="fc bfc" id="L689" title="All 2 branches covered.">                    || mapType(schemaPath).equals(Optional.of(MapType.ADDITIONAL_PROPERTIES));</span>
+<span class="fc bfc" id="L701" title="All 2 branches covered.">                    || mapType(schemaPath).equals(Optional.of(MapType.ADDITIONAL_PROPERTIES));</span>
         }
     }
 
     private static Optional&lt;MapType&gt; mapType(ImmutableList&lt;SchemaWithName&gt; schemaPath) {
-<span class="fc" id="L694">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
-<span class="fc bfc" id="L695" title="All 2 branches covered.">        if (schemaPath.size() &gt; 1</span>
-<span class="fc bfc" id="L696" title="All 2 branches covered.">                &amp;&amp; schemaPath.secondLast().schema.getAdditionalProperties() == schemaPath.last().schema) {</span>
-<span class="fc" id="L697">            return Optional.of(MapType.ADDITIONAL_PROPERTIES);</span>
-<span class="fc bfc" id="L698" title="All 4 branches covered.">        } else if (Util.isMap(schema) || allNulls(schema)) {</span>
-<span class="fc" id="L699">            return Optional.of(MapType.FIELD);</span>
+<span class="fc" id="L706">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
+<span class="fc bfc" id="L707" title="All 2 branches covered.">        if (schemaPath.size() &gt; 1</span>
+<span class="fc bfc" id="L708" title="All 2 branches covered.">                &amp;&amp; schemaPath.secondLast().schema.getAdditionalProperties() == schemaPath.last().schema) {</span>
+<span class="fc" id="L709">            return Optional.of(MapType.ADDITIONAL_PROPERTIES);</span>
+<span class="fc bfc" id="L710" title="All 4 branches covered.">        } else if (Util.isMap(schema) || allNulls(schema)) {</span>
+<span class="fc" id="L711">            return Optional.of(MapType.FIELD);</span>
         } else {
-<span class="fc" id="L701">            return Optional.empty();</span>
+<span class="fc" id="L713">            return Optional.empty();</span>
         }
     }
 
     private static boolean allNulls(Schema&lt;?&gt; s) {
-<span class="pc bpc" id="L706" title="1 of 6 branches missed.">        return s.getClass().equals(Schema.class) &amp;&amp; s.getType() == null &amp;&amp; s.getProperties() == null</span>
-<span class="pc bpc" id="L707" title="2 of 6 branches missed.">                &amp;&amp; s.getAdditionalProperties() == null &amp;&amp; s.get$ref() == null &amp;&amp; s.getAdditionalItems() == null;</span>
+<span class="fc bfc" id="L718" title="All 6 branches covered.">        return s.getClass().equals(Schema.class) &amp;&amp; !Util.getType(s).isPresent() &amp;&amp; s.getProperties() == null</span>
+<span class="pc bpc" id="L719" title="2 of 6 branches missed.">                &amp;&amp; s.getAdditionalProperties() == null &amp;&amp; s.get$ref() == null &amp;&amp; s.getAdditionalItems() == null;</span>
     }
 
     private static void handlePolymorphism(ImmutableList&lt;SchemaWithName&gt; schemaPath, Cls cls, Names names,
             Optional&lt;Cls&gt; previous, Optional&lt;String&gt; fieldName, boolean isArray) {
-<span class="fc" id="L712">        SchemaWithName last = schemaPath.last();</span>
-<span class="fc" id="L713">        cls.polymorphicType = polymorphicType(last.schema);</span>
-<span class="fc" id="L714">        io.swagger.v3.oas.models.media.Discriminator discriminator = last.schema.getDiscriminator();</span>
-<span class="fc bfc" id="L715" title="All 2 branches covered.">        if (discriminator != null) {</span>
-<span class="fc" id="L716">            String propertyName = discriminator.getPropertyName();</span>
+<span class="fc" id="L724">        SchemaWithName last = schemaPath.last();</span>
+<span class="fc" id="L725">        cls.polymorphicType = polymorphicType(last.schema);</span>
+<span class="fc" id="L726">        io.swagger.v3.oas.models.media.Discriminator discriminator = last.schema.getDiscriminator();</span>
+<span class="fc bfc" id="L727" title="All 2 branches covered.">        if (discriminator != null) {</span>
+<span class="fc" id="L728">            String propertyName = discriminator.getPropertyName();</span>
             final Map&lt;String, String&gt; map;
-<span class="fc bfc" id="L718" title="All 2 branches covered.">            if (discriminator.getMapping() != null) {</span>
-<span class="fc" id="L719">                map = discriminator.getMapping().entrySet().stream()</span>
-<span class="fc" id="L720">                        .collect(Collectors.toMap(x -&gt; names.refToFullClassName(x.getValue()), x -&gt; x.getKey()));</span>
+<span class="fc bfc" id="L730" title="All 2 branches covered.">            if (discriminator.getMapping() != null) {</span>
+<span class="fc" id="L731">                map = discriminator.getMapping().entrySet().stream()</span>
+<span class="fc" id="L732">                        .collect(Collectors.toMap(x -&gt; names.refToFullClassName(x.getValue()), x -&gt; x.getKey()));</span>
             } else {
-<span class="fc" id="L722">                map = Collections.emptyMap();</span>
+<span class="fc" id="L734">                map = Collections.emptyMap();</span>
             }
-<span class="fc" id="L724">            cls.discriminator = new Discriminator(propertyName, Names.toFieldName(propertyName), map);</span>
+<span class="fc" id="L736">            cls.discriminator = new Discriminator(propertyName, Names.toFieldName(propertyName), map);</span>
         }
-<span class="pc bpc" id="L726" title="1 of 4 branches missed.">        if (cls.polymorphicType == PolymorphicType.ONE_OF || cls.polymorphicType == PolymorphicType.ANY_OF) {</span>
-<span class="fc bfc" id="L727" title="All 2 branches covered.">            if (discriminator != null) {</span>
-<span class="fc" id="L728">                cls.classType = ClassType.ONE_OR_ANY_OF_DISCRIMINATED;</span>
+<span class="fc bfc" id="L738" title="All 4 branches covered.">        if (cls.polymorphicType == PolymorphicType.ONE_OF || cls.polymorphicType == PolymorphicType.ANY_OF) {</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">            if (discriminator != null) {</span>
+<span class="fc" id="L740">                cls.classType = ClassType.ONE_OR_ANY_OF_DISCRIMINATED;</span>
             } else {
-<span class="fc" id="L730">                cls.classType = ClassType.ONE_OR_ANY_OF_NON_DISCRIMINATED;</span>
+<span class="fc bfc" id="L742" title="All 2 branches covered.">                if (cls.polymorphicType == PolymorphicType.ONE_OF) {</span>
+<span class="fc" id="L743">                    cls.classType = ClassType.ONE_OF_NON_DISCRIMINATED;</span>
+                } else {
+<span class="fc" id="L745">                    cls.classType = ClassType.ANY_OF_NON_DISCRIMINATED;</span>
+                }
             }
         } else {
-<span class="fc" id="L733">            cls.classType = ClassType.ALL_OF;</span>
+<span class="fc" id="L749">            cls.classType = ClassType.ALL_OF;</span>
         }
-<span class="fc" id="L735">        boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L736">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required, isArray,</span>
-<span class="fc" id="L737">                mapType(schemaPath), isNullable(schemaPath.last().schema)));</span>
-<span class="fc" id="L738">    }</span>
+<span class="fc" id="L751">        boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L752">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, last.name, fieldName.get(), required, isArray,</span>
+<span class="fc" id="L753">                mapType(schemaPath), isNullable(schemaPath.last().schema)));</span>
+<span class="fc" id="L754">    }</span>
 
     private static PolymorphicType polymorphicType(Schema&lt;?&gt; schema) {
         final PolymorphicType pt;
-<span class="fc bfc" id="L742" title="All 2 branches covered.">        if (Util.isOneOf(schema)) {</span>
-<span class="fc" id="L743">            pt = PolymorphicType.ONE_OF;</span>
-<span class="pc bpc" id="L744" title="1 of 2 branches missed.">        } else if (Util.isAnyOf(schema)) {</span>
-<span class="nc" id="L745">            pt = PolymorphicType.ANY_OF;</span>
+<span class="fc bfc" id="L758" title="All 2 branches covered.">        if (Util.isOneOf(schema)) {</span>
+<span class="fc" id="L759">            pt = PolymorphicType.ONE_OF;</span>
+<span class="fc bfc" id="L760" title="All 2 branches covered.">        } else if (Util.isAnyOf(schema)) {</span>
+<span class="fc" id="L761">            pt = PolymorphicType.ANY_OF;</span>
         } else {
-<span class="fc" id="L747">            pt = PolymorphicType.ALL_OF;</span>
+<span class="fc" id="L763">            pt = PolymorphicType.ALL_OF;</span>
         }
-<span class="fc" id="L749">        return pt;</span>
+<span class="fc" id="L765">        return pt;</span>
     }
 
     public static final class Discriminator {
@@ -754,82 +770,98 @@ public class Generator {
         public final String fieldName;
         public final Map&lt;String, String&gt; fullClassNameToPropertyValue;
 
-<span class="fc" id="L757">        public Discriminator(String propertyName, String fieldName, Map&lt;String, String&gt; fullClassNameToPropertyValue) {</span>
-<span class="fc" id="L758">            this.propertyName = propertyName;</span>
-<span class="fc" id="L759">            this.fieldName = fieldName;</span>
-<span class="fc" id="L760">            this.fullClassNameToPropertyValue = fullClassNameToPropertyValue;</span>
-<span class="fc" id="L761">        }</span>
+<span class="fc" id="L773">        public Discriminator(String propertyName, String fieldName, Map&lt;String, String&gt; fullClassNameToPropertyValue) {</span>
+<span class="fc" id="L774">            this.propertyName = propertyName;</span>
+<span class="fc" id="L775">            this.fieldName = fieldName;</span>
+<span class="fc" id="L776">            this.fullClassNameToPropertyValue = fullClassNameToPropertyValue;</span>
+<span class="fc" id="L777">        }</span>
 
         public String discriminatorValueFromFullClassName(String fullClassName) {
-<span class="fc" id="L764">            String value = fullClassNameToPropertyValue.get(fullClassName);</span>
-<span class="fc bfc" id="L765" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L780">            String value = fullClassNameToPropertyValue.get(fullClassName);</span>
+<span class="fc bfc" id="L781" title="All 2 branches covered.">            if (value == null) {</span>
                 // TODO review using simple class name for value because collision risk, better
                 // to use $ref value like '#/components/schemas/Oval'
-<span class="fc" id="L768">                return Names.simpleClassName(fullClassName);</span>
+<span class="fc" id="L784">                return Names.simpleClassName(fullClassName);</span>
             } else {
-<span class="fc" id="L770">                return value;</span>
+<span class="fc" id="L786">                return value;</span>
             }
         }
     }
 
     private static void handleEnum(ImmutableList&lt;SchemaWithName&gt; schemaPath, Cls cls, Optional&lt;Cls&gt; previous,
             boolean isArray, Optional&lt;String&gt; fieldName, Names names) {
-<span class="fc" id="L777">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
-<span class="fc" id="L778">        cls.classType = ClassType.ENUM;</span>
-<span class="fc" id="L779">        Class&lt;?&gt; valueCls = Util.toClass(schema.getType(), schema.getFormat(), schema.getExtensions(),</span>
-<span class="fc" id="L780">                names.mapIntegerToBigInteger(), names.mapNumberToBigDecimal());</span>
-<span class="fc" id="L781">        cls.enumValueFullType = valueCls.getCanonicalName();</span>
-<span class="fc" id="L782">        Map&lt;String, String&gt; map = Names.getEnumValueToIdentifierMap(schema.getEnum());</span>
-<span class="fc" id="L783">        Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L784" title="All 2 branches covered.">        for (Object o : schema.getEnum()) {</span>
-<span class="fc bfc" id="L785" title="All 2 branches covered.">            if (!used.contains(String.valueOf(o))) {</span>
-<span class="fc" id="L786">                cls.enumMembers.add(new EnumMember(map.get(String.valueOf(o)), o, isNullable(schema)));</span>
-<span class="fc" id="L787">                used.add(String.valueOf(o));</span>
+<span class="fc" id="L793">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
+<span class="fc" id="L794">        cls.classType = ClassType.ENUM;</span>
+<span class="fc bfc" id="L795" title="All 2 branches covered.">        if (!cls.schema.isPresent()) {</span>
+            // ensure schema extensions visible
+<span class="fc" id="L797">            cls.schema = Optional.of(schema);</span>
+        }
+        
+<span class="fc" id="L800">        Class&lt;?&gt; valueCls = Util.toClass(Util.getTypeOrThrow(schema), schema.getFormat(), schema.getExtensions(),</span>
+<span class="fc" id="L801">                names.mapIntegerToBigInteger(), names.mapNumberToBigDecimal());</span>
+<span class="fc" id="L802">        cls.enumValueFullType = valueCls.getCanonicalName();</span>
+<span class="fc" id="L803">        Map&lt;String, String&gt; map = Names.getEnumValueToIdentifierMap(schema.getEnum());</span>
+<span class="fc" id="L804">        Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L805" title="All 2 branches covered.">        for (Object o : schema.getEnum()) {</span>
+<span class="fc bfc" id="L806" title="All 2 branches covered.">            if (!used.contains(String.valueOf(o))) {</span>
+<span class="fc" id="L807">                cls.enumMembers.add(new EnumMember(map.get(String.valueOf(o)), o, isNullable(schema)));</span>
+<span class="fc" id="L808">                used.add(String.valueOf(o));</span>
             }
-<span class="fc" id="L789">        }</span>
-<span class="fc" id="L790">        cls.addField(cls.enumValueFullType, &quot;value&quot;, &quot;value&quot;, true, false, mapType(schemaPath), isNullable(schema));</span>
-<span class="fc" id="L791">        boolean required = fieldIsRequired(schemaPath);</span>
-<span class="fc" id="L792">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, schemaPath.last().name, fieldName.get(), required,</span>
-<span class="fc" id="L793">                isArray, mapType(schemaPath), isNullable(schema)));</span>
-<span class="fc" id="L794">    }</span>
+<span class="fc" id="L810">        }</span>
+<span class="fc bfc" id="L811" title="All 4 branches covered.">        if (schema.getExtensions() != null &amp;&amp; schema.getExtensions().get(ExtensionKeys.NAMES) != null) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L813">            List&lt;String&gt; a = (List&lt;String&gt;) schema.getExtensions().get(ExtensionKeys.NAMES);</span>
+<span class="pc bpc" id="L814" title="1 of 2 branches missed.">            if (a.size() == cls.enumMembers.size()) {</span>
+<span class="fc" id="L815">                cls.enumNames = a;</span>
+            } else {
+<span class="nc" id="L817">                System.out.println(&quot;[WARN] &quot; + ExtensionKeys.NAMES + &quot; array length must match number of enum members&quot;);</span>
+            }
+        }
+<span class="fc" id="L820">        cls.addField(cls.enumValueFullType, &quot;value&quot;, &quot;value&quot;, true, false, mapType(schemaPath), isNullable(schema));</span>
+<span class="fc" id="L821">        boolean required = fieldIsRequired(schemaPath);</span>
+<span class="fc" id="L822">        previous.ifPresent(p -&gt; p.addField(cls.fullClassName, schemaPath.last().name, fieldName.get(), required,</span>
+<span class="fc" id="L823">                isArray, mapType(schemaPath), isNullable(schema)));</span>
+<span class="fc" id="L824">    }</span>
 
     private static &lt;T&gt; boolean contains(Collection&lt;? extends T&gt; collection, T t) {
-<span class="pc bpc" id="L797" title="1 of 6 branches missed.">        return collection != null &amp;&amp; t != null &amp;&amp; collection.contains(t);</span>
+<span class="pc bpc" id="L827" title="1 of 6 branches missed.">        return collection != null &amp;&amp; t != null &amp;&amp; collection.contains(t);</span>
     }
 
     private static String toList(String fullClassName, Imports imports, boolean useOptional) {
-<span class="pc bpc" id="L801" title="1 of 2 branches missed.">        if (useOptional) {</span>
-<span class="nc" id="L802">            return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
-<span class="nc" id="L803">                    imports.add(fullClassName));</span>
+<span class="pc bpc" id="L831" title="1 of 2 branches missed.">        if (useOptional) {</span>
+<span class="nc" id="L832">            return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
+<span class="nc" id="L833">                    imports.add(fullClassName));</span>
         } else {
-<span class="fc" id="L805">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(fullClassName));</span>
+<span class="fc" id="L835">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(fullClassName));</span>
         }
     }
 
     private static String resolveCandidateFullClassName(Cls cls, String candidateFullClassName) {
-<span class="fc" id="L810">        String s = candidateFullClassName;</span>
-<span class="fc" id="L811">        Set&lt;String&gt; ownersAndSiblings = cls.ownersAndSiblingsSimpleNames();</span>
-<span class="pc bpc" id="L812" title="1 of 4 branches missed.">        if (ownersAndSiblings.contains(Names.simpleClassName(s)) || s.equals(cls.fullClassName)) {</span>
-<span class="fc" id="L813">            int i = 2;</span>
-<span class="pc bpc" id="L814" title="1 of 2 branches missed.">            while (ownersAndSiblings.contains(Names.simpleClassName(s + i))) {</span>
-<span class="nc" id="L815">                i++;</span>
+<span class="fc" id="L840">        String s = candidateFullClassName;</span>
+<span class="fc" id="L841">        Set&lt;String&gt; ownersAndSiblings = cls.ownersAndSiblingsSimpleNames();</span>
+<span class="pc bpc" id="L842" title="1 of 4 branches missed.">        if (ownersAndSiblings.contains(Names.simpleClassName(s)) || s.equals(cls.fullClassName)) {</span>
+<span class="fc" id="L843">            int i = 2;</span>
+<span class="pc bpc" id="L844" title="1 of 2 branches missed.">            while (ownersAndSiblings.contains(Names.simpleClassName(s + i))) {</span>
+<span class="nc" id="L845">                i++;</span>
             }
-<span class="fc" id="L817">            s = s + i;</span>
+<span class="fc" id="L847">            s = s + i;</span>
         }
-<span class="fc" id="L819">        return s;</span>
+<span class="fc" id="L849">        return s;</span>
     }
 
     private static ClassType classType(Schema&lt;?&gt; schema) {
-<span class="pc bpc" id="L823" title="1 of 4 branches missed.">        if (Util.isOneOf(schema) || Util.isAnyOf(schema)) {</span>
-<span class="fc" id="L824">            return ClassType.ONE_OR_ANY_OF_NON_DISCRIMINATED;</span>
-<span class="fc bfc" id="L825" title="All 2 branches covered.">        } else if (Util.isEnum(schema)) {</span>
-<span class="fc" id="L826">            return ClassType.ENUM;</span>
-<span class="fc bfc" id="L827" title="All 2 branches covered.">        } else if (Util.isArray(schema)) {</span>
-<span class="fc" id="L828">            return ClassType.ARRAY_WRAPPER;</span>
+<span class="fc bfc" id="L853" title="All 2 branches covered.">        if (Util.isOneOf(schema)) {</span>
+<span class="fc" id="L854">            return ClassType.ONE_OF_NON_DISCRIMINATED;</span>
+<span class="fc bfc" id="L855" title="All 2 branches covered.">        } if (Util.isAnyOf(schema)) {</span>
+<span class="fc" id="L856">            return ClassType.ANY_OF_NON_DISCRIMINATED;</span>
+<span class="fc bfc" id="L857" title="All 2 branches covered.">        } else if (Util.isEnum(schema)) {</span>
+<span class="fc" id="L858">            return ClassType.ENUM;</span>
+<span class="fc bfc" id="L859" title="All 2 branches covered.">        } else if (Util.isArray(schema)) {</span>
+<span class="fc" id="L860">            return ClassType.ARRAY_WRAPPER;</span>
         } else {
-<span class="fc" id="L830">            return ClassType.CLASS;</span>
+<span class="fc" id="L862">            return ClassType.CLASS;</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProjectGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator</a> &gt; <span class="el_source">ProjectGenerator.java</span></div><h1>ProjectGenerator.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.davidmoten.oa3.codegen.generator.internal.WriterUtil;
+import org.davidmoten.oa3.codegen.util.Util;
+
+public final class ProjectGenerator {
+
+    private static final String START_SERVER = &quot;&lt;!-- serverStart --&gt;\n&quot;;
+    private static final String END_SERVER = &quot;&lt;!-- serverEnd --&gt;\n&quot;;
+
+    private ProjectGenerator() {
+        // prevent instantiation
+    }
+
+    public static void generateZipped(String openapiFilename, String groupId, String artifactId, String version,
+            String basePackage, boolean generateClient, boolean generateServer, OutputStream zip) {
+        try {
+<span class="fc" id="L32">            File directory = Files.createTempDirectory(&quot;openapi-codegen&quot;).toFile();</span>
+<span class="fc" id="L33">            generate(openapiFilename, groupId, artifactId, version, basePackage, generateClient, generateServer,</span>
+                    directory);
+<span class="fc" id="L35">            zipDirectory(directory, zip);</span>
+<span class="nc" id="L36">        } catch (IOException e) {</span>
+<span class="nc" id="L37">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L38">        }</span>
+<span class="fc" id="L39">    }</span>
+
+    public static void generate(String openapiFilename, String groupId, String artifactId, String version,
+            String basePackage, boolean generateClient, boolean generateServer, File directory) throws IOException {
+<span class="fc" id="L43">        File generatedSourceDirectory = new File(directory, &quot;src/main/java&quot;);</span>
+<span class="fc" id="L44">        generatedSourceDirectory.mkdirs();</span>
+<span class="fc" id="L45">        Definition definition = new Definition(openapiFilename, new Packages(basePackage), generatedSourceDirectory,</span>
+<span class="pc" id="L46">                x -&gt; x, Collections.emptySet(), Collections.emptySet(), false, false, true, Optional.empty(), generateServer);</span>
+<span class="fc" id="L47">        Generator g = new Generator(definition);</span>
+<span class="fc" id="L48">        g.generate();</span>
+
+<span class="fc" id="L50">        ClientServerGenerator g2 = new ClientServerGenerator(definition);</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (generateClient) {</span>
+<span class="fc" id="L52">            g2.generateClient();</span>
+        }
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (generateServer) {</span>
+<span class="fc" id="L55">            g2.generateServer();</span>
+        }
+<span class="fc" id="L57">        writePom(groupId, artifactId, version, basePackage, generateServer, directory);</span>
+<span class="fc" id="L58">    }</span>
+
+    private static void writePom(String groupId, String artifactId, String version, String basePackage,
+            boolean generateServer, File directory) throws IOException {
+<span class="fc" id="L62">        String generatorVersion = WriterUtil.readVersion();</span>
+<span class="fc" id="L63">        try (InputStream in = ProjectGenerator.class.getResourceAsStream(&quot;/generated-pom.xml&quot;)) {</span>
+<span class="fc" id="L64">            String pom = new String(Util.read(in), StandardCharsets.UTF_8) //</span>
+<span class="fc" id="L65">                    .replace(&quot;${generator.version}&quot;, generatorVersion) //</span>
+<span class="fc" id="L66">                    .replace(&quot;${base.package}&quot;, basePackage) //</span>
+<span class="fc" id="L67">                    .replace(&quot;${groupId}&quot;, groupId) //</span>
+<span class="fc" id="L68">                    .replace(&quot;${artifactId}&quot;, artifactId) //</span>
+<span class="fc" id="L69">                    .replace(&quot;${version}&quot;, version);</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (!generateServer) {</span>
+                int i;
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                while ((i = pom.indexOf(START_SERVER)) != -1) {</span>
+<span class="fc" id="L74">                    int j = pom.indexOf(END_SERVER);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                    if (j == -1) {</span>
+<span class="nc" id="L76">                        throw new RuntimeException(END_SERVER + &quot; marker not found&quot;);</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">                    } else if (i &gt; j) {</span>
+<span class="nc" id="L78">                        throw new RuntimeException(START_SERVER + &quot; marker not found, check does not have trailing spaces&quot;);</span>
+                    }
+<span class="fc" id="L80">                    pom = pom.substring(0, i) + pom.substring(j + END_SERVER.length());</span>
+<span class="fc" id="L81">                }</span>
+<span class="fc" id="L82">            } else {</span>
+<span class="fc" id="L83">                pom = pom //</span>
+<span class="fc" id="L84">                        .replaceAll(START_SERVER, &quot;&quot;) //</span>
+<span class="fc" id="L85">                        .replaceAll(END_SERVER, &quot;&quot;);</span>
+            }
+<span class="fc" id="L87">            File pomFile = new File(directory, &quot;pom.xml&quot;);</span>
+<span class="fc" id="L88">            Files.write(pomFile.toPath(), pom.getBytes(StandardCharsets.UTF_8));</span>
+        }
+<span class="fc" id="L90">    }</span>
+
+    private static void zipDirectory(File sourceDirectory, OutputStream out) throws IOException {
+<span class="fc" id="L93">        try (ZipOutputStream zs = new ZipOutputStream(out)) {</span>
+<span class="fc" id="L94">            Path pp = sourceDirectory.toPath();</span>
+<span class="fc" id="L95">            try (Stream&lt;Path&gt; paths = Files.walk(pp)) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">                paths.filter(path -&gt; !Files.isDirectory(path)).forEach(path -&gt; {</span>
+<span class="fc" id="L97">                    ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());</span>
+                    try {
+<span class="fc" id="L99">                        zs.putNextEntry(zipEntry);</span>
+<span class="fc" id="L100">                        Files.copy(path, zs);</span>
+<span class="fc" id="L101">                        zs.closeEntry();</span>
+<span class="nc" id="L102">                    } catch (IOException e) {</span>
+<span class="nc" id="L103">                        System.err.println(e);</span>
+<span class="fc" id="L104">                    }</span>
+<span class="fc" id="L105">                });</span>
+            }
+        }
+<span class="fc" id="L108">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

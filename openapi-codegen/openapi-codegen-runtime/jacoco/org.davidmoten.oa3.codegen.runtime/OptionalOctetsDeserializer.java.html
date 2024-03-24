@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OptionalOctetsDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">OptionalOctetsDeserializer.java</span></div><h1>OptionalOctetsDeserializer.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+
+import java.io.IOException;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.util.Util;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+
+public class OptionalOctetsDeserializer extends StdDeserializer&lt;Optional&lt;byte[]&gt;&gt; {
+
+    private static final long serialVersionUID = 1L;
+
+    public OptionalOctetsDeserializer() {
+<span class="fc" id="L18">        super(Optional.class);</span>
+<span class="fc" id="L19">    }</span>
+    
+    @Override
+    public Optional&lt;byte[]&gt; deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+<span class="fc" id="L23">        return Optional.ofNullable(p.getText()).map(Util::decodeOctets);</span>
+    }
+
+    @Override
+    public Object getAbsentValue(DeserializationContext ctxt) {
+<span class="nc" id="L28">        return Optional.empty();</span>
+    }
+
+    @Override
+    public Optional&lt;byte[]&gt; getNullValue(DeserializationContext ctxt) {
+<span class="fc" id="L33">        return Optional.empty();</span>
+    }
+
+    @Override
+    public Object getEmptyValue(DeserializationContext ctxt) {
+<span class="nc" id="L38">        return Optional.empty();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

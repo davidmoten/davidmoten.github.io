@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"org.davidmoten.oa3.codegen.client.runtime","c":"ClientBuilderTest","l":"ClientBuilderTest()","u":"%3Cinit%3E()"},{"p":"org.davidmoten.oa3.codegen.client.runtime","c":"ClientBuilderTest","l":"testBasePathIsTrimmedAndFinalSlashRemoved()"}];updateSearchResults();

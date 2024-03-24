@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"org.davidmoten.oa3.codegen.plugin","l":"GenerateMojo"},{"p":"com.github.davidmoten.openapi_codegen_maven_plugin","l":"HelpMojo"}];updateSearchResults();

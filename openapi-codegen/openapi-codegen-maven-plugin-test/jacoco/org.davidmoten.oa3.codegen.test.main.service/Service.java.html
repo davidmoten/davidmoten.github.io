@@ -164,26 +164,28 @@ import org.davidmoten.oa3.codegen.test.main.schema.Status;
  * occurs and the user should be able to see the actual broadcast times.
  * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; discuss with satellite providers
  */
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public interface Service extends ErrorHandler {
+
+<span class="nc" id="L170">    Service DEFAULT = new Service() {};</span>
 
     /**
      * &lt;p&gt;Obtains a token that will be passed in a request header to calls
      * to other paths on this API for authentication and authorization
      * purposes.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link AuthenticationResponse}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code AuthenticationResponse}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 200
      */
     default AuthenticationResponse getToken(
             AuthenticationRequestBody requestBody) throws ServiceException {
-<span class="nc" id="L186">        throw notImplemented();</span>
+<span class="nc" id="L188">        throw notImplemented();</span>
     }
 
     /**
@@ -200,102 +202,79 @@ public interface Service extends ErrorHandler {
      * by time then all pages should be requested and then sorted
      * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link GetMsis200Response}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code GetMsis200Response}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param endTimeMaxInclusive
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
-If endTimeMaxInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive not specified then has no effect.
      * @param endTimeMax
-     *            If endTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;lt;= endTimeMax.
-
-If endTimeMaxInclusive is false then filters MSIs
-on endTime &amp;lt; endTimeMax.
-
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
      * @param endTimeMin
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-     * @param limit
-     *            Requests that at most `limit` MSIs are returned in the call.
-The server may cap the requested `limit` (fewer items may be
-returned). To request the next page available include the 
-returned `continuationToken` in the next call. If there are 
-no more items available then the response will not contain
-a `continuationToken`.
-
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
      * @param startTimeMin
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param limit
+     *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
+     *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
+     *            returned). To request the next page available include the
+     *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
+     *            no more items available then the response will not contain
+     *            a &lt;code&gt;continuationToken&lt;/code&gt;.
      * @param startTimeMinInclusive
-     *            If startTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;gt;= startTimeMin.
-
-If startTimeMinInclusive is false then filters MSIs
-on startTime &amp;gt; startTimeMin.
-
-If startTimeMinInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive not specified then has no effect.
      * @param endTimeMinInclusive
-     *            If endTimeMinInclusive is true (the default value if not specified)
-then filters MSIs on endTime &amp;gt;= endTimeMin.
-
-If endTimeMinInclusive is false then filters MSIs
-on endTime &amp;gt; endTimeMin.
-
-If endTimeMinInclusive not specified then has no effect.
-
-     * @param broadcastType
-     *            the type of broadcast
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;gt;= endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
+     *            on endTime &amp;gt; endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
      * @param startTimeMax
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-     * @param continuationToken
-     *            Describes to the server the starting point of 
-the next page of results and is obtained from 
-the current page. May contain an offset if desired
-but is at the discretion of implementer. Note that
-it is possible that a call specifying a continuation
-token may return en empty list (but an empty list return 
-should not have a continuation token on it so at 
-that point paging would stop).
-
-     * @param status
-     *            Only MSIs that have a status in the given list
-are returned. If the list is empty (or the parameter
-is not present) then no filtering on status occurs.
-**TODO** support multi-status filtering or just one?
-
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
      * @param startTimeMaxInclusive
-     *            If startTimeMaxInclusive is true (the default value if not specified)
-then filters MSIs on startTime &amp;lt;= startTimeMax.
-
-If startTimeMaxInclusive is false then filters MSIs
-on startTime &amp;lt; startTimeMax.
-
-If startTimeMaxInclusive not specified then has no effect.
-
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param continuationToken
+     *            &lt;p&gt;Describes to the server the starting point of
+     *            the next page of results and is obtained from
+     *            the current page. May contain an offset if desired
+     *            but is at the discretion of implementer. Note that
+     *            it is possible that a call specifying a continuation
+     *            token may return en empty list (but an empty list return
+     *            should not have a continuation token on it so at
+     *            that point paging would stop).
      * @return primary response status code 200
      */
     default GetMsis200Response getMsis(
@@ -311,7 +290,7 @@ If startTimeMaxInclusive not specified then has no effect.
             Optional&lt;List&lt;String&gt;&gt; status, 
             Optional&lt;String&gt; broadcastType, 
             Optional&lt;String&gt; continuationToken) throws ServiceException {
-<span class="nc" id="L314">        throw notImplemented();</span>
+<span class="nc" id="L293">        throw notImplemented();</span>
     }
 
     /**
@@ -323,38 +302,38 @@ If startTimeMaxInclusive not specified then has no effect.
      * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
      * maximum number of unsent messages so it can be documented here).
      * 
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link MsiId}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code MsiId}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
+     *            &lt;p&gt;requestBody
      * @return primary response status code 201
      */
     default MsiId createMsi(
             MsiContent requestBody) throws ServiceException {
-<span class="nc" id="L338">        throw notImplemented();</span>
+<span class="nc" id="L317">        throw notImplemented();</span>
     }
 
     /**
      * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Msi}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Msi}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      * @return primary response status code 200
      */
     default Msi getMsi(
             String id) throws ServiceException {
-<span class="nc" id="L357">        throw notImplemented();</span>
+<span class="nc" id="L336">        throw notImplemented();</span>
     }
 
     /**
@@ -362,18 +341,18 @@ If startTimeMaxInclusive not specified then has no effect.
      * has already been sent or the MSI has been cancelled then
      * nothing occurs (this method is idempotent).
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      */
     default void sendMsi(
             String id) throws ServiceException {
-<span class="nc" id="L376">        throw notImplemented();</span>
+<span class="nc" id="L355">        throw notImplemented();</span>
     }
 
     /**
@@ -383,37 +362,37 @@ If startTimeMaxInclusive not specified then has no effect.
      * an MSI cannot be resent. However, the broadcast details
      * are still available to be queried.
      * 
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      */
     default void cancelMsi(
             String id) throws ServiceException {
-<span class="nc" id="L397">        throw notImplemented();</span>
+<span class="nc" id="L376">        throw notImplemented();</span>
     }
 
     /**
      * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
      * 
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Status}
-     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@link Error}
-     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Status}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            unique msi identifier
+     *            &lt;p&gt;unique msi identifier
      * @return primary response status code 200
      */
     default Status getMsiStatus(
             String id) throws ServiceException {
-<span class="nc" id="L416">        throw notImplemented();</span>
+<span class="nc" id="L395">        throw notImplemented();</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

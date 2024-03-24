@@ -5,19 +5,24 @@ import jakarta.annotation.Generated;
 import java.lang.Long;
 import java.lang.Object;
 import java.lang.String;
+import java.lang.Void;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
 import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
 import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.Http.Builder;
+import org.davidmoten.oa3.codegen.http.Http.RequestBuilder;
 import org.davidmoten.oa3.codegen.http.HttpMethod;
-import org.davidmoten.oa3.codegen.http.HttpResponse;
 import org.davidmoten.oa3.codegen.http.Interceptor;
 import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
 import org.davidmoten.oa3.codegen.test.paths.Globals;
 import org.davidmoten.oa3.codegen.test.paths.path.QueryObjectGetIdParameterId;
 import org.davidmoten.oa3.codegen.test.paths.path.RequestBodyMultiTypePostRequestApplicationOctetStream;
+import org.davidmoten.oa3.codegen.test.paths.path.SubmitPostRequestApplicationXWwwFormUrlencoded;
+import org.davidmoten.oa3.codegen.test.paths.path.UploadPostRequestMultipartFormData;
 import org.davidmoten.oa3.codegen.test.paths.response.Response4;
 import org.davidmoten.oa3.codegen.test.paths.schema.Error;
 import org.davidmoten.oa3.codegen.test.paths.schema.Name;
@@ -26,906 +31,604 @@ import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody1;
 import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody2;
 import org.davidmoten.oa3.codegen.test.paths.schema.Response1;
 import org.davidmoten.oa3.codegen.test.paths.schema.Response2;
-import org.springframework.core.io.Resource;
 
 /**
  * &lt;p&gt;path tests
  */
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public class Client {
 
     private final Serializer serializer;
     private final List&lt;Interceptor&gt; interceptors;
     private final String basePath;
+    private final HttpService httpService;
 
-<span class="fc" id="L41">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath) {</span>
-<span class="fc" id="L42">        this.serializer = serializer;</span>
-<span class="fc" id="L43">        this.interceptors = interceptors;</span>
-<span class="fc" id="L44">        this.basePath = basePath;</span>
-<span class="fc" id="L45">    }</span>
+<span class="fc" id="L46">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath, HttpService httpService) {</span>
+<span class="fc" id="L47">        this.serializer = serializer;</span>
+<span class="fc" id="L48">        this.interceptors = interceptors;</span>
+<span class="fc" id="L49">        this.basePath = basePath;</span>
+<span class="fc" id="L50">        this.httpService = httpService;</span>
+<span class="fc" id="L51">    }</span>
 
     public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
-<span class="fc" id="L48">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath()), Globals.config(), basePath);</span>
+<span class="fc" id="L54">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), basePath);</span>
+    }
+
+    public static ClientBuilder&lt;Client&gt; basePath(Server server) {
+<span class="nc" id="L58">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), server.url());</span>
+    }
+
+<span class="nc" id="L61">    public enum Server {</span>
+
+<span class="nc" id="L63">        SERVER1(&quot;https://myservice.com/v1&quot;);</span>
+
+        private String url;
+
+<span class="nc" id="L67">        Server(String url) {</span>
+<span class="nc" id="L68">            this.url = url;</span>
+<span class="nc" id="L69">        }</span>
+
+        public String url() {
+<span class="nc" id="L72">            return url;</span>
+        }
+    }
+
+    private Builder http(HttpMethod method, String path) {
+<span class="fc" id="L77">        return Http</span>
+<span class="fc" id="L78">                .method(method)</span>
+<span class="fc" id="L79">                .basePath(this.basePath)</span>
+<span class="fc" id="L80">                .path(path)</span>
+<span class="fc" id="L81">                .serializer(this.serializer)</span>
+<span class="fc" id="L82">                .interceptors(this.interceptors)</span>
+<span class="fc" id="L83">                .httpService(this.httpService);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return primary response with status code 200
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public Response1 requestBodyRequiredPost(
+    public RequestBuilder&lt;Response1&gt; requestBodyRequiredPost(
             RequestBody1 requestBody) {
-<span class="nc" id="L62">        return requestBodyRequiredPostFullResponse(requestBody)</span>
-<span class="nc" id="L63">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L64">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L65">                .dataUnwrapped();</span>
+<span class="nc" id="L97">        return http(HttpMethod.POST, &quot;/requestBodyRequired&quot;)</span>
+<span class="nc" id="L98">                .acceptApplicationJson()</span>
+<span class="nc" id="L99">                .body(requestBody)</span>
+<span class="nc" id="L100">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L101">                .responseAs(Response1.class)</span>
+<span class="nc" id="L102">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L103">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L104">                .responseAs(Error.class)</span>
+<span class="nc" id="L105">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L106">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L107">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public HttpResponse requestBodyRequiredPostFullResponse(
-            RequestBody1 requestBody) {
-<span class="nc" id="L79">        return Http</span>
-<span class="nc" id="L80">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L81">                .basePath(this.basePath)</span>
-<span class="nc" id="L82">                .path(&quot;/requestBodyRequired&quot;)</span>
-<span class="nc" id="L83">                .serializer(this.serializer)</span>
-<span class="nc" id="L84">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L85">                .acceptApplicationJson()</span>
-<span class="nc" id="L86">                .body(requestBody)</span>
-<span class="nc" id="L87">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L88">                .responseAs(Response1.class)</span>
-<span class="nc" id="L89">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L90">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L91">                .responseAs(Error.class)</span>
-<span class="nc" id="L92">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L93">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L94">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param requestBody
-     *            requestBody
-     * @return primary response with status code 200
-     */
-    public Response2 requestBodyNotRequiredPost(
+    public RequestBuilder&lt;Response2&gt; requestBodyNotRequiredPost(
             Optional&lt;RequestBody2&gt; requestBody) {
-<span class="nc" id="L108">        return requestBodyNotRequiredPostFullResponse(requestBody)</span>
-<span class="nc" id="L109">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L110">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L111">                .dataUnwrapped();</span>
+<span class="nc" id="L121">        return http(HttpMethod.POST, &quot;/requestBodyNotRequired&quot;)</span>
+<span class="nc" id="L122">                .acceptApplicationJson()</span>
+<span class="nc" id="L123">                .body(requestBody)</span>
+<span class="nc" id="L124">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L125">                .responseAs(Response2.class)</span>
+<span class="nc" id="L126">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L127">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L128">                .responseAs(Error.class)</span>
+<span class="nc" id="L129">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L130">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L131">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public HttpResponse requestBodyNotRequiredPostFullResponse(
-            Optional&lt;RequestBody2&gt; requestBody) {
-<span class="nc" id="L125">        return Http</span>
-<span class="nc" id="L126">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L127">                .basePath(this.basePath)</span>
-<span class="nc" id="L128">                .path(&quot;/requestBodyNotRequired&quot;)</span>
-<span class="nc" id="L129">                .serializer(this.serializer)</span>
-<span class="nc" id="L130">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L131">                .acceptApplicationJson()</span>
-<span class="nc" id="L132">                .body(requestBody)</span>
-<span class="nc" id="L133">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L134">                .responseAs(Response2.class)</span>
-<span class="nc" id="L135">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L136">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L137">                .responseAs(Error.class)</span>
-<span class="nc" id="L138">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L139">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L140">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param requestBody
-     *            requestBody
-     * @return primary response with status code 200
-     */
-    public Response1 requestBodyRefPost(
+    public RequestBuilder&lt;Response1&gt; requestBodyRefPost(
             RequestBody1 requestBody) {
-<span class="nc" id="L154">        return requestBodyRefPostFullResponse(requestBody)</span>
-<span class="nc" id="L155">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L156">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L157">                .dataUnwrapped();</span>
+<span class="nc" id="L145">        return http(HttpMethod.POST, &quot;/requestBodyRef&quot;)</span>
+<span class="nc" id="L146">                .acceptApplicationJson()</span>
+<span class="nc" id="L147">                .body(requestBody)</span>
+<span class="nc" id="L148">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L149">                .responseAs(Response1.class)</span>
+<span class="nc" id="L150">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L151">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L152">                .responseAs(Error.class)</span>
+<span class="nc" id="L153">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L154">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L155">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse requestBodyRefPostFullResponse(
-            RequestBody1 requestBody) {
-<span class="nc" id="L171">        return Http</span>
-<span class="nc" id="L172">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L173">                .basePath(this.basePath)</span>
-<span class="nc" id="L174">                .path(&quot;/requestBodyRef&quot;)</span>
-<span class="nc" id="L175">                .serializer(this.serializer)</span>
-<span class="nc" id="L176">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L177">                .acceptApplicationJson()</span>
-<span class="nc" id="L178">                .body(requestBody)</span>
-<span class="nc" id="L179">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L180">                .responseAs(Response1.class)</span>
-<span class="nc" id="L181">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L182">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L183">                .responseAs(Error.class)</span>
-<span class="nc" id="L184">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L185">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L186">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
      * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; byte[]
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @param username
-     *            username
      * @param accept
-     *            accept
-     * @return primary response with status code 200
+     *            &lt;p&gt;accept
+     * @param username
+     *            &lt;p&gt;username
+     * @return call builder
      */
-    public Response1 responseMultiTypeGet(
+    public RequestBuilder&lt;Response1&gt; responseMultiTypeGet(
             String accept, 
             String username) {
-<span class="fc" id="L204">        return responseMultiTypeGetFullResponse(accept, username)</span>
-<span class="fc" id="L205">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L206">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L207">                .dataUnwrapped();</span>
+<span class="fc" id="L173">        return http(HttpMethod.GET, &quot;/responseMultiType&quot;)</span>
+<span class="fc" id="L174">                .acceptApplicationJson()</span>
+<span class="fc" id="L175">                .accept(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L176">                .header(&quot;Accept&quot;, accept)</span>
+<span class="fc" id="L177">                .queryParam(&quot;username&quot;, username)</span>
+<span class="fc" id="L178">                .responseAs(Response1.class)</span>
+<span class="fc" id="L179">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L180">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L181">                .responseAs(byte[].class)</span>
+<span class="fc" id="L182">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L183">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L184">                .responseAs(Error.class)</span>
+<span class="fc" id="L185">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L186">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L187">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; byte[]
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@code RequestBodyMultiTypePostRequestApplicationOctetStream}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @param username
-     *            username
-     * @param accept
-     *            accept
-     * @return full response with status code, body and headers
+     * @return call builder
      */
-    public HttpResponse responseMultiTypeGetFullResponse(
-            String accept, 
-            String username) {
-<span class="fc" id="L225">        return Http</span>
-<span class="fc" id="L226">                .method(HttpMethod.GET)</span>
-<span class="fc" id="L227">                .basePath(this.basePath)</span>
-<span class="fc" id="L228">                .path(&quot;/responseMultiType&quot;)</span>
-<span class="fc" id="L229">                .serializer(this.serializer)</span>
-<span class="fc" id="L230">                .interceptors(this.interceptors)</span>
-<span class="fc" id="L231">                .acceptApplicationJson()</span>
-<span class="fc" id="L232">                .header(&quot;Accept&quot;, accept)</span>
-<span class="fc" id="L233">                .queryParam(&quot;username&quot;, username)</span>
-<span class="fc" id="L234">                .responseAs(Response1.class)</span>
-<span class="fc" id="L235">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L236">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L237">                .responseAs(byte[].class)</span>
-<span class="fc" id="L238">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L239">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
-<span class="fc" id="L240">                .responseAs(Error.class)</span>
-<span class="fc" id="L241">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="fc" id="L242">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L243">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@link RequestBodyMultiTypePostRequestApplicationOctetStream}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return primary response with status code 200
-     */
-    public Resource bytesGet() {
-<span class="nc" id="L254">        return bytesGetFullResponse()</span>
-<span class="nc" id="L255">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L256">                .assertContentTypeMatches(&quot;application/octet-stream&quot;)</span>
-<span class="nc" id="L257">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@link RequestBodyMultiTypePostRequestApplicationOctetStream}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse bytesGetFullResponse() {
-<span class="nc" id="L268">        return Http</span>
-<span class="nc" id="L269">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L270">                .basePath(this.basePath)</span>
-<span class="nc" id="L271">                .path(&quot;/bytes&quot;)</span>
-<span class="nc" id="L272">                .serializer(this.serializer)</span>
-<span class="nc" id="L273">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L274">                .acceptApplicationJson()</span>
-<span class="nc" id="L275">                .responseAs(RequestBodyMultiTypePostRequestApplicationOctetStream.class)</span>
-<span class="nc" id="L276">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L277">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
-<span class="nc" id="L278">                .responseAs(Error.class)</span>
-<span class="nc" id="L279">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L280">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L281">                .call();</span>
+    public RequestBuilder&lt;byte[]&gt; bytesGet() {
+<span class="fc" id="L198">        return http(HttpMethod.GET, &quot;/bytes&quot;)</span>
+<span class="fc" id="L199">                .accept(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L200">                .acceptApplicationJson()</span>
+<span class="fc" id="L201">                .responseAs(RequestBodyMultiTypePostRequestApplicationOctetStream.class)</span>
+<span class="fc" id="L202">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L203">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L204">                .responseAs(Error.class)</span>
+<span class="fc" id="L205">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L206">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L207">                .&lt;byte[]&gt;requestBuilder(&quot;200&quot;, &quot;application/octet-stream&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
-     * 
-     * @return primary response with status code 200
-     */
-    public Object uploadPost() {
-<span class="nc" id="L291">        return uploadPostFullResponse()</span>
-<span class="nc" id="L292">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L293">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L294">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse uploadPostFullResponse() {
-<span class="nc" id="L304">        return Http</span>
-<span class="nc" id="L305">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L306">                .basePath(this.basePath)</span>
-<span class="nc" id="L307">                .path(&quot;/upload&quot;)</span>
-<span class="nc" id="L308">                .serializer(this.serializer)</span>
-<span class="nc" id="L309">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L310">                .acceptApplicationJson()</span>
-<span class="nc" id="L311">                .responseAs(byte[].class)</span>
-<span class="nc" id="L312">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L313">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L314">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
-     * 
-     * @return primary response with status code 200
-     */
-    public Object uploadImagePost() {
-<span class="nc" id="L324">        return uploadImagePostFullResponse()</span>
-<span class="nc" id="L325">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L326">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L327">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse uploadImagePostFullResponse() {
-<span class="nc" id="L337">        return Http</span>
-<span class="nc" id="L338">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L339">                .basePath(this.basePath)</span>
-<span class="nc" id="L340">                .path(&quot;/uploadImage&quot;)</span>
-<span class="nc" id="L341">                .serializer(this.serializer)</span>
-<span class="nc" id="L342">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L343">                .acceptApplicationJson()</span>
-<span class="nc" id="L344">                .responseAs(byte[].class)</span>
-<span class="nc" id="L345">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L346">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L347">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return primary response with status code 200
-     */
-    public Response1 defaultErrorGet() {
-<span class="nc" id="L358">        return defaultErrorGetFullResponse()</span>
-<span class="nc" id="L359">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L360">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L361">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse defaultErrorGetFullResponse() {
-<span class="fc" id="L372">        return Http</span>
-<span class="fc" id="L373">                .method(HttpMethod.GET)</span>
-<span class="fc" id="L374">                .basePath(this.basePath)</span>
-<span class="fc" id="L375">                .path(&quot;/defaultError&quot;)</span>
-<span class="fc" id="L376">                .serializer(this.serializer)</span>
-<span class="fc" id="L377">                .interceptors(this.interceptors)</span>
-<span class="fc" id="L378">                .acceptApplicationJson()</span>
-<span class="fc" id="L379">                .responseAs(Response1.class)</span>
-<span class="fc" id="L380">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L381">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L382">                .responseAs(Error.class)</span>
-<span class="fc" id="L383">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="fc" id="L384">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L385">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return primary response with status code 200
-     */
-    public String textGet() {
-<span class="nc" id="L396">        return textGetFullResponse()</span>
-<span class="nc" id="L397">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L398">                .assertContentTypeMatches(&quot;text/plain&quot;)</span>
-<span class="nc" id="L399">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse textGetFullResponse() {
-<span class="nc" id="L410">        return Http</span>
-<span class="nc" id="L411">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L412">                .basePath(this.basePath)</span>
-<span class="nc" id="L413">                .path(&quot;/text&quot;)</span>
-<span class="nc" id="L414">                .serializer(this.serializer)</span>
-<span class="nc" id="L415">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L416">                .acceptApplicationJson()</span>
-<span class="nc" id="L417">                .responseAs(Name.class)</span>
-<span class="nc" id="L418">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L419">                .whenContentTypeMatches(&quot;text/plain&quot;)</span>
-<span class="nc" id="L420">                .responseAs(Error.class)</span>
-<span class="nc" id="L421">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L422">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L423">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return primary response with status code 200
-     */
-    public Name jsonStringGet() {
-<span class="fc" id="L434">        return jsonStringGetFullResponse()</span>
-<span class="fc" id="L435">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L436">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L437">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Name}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse jsonStringGetFullResponse() {
-<span class="fc" id="L448">        return Http</span>
-<span class="fc" id="L449">                .method(HttpMethod.GET)</span>
-<span class="fc" id="L450">                .basePath(this.basePath)</span>
-<span class="fc" id="L451">                .path(&quot;/jsonString&quot;)</span>
-<span class="fc" id="L452">                .serializer(this.serializer)</span>
-<span class="fc" id="L453">                .interceptors(this.interceptors)</span>
-<span class="fc" id="L454">                .acceptApplicationJson()</span>
-<span class="fc" id="L455">                .responseAs(Name.class)</span>
-<span class="fc" id="L456">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L457">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L458">                .responseAs(Error.class)</span>
-<span class="fc" id="L459">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="fc" id="L460">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L461">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
      * 
      * @param requestBody
-     *            requestBody
-     * @return primary response with status code 200
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public Response1 requestBodyMultiTypePost(
-            RequestBody1 requestBody) {
-<span class="nc" id="L475">        return requestBodyMultiTypePostFullResponse(requestBody)</span>
-<span class="nc" id="L476">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L477">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L478">                .dataUnwrapped();</span>
+    public RequestBuilder&lt;Object&gt; uploadPost(
+            UploadPostRequestMultipartFormData requestBody) {
+<span class="fc" id="L220">        return http(HttpMethod.POST, &quot;/upload&quot;)</span>
+<span class="fc" id="L221">                .acceptApplicationJson()</span>
+<span class="fc" id="L222">                .multipartFormData(requestBody)</span>
+<span class="fc" id="L223">                .responseAs(byte[].class)</span>
+<span class="fc" id="L224">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L225">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L226">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response1}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
      * 
      * @param requestBody
-     *            requestBody
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;requestBody
+     * @return call builder
      */
-    public HttpResponse requestBodyMultiTypePostFullResponse(
+    public RequestBuilder&lt;Object&gt; submitPost(
+            SubmitPostRequestApplicationXWwwFormUrlencoded requestBody) {
+<span class="fc" id="L239">        return http(HttpMethod.POST, &quot;/submit&quot;)</span>
+<span class="fc" id="L240">                .acceptApplicationJson()</span>
+<span class="fc" id="L241">                .formUrlEncoded(requestBody)</span>
+<span class="fc" id="L242">                .responseAs(byte[].class)</span>
+<span class="fc" id="L243">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L244">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L245">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Object&gt; uploadImagePost() {
+<span class="nc" id="L255">        return http(HttpMethod.POST, &quot;/uploadImage&quot;)</span>
+<span class="nc" id="L256">                .acceptApplicationJson()</span>
+<span class="nc" id="L257">                .responseAs(byte[].class)</span>
+<span class="nc" id="L258">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L259">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L260">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; defaultErrorGet() {
+<span class="fc" id="L271">        return http(HttpMethod.GET, &quot;/defaultError&quot;)</span>
+<span class="fc" id="L272">                .acceptApplicationJson()</span>
+<span class="fc" id="L273">                .responseAs(Response1.class)</span>
+<span class="fc" id="L274">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L275">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L276">                .responseAs(Error.class)</span>
+<span class="fc" id="L277">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L278">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L279">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;String&gt; textGet() {
+<span class="nc" id="L290">        return http(HttpMethod.GET, &quot;/text&quot;)</span>
+<span class="nc" id="L291">                .accept(&quot;text/plain&quot;)</span>
+<span class="nc" id="L292">                .acceptApplicationJson()</span>
+<span class="nc" id="L293">                .responseAs(Name.class)</span>
+<span class="nc" id="L294">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L295">                .whenContentTypeMatches(&quot;text/plain&quot;)</span>
+<span class="nc" id="L296">                .responseAs(Error.class)</span>
+<span class="nc" id="L297">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L298">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L299">                .&lt;String&gt;requestBuilder(&quot;200&quot;, &quot;text/plain&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Name&gt; jsonStringGet() {
+<span class="fc" id="L310">        return http(HttpMethod.GET, &quot;/jsonString&quot;)</span>
+<span class="fc" id="L311">                .acceptApplicationJson()</span>
+<span class="fc" id="L312">                .responseAs(Name.class)</span>
+<span class="fc" id="L313">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L314">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L315">                .responseAs(Error.class)</span>
+<span class="fc" id="L316">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L317">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L318">                .&lt;Name&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; requestBodyMultiTypePost(
             RequestBody1 requestBody) {
-<span class="nc" id="L492">        return Http</span>
-<span class="nc" id="L493">                .method(HttpMethod.POST)</span>
-<span class="nc" id="L494">                .basePath(this.basePath)</span>
-<span class="nc" id="L495">                .path(&quot;/requestBodyMultiType&quot;)</span>
-<span class="nc" id="L496">                .serializer(this.serializer)</span>
-<span class="nc" id="L497">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L498">                .acceptApplicationJson()</span>
-<span class="nc" id="L499">                .body(requestBody)</span>
-<span class="nc" id="L500">                .contentTypeApplicationJson()</span>
-<span class="nc" id="L501">                .responseAs(Response1.class)</span>
-<span class="nc" id="L502">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L503">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L504">                .responseAs(Error.class)</span>
-<span class="nc" id="L505">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L506">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L507">                .call();</span>
+<span class="nc" id="L332">        return http(HttpMethod.POST, &quot;/requestBodyMultiType&quot;)</span>
+<span class="nc" id="L333">                .acceptApplicationJson()</span>
+<span class="nc" id="L334">                .body(requestBody)</span>
+<span class="nc" id="L335">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L336">                .responseAs(Response1.class)</span>
+<span class="nc" id="L337">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L338">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L339">                .responseAs(Error.class)</span>
+<span class="nc" id="L340">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L341">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L342">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return primary response with status code 200
+     * @return call builder
      */
-    public Response2 itemGet() {
-<span class="nc" id="L518">        return itemGetFullResponse()</span>
-<span class="nc" id="L519">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L520">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L521">                .dataUnwrapped();</span>
+    public RequestBuilder&lt;Response2&gt; itemGet() {
+<span class="fc" id="L353">        return http(HttpMethod.GET, &quot;/item&quot;)</span>
+<span class="fc" id="L354">                .acceptApplicationJson()</span>
+<span class="fc" id="L355">                .responseAs(Response2.class)</span>
+<span class="fc" id="L356">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L357">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L358">                .responseAs(Error.class)</span>
+<span class="fc" id="L359">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L360">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L361">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return full response with status code, body and headers
+     * @return call builder
      */
-    public HttpResponse itemGetFullResponse() {
-<span class="fc" id="L532">        return Http</span>
-<span class="fc" id="L533">                .method(HttpMethod.GET)</span>
-<span class="fc" id="L534">                .basePath(this.basePath)</span>
-<span class="fc" id="L535">                .path(&quot;/item&quot;)</span>
-<span class="fc" id="L536">                .serializer(this.serializer)</span>
-<span class="fc" id="L537">                .interceptors(this.interceptors)</span>
-<span class="fc" id="L538">                .acceptApplicationJson()</span>
-<span class="fc" id="L539">                .responseAs(Response2.class)</span>
-<span class="fc" id="L540">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="fc" id="L541">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L542">                .responseAs(Error.class)</span>
-<span class="fc" id="L543">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="fc" id="L544">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="fc" id="L545">                .call();</span>
+    public RequestBuilder&lt;Response2&gt; item201Get() {
+<span class="nc" id="L372">        return http(HttpMethod.GET, &quot;/item201&quot;)</span>
+<span class="nc" id="L373">                .acceptApplicationJson()</span>
+<span class="nc" id="L374">                .responseAs(Response2.class)</span>
+<span class="nc" id="L375">                .whenStatusCodeMatches(&quot;201&quot;)</span>
+<span class="nc" id="L376">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L377">                .responseAs(Error.class)</span>
+<span class="nc" id="L378">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L379">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L380">                .&lt;Response2&gt;requestBuilder(&quot;201&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return primary response with status code 201
+     * @return call builder
      */
-    public Response2 item201Get() {
-<span class="nc" id="L556">        return item201GetFullResponse()</span>
-<span class="nc" id="L557">                .assertStatusCodeMatches(&quot;201&quot;)</span>
-<span class="nc" id="L558">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L559">                .dataUnwrapped();</span>
+    public RequestBuilder&lt;Response2&gt; responseRefGet() {
+<span class="nc" id="L391">        return http(HttpMethod.GET, &quot;/responseRef&quot;)</span>
+<span class="nc" id="L392">                .acceptApplicationJson()</span>
+<span class="nc" id="L393">                .responseAs(Response2.class)</span>
+<span class="nc" id="L394">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L395">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L396">                .responseAs(Error.class)</span>
+<span class="nc" id="L397">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L398">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L399">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return full response with status code, body and headers
+     * @return call builder
      */
-    public HttpResponse item201GetFullResponse() {
-<span class="nc" id="L570">        return Http</span>
-<span class="nc" id="L571">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L572">                .basePath(this.basePath)</span>
-<span class="nc" id="L573">                .path(&quot;/item201&quot;)</span>
-<span class="nc" id="L574">                .serializer(this.serializer)</span>
-<span class="nc" id="L575">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L576">                .acceptApplicationJson()</span>
-<span class="nc" id="L577">                .responseAs(Response2.class)</span>
-<span class="nc" id="L578">                .whenStatusCodeMatches(&quot;201&quot;)</span>
-<span class="nc" id="L579">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L580">                .responseAs(Error.class)</span>
-<span class="nc" id="L581">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L582">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L583">                .call();</span>
+    public RequestBuilder&lt;Response4&gt; responseRef2Get() {
+<span class="nc" id="L410">        return http(HttpMethod.GET, &quot;/responseRef2&quot;)</span>
+<span class="nc" id="L411">                .acceptApplicationJson()</span>
+<span class="nc" id="L412">                .responseAs(Response4.class)</span>
+<span class="nc" id="L413">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L414">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L415">                .responseAs(Error.class)</span>
+<span class="nc" id="L416">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L417">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L418">                .&lt;Response4&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return primary response with status code 200
+     * @return call builder
      */
-    public Response2 responseRefGet() {
-<span class="nc" id="L594">        return responseRefGetFullResponse()</span>
-<span class="nc" id="L595">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L596">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L597">                .dataUnwrapped();</span>
+    public RequestBuilder&lt;Void&gt; emptyGet() {
+<span class="nc" id="L428">        return http(HttpMethod.GET, &quot;/empty&quot;)</span>
+<span class="nc" id="L429">                .acceptApplicationJson()</span>
+<span class="nc" id="L430">                .responseAs(Error.class)</span>
+<span class="nc" id="L431">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L432">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L433">                .&lt;Void&gt;requestBuilder();</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=2XX, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
-     * @return full response with status code, body and headers
+     * @return call builder
      */
-    public HttpResponse responseRefGetFullResponse() {
-<span class="nc" id="L608">        return Http</span>
-<span class="nc" id="L609">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L610">                .basePath(this.basePath)</span>
-<span class="nc" id="L611">                .path(&quot;/responseRef&quot;)</span>
-<span class="nc" id="L612">                .serializer(this.serializer)</span>
-<span class="nc" id="L613">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L614">                .acceptApplicationJson()</span>
-<span class="nc" id="L615">                .responseAs(Response2.class)</span>
-<span class="nc" id="L616">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L617">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L618">                .responseAs(Error.class)</span>
-<span class="nc" id="L619">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L620">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L621">                .call();</span>
+    public RequestBuilder&lt;Response4&gt; wildcardStatusCodeGet() {
+<span class="fc" id="L444">        return http(HttpMethod.GET, &quot;/wildcardStatusCode&quot;)</span>
+<span class="fc" id="L445">                .acceptApplicationJson()</span>
+<span class="fc" id="L446">                .responseAs(Response4.class)</span>
+<span class="fc" id="L447">                .whenStatusCodeMatches(&quot;2XX&quot;)</span>
+<span class="fc" id="L448">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L449">                .responseAs(Error.class)</span>
+<span class="fc" id="L450">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L451">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L452">                .&lt;Response4&gt;requestBuilder(&quot;2XX&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response4}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return primary response with status code 200
-     */
-    public Response4 responseRef2Get() {
-<span class="nc" id="L632">        return responseRef2GetFullResponse()</span>
-<span class="nc" id="L633">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L634">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L635">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response4}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse responseRef2GetFullResponse() {
-<span class="nc" id="L646">        return Http</span>
-<span class="nc" id="L647">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L648">                .basePath(this.basePath)</span>
-<span class="nc" id="L649">                .path(&quot;/responseRef2&quot;)</span>
-<span class="nc" id="L650">                .serializer(this.serializer)</span>
-<span class="nc" id="L651">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L652">                .acceptApplicationJson()</span>
-<span class="nc" id="L653">                .responseAs(Response4.class)</span>
-<span class="nc" id="L654">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L655">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L656">                .responseAs(Error.class)</span>
-<span class="nc" id="L657">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L658">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L659">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse emptyGetFullResponse() {
-<span class="nc" id="L669">        return Http</span>
-<span class="nc" id="L670">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L671">                .basePath(this.basePath)</span>
-<span class="nc" id="L672">                .path(&quot;/empty&quot;)</span>
-<span class="nc" id="L673">                .serializer(this.serializer)</span>
-<span class="nc" id="L674">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L675">                .acceptApplicationJson()</span>
-<span class="nc" id="L676">                .responseAs(Error.class)</span>
-<span class="nc" id="L677">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L678">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L679">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param third
-     *            third
+     *            &lt;p&gt;third
      * @param id
-     *            id
+     *            &lt;h2&gt;heading&lt;/h2&gt;
+     *            &lt;h3&gt;subheading&lt;/h3&gt;
+     *            &lt;p&gt;Here's a long identifier description that is &lt;em&gt;more&lt;/em&gt; of an &lt;strong&gt;essay&lt;/strong&gt;
+     *            written in &lt;code&gt;markdown&lt;/code&gt; and is expected to be converted to html at generation time
+     *            when appearing in javadoc and is &amp;gt; 80 chars with an illegal javadoc char
+     *            &lt;p&gt;And a &lt;em&gt;table&lt;/em&gt;
+     *            &lt;p&gt;| Item Type  | Description                    |
+     *            | ---        | ---                            |
+     *            | vehicle    | car, truck, bike, motorbike    |
+     *            | aircraft   | monoplane, biplane, helicopter |
+     *            &lt;pre&gt;&lt;code&gt;what happens to stuff like &amp;lt;this&amp;gt;?
+     *            &lt;/code&gt;&lt;/pre&gt;
+     *            &lt;p&gt;Note that tables in commonMark are done with html not like with GitHub flavoured mark
+     *            down
+     *            &lt;table&gt;
+     *              &lt;thead&gt;
+     *                &lt;tr&gt;
+     *                  &lt;th&gt;Header&lt;/th&gt;
+     *                  &lt;th&gt;Another Header&lt;/th&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/thead&gt;
+     *              &lt;tbody&gt;
+     *                &lt;tr&gt;
+     *                  &lt;td&gt;field 1&lt;/td&gt;
+     *                  &lt;td&gt;value one&lt;/td&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/tbody&gt;
+     *            &lt;/table&gt;
      * @param first
-     *            first
+     *            &lt;p&gt;first
      * @param second
-     *            second
-     * @return primary response with status code 203
+     *            &lt;p&gt;second
+     * @return call builder
      */
-    public Response2 paramsGet(
+    public RequestBuilder&lt;Response2&gt; paramsGet(
             String id, 
             OffsetDateTime first, 
             Optional&lt;Long&gt; second, 
             int third) {
-<span class="nc" id="L702">        return paramsGetFullResponse(</span>
-                    id,
-                    first,
-                    second,
-                    third)
-<span class="nc" id="L707">                .assertStatusCodeMatches(&quot;203&quot;)</span>
-<span class="nc" id="L708">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L709">                .dataUnwrapped();</span>
+<span class="nc" id="L502">        return http(HttpMethod.GET, &quot;/params&quot;)</span>
+<span class="nc" id="L503">                .acceptApplicationJson()</span>
+<span class="nc" id="L504">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L505">                .queryParam(&quot;first&quot;, first)</span>
+<span class="nc" id="L506">                .queryParam(&quot;second&quot;, second)</span>
+<span class="nc" id="L507">                .queryParam(&quot;third&quot;, third)</span>
+<span class="nc" id="L508">                .responseAs(Response2.class)</span>
+<span class="nc" id="L509">                .whenStatusCodeMatches(&quot;203&quot;)</span>
+<span class="nc" id="L510">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L511">                .responseAs(Error.class)</span>
+<span class="nc" id="L512">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L513">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L514">                .&lt;Response2&gt;requestBuilder(&quot;203&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param third
-     *            third
-     * @param id
-     *            id
-     * @param first
-     *            first
-     * @param second
-     *            second
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse paramsGetFullResponse(
-            String id, 
-            OffsetDateTime first, 
-            Optional&lt;Long&gt; second, 
-            int third) {
-<span class="nc" id="L732">        return Http</span>
-<span class="nc" id="L733">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L734">                .basePath(this.basePath)</span>
-<span class="nc" id="L735">                .path(&quot;/params&quot;)</span>
-<span class="nc" id="L736">                .serializer(this.serializer)</span>
-<span class="nc" id="L737">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L738">                .acceptApplicationJson()</span>
-<span class="nc" id="L739">                .queryParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L740">                .queryParam(&quot;first&quot;, first)</span>
-<span class="nc" id="L741">                .queryParam(&quot;second&quot;, second)</span>
-<span class="nc" id="L742">                .queryParam(&quot;third&quot;, third)</span>
-<span class="nc" id="L743">                .responseAs(Response2.class)</span>
-<span class="nc" id="L744">                .whenStatusCodeMatches(&quot;203&quot;)</span>
-<span class="nc" id="L745">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L746">                .responseAs(Error.class)</span>
-<span class="nc" id="L747">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L748">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L749">                .call();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param apiKey
-     *            apiKey
+     *            &lt;p&gt;apiKey
      * @param bickie
-     *            bickie
+     *            &lt;p&gt;bickie
      * @param id
-     *            id
-     * @return primary response with status code 200
+     *            &lt;p&gt;id
+     * @return call builder
      */
-    public Response2 paramsIdGet(
+    public RequestBuilder&lt;Response2&gt; paramsIdGet(
             String id, 
             String apiKey, 
             String bickie) {
-<span class="nc" id="L769">        return paramsIdGetFullResponse(id, apiKey, bickie)</span>
-<span class="nc" id="L770">                .assertStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L771">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L772">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param apiKey
-     *            apiKey
-     * @param bickie
-     *            bickie
-     * @param id
-     *            id
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse paramsIdGetFullResponse(
-            String id, 
-            String apiKey, 
-            String bickie) {
-<span class="nc" id="L792">        return Http</span>
-<span class="nc" id="L793">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L794">                .basePath(this.basePath)</span>
-<span class="nc" id="L795">                .path(&quot;/params/{id}&quot;)</span>
-<span class="nc" id="L796">                .serializer(this.serializer)</span>
-<span class="nc" id="L797">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L798">                .acceptApplicationJson()</span>
-<span class="nc" id="L799">                .pathParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L800">                .header(&quot;ApiKey&quot;, apiKey)</span>
-<span class="nc" id="L801">                .cookie(&quot;bickie&quot;, bickie)</span>
-<span class="nc" id="L802">                .responseAs(Response2.class)</span>
-<span class="nc" id="L803">                .whenStatusCodeMatches(&quot;200&quot;)</span>
-<span class="nc" id="L804">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L805">                .responseAs(Error.class)</span>
-<span class="nc" id="L806">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L807">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L808">                .call();</span>
+<span class="nc" id="L534">        return http(HttpMethod.GET, &quot;/params/{id}&quot;)</span>
+<span class="nc" id="L535">                .acceptApplicationJson()</span>
+<span class="nc" id="L536">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L537">                .header(&quot;ApiKey&quot;, apiKey)</span>
+<span class="nc" id="L538">                .cookie(&quot;bickie&quot;, bickie)</span>
+<span class="nc" id="L539">                .responseAs(Response2.class)</span>
+<span class="nc" id="L540">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L541">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L542">                .responseAs(Error.class)</span>
+<span class="nc" id="L543">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L544">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L545">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
      * @param id
-     *            id
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;id
+     * @return call builder
      */
-    public HttpResponse queryObjectGetFullResponse(
+    public RequestBuilder&lt;Void&gt; queryObjectGet(
             QueryObjectGetIdParameterId id) {
-<span class="nc" id="L820">        return Http</span>
-<span class="nc" id="L821">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L822">                .basePath(this.basePath)</span>
-<span class="nc" id="L823">                .path(&quot;/query-object&quot;)</span>
-<span class="nc" id="L824">                .serializer(this.serializer)</span>
-<span class="nc" id="L825">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L826">                .acceptApplicationJson()</span>
-<span class="nc" id="L827">                .queryParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L828">                .call();</span>
+<span class="nc" id="L557">        return http(HttpMethod.GET, &quot;/query-object&quot;)</span>
+<span class="nc" id="L558">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L559">                .&lt;Void&gt;requestBuilder();</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
      * @param a
-     *            a
+     *            &lt;p&gt;a
      * @param b
-     *            b
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;b
+     * @return call builder
      */
-    public HttpResponse pointsGetFullResponse(
+    public RequestBuilder&lt;Void&gt; pointsGet(
             Point a, 
             Point b) {
-<span class="nc" id="L843">        return Http</span>
-<span class="nc" id="L844">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L845">                .basePath(this.basePath)</span>
-<span class="nc" id="L846">                .path(&quot;/points&quot;)</span>
-<span class="nc" id="L847">                .serializer(this.serializer)</span>
-<span class="nc" id="L848">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L849">                .acceptApplicationJson()</span>
-<span class="nc" id="L850">                .queryParam(&quot;a&quot;, a)</span>
-<span class="nc" id="L851">                .queryParam(&quot;b&quot;, b)</span>
-<span class="nc" id="L852">                .call();</span>
+<span class="nc" id="L574">        return http(HttpMethod.GET, &quot;/points&quot;)</span>
+<span class="nc" id="L575">                .queryParam(&quot;a&quot;, a)</span>
+<span class="nc" id="L576">                .queryParam(&quot;b&quot;, b)</span>
+<span class="nc" id="L577">                .&lt;Void&gt;requestBuilder();</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
      * 
      * @param id
-     *            id
+     *            &lt;p&gt;id
      * @param first
-     *            first
-     * @return primary response with status code 203
+     *            &lt;p&gt;first
+     * @return call builder
      */
-    public Response2 paramRefGet(
+    public RequestBuilder&lt;Response2&gt; paramRefGet(
             String id, 
             OffsetDateTime first) {
-<span class="nc" id="L869">        return paramRefGetFullResponse(id, first)</span>
-<span class="nc" id="L870">                .assertStatusCodeMatches(&quot;203&quot;)</span>
-<span class="nc" id="L871">                .assertContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L872">                .dataUnwrapped();</span>
-    }
-
-    /**
-     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
-     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@link Response2}
-     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@link Error}
-     * 
-     * @param id
-     *            id
-     * @param first
-     *            first
-     * @return full response with status code, body and headers
-     */
-    public HttpResponse paramRefGetFullResponse(
-            String id, 
-            OffsetDateTime first) {
-<span class="nc" id="L889">        return Http</span>
-<span class="nc" id="L890">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L891">                .basePath(this.basePath)</span>
-<span class="nc" id="L892">                .path(&quot;/paramRef&quot;)</span>
-<span class="nc" id="L893">                .serializer(this.serializer)</span>
-<span class="nc" id="L894">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L895">                .acceptApplicationJson()</span>
-<span class="nc" id="L896">                .queryParam(&quot;id&quot;, id)</span>
-<span class="nc" id="L897">                .queryParam(&quot;first&quot;, first)</span>
-<span class="nc" id="L898">                .responseAs(Response2.class)</span>
-<span class="nc" id="L899">                .whenStatusCodeMatches(&quot;203&quot;)</span>
-<span class="nc" id="L900">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L901">                .responseAs(Error.class)</span>
-<span class="nc" id="L902">                .whenStatusCodeMatches(&quot;default&quot;)</span>
-<span class="nc" id="L903">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
-<span class="nc" id="L904">                .call();</span>
+<span class="nc" id="L594">        return http(HttpMethod.GET, &quot;/paramRef&quot;)</span>
+<span class="nc" id="L595">                .acceptApplicationJson()</span>
+<span class="nc" id="L596">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L597">                .queryParam(&quot;first&quot;, first)</span>
+<span class="nc" id="L598">                .responseAs(Response2.class)</span>
+<span class="nc" id="L599">                .whenStatusCodeMatches(&quot;203&quot;)</span>
+<span class="nc" id="L600">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L601">                .responseAs(Error.class)</span>
+<span class="nc" id="L602">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L603">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L604">                .&lt;Response2&gt;requestBuilder(&quot;203&quot;, &quot;application/json&quot;);</span>
     }
 
     /**
      * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
      * 
-     * @param a2
-     *            a2
      * @param a
-     *            a
-     * @return full response with status code, body and headers
+     *            &lt;p&gt;a
+     * @param a2
+     *            &lt;p&gt;a2
+     * @return call builder
      */
-    public HttpResponse parameterNameCollisionGetFullResponse(
+    public RequestBuilder&lt;Void&gt; parameterNameCollisionGet(
             String a, 
             String a2) {
-<span class="nc" id="L919">        return Http</span>
-<span class="nc" id="L920">                .method(HttpMethod.GET)</span>
-<span class="nc" id="L921">                .basePath(this.basePath)</span>
-<span class="nc" id="L922">                .path(&quot;/parameterNameCollision&quot;)</span>
-<span class="nc" id="L923">                .serializer(this.serializer)</span>
-<span class="nc" id="L924">                .interceptors(this.interceptors)</span>
-<span class="nc" id="L925">                .acceptApplicationJson()</span>
-<span class="nc" id="L926">                .queryParam(&quot;a&quot;, a)</span>
-<span class="nc" id="L927">                .queryParam(&quot;A&quot;, a2)</span>
-<span class="nc" id="L928">                .call();</span>
+<span class="nc" id="L619">        return http(HttpMethod.GET, &quot;/parameterNameCollision&quot;)</span>
+<span class="nc" id="L620">                .queryParam(&quot;a&quot;, a)</span>
+<span class="nc" id="L621">                .queryParam(&quot;A&quot;, a2)</span>
+<span class="nc" id="L622">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    public Builder _custom(HttpMethod method, String path) {
+<span class="fc" id="L626">        return Http</span>
+<span class="fc" id="L627">                .method(method)</span>
+<span class="fc" id="L628">                .basePath(this.basePath)</span>
+<span class="fc" id="L629">                .path(path)</span>
+<span class="fc" id="L630">                .serializer(this.serializer)</span>
+<span class="fc" id="L631">                .httpService(this.httpService);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Apis.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator</a> &gt; <span class="el_source">Apis.java</span></div><h1>Apis.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.davidmoten.oa3.codegen.generator.internal.Util;
 import org.davidmoten.oa3.codegen.util.ImmutableList;
 
 import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.Maps;
 import com.github.davidmoten.guavamini.Preconditions;
 
 import io.swagger.v3.oas.models.OpenAPI;
@@ -16,6 +21,7 @@ import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -24,238 +30,290 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 
-<span class="nc" id="L27">class Apis {</span>
+<span class="nc" id="L33">class Apis {</span>
 
     static void visitSchemas(OpenAPI api, Visitor visitor) {
-<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (api.getPaths() != null) {</span>
-<span class="fc" id="L31">            api.getPaths().forEach((name, pathItem) -&gt; visitSchemas(SchemaCategory.PATH, ImmutableList.of(name),</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (api.getPaths() != null) {</span>
+<span class="fc" id="L37">            api.getPaths().forEach((name, pathItem) -&gt; visitSchemas(SchemaCategory.PATH, ImmutableList.of(name),</span>
                     pathItem, visitor, api));
         }
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (api.getComponents() != null) {</span>
-<span class="fc bfc" id="L35" title="All 2 branches covered.">            if (api.getComponents().getParameters() != null)</span>
-<span class="fc" id="L36">                api.getComponents().getParameters().forEach((name, parameter) -&gt; visitSchemas(SchemaCategory.PARAMETER,</span>
-<span class="fc" id="L37">                        ImmutableList.of(name), parameter, visitor, api));</span>
-<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (api.getComponents().getPathItems() != null)</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (api.getComponents() != null) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (api.getComponents().getParameters() != null)</span>
+<span class="fc" id="L42">                api.getComponents().getParameters().forEach((name, parameter) -&gt; visitSchemas(SchemaCategory.PARAMETER,</span>
+<span class="fc" id="L43">                        ImmutableList.of(name), parameter, visitor, api));</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (api.getComponents().getPathItems() != null)</span>
                 // Note that this is an OpenAPI 3.1 feature
-<span class="nc" id="L40">                api.getComponents().getPathItems().forEach((name, pathItem) -&gt; visitSchemas(SchemaCategory.PATH_ITEM,</span>
-<span class="nc" id="L41">                        ImmutableList.of(name), pathItem, visitor, api));</span>
-<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (api.getComponents().getRequestBodies() != null)</span>
-<span class="fc" id="L43">                api.getComponents().getRequestBodies()</span>
-<span class="fc" id="L44">                        .forEach((name, requestBody) -&gt; visitSchemas(SchemaCategory.REQUEST_BODY,</span>
-<span class="fc" id="L45">                                ImmutableList.of(name), requestBody, visitor, api));</span>
-<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (api.getComponents().getResponses() != null)</span>
-<span class="fc" id="L47">                api.getComponents().getResponses().forEach((name, response) -&gt; visitSchemas(SchemaCategory.RESPONSE,</span>
-<span class="fc" id="L48">                        ImmutableList.of(name), response, visitor, api));</span>
-<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (api.getComponents().getHeaders() != null) {</span>
-<span class="nc" id="L50">                api.getComponents().getHeaders().forEach((key, header) -&gt; visitSchemas(SchemaCategory.HEADER,</span>
-<span class="nc" id="L51">                        ImmutableList.of(key), header, visitor, api));</span>
+<span class="nc" id="L46">                api.getComponents().getPathItems().forEach((name, pathItem) -&gt; visitSchemas(SchemaCategory.PATH_ITEM,</span>
+<span class="nc" id="L47">                        ImmutableList.of(name), pathItem, visitor, api));</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            if (api.getComponents().getRequestBodies() != null)</span>
+<span class="fc" id="L49">                api.getComponents().getRequestBodies()</span>
+<span class="fc" id="L50">                        .forEach((name, requestBody) -&gt; visitSchemas(SchemaCategory.REQUEST_BODY,</span>
+<span class="fc" id="L51">                                ImmutableList.of(name), requestBody, visitor, api));</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (api.getComponents().getResponses() != null)</span>
+<span class="fc" id="L53">                api.getComponents().getResponses().forEach((name, response) -&gt; visitSchemas(SchemaCategory.RESPONSE,</span>
+<span class="fc" id="L54">                        ImmutableList.of(name), response, visitor, api));</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            if (api.getComponents().getHeaders() != null) {</span>
+<span class="nc" id="L56">                api.getComponents().getHeaders().forEach((key, header) -&gt; visitSchemas(SchemaCategory.HEADER,</span>
+<span class="nc" id="L57">                        ImmutableList.of(key), header, visitor, api));</span>
             }
-<span class="pc bpc" id="L53" title="1 of 2 branches missed.">            if (api.getComponents().getSchemas() != null)</span>
-<span class="fc" id="L54">                api.getComponents().getSchemas().forEach((key, value) -&gt; visitSchemas(key, value, visitor));</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (api.getComponents().getSchemas() != null)</span>
+<span class="fc" id="L60">                api.getComponents().getSchemas().forEach((key, value) -&gt; visitSchemas(key, value, visitor));</span>
         }
-<span class="fc" id="L56">    }</span>
+<span class="fc" id="L62">    }</span>
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; names, Header header,
             Visitor visitor, OpenAPI api) {
-<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (header != null) {</span>
-<span class="nc" id="L61">            header = resolveRefs(api, header);</span>
-<span class="nc" id="L62">            visitSchemas(category, names, header.getSchema(), visitor);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (header != null) {</span>
+<span class="nc" id="L67">            header = resolveRefs(api, header);</span>
+<span class="nc" id="L68">            visitSchemas(category, names, header.getSchema(), Maps.empty(),  visitor);</span>
         }
-<span class="nc" id="L64">    }</span>
+<span class="nc" id="L70">    }</span>
 
     private static Header resolveRefs(OpenAPI api, Header header) {
-<span class="nc bnc" id="L67" title="All 2 branches missed.">        while (header.get$ref() != null) {</span>
-<span class="nc" id="L68">            header = api.getComponents().getHeaders().get(Names.lastComponent(header.get$ref()));</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        while (header.get$ref() != null) {</span>
+<span class="nc" id="L74">            header = api.getComponents().getHeaders().get(Names.lastComponent(header.get$ref()));</span>
         }
-<span class="nc" id="L70">        return header;</span>
+<span class="nc" id="L76">        return header;</span>
     }
 
     private static void visitSchemas(String name, Schema&lt;?&gt; schema, Visitor visitor) {
-<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        Preconditions.checkArgument(name != null);</span>
-<span class="fc" id="L75">        visitSchemas(SchemaCategory.SCHEMA, ImmutableList.of(new SchemaWithName(stripLeadingSlash(name), schema)),</span>
-                visitor);
-<span class="fc" id="L77">    }</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        Preconditions.checkArgument(name != null);</span>
+<span class="fc" id="L81">        visitSchemas(SchemaCategory.SCHEMA, ImmutableList.of(new SchemaWithName(stripLeadingSlash(name), schema)), </span>
+<span class="fc" id="L82">                Maps.empty(), visitor);</span>
+<span class="fc" id="L83">    }</span>
 
     private static String stripLeadingSlash(String name) {
-<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (name.startsWith(&quot;/&quot;)) {</span>
-<span class="nc" id="L81">            return name.substring(1);</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (name.startsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L87">            return name.substring(1);</span>
         } else {
-<span class="fc" id="L83">            return name;</span>
+<span class="fc" id="L89">            return name;</span>
         }
     }
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; names, PathItem pathItem,
             Visitor visitor, OpenAPI api) {
-<span class="fc" id="L89">        pathItem = resolveRefs(api, pathItem);</span>
-<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (pathItem.readOperationsMap() != null) {</span>
-<span class="fc" id="L91">            pathItem.readOperationsMap().forEach((httpMethod, operation) -&gt; {</span>
+<span class="fc" id="L95">        pathItem = resolveRefs(api, pathItem);</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (pathItem.readOperationsMap() != null) {</span>
+<span class="fc" id="L97">            pathItem.readOperationsMap().forEach((httpMethod, operation) -&gt; {</span>
                 final ImmutableList&lt;String&gt; names2;
-<span class="fc bfc" id="L93" title="All 2 branches covered.">                if (operation.getOperationId() != null) {</span>
-<span class="fc" id="L94">                    names2 = ImmutableList.of(operation.getOperationId());</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                if (operation.getOperationId() != null) {</span>
+<span class="fc" id="L100">                    names2 = ImmutableList.of(operation.getOperationId());</span>
                 } else {
-<span class="fc" id="L96">                    names2 = names.add(Names.upperFirst(httpMethod.toString().toLowerCase(Locale.ENGLISH)));</span>
+<span class="fc" id="L102">                    names2 = names.add(Names.upperFirst(httpMethod.toString().toLowerCase(Locale.ENGLISH)));</span>
                 }
-<span class="fc" id="L98">                visitSchemas(category, names2, operation, visitor, api);</span>
-<span class="fc" id="L99">            });</span>
+<span class="fc" id="L104">                visitSchemas(category, names2, operation, visitor, api);</span>
+<span class="fc" id="L105">            });</span>
         }
-<span class="pc bpc" id="L101" title="1 of 2 branches missed.">        if (pathItem.getParameters() != null) {</span>
-<span class="nc" id="L102">            pathItem.getParameters().forEach(p -&gt; visitSchemas(category, names.add(p.getName()), p, visitor, api));</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (pathItem.getParameters() != null) {</span>
+<span class="nc" id="L108">            pathItem.getParameters().forEach(p -&gt; {</span>
+<span class="nc" id="L109">                p = resolveRefs(api, p);</span>
+<span class="nc" id="L110">                visitSchemas(category, names.add(p.getName()), p, visitor, api);</span>
+<span class="nc" id="L111">            });</span>
         }
-<span class="fc" id="L104">    }</span>
+<span class="fc" id="L113">    }</span>
 
     static PathItem resolveRefs(OpenAPI api, PathItem item) {
         // Note that components.pathItems only exists with OpenApi 3.1
-<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        while (item.get$ref() != null) {</span>
-<span class="nc" id="L109">            item = api.getComponents().getPathItems().get(Names.lastComponent(item.get$ref()));</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        while (item.get$ref() != null) {</span>
+<span class="nc" id="L118">            item = api.getComponents().getPathItems().get(Names.lastComponent(item.get$ref()));</span>
         }
-<span class="fc" id="L111">        return item;</span>
+<span class="fc" id="L120">        return item;</span>
     }
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, Operation operation,
             Visitor visitor, OpenAPI api) {
-<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (operation == null) {</span>
-<span class="nc" id="L117">            return;</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (operation == null) {</span>
+<span class="nc" id="L126">            return;</span>
         }
-<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (operation.getParameters() != null) {</span>
-<span class="fc" id="L120">            operation.getParameters().forEach(p -&gt; visitSchemas(category, list.add(p.getName()), p, visitor, api));</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (operation.getParameters() != null) {</span>
+<span class="fc" id="L129">            operation.getParameters().forEach(p -&gt; {</span>
+<span class="fc" id="L130">                p = resolveRefs(api, p);</span>
+<span class="fc" id="L131">                visitSchemas(category, list.add(p.getName()), p, visitor, api);</span>
+<span class="fc" id="L132">            });</span>
         }
-<span class="fc" id="L122">        visitSchemas(category, list, operation.getRequestBody(), visitor, api);</span>
-<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        if (operation.getResponses() != null) {</span>
-<span class="fc" id="L124">            operation.getResponses().forEach((statusCode, response) -&gt; {</span>
-<span class="fc" id="L125">                visitSchemas(category, list.add(statusCode), response, visitor, api);</span>
-<span class="fc" id="L126">            });</span>
+<span class="fc" id="L134">        visitSchemas(category, list, operation.getRequestBody(), visitor, api);</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (operation.getResponses() != null) {</span>
+<span class="fc" id="L136">            operation.getResponses().forEach((statusCode, response) -&gt; {</span>
+<span class="fc" id="L137">                response = resolveRefs(api, response);</span>
+<span class="fc" id="L138">                visitSchemas(category, list.add(statusCode), response, visitor, api);</span>
+<span class="fc" id="L139">            });</span>
         }
-<span class="fc" id="L128">    }</span>
+<span class="fc" id="L141">    }</span>
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, ApiResponse response,
             Visitor visitor, OpenAPI api) {
-<span class="fc" id="L132">        response = resolveRefs(api, response);</span>
-<span class="fc bfc" id="L133" title="All 2 branches covered.">        visitSchemas(category, category == SchemaCategory.RESPONSE ? list : list.add(&quot;Response&quot;), response.getContent(),</span>
+<span class="fc" id="L145">        response = resolveRefs(api, response);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        visitSchemas(category, category == SchemaCategory.RESPONSE ? list : list.add(&quot;Response&quot;), response.getContent(),</span>
                 visitor);
-<span class="fc" id="L135">    }</span>
+<span class="fc" id="L148">    }</span>
 
     private static ApiResponse resolveRefs(OpenAPI api, ApiResponse response) {
-<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        while (response.get$ref() != null) {</span>
-<span class="nc" id="L139">            response = api.getComponents().getResponses().get(Names.lastComponent(response.get$ref()));</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        while (response.get$ref() != null) {</span>
+<span class="nc" id="L152">            response = api.getComponents().getResponses().get(Names.lastComponent(response.get$ref()));</span>
         }
-<span class="fc" id="L141">        return response;</span>
+<span class="fc" id="L154">        return response;</span>
     }
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, RequestBody requestBody,
             Visitor visitor, OpenAPI api) {
-<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (requestBody != null) {</span>
-<span class="fc" id="L147">            requestBody = resolveRefs(api, requestBody);</span>
-<span class="fc" id="L148">            visitSchemas(category, list.add(&quot;Request&quot;), requestBody.getContent(), visitor);</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        if (requestBody != null) {</span>
+<span class="fc" id="L160">            requestBody = resolveRefs(api, requestBody);</span>
+<span class="fc" id="L161">            visitSchemas(category, list.add(&quot;Request&quot;), requestBody.getContent(), visitor);</span>
         }
-<span class="fc" id="L150">    }</span>
+<span class="fc" id="L163">    }</span>
 
     private static RequestBody resolveRefs(OpenAPI api, RequestBody requestBody) {
-<span class="fc bfc" id="L153" title="All 2 branches covered.">        while (requestBody.get$ref() != null) {</span>
-<span class="fc" id="L154">            requestBody = api.getComponents().getRequestBodies().get(Names.lastComponent(requestBody.get$ref()));</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        while (requestBody.get$ref() != null) {</span>
+<span class="fc" id="L167">            requestBody = api.getComponents().getRequestBodies().get(Names.lastComponent(requestBody.get$ref()));</span>
         }
-<span class="fc" id="L156">        return requestBody;</span>
+<span class="fc" id="L169">        return requestBody;</span>
     }
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, Content content,
             Visitor visitor) {
-<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (content != null) {</span>
-<span class="fc" id="L162">            content.forEach((mimeType, mediaType) -&gt; {</span>
-<span class="fc bfc" id="L163" title="All 2 branches covered.">                if (mimeType.equals(&quot;application/json&quot;)) {</span>
-<span class="fc" id="L164">                    visitSchemas(category, list, mediaType, visitor);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (content != null) {</span>
+<span class="fc" id="L175">            content.forEach((mimeType, mediaType) -&gt; {</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                if (mimeType.equals(&quot;application/json&quot;)) {</span>
+<span class="fc" id="L177">                    visitSchemas(category, list, mediaType, visitor);</span>
                 } else {
-<span class="fc" id="L166">                    visitSchemas(category, list.add(mimeType), mediaType, visitor);</span>
+<span class="fc" id="L179">                    visitSchemas(category, list.add(mimeType), mediaType, visitor);</span>
                 }
-<span class="fc" id="L168">            });</span>
+<span class="fc" id="L181">            });</span>
         }
-<span class="fc" id="L170">    }</span>
+<span class="fc" id="L183">    }</span>
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, MediaType mediaType,
             Visitor visitor) {
-<span class="fc" id="L174">        visitSchemas(category, list, mediaType.getSchema(), visitor);</span>
-<span class="fc" id="L175">    }</span>
+<span class="fc" id="L187">        visitSchemas(category, list, mediaType.getSchema(), mediaType.getEncoding(), visitor);</span>
+<span class="fc" id="L188">    }</span>
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, Parameter parameter,
             Visitor visitor, OpenAPI api) {
-<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (parameter != null) {</span>
-<span class="fc" id="L180">            parameter = resolveRefs(api, parameter);</span>
-<span class="pc bpc" id="L181" title="1 of 4 branches missed.">            if (parameter.getSchema() != null &amp;&amp; !Util.isPrimitive(parameter.getSchema())) {</span>
-<span class="fc" id="L182">                visitSchemas(category, list.add(&quot;Parameter&quot;).add(parameter.getName()), parameter.getSchema(), visitor);</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (parameter != null) {</span>
+<span class="fc" id="L193">            parameter = resolveRefs(api, parameter);</span>
+<span class="pc bpc" id="L194" title="1 of 4 branches missed.">            if (parameter.getSchema() != null &amp;&amp; !Util.isPrimitive(parameter.getSchema())) {</span>
+<span class="fc" id="L195">                visitSchemas(category, list.add(&quot;Parameter&quot;).add(parameter.getName()), parameter.getSchema(), Maps.empty(), visitor);</span>
             }
-<span class="fc" id="L184">            visitSchemas(category, list.add(&quot;Parameter&quot;).add(parameter.getName()), parameter.getContent(), visitor);</span>
+<span class="fc" id="L197">            visitSchemas(category, list.add(&quot;Parameter&quot;).add(parameter.getName()), parameter.getContent(), visitor);</span>
         }
-<span class="fc" id="L186">    }</span>
+<span class="fc" id="L199">    }</span>
 
     private static Parameter resolveRefs(OpenAPI api, Parameter parameter) {
-<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        while (parameter.get$ref() != null) {</span>
-<span class="nc" id="L190">            parameter = api.getComponents().getParameters().get(Names.lastComponent(parameter.get$ref()));</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        while (parameter.get$ref() != null) {</span>
+<span class="nc" id="L203">            parameter = api.getComponents().getParameters().get(Names.lastComponent(parameter.get$ref()));</span>
         }
-<span class="fc" id="L192">        return parameter;</span>
+<span class="fc" id="L205">        return parameter;</span>
     }
 
     private static void visitSchemas(SchemaCategory category, ImmutableList&lt;String&gt; list, Schema&lt;?&gt; schema,
-            Visitor visitor) {
-<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (schema != null) {</span>
-<span class="fc" id="L198">            ImmutableList&lt;SchemaWithName&gt; schemaPath = ImmutableList</span>
-<span class="fc" id="L199">                    .of(new SchemaWithName(Names.toIdentifier(list), schema));</span>
-<span class="fc" id="L200">            visitSchemas(category, schemaPath, visitor);</span>
+            Map&lt;String, Encoding&gt; propertyEncoding, Visitor visitor) {
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (schema != null) {</span>
+<span class="fc" id="L211">            ImmutableList&lt;SchemaWithName&gt; schemaPath = ImmutableList</span>
+<span class="fc" id="L212">                    .of(new SchemaWithName(Names.toIdentifier(list), schema));</span>
+<span class="fc" id="L213">            visitSchemas(category, schemaPath, propertyEncoding, visitor);</span>
         }
-<span class="fc" id="L202">    }</span>
+<span class="fc" id="L215">    }</span>
 
-    static void visitSchemas(SchemaCategory category, ImmutableList&lt;SchemaWithName&gt; schemaPath, Visitor visitor) {
-<span class="fc" id="L205">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
-<span class="fc" id="L206">        visitor.startSchema(category, schemaPath);</span>
-<span class="fc bfc" id="L207" title="All 4 branches covered.">        if (schema instanceof ObjectSchema &amp;&amp; schema.getProperties() == null</span>
-<span class="fc bfc" id="L208" title="All 2 branches covered.">                &amp;&amp; schema.getAdditionalProperties() == null) {</span>
-<span class="fc" id="L209">            schema.setAdditionalProperties(Boolean.TRUE);</span>
+    static void visitSchemas(SchemaCategory category, ImmutableList&lt;SchemaWithName&gt; schemaPath, Map&lt;String, Encoding&gt; propertyEncoding, Visitor visitor) {
+<span class="fc" id="L218">        Schema&lt;?&gt; schema = schemaPath.last().schema;</span>
+<span class="fc" id="L219">        visitor.startSchema(category, schemaPath);</span>
+//        System.out.println(schemaPath + &quot; &quot; + schema.getClass());
+<span class="fc bfc" id="L221" title="All 4 branches covered.">        if (schema instanceof ComposedSchema &amp;&amp; ((ComposedSchema) schema).getAnyOf() != null</span>
+<span class="pc bpc" id="L222" title="1 of 4 branches missed.">                &amp;&amp; (schema.getProperties() != null || schema.getAdditionalProperties() != null</span>
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">                        || schema.getAdditionalItems() != null)) {</span>
+<span class="fc" id="L224">            schema.setProperties(null);</span>
+<span class="fc" id="L225">            schema.setAdditionalProperties(null);</span>
+<span class="fc" id="L226">            schema.setAdditionalItems(null);</span>
+<span class="fc" id="L227">            System.out.println(&quot;[WARN] anyOf with extra properties not supported yet, extra properties stripped&quot;);</span>
+<span class="fc bfc" id="L228" title="All 4 branches covered.">        } else if (schema instanceof ObjectSchema &amp;&amp; schema.getProperties() == null</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                &amp;&amp; schema.getAdditionalProperties() == null) {</span>
+<span class="fc" id="L230">            schema.setAdditionalProperties(Boolean.TRUE);</span>
         }
-<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (Boolean.TRUE.equals(schema.getAdditionalProperties())) {</span>
-<span class="fc" id="L212">            schema.setAdditionalProperties(new Schema&lt;&gt;());</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        if (Boolean.TRUE.equals(schema.getAdditionalProperties())) {</span>
+<span class="fc" id="L233">            schema.setAdditionalProperties(new Schema&lt;&gt;());</span>
         }
-<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (schema.getAdditionalProperties() instanceof Schema) {</span>
-<span class="fc" id="L215">            visitSchemas(category,</span>
-<span class="fc" id="L216">                    schemaPath.add(new SchemaWithName(&quot;properties&quot;, (Schema&lt;?&gt;) schema.getAdditionalProperties())),</span>
+<span class="fc bfc" id="L235" title="All 4 branches covered.">        if (schema.getAdditionalProperties() instanceof Schema &amp;&amp; schema.getEnum() == null) {</span>
+<span class="fc" id="L236">            visitSchemas(category,</span>
+<span class="fc" id="L237">                    schemaPath.add(new SchemaWithName(&quot;properties&quot;, (Schema&lt;?&gt;) schema.getAdditionalProperties())), Maps.empty(),</span>
                     visitor);
-<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        } else if (schema.getNot() != null) {</span>
-<span class="nc" id="L219">            visitSchemas(category, schemaPath.add(new SchemaWithName(&quot;not&quot;, schema.getNot())), visitor);</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        } else if (schema.getNot() != null) {</span>
+<span class="nc" id="L240">            visitSchemas(category, schemaPath.add(new SchemaWithName(&quot;not&quot;, schema.getNot())), Maps.empty(), visitor);</span>
         }
-<span class="fc bfc" id="L221" title="All 2 branches covered.">        if (schema.getProperties() != null) {</span>
-<span class="fc" id="L222">            schema.getProperties().entrySet().forEach(</span>
-<span class="fc" id="L223">                    x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(x.getKey(), x.getValue())), visitor));</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (schema.getProperties() != null) {</span>
+<span class="fc" id="L243">            schema.getProperties().entrySet().forEach(</span>
+                    x -&gt; {
+                        final Schema&lt;?&gt; sch;
+<span class="fc bfc" id="L246" title="All 4 branches covered.">                        if (propertyEncoding != null &amp;&amp; propertyEncoding.containsKey(x.getKey())) {</span>
+<span class="fc" id="L247">                            Encoding encoding = propertyEncoding.get(x.getKey());</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">                            if (encoding.getContentType() != null) {</span>
+<span class="fc" id="L249">                                List&lt;String&gt; contentTypes = Arrays.stream(encoding.getContentType() //</span>
+<span class="fc" id="L250">                                        .split(&quot;,&quot;)) //</span>
+<span class="fc" id="L251">                                        .map(y -&gt; y.trim()) //</span>
+<span class="fc" id="L252">                                        .collect(Collectors.toList());</span>
+<span class="fc" id="L253">                                Schema&lt;String&gt; contentTypeSchema = enumSchema(contentTypes);</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">                                if (contentTypes.size() == 1) {</span>
+<span class="fc" id="L255">                                    contentTypeSchema.setDefault(contentTypes.get(0));</span>
+                                }
+<span class="fc" id="L257">                                contentTypeSchema.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
+<span class="fc" id="L258">                                ObjectSchema combined = new ObjectSchema();</span>
+<span class="fc" id="L259">                                combined.setProperties(new LinkedHashMap&lt;&gt;());</span>
+<span class="fc" id="L260">                                combined.getProperties().put(&quot;contentType&quot;, contentTypeSchema);</span>
+<span class="fc" id="L261">                                combined.getProperties().put(&quot;value&quot;, x.getValue());</span>
+<span class="fc" id="L262">                                combined.setRequired(Lists.of(&quot;value&quot;, &quot;contentType&quot;));</span>
+<span class="fc" id="L263">                                combined.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
+                                
+<span class="fc" id="L265">                                sch = combined;</span>
+<span class="fc" id="L266">                            } else {</span>
+<span class="fc" id="L267">                                sch = x.getValue();</span>
+                            }
+<span class="fc" id="L269">                        } else {</span>
+<span class="fc" id="L270">                            sch = x.getValue();</span>
+                        }
+<span class="fc" id="L272">                        visitSchemas(category, schemaPath.add(new SchemaWithName(x.getKey(), sch)),</span>
+<span class="fc" id="L273">                                Maps.empty(), visitor);</span>
+<span class="fc" id="L274">                    });</span>
         }
-<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (schema instanceof ArraySchema) {</span>
-<span class="fc" id="L226">            ArraySchema a = (ArraySchema) schema;</span>
-<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            if (a.getItems() != null) {</span>
-<span class="fc" id="L228">                visitSchemas(category,</span>
-<span class="fc" id="L229">                        schemaPath.add(new SchemaWithName(schemaPath.last().name + &quot;Item&quot;, a.getItems())), visitor);</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        if (schema instanceof ArraySchema) {</span>
+<span class="fc" id="L277">            ArraySchema a = (ArraySchema) schema;</span>
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">            if (a.getItems() != null) {</span>
+<span class="fc" id="L279">                visitSchemas(category,</span>
+<span class="fc" id="L280">                        schemaPath.add(new SchemaWithName(schemaPath.last().name + &quot;Item&quot;, a.getItems())), Maps.empty(), visitor);</span>
             }
-<span class="fc bfc" id="L231" title="All 2 branches covered.">        } else if (schema instanceof ComposedSchema) {</span>
-<span class="fc" id="L232">            ComposedSchema a = (ComposedSchema) schema;</span>
-<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (a.getAllOf() != null) {</span>
-<span class="fc" id="L234">                a.getAllOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), visitor));</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        } else if (schema instanceof ComposedSchema) {</span>
+<span class="fc" id="L283">            ComposedSchema a = (ComposedSchema) schema;</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">            if (a.getAllOf() != null) {</span>
+<span class="fc" id="L285">                a.getAllOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
-<span class="fc bfc" id="L236" title="All 2 branches covered.">            if (a.getOneOf() != null) {</span>
-<span class="fc" id="L237">                a.getOneOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), visitor));</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">            if (a.getOneOf() != null) {</span>
+<span class="fc" id="L288">                a.getOneOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
-<span class="pc bpc" id="L239" title="1 of 2 branches missed.">            if (a.getAnyOf() != null) {</span>
-<span class="nc" id="L240">                a.getAnyOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), visitor));</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (a.getAnyOf() != null) {</span>
+<span class="fc" id="L291">                a.getAnyOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
         }
-        // MapSchema and ObjectSchema have nothing to add
+        // MapSchema, ObjectSchema have nothing to add
 
-<span class="fc" id="L245">        visitor.finishSchema(category, schemaPath);</span>
-<span class="fc" id="L246">    }</span>
+<span class="fc" id="L296">        visitor.finishSchema(category, schemaPath);</span>
+<span class="fc" id="L297">    }</span>
+
+    private static Schema&lt;String&gt; enumSchema(List&lt;String&gt; values) {
+<span class="fc" id="L300">        Schema&lt;String&gt; schema = new Schema&lt;&gt;();</span>
+<span class="fc" id="L301">        schema.setType(&quot;string&quot;);</span>
+<span class="fc" id="L302">        schema.setEnum(values);</span>
+<span class="fc" id="L303">        return schema;</span>
+    }
 
     static final boolean isComplexSchema(Schema&lt;?&gt; schema) {
-<span class="fc bfc" id="L249" title="All 2 branches covered.">        for (Class&lt;? extends Schema&lt;?&gt;&gt; cls : COMPLEX_SCHEMA_CLASSES) {</span>
-<span class="fc bfc" id="L250" title="All 2 branches covered.">            if (cls.isAssignableFrom(schema.getClass())) {</span>
-<span class="fc" id="L251">                return true;</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        for (Class&lt;? extends Schema&lt;?&gt;&gt; cls : COMPLEX_SCHEMA_CLASSES) {</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (cls.isAssignableFrom(schema.getClass())) {</span>
+<span class="fc" id="L309">                return true;</span>
             }
-<span class="fc" id="L253">        }</span>
-<span class="fc bfc" id="L254" title="All 2 branches covered.">        return schema.getProperties() != null;</span>
+<span class="fc" id="L311">        }</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">        return schema.getProperties() != null;</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L258">    private static List&lt;Class&lt;? extends Schema&lt;?&gt;&gt;&gt; COMPLEX_SCHEMA_CLASSES = Lists.newArrayList( //</span>
+<span class="fc" id="L316">    private static List&lt;Class&lt;? extends Schema&lt;?&gt;&gt;&gt; COMPLEX_SCHEMA_CLASSES = Lists.of( //</span>
             ObjectSchema.class, MapSchema.class, ComposedSchema.class, ArraySchema.class);
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

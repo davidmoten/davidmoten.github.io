@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"org.davidmoten.oa3.codegen.http"},{"l":"org.davidmoten.oa3.codegen.http.service"},{"l":"org.davidmoten.oa3.codegen.http.service.internal"}];updateSearchResults();

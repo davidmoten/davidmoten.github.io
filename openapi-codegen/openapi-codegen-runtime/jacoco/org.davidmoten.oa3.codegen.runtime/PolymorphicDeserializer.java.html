@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PolymorphicDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">PolymorphicDeserializer.java</span></div><h1>PolymorphicDeserializer.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+
+public class PolymorphicDeserializer&lt;T&gt; extends StdDeserializer&lt;T&gt; {
+
+    private static final long serialVersionUID = -4953059872205916149L;
+
+    private final PolymorphicType type;
+    private final List&lt;Class&lt;?&gt;&gt; classes;
+    private final Class&lt;T&gt; cls;
+    private final ObjectMapper mapper;
+
+    protected PolymorphicDeserializer(Config config, PolymorphicType type, Class&lt;T&gt; cls, Class&lt;?&gt;... classes) {
+<span class="nc" id="L30">        super(cls);</span>
+<span class="nc" id="L31">        this.type = type;</span>
+<span class="nc" id="L32">        this.classes = Arrays.asList(classes);</span>
+<span class="nc" id="L33">        this.cls = cls;</span>
+<span class="nc" id="L34">        this.mapper = config.mapper();</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+<span class="nc" id="L39">        return deserializePoly(mapper, p, ctxt, classes, cls, type);</span>
+    }
+
+    private static &lt;T&gt; T deserializePoly(ObjectMapper mapper, JsonParser p, DeserializationContext ctxt,
+            List&lt;Class&lt;?&gt;&gt; classes, Class&lt;T&gt; cls, PolymorphicType type) throws IOException {
+<span class="nc" id="L44">        TreeNode tree = p.getCodec().readTree(p);</span>
+        // TODO don't have to generate json because can use tree.traverse to get a
+        // parser to read value, perf advantage and can stop plugging in ObjectMapper
+<span class="nc" id="L47">        String json = mapper.writeValueAsString(tree);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (type == PolymorphicType.ANY_OF) {</span>
+<span class="nc" id="L49">            throw new IllegalArgumentException(&quot;use &quot; + AnyOfDeserializer.class.getSimpleName());</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        } else if (type == PolymorphicType.ONE_OF) {</span>
+<span class="nc" id="L51">            return deserializeOneOf(mapper, json, classes, cls, ctxt);</span>
+        } else {
+<span class="nc" id="L53">            return deserializeAllOf(mapper, json, classes, cls);</span>
+        }
+    }
+
+    private static &lt;T&gt; T deserializeOneOf(ObjectMapper mapper, String json, List&lt;Class&lt;?&gt;&gt; classes, Class&lt;T&gt; cls,
+            DeserializationContext ctxt) throws JsonProcessingException {
+<span class="nc" id="L59">        T v = null;</span>
+<span class="nc" id="L60">        int count = 0;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (Class&lt;?&gt; c : classes) {</span>
+            // try to deserialize with each of the member classes
+            // @formatter:off
+            try {
+                // Note that ObjectMapper configured for strict
+                // deserialization
+<span class="nc" id="L67">                Object o = mapper.readValue(json, c);</span>
+<span class="nc" id="L68">                v = newInstance(cls, o);</span>
+<span class="nc" id="L69">                count++;</span>
+<span class="nc" id="L70">            } catch (DatabindException e) {} // NOPMD</span>
+            // @formatter:on
+<span class="nc" id="L72">        }</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (count == 1) {</span>
+<span class="nc" id="L74">            return v;</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        } else if (count &gt; 1) {</span>
+<span class="nc" id="L76">            throw JsonMappingException.from(ctxt,</span>
+                    &quot;json matched more than one of the possible classes: &quot; + classes + &quot;, json=\n&quot; + json);
+        }
+<span class="nc" id="L79">        throw JsonMappingException.from(ctxt,</span>
+                &quot;json did not match any of the possible classes: &quot; + classes + &quot;, json=\n&quot; + json);
+    }
+
+    private static &lt;T&gt; T deserializeAllOf(ObjectMapper mapper, String json, List&lt;Class&lt;?&gt;&gt; classes, Class&lt;T&gt; cls)
+            throws JsonMappingException, JsonProcessingException {
+<span class="nc" id="L85">        ObjectMapper m = mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);</span>
+<span class="nc" id="L86">        List&lt;Object&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        for (Class&lt;?&gt; c : classes) {</span>
+<span class="nc" id="L88">            list.add(m.readValue(json, c));</span>
+<span class="nc" id="L89">        }</span>
+        try {
+<span class="nc" id="L91">            Constructor&lt;T&gt; con = cls.getDeclaredConstructor(classes.toArray(new Class&lt;?&gt;[] {}));</span>
+<span class="nc" id="L92">            con.setAccessible(true);</span>
+<span class="nc" id="L93">            return con.newInstance(list.toArray());</span>
+<span class="nc" id="L94">        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException</span>
+                | NoSuchMethodException | SecurityException e) {
+<span class="nc" id="L96">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    private static &lt;T&gt; T newInstance(Class&lt;T&gt; cls, Object parameter) {
+        try {
+<span class="nc" id="L102">            Constructor&lt;T&gt; con = cls.getDeclaredConstructor(Object.class);</span>
+<span class="nc" id="L103">            con.setAccessible(true);</span>
+<span class="nc" id="L104">            return con.newInstance(parameter);</span>
+<span class="nc" id="L105">        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException</span>
+                | NoSuchMethodException | SecurityException e) {
+<span class="nc" id="L107">            throw new RuntimeException(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

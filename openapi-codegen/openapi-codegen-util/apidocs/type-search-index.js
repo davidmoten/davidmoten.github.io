@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"org.davidmoten.oa3.codegen.util","l":"ImmutableList"},{"p":"org.davidmoten.oa3.codegen.util","l":"Util"}];updateSearchResults();

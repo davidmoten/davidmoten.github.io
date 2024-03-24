@@ -4,57 +4,104 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.github.davidmoten.guavamini.Preconditions;
 
-<span class="nc" id="L11">public final class Util {</span>
+<span class="nc" id="L16">public final class Util {</span>
 
     public static String encodeOctets(byte[] a) {
-<span class="nc bnc" id="L14" title="All 2 branches missed.">        if (a == null) {</span>
-<span class="nc" id="L15">            return &quot;&quot;;</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">        if (a == null) {</span>
+<span class="nc" id="L20">            return &quot;&quot;;</span>
         } else {
-<span class="nc" id="L17">            return new BigInteger(a).toString(16);</span>
+<span class="nc" id="L22">            return new BigInteger(a).toString(16);</span>
         }
     }
     
-    public static String encodeOctets(Optional&lt;byte[]&gt; a) {
-<span class="nc" id="L22">        return a.map(Util::encodeOctets).orElse(&quot;&quot;);</span>
+    public static Optional&lt;String&gt; encodeOctets(Optional&lt;byte[]&gt; a) {
+<span class="nc" id="L27">        return a.map(Util::encodeOctets);</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static JsonNullable&lt;String&gt; encodeOctets(JsonNullable&lt;byte[]&gt; a) {
+<span class="nc bnc" id="L32" title="All 4 branches missed.">        if (a.isPresent() &amp;&amp; a.get() != null) {</span>
+<span class="nc" id="L33">            return JsonNullable.of(encodeOctets(a.get()));</span>
+        } else {
+<span class="nc" id="L35">            return (JsonNullable&lt;String&gt;) (JsonNullable&lt;?&gt;) a;</span>
+        }
     }
 
     public static byte[] decodeOctets(String s) {
-<span class="nc" id="L26">        return new BigInteger(s, 16).toByteArray();</span>
+<span class="nc" id="L40">        return new BigInteger(s, 16).toByteArray();</span>
+    }
+    
+    public static Optional&lt;byte[]&gt; decodeOctets(Optional&lt;String&gt; s) {
+<span class="nc" id="L44">        return s.map(Util::decodeOctets);</span>
+    }
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static JsonNullable&lt;byte[]&gt; decodeOctets(JsonNullable&lt;String&gt; a) {
+<span class="nc bnc" id="L49" title="All 4 branches missed.">        if (a.isPresent() &amp;&amp; a.get() != null) {</span>
+<span class="nc" id="L50">            return JsonNullable.of(decodeOctets(a.get()));</span>
+        } else {
+<span class="nc" id="L52">            return (JsonNullable&lt;byte[]&gt;) (JsonNullable&lt;?&gt;) a;</span>
+        }
     }
 
     public static &lt;T&gt; T orElse(T value, T defaultValue) {
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        return value == null ? defaultValue : value;</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        return value == null ? defaultValue : value;</span>
     }
 
     public static String toString(Class&lt;?&gt; cls, Object... items) {
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        Preconditions.checkArgument(items.length % 2 == 0);</span>
-<span class="nc" id="L35">        StringBuilder s = new StringBuilder();</span>
-<span class="nc" id="L36">        int i = 0;</span>
-<span class="nc bnc" id="L37" title="All 2 branches missed.">        while (i &lt; items.length) {</span>
-<span class="nc bnc" id="L38" title="All 2 branches missed.">            if (i &gt; 0) {</span>
-<span class="nc" id="L39">                s.append(&quot;, &quot;);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        Preconditions.checkArgument(items.length % 2 == 0);</span>
+<span class="nc" id="L62">        StringBuilder s = new StringBuilder();</span>
+<span class="nc" id="L63">        int i = 0;</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        while (i &lt; items.length) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L66">                s.append(&quot;, &quot;);</span>
             }
-<span class="nc" id="L41">            s.append(items[i]);</span>
-<span class="nc" id="L42">            s.append(&quot;=&quot;);</span>
-<span class="nc" id="L43">            s.append(items[i + 1]);</span>
-<span class="nc" id="L44">            i += 2;</span>
+<span class="nc" id="L68">            s.append(items[i]);</span>
+<span class="nc" id="L69">            s.append(&quot;=&quot;);</span>
+<span class="nc" id="L70">            s.append(items[i + 1]);</span>
+<span class="nc" id="L71">            i += 2;</span>
         }
-<span class="nc" id="L46">        return cls.getSimpleName() + &quot;[&quot; + s + &quot;]&quot;;</span>
+<span class="nc" id="L73">        return cls.getSimpleName() + &quot;[&quot; + s + &quot;]&quot;;</span>
     }
 
     public static byte[] read(InputStream in) throws IOException {
-<span class="nc" id="L50">        byte[] buffer = new byte[8192];</span>
-<span class="nc" id="L51">        int n = 0;</span>
-<span class="nc" id="L52">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
-<span class="nc bnc" id="L53" title="All 2 branches missed.">        while ((n = in.read(buffer)) != -1) {</span>
-<span class="nc" id="L54">            bytes.write(buffer, 0, n);</span>
+<span class="nc" id="L77">        byte[] buffer = new byte[8192];</span>
+<span class="nc" id="L78">        int n = 0;</span>
+<span class="nc" id="L79">        ByteArrayOutputStream bytes = new ByteArrayOutputStream();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="nc" id="L81">            bytes.write(buffer, 0, n);</span>
         }
-<span class="nc" id="L56">        return bytes.toByteArray();</span>
+<span class="nc" id="L83">        return bytes.toByteArray();</span>
+    }
+    
+    public static &lt;K, V&gt; Map&lt;K, V&gt; createMapIfNull(Map&lt;K, V&gt; map) {
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        return map == null ? new HashMap&lt;&gt;() : map;</span>
+    }
+
+    public static &lt;T&gt; T nvl(T value, T defaultValue) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L92">            return defaultValue;</span>
+        } else {
+<span class="nc" id="L94">            return value;</span>
+        }
+    }
+    
+    public static &lt;T&gt; T nvl(T value, Supplier&lt;? extends T&gt; defaultValue) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L100">            return defaultValue.get();</span>
+        } else {
+<span class="nc" id="L102">            return value;</span>
+        }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

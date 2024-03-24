@@ -7,6 +7,8 @@ import java.util.function.Function;
 import org.davidmoten.oa3.codegen.http.DefaultSerializer;
 import org.davidmoten.oa3.codegen.http.Interceptor;
 import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.DefaultHttpService;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
 import org.davidmoten.oa3.codegen.runtime.Config;
 
 public final class ClientBuilder&lt;T&gt; {
@@ -15,17 +17,19 @@ public final class ClientBuilder&lt;T&gt; {
     private final String basePath;
     private final List&lt;Interceptor&gt; interceptors;
     private Serializer serializer;
+    private HttpService httpService;
 
-<span class="fc" id="L19">    public ClientBuilder(Function&lt;ClientBuilder&lt;T&gt;, T&gt; creator, Config config, String basePath) {</span>
-<span class="fc" id="L20">        this.creator = creator;</span>
-<span class="fc" id="L21">        this.serializer = new DefaultSerializer(config.mapper());</span>
-<span class="fc" id="L22">        this.interceptors = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L23">        this.basePath = trimAndRemoveFinalSlash(basePath);</span>
-<span class="fc" id="L24">    }</span>
+<span class="fc" id="L22">    public ClientBuilder(Function&lt;ClientBuilder&lt;T&gt;, T&gt; creator, Config config, String basePath) {</span>
+<span class="fc" id="L23">        this.creator = creator;</span>
+<span class="fc" id="L24">        this.serializer = new DefaultSerializer(config.mapper());</span>
+<span class="fc" id="L25">        this.interceptors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L26">        this.basePath = trimAndRemoveFinalSlash(basePath);</span>
+<span class="fc" id="L27">        this.httpService = DefaultHttpService.INSTANCE;</span>
+<span class="fc" id="L28">    }</span>
 
     public ClientBuilder&lt;T&gt; serializer(Serializer serializer) {
-<span class="nc" id="L27">        this.serializer = serializer;</span>
-<span class="nc" id="L28">        return this;</span>
+<span class="nc" id="L31">        this.serializer = serializer;</span>
+<span class="nc" id="L32">        return this;</span>
     }
 
     /**
@@ -37,39 +41,48 @@ public final class ClientBuilder&lt;T&gt; {
      * @return this
      */
     public ClientBuilder&lt;T&gt; interceptor(Interceptor interceptor) {
-<span class="nc" id="L40">        this.interceptors.add(interceptor);</span>
-<span class="nc" id="L41">        return this;</span>
+<span class="nc" id="L44">        this.interceptors.add(interceptor);</span>
+<span class="nc" id="L45">        return this;</span>
     }
     
     public ClientBuilder&lt;T&gt; interceptors(Iterable&lt;? extends Interceptor&gt; list) {
-<span class="nc" id="L45">        list.forEach(x -&gt; interceptor(x));</span>
-<span class="nc" id="L46">        return this;</span>
+<span class="nc" id="L49">        list.forEach(x -&gt; interceptor(x));</span>
+<span class="nc" id="L50">        return this;</span>
+    }
+    
+    public ClientBuilder&lt;T&gt; httpService(HttpService httpService) {
+<span class="nc" id="L54">        this.httpService = httpService;</span>
+<span class="nc" id="L55">        return this;</span>
     }
 
     public Serializer serializer() {
-<span class="nc" id="L50">        return serializer;</span>
+<span class="nc" id="L59">        return serializer;</span>
     }
 
     public List&lt;Interceptor&gt; interceptors() {
-<span class="nc" id="L54">        return interceptors;</span>
+<span class="nc" id="L63">        return interceptors;</span>
     }
 
     public String basePath() {
-<span class="fc" id="L58">        return basePath;</span>
+<span class="fc" id="L67">        return basePath;</span>
+    }
+    
+    public HttpService httpService() {
+<span class="nc" id="L71">        return httpService;</span>
     }
 
     public T build() {
-<span class="nc" id="L62">        return creator.apply(this);</span>
+<span class="nc" id="L75">        return creator.apply(this);</span>
     }
 
     private static String trimAndRemoveFinalSlash(String s) {
-<span class="fc" id="L66">        s = s.trim();</span>
-<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (s.endsWith(&quot;/&quot;)) {</span>
-<span class="fc" id="L68">            return s.substring(0, s.length() - 1);</span>
+<span class="fc" id="L79">        s = s.trim();</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (s.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L81">            return s.substring(0, s.length() - 1);</span>
         } else {
-<span class="nc" id="L70">            return s;</span>
+<span class="nc" id="L83">            return s;</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

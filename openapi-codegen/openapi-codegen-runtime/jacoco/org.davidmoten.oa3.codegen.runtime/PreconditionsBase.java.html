@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreconditionsBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">PreconditionsBase.java</span></div><h1>PreconditionsBase.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import org.openapitools.jackson.nullable.JsonNullable;
+
+public final class PreconditionsBase {
+
+    private final Function&lt;? super String, ? extends RuntimeException&gt; factory;
+
+<span class="nc" id="L15">    public PreconditionsBase(Function&lt;? super String, ? extends RuntimeException&gt; factory) {</span>
+<span class="nc" id="L16">        this.factory = factory;</span>
+<span class="nc" id="L17">    }</span>
+
+    public &lt;T&gt; T checkNotNull(T t, String parameterName) {
+<span class="nc bnc" id="L20" title="All 2 branches missed.">        if (t == null) {</span>
+<span class="nc" id="L21">            throw factory.apply(parameterName + &quot; cannot be null&quot;);</span>
+        }
+<span class="nc" id="L23">        return t;</span>
+    }
+
+    ////////////////////////////////
+    // minimum
+    ////////////////////////////////
+
+    public void checkMinimum(Number x, String min, String name) {
+<span class="nc" id="L31">        checkMinimum(x, min, name, false);</span>
+<span class="nc" id="L32">    }</span>
+
+    public void checkMinimum(Optional&lt;? extends Number&gt; x, String min, String name) {
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (x.isPresent()) {</span>
+<span class="nc" id="L36">            checkMinimum(x.get(), min, name, false);</span>
+        }
+<span class="nc" id="L38">    }</span>
+
+    public void checkMinimum(JsonNullable&lt;? extends Number&gt; x, String min, String name) {
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (hasValue(x)) {</span>
+<span class="nc" id="L42">            checkMinimum(x.get(), min, name, false);</span>
+        }
+<span class="nc" id="L44">    }</span>
+
+    public void checkMinimum(Collection&lt;?&gt; list, String min, String name) {
+<span class="nc" id="L47">        checkMinimum(list, min, name, false);</span>
+<span class="nc" id="L48">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void checkMinimum(Collection&lt;?&gt; list, String min, String name, boolean exclusive) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (list == null) {</span>
+<span class="nc" id="L53">            return;</span>
+        }
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        for (Object x : list) {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (x instanceof Number) {</span>
+<span class="nc" id="L57">                checkMinimum((Number) x, min, name, exclusive);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            } else if (x instanceof JsonNullable) {</span>
+<span class="nc" id="L59">                checkMinimum((JsonNullable&lt;Number&gt;) x, min, name, exclusive);</span>
+            }
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">    }</span>
+
+    public void checkMinimum(Number x, String min, String name, boolean exclusive) {
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (x == null) {</span>
+<span class="nc" id="L66">            return;</span>
+        }
+<span class="nc" id="L68">        int compare = new BigDecimal(min).compareTo(BigDecimal.valueOf(x.doubleValue()));</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">        if (!exclusive &amp;&amp; compare &gt; 0) {</span>
+<span class="nc" id="L70">            throw factory.apply(name + &quot; must be &gt;= &quot; + min);</span>
+        }
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (exclusive &amp;&amp; compare &gt;= 0) {</span>
+<span class="nc" id="L73">            throw factory.apply(name + &quot; must be &gt; &quot; + min);</span>
+        }
+<span class="nc" id="L75">    }</span>
+
+    public void checkMinimum(Optional&lt;? extends Number&gt; x, String min, String name, boolean exclusive) {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (x.isPresent()) {</span>
+<span class="nc" id="L79">            checkMinimum(x.get(), min, name, exclusive);</span>
+        }
+<span class="nc" id="L81">    }</span>
+
+    public void checkMinimum(JsonNullable&lt;? extends Number&gt; x, String min, String name, boolean exclusive) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (hasValue(x)) {</span>
+<span class="nc" id="L85">            checkMinimum(x.get(), min, name, exclusive);</span>
+        }
+<span class="nc" id="L87">    }</span>
+
+    ////////////////////////////////
+    // maximum
+    ////////////////////////////////
+
+    public void checkMaximum(Collection&lt;?&gt; list, String max, String name) {
+<span class="nc" id="L94">        checkMaximum(list, max, name, false);</span>
+<span class="nc" id="L95">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void checkMaximum(Collection&lt;?&gt; list, String max, String name, boolean exclusive) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (list == null) {</span>
+<span class="nc" id="L100">            return;</span>
+        }
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        for (Object x : list) {</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (x instanceof Number) {</span>
+<span class="nc" id="L104">                checkMaximum((Number) x, max, name, exclusive);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            } else if (x instanceof JsonNullable) {</span>
+<span class="nc" id="L106">                checkMaximum((JsonNullable&lt;Number&gt;) x, max, name, exclusive);</span>
+            }
+<span class="nc" id="L108">        }</span>
+<span class="nc" id="L109">    }</span>
+
+    public void checkMaximum(Number x, String max, String name) {
+<span class="nc" id="L112">        checkMaximum(x, max, name, false);</span>
+<span class="nc" id="L113">    }</span>
+
+    public void checkMaximum(Optional&lt;? extends Number&gt; x, String max, String name) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (x.isPresent()) {</span>
+<span class="nc" id="L117">            checkMaximum(x.get(), max, name, false);</span>
+        }
+<span class="nc" id="L119">    }</span>
+
+    public void checkMaximum(JsonNullable&lt;? extends Number&gt; x, String max, String name) {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (hasValue(x)) {</span>
+<span class="nc" id="L123">            checkMaximum(x.get(), max, name, false);</span>
+        }
+<span class="nc" id="L125">    }</span>
+
+    public void checkMaximum(Number x, String max, String name, boolean exclusive) {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (x == null) {</span>
+<span class="nc" id="L129">            return;</span>
+        }
+<span class="nc" id="L131">        int compare = new BigDecimal(max).compareTo(BigDecimal.valueOf(x.doubleValue()));</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        if (!exclusive &amp;&amp; compare &lt; 0) {</span>
+<span class="nc" id="L133">            throw factory.apply(name + &quot; must be &lt;= &quot; + max);</span>
+        }
+<span class="nc bnc" id="L135" title="All 4 branches missed.">        if (exclusive &amp;&amp; compare &lt;= 0) {</span>
+<span class="nc" id="L136">            throw factory.apply(name + &quot; must be &lt; &quot; + max);</span>
+        }
+<span class="nc" id="L138">    }</span>
+
+    public void checkMaximum(Optional&lt;? extends Number&gt; x, String max, String name, boolean exclusive) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (x.isPresent()) {</span>
+<span class="nc" id="L142">            checkMaximum(x.get(), max, name, exclusive);</span>
+        }
+<span class="nc" id="L144">    }</span>
+
+    public void checkMaximum(JsonNullable&lt;? extends Number&gt; x, String max, String name, boolean exclusive) {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (hasValue(x)) {</span>
+<span class="nc" id="L148">            checkMaximum(x.get(), max, name, exclusive);</span>
+        }
+<span class="nc" id="L150">    }</span>
+
+    ////////////////////////////////
+    // minLength
+    ////////////////////////////////
+
+    public void checkMinLength(String s, int minLength, String name) {
+<span class="nc bnc" id="L157" title="All 4 branches missed.">        if (s != null &amp;&amp; s.length() &lt; minLength) {</span>
+<span class="nc" id="L158">            throw factory.apply(name + &quot; must have a length of at least &quot; + minLength);</span>
+        }
+<span class="nc" id="L160">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void checkMinLength(Optional&lt;?&gt; s, int minLength, String name) {
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (s.isPresent()) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L166">                checkMinLength((Collection&lt;String&gt;) s.get(), minLength, name);</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            } else if (s.get() instanceof byte[]) {</span>
+<span class="nc" id="L168">                checkMinLength((byte[]) s.get(), minLength, name);  </span>
+            } else {
+<span class="nc" id="L170">                checkMinLength((String) s.get(), minLength, name);</span>
+            }
+        }
+<span class="nc" id="L173">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public void checkMinLength(JsonNullable&lt;?&gt; s, int minLength, String name) {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (hasValue(s)) {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L179">                checkMinLength((Collection&lt;String&gt;) s.get(), minLength, name);</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            } else if (s.get() instanceof byte[]) {</span>
+<span class="nc" id="L181">                checkMinLength((byte[]) s.get(), minLength, name);   </span>
+            } else {
+<span class="nc" id="L183">                checkMinLength((String) s.get(), minLength, name);</span>
+            }
+        }
+<span class="nc" id="L186">    }</span>
+
+    public void checkMinLength(Collection&lt;?&gt; list, int minLength, String name) {
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (list != null &amp;&amp; list //</span>
+<span class="nc" id="L190">                .stream() //</span>
+<span class="nc" id="L191">                .filter(x -&gt; {</span>
+                    final String s;
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    if (x instanceof String) {</span>
+<span class="nc" id="L194">                        s = (String) x;</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                    } else if (x instanceof JsonNullable) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L197">                        JsonNullable&lt;String&gt; n = (JsonNullable&lt;String&gt;) x;</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                        if (hasValue(n)) {</span>
+<span class="nc" id="L199">                            s = n.get();</span>
+                        } else {
+<span class="nc" id="L201">                            return false;</span>
+                        }
+<span class="nc" id="L203">                    } else {</span>
+<span class="nc" id="L204">                        return false;</span>
+                    }
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                    return s.length() &lt; minLength;</span>
+                }) //
+<span class="nc" id="L208">                .findAny() //</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                .isPresent()) {</span>
+<span class="nc" id="L210">            throw factory.apply(name + &quot; elements must have a length of at least &quot; + minLength);</span>
+        }
+<span class="nc" id="L212">    }</span>
+    
+    public void checkMinLength(byte[] bytes, int minLength, String name) {
+<span class="nc bnc" id="L215" title="All 4 branches missed.">        if (bytes != null &amp;&amp; bytes.length &lt; minLength) {</span>
+<span class="nc" id="L216">            throw factory.apply(name + &quot; must have a length of at least &quot; + minLength);</span>
+        }
+<span class="nc" id="L218">    }</span>
+
+    ////////////////////////////////
+    // maxLength
+    ////////////////////////////////
+
+    public void checkMaxLength(String s, int maxLength, String name) {
+<span class="nc bnc" id="L225" title="All 4 branches missed.">        if (s != null &amp;&amp; s.length() &gt; maxLength) {</span>
+<span class="nc" id="L226">            throw factory.apply(name + &quot; must have a length of at most &quot; + maxLength);</span>
+        }
+<span class="nc" id="L228">    }</span>
+
+    public void checkMaxLength(Collection&lt;?&gt; list, int maxLength, String name) {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (list != null &amp;&amp; list //</span>
+<span class="nc" id="L232">                .stream() //</span>
+<span class="nc" id="L233">                .filter(x -&gt; {</span>
+                    final String s;
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                    if (x instanceof String) {</span>
+<span class="nc" id="L236">                        s = (String) x;</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                    } else if (x instanceof JsonNullable) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L239">                        JsonNullable&lt;String&gt; n = (JsonNullable&lt;String&gt;) x;</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                        if (hasValue(n)) {</span>
+<span class="nc" id="L241">                            s = n.get();</span>
+                        } else {
+<span class="nc" id="L243">                            return false;</span>
+                        }
+<span class="nc" id="L245">                    } else {</span>
+<span class="nc" id="L246">                        return false;</span>
+                    }
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                    return s.length() &gt; maxLength;</span>
+                }) //
+<span class="nc" id="L250">                .findAny() //</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">                .isPresent()) {</span>
+<span class="nc" id="L252">            throw factory.apply(name + &quot; elements must have a length of at most &quot; + maxLength);</span>
+        }
+<span class="nc" id="L254">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; void checkMaxLength(Optional&lt;T&gt; s, int maxLength, String name) {
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        if (s.isPresent()) {</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L260">                checkMaxLength((Collection&lt;String&gt;) s.get(), maxLength, name);</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            } else if (s.get() instanceof byte[]) {</span>
+<span class="nc" id="L262">                checkMaxLength((byte[]) s.get(), maxLength, name);</span>
+            } else {
+<span class="nc" id="L264">                checkMaxLength((String) s.get(), maxLength, name);</span>
+            }
+        }
+<span class="nc" id="L267">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; void checkMaxLength(JsonNullable&lt;T&gt; s, int maxLength, String name) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (hasValue(s)) {</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L273">                checkMaxLength((Collection&lt;String&gt;) s.get(), maxLength, name);</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            } else if (s.get() instanceof byte[]) {</span>
+<span class="nc" id="L275">                checkMaxLength((byte[]) s.get(), maxLength, name);</span>
+            } else {
+<span class="nc" id="L277">                checkMaxLength((String) s.get(), maxLength, name);</span>
+            }
+        }
+<span class="nc" id="L280">    }</span>
+    
+    public void checkMaxLength(byte[] bytes, int maxLength, String name) {
+<span class="nc bnc" id="L283" title="All 4 branches missed.">        if (bytes != null &amp;&amp; bytes.length &gt; maxLength) {</span>
+<span class="nc" id="L284">            throw factory.apply(name + &quot; must have a length of at most &quot; + maxLength);</span>
+        }
+<span class="nc" id="L286">    }</span>
+
+    ////////////////////////////////
+    // minSize
+    ////////////////////////////////
+
+    public void checkMinSize(Collection&lt;?&gt; collection, int min, String name) {
+<span class="nc bnc" id="L293" title="All 4 branches missed.">        if (collection != null &amp;&amp; collection.size() &lt; min) {</span>
+<span class="nc" id="L294">            throw factory.apply(&quot;collection must be have at least &quot; + min + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L296">    }</span>
+
+    public &lt;T&gt; void checkMinSize(Optional&lt;? extends Collection&lt;T&gt;&gt; collection, int min, String name) {
+<span class="nc bnc" id="L299" title="All 6 branches missed.">        if (collection != null &amp;&amp; collection.isPresent() &amp;&amp; collection.get().size() &lt; min) {</span>
+<span class="nc" id="L300">            throw factory.apply(&quot;collection must be have at least &quot; + min + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L302">    }</span>
+
+    public &lt;T&gt; void checkMinSize(JsonNullable&lt;? extends Collection&lt;T&gt;&gt; collection, int min, String name) {
+<span class="nc bnc" id="L305" title="All 6 branches missed.">        if (collection != null &amp;&amp; hasValue(collection) &amp;&amp; collection.get().size() &lt; min) {</span>
+<span class="nc" id="L306">            throw factory.apply(&quot;collection must be have at least &quot; + min + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L308">    }</span>
+
+    ////////////////////////////////
+    // maxSize
+    ////////////////////////////////
+
+    public void checkMaxSize(Collection&lt;?&gt; collection, int max, String name) {
+<span class="nc bnc" id="L315" title="All 4 branches missed.">        if (collection != null &amp;&amp; collection.size() &gt; max) {</span>
+<span class="nc" id="L316">            throw factory.apply(&quot;collection must be have at most &quot; + max + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L318">    }</span>
+
+    public &lt;T&gt; void checkMaxSize(Optional&lt;? extends Collection&lt;T&gt;&gt; collection, int max, String name) {
+<span class="nc bnc" id="L321" title="All 6 branches missed.">        if (collection != null &amp;&amp; collection.isPresent() &amp;&amp; collection.get().size() &gt; max) {</span>
+<span class="nc" id="L322">            throw factory.apply(&quot;collection must be have at most &quot; + max + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L324">    }</span>
+    
+    public &lt;T&gt; void checkMaxSize(JsonNullable&lt;? extends Collection&lt;T&gt;&gt; collection, int max, String name) {
+<span class="nc bnc" id="L327" title="All 6 branches missed.">        if (collection != null &amp;&amp; hasValue(collection) &amp;&amp; collection.get().size() &gt; max) {</span>
+<span class="nc" id="L328">            throw factory.apply(&quot;collection must be have at most &quot; + max + &quot; elements&quot;);</span>
+        }
+<span class="nc" id="L330">    }</span>
+    ////////////////////////////////
+    // matchesPattern
+    ////////////////////////////////
+
+    public void checkMatchesPattern(String s, String pattern, String name) {
+<span class="nc bnc" id="L336" title="All 4 branches missed.">        if (s != null &amp;&amp; !Pattern.matches(pattern, s)) {</span>
+<span class="nc" id="L337">            throw factory.apply(name + &quot; must match this regex pattern: &quot; + pattern);</span>
+        }
+<span class="nc" id="L339">    }</span>
+
+    public void checkMatchesPattern(Collection&lt;?&gt; list, String pattern, String name) {
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        if (list != null &amp;&amp; list //</span>
+<span class="nc" id="L343">                .stream().filter(x -&gt; {</span>
+                    final String s;
+<span class="nc bnc" id="L345" title="All 2 branches missed.">                    if (x instanceof String) {</span>
+<span class="nc" id="L346">                        s = (String) x;</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">                    } else if (x instanceof JsonNullable) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L349">                        JsonNullable&lt;String&gt; n = (JsonNullable&lt;String&gt;) x;</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">                        if (hasValue(n)) {</span>
+<span class="nc" id="L351">                            s = n.get();</span>
+                        } else {
+<span class="nc" id="L353">                            return false;</span>
+                        }
+<span class="nc" id="L355">                    } else {</span>
+<span class="nc" id="L356">                        return false;</span>
+                    }
+<span class="nc bnc" id="L358" title="All 2 branches missed.">                    return !Pattern.matches(pattern, s);</span>
+                }) //
+<span class="nc" id="L360">                .findAny() //</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">                .isPresent()) {</span>
+<span class="nc" id="L362">            throw factory.apply(name + &quot; elements must match this regex pattern: &quot; + pattern);</span>
+        }
+<span class="nc" id="L364">    }</span>
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; void checkMatchesPattern(Optional&lt;T&gt; s, String pattern, String name) {
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        if (s.isPresent()) {</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L370">                checkMatchesPattern((Collection&lt;String&gt;) s.get(), pattern, name);</span>
+            } else {
+<span class="nc" id="L372">                checkMatchesPattern((String) s.get(), pattern, name);</span>
+            }
+        }
+<span class="nc" id="L375">    }</span>
+    
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; void checkMatchesPattern(JsonNullable&lt;T&gt; s, String pattern, String name) {
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        if (hasValue(s)) {</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">            if (s.get() instanceof Collection) {</span>
+<span class="nc" id="L381">                checkMatchesPattern((Collection&lt;String&gt;) s.get(), pattern, name);</span>
+            } else {
+<span class="nc" id="L383">                checkMatchesPattern((String) s.get(), pattern, name);</span>
+            }
+        }
+<span class="nc" id="L386">    }</span>
+
+    private static boolean hasValue(JsonNullable&lt;?&gt; x) {
+<span class="nc bnc" id="L389" title="All 4 branches missed.">        return x.isPresent() &amp;&amp; x.get() != null;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

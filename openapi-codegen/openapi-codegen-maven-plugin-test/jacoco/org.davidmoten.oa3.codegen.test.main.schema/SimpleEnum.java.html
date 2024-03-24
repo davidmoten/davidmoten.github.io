@@ -10,33 +10,39 @@ import java.lang.Object;
 import java.lang.String;
 import java.util.Objects;
 
-<span class="fc" id="L13">@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)</span>
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+
+<span class="fc" id="L16">@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)</span>
 public enum SimpleEnum {
 
-<span class="fc" id="L16">    HELLO(&quot;hello&quot;),</span>
-<span class="fc" id="L17">    THERE(&quot;there&quot;),</span>
-<span class="fc" id="L18">    YOU(&quot;you&quot;);</span>
+<span class="fc" id="L19">    HELLO(&quot;hello&quot;),</span>
+<span class="fc" id="L20">    THERE(&quot;there&quot;),</span>
+<span class="fc" id="L21">    YOU(&quot;you&quot;);</span>
 
     @JsonValue
     private final String value;
 
-    private SimpleEnum(
-<span class="fc" id="L24">            String value) {</span>
-<span class="fc" id="L25">        this.value = value;</span>
-<span class="fc" id="L26">    }</span>
+    SimpleEnum(
+<span class="fc" id="L27">            String value) {</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(SimpleEnum.class)) {</span>
+<span class="fc" id="L29">            Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+        }
+<span class="fc" id="L31">        this.value = value;</span>
+<span class="fc" id="L32">    }</span>
 
     public String value() {
-<span class="fc" id="L29">        return value;</span>
+<span class="fc" id="L35">        return value;</span>
     }
 
     @JsonCreator
     public static SimpleEnum fromValue(Object value) {
-<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        for (SimpleEnum x: SimpleEnum.values()) {</span>
-<span class="fc bfc" id="L35" title="All 2 branches covered.">            if (Objects.equals(value, x.value)) {</span>
-<span class="fc" id="L36">                return x;</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        for (SimpleEnum x: SimpleEnum.values()) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (Objects.equals(value, x.value)) {</span>
+<span class="fc" id="L42">                return x;</span>
             }
         }
-<span class="nc" id="L39">        throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
+<span class="nc" id="L45">        throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

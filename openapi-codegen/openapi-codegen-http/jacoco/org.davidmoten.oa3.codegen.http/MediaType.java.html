@@ -7,7 +7,7 @@ import com.github.davidmoten.guavamini.Sets;
 
 <span class="nc" id="L8">public final class MediaType {</span>
 
-<span class="fc" id="L10">    private static final Set&lt;String&gt; BINARY_MEDIA_TYPES = Sets.newHashSet( //</span>
+<span class="fc" id="L10">    private static final Set&lt;String&gt; BINARY_MEDIA_TYPES = Sets.of( //</span>
             &quot;application/octet-stream&quot;, //
             &quot;application/pdf&quot;, //
             &quot;image/jpeg&quot;, //
@@ -15,20 +15,37 @@ import com.github.davidmoten.guavamini.Sets;
             &quot;image/png&quot;);
 
     public static boolean isJson(String mediaType) {
-<span class="pc bpc" id="L18" title="3 of 4 branches missed.">        return lc(mediaType).endsWith(&quot;/json&quot;) || lc(mediaType).endsWith(&quot;+json&quot;);</span>
+<span class="pc bpc" id="L18" title="3 of 4 branches missed.">        return lc(stripExtras(mediaType)).endsWith(&quot;/json&quot;) || lc(mediaType).endsWith(&quot;+json&quot;);</span>
+    }
+    
+    private static String stripExtras(String mediaType) {
+<span class="fc" id="L22">        int i= mediaType.indexOf(&quot;;&quot;);</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if ( i == -1) {</span>
+<span class="fc" id="L24">            return mediaType.trim();</span>
+        } else {
+<span class="nc" id="L26">            return mediaType.substring(0, i).trim();</span>
+        }
+    }
+
+    public static boolean isMultipartFormData(String mediaType) {
+<span class="fc" id="L31">        return lc(stripExtras(mediaType)).equals(&quot;multipart/form-data&quot;);</span>
+    }
+    
+    public static boolean isWwwFormUrlEncoded(String mediaType) {
+<span class="fc" id="L35">        return lc(stripExtras(mediaType)).equals(&quot;application/x-www-form-urlencoded&quot;);</span>
     }
 
     public static boolean isText(String mediaType) {
-<span class="nc" id="L22">        return lc(mediaType).startsWith(&quot;text/&quot;);</span>
+<span class="nc" id="L39">        return lc(mediaType).startsWith(&quot;text/&quot;);</span>
     }
 
     public static boolean isOctetStream(String mediaType) {
-<span class="nc" id="L26">        return BINARY_MEDIA_TYPES.contains(lc(mediaType));</span>
+<span class="nc" id="L43">        return BINARY_MEDIA_TYPES.contains(lc(mediaType));</span>
     }
     
     private static String lc(String s) {
-<span class="fc" id="L30">        return s.toLowerCase(Locale.ENGLISH);</span>
+<span class="fc" id="L47">        return s.toLowerCase(Locale.ENGLISH);</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnhancedOpenAPIV3Parser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator.internal</a> &gt; <span class="el_source">EnhancedOpenAPIV3Parser.java</span></div><h1>EnhancedOpenAPIV3Parser.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator.internal;
+
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+
+import javax.net.ssl.SSLHandshakeException;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.snakeyaml.engine.v2.api.Dump;
+import org.snakeyaml.engine.v2.api.DumpSettings;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
+import org.snakeyaml.engine.v2.common.ScalarStyle;
+
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.AuthorizationValue;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import io.swagger.v3.parser.exception.ReadContentException;
+import io.swagger.v3.parser.util.ClasspathHelper;
+import io.swagger.v3.parser.util.RemoteUrl;
+
+public final class EnhancedOpenAPIV3Parser extends OpenAPIV3Parser {
+
+    /**
+     * Encoding of the resource content with OpenAPI spec to parse.
+     */
+<span class="fc" id="L40">    private static String encoding = StandardCharsets.UTF_8.displayName();</span>
+<span class="fc" id="L41">    private static final Logger LOGGER = LoggerFactory.getLogger(OpenAPIV3Parser.class);</span>
+
+<span class="fc" id="L43">    public EnhancedOpenAPIV3Parser() {</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public SwaggerParseResult readLocation(String url, List&lt;AuthorizationValue&gt; auth, ParseOptions options) {
+        try {
+<span class="fc" id="L49">            final String content = doubleQuoteStrings(readContentFromLocation(url, emptyListIfNull(auth)));</span>
+<span class="fc" id="L50">            LOGGER.debug(&quot;Loaded raw data: {}&quot;, content);</span>
+<span class="fc" id="L51">            return readContents(content, auth, options, url);</span>
+<span class="nc" id="L52">        } catch (ReadContentException e) {</span>
+<span class="nc" id="L53">            LOGGER.warn(&quot;Exception while reading:&quot;, e);</span>
+<span class="nc" id="L54">            return SwaggerParseResult.ofError(e.getMessage());</span>
+        }
+    }
+
+    /**
+     * Uses snakeyaml-engine to parse yaml as YAML 1.2 and stop replacing on, off,
+     * yes, no with true or false boolean values.
+     * 
+     * @param data json or yaml OpenAPI definition
+     * @return json data untouched or if yaml returns data converted to have double
+     *         quoted strings and !! types so YAML 1.1 parser used by swagger-parser
+     *         will not do annoying replacements of on, off, yes, no with boolean
+     *         true and false values.
+     */
+    private static String doubleQuoteStrings(String data) {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (data.startsWith(&quot;{&quot;)) {</span>
+<span class="nc" id="L70">            return data;</span>
+        } else {
+<span class="fc" id="L72">            Load load = new Load(LoadSettings.builder().setCodePointLimit(Integer.MAX_VALUE).build());</span>
+<span class="fc" id="L73">            Iterator&lt;Object&gt; it = load.loadAllFromString(data).iterator();</span>
+<span class="fc" id="L74">            DumpSettings settings = DumpSettings.builder().setDefaultScalarStyle(ScalarStyle.DOUBLE_QUOTED).build();</span>
+<span class="fc" id="L75">            Dump dump = new Dump(settings);</span>
+<span class="fc" id="L76">            return dump.dumpAllToString(it);</span>
+        }
+    }
+
+    // copied from OpenAPIV3Parser, added Locale.ENGLISH to toLowerCase calls to
+    // satisfy spotbugs if this method was protected in OpenAPIV3Parser I wouldn't
+    // need to copy it (that would be nice!)
+    private String readContentFromLocation(String location, List&lt;AuthorizationValue&gt; auth) {
+<span class="fc" id="L84">        final String adjustedLocation = location.replaceAll(&quot;\\\\&quot;, &quot;/&quot;);</span>
+        try {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">            if (adjustedLocation.toLowerCase(Locale.ENGLISH).startsWith(&quot;http&quot;)) {</span>
+<span class="nc" id="L87">                return RemoteUrl.urlToString(adjustedLocation, auth);</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            } else if (adjustedLocation.toLowerCase(Locale.ENGLISH).startsWith(&quot;jar:&quot;)) {</span>
+<span class="nc" id="L89">                final InputStream in = new URI(adjustedLocation).toURL().openStream();</span>
+<span class="nc" id="L90">                return IOUtils.toString(in, encoding);</span>
+            } else {
+<span class="fc" id="L92">                final String fileScheme = &quot;file:&quot;;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                final Path path = adjustedLocation.toLowerCase(Locale.ENGLISH).startsWith(fileScheme)</span>
+<span class="fc" id="L94">                        ? Paths.get(URI.create(adjustedLocation))</span>
+<span class="fc" id="L95">                        : Paths.get(adjustedLocation);</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">                if (Files.exists(path)) {</span>
+<span class="fc" id="L97">                    return FileUtils.readFileToString(path.toFile(), encoding);</span>
+                } else {
+<span class="nc" id="L99">                    return ClasspathHelper.loadFileFromClasspath(adjustedLocation);</span>
+                }
+            }
+<span class="nc" id="L102">        } catch (SSLHandshakeException e) {</span>
+<span class="nc" id="L103">            final String message = String.format(</span>
+                    &quot;Unable to read location `%s` due to a SSL configuration error. It is possible that the server SSL certificate is invalid, self-signed, or has an untrusted Certificate Authority.&quot;,
+                    adjustedLocation);
+<span class="nc" id="L106">            throw new ReadContentException(message, e);</span>
+<span class="nc" id="L107">        } catch (Exception e) {</span>
+<span class="nc" id="L108">            throw new ReadContentException(String.format(&quot;Unable to read location `%s`&quot;, adjustedLocation), e);</span>
+        }
+    }
+
+    private static &lt;T&gt; List&lt;T&gt; emptyListIfNull(List&lt;T&gt; list) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        return Objects.isNull(list) ? new ArrayList&lt;&gt;() : list;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

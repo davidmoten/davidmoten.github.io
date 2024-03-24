@@ -1,18 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetMsis200Response.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.path</a> &gt; <span class="el_source">GetMsis200Response.java</span></div><h1>GetMsis200Response.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.path;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.github.davidmoten.guavamini.Maps;
 
 import jakarta.annotation.Generated;
 
 import java.lang.Object;
 import java.lang.Override;
+import java.lang.String;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -21,59 +23,80 @@ import org.davidmoten.oa3.codegen.test.main.Globals;
 import org.davidmoten.oa3.codegen.test.main.schema.ContinuationToken;
 import org.davidmoten.oa3.codegen.test.main.schema.Msi;
 import org.davidmoten.oa3.codegen.util.Util;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
 /**
- * A list of MSIs and an optional continuation token (
+ * &lt;p&gt;A list of MSIs and an optional continuation token (
  * to retrieve the next page of MSIs). If the list of
  * MSIs is empty there should be no continuation token.
  */
-@JsonInclude(Include.NON_NULL)
-@JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.2-SNAPSHOT&quot;)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
 public final class GetMsis200Response {
 
     @JsonProperty(&quot;msis&quot;)
     private final Msis msis;
 
     @JsonProperty(&quot;continuationToken&quot;)
-    private final ContinuationToken continuationToken;
+    private final Optional&lt;ContinuationToken&gt; continuationToken;
 
     @JsonCreator
-    private GetMsis200Response(
-            @JsonProperty(&quot;msis&quot;) Msis msis,
-<span class="nc" id="L45">            @JsonProperty(&quot;continuationToken&quot;) ContinuationToken continuationToken) {</span>
-<span class="nc" id="L46">        this.msis = msis;</span>
-<span class="nc" id="L47">        this.continuationToken = continuationToken;</span>
-<span class="nc" id="L48">    }</span>
-
-    @ConstructorBinding
     public GetMsis200Response(
-            Msis msis,
-<span class="nc" id="L53">            Optional&lt;ContinuationToken&gt; continuationToken) {</span>
-<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(GetMsis200Response.class)) {</span>
-<span class="nc" id="L55">            Preconditions.checkNotNull(msis, &quot;msis&quot;);</span>
-<span class="nc" id="L56">            Preconditions.checkNotNull(continuationToken, &quot;continuationToken&quot;);</span>
+            @JsonProperty(&quot;msis&quot;) Msis msis,
+<span class="nc" id="L49">            @JsonProperty(&quot;continuationToken&quot;) Optional&lt;ContinuationToken&gt; continuationToken) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(GetMsis200Response.class)) {</span>
+<span class="nc" id="L51">            Preconditions.checkNotNull(msis, &quot;msis&quot;);</span>
+<span class="nc" id="L52">            Preconditions.checkNotNull(continuationToken, &quot;continuationToken&quot;);</span>
         }
-<span class="nc" id="L58">        this.msis = msis;</span>
-<span class="nc" id="L59">        this.continuationToken = continuationToken.orElse(null);</span>
-<span class="nc" id="L60">    }</span>
+<span class="nc" id="L54">        this.msis = msis;</span>
+<span class="nc" id="L55">        this.continuationToken = continuationToken;</span>
+<span class="nc" id="L56">    }</span>
+
+    public Msis msis() {
+<span class="nc" id="L59">        return msis;</span>
+    }
+
+    public Optional&lt;ContinuationToken&gt; continuationToken() {
+<span class="nc" id="L63">        return continuationToken;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L67">        return Maps</span>
+<span class="nc" id="L68">                .put(&quot;msis&quot;, (Object) msis)</span>
+<span class="nc" id="L69">                .put(&quot;continuationToken&quot;, (Object) continuationToken)</span>
+<span class="nc" id="L70">                .build();</span>
+    }
+
+    public GetMsis200Response withMsis(Msis msis) {
+<span class="nc" id="L74">        return new GetMsis200Response(msis, continuationToken);</span>
+    }
+
+    public GetMsis200Response withContinuationToken(Optional&lt;ContinuationToken&gt; continuationToken) {
+<span class="nc" id="L78">        return new GetMsis200Response(msis, continuationToken);</span>
+    }
+
+    public GetMsis200Response withContinuationToken(ContinuationToken continuationToken) {
+<span class="nc" id="L82">        return new GetMsis200Response(msis, Optional.of(continuationToken));</span>
+    }
 
     public static Builder builder() {
-<span class="nc" id="L63">        return new Builder();</span>
+<span class="nc" id="L86">        return new Builder();</span>
     }
 
     public static final class Builder {
 
         private Msis msis;
-<span class="nc" id="L69">        private Optional&lt;ContinuationToken&gt; continuationToken = Optional.empty();</span>
+<span class="nc" id="L92">        private Optional&lt;ContinuationToken&gt; continuationToken = Optional.empty();</span>
 
-<span class="nc" id="L71">        Builder() {</span>
-<span class="nc" id="L72">        }</span>
+<span class="nc" id="L94">        Builder() {</span>
+<span class="nc" id="L95">        }</span>
 
         public BuilderWithMsis msis(Msis msis) {
-<span class="nc" id="L75">            this.msis = msis;</span>
-<span class="nc" id="L76">            return new BuilderWithMsis(this);</span>
+<span class="nc" id="L98">            this.msis = msis;</span>
+<span class="nc" id="L99">            return new BuilderWithMsis(this);</span>
         }
     }
 
@@ -81,120 +104,108 @@ public final class GetMsis200Response {
 
         private final Builder b;
 
-<span class="nc" id="L84">        BuilderWithMsis(Builder b) {</span>
-<span class="nc" id="L85">            this.b = b;</span>
-<span class="nc" id="L86">        }</span>
+<span class="nc" id="L107">        BuilderWithMsis(Builder b) {</span>
+<span class="nc" id="L108">            this.b = b;</span>
+<span class="nc" id="L109">        }</span>
 
         public BuilderWithMsis continuationToken(ContinuationToken continuationToken) {
-<span class="nc" id="L89">            this.b.continuationToken = Optional.of(continuationToken);</span>
-<span class="nc" id="L90">            return this;</span>
+<span class="nc" id="L112">            this.b.continuationToken = Optional.of(continuationToken);</span>
+<span class="nc" id="L113">            return this;</span>
         }
 
         public BuilderWithMsis continuationToken(Optional&lt;ContinuationToken&gt; continuationToken) {
-<span class="nc" id="L94">            this.b.continuationToken = continuationToken;</span>
-<span class="nc" id="L95">            return this;</span>
+<span class="nc" id="L117">            this.b.continuationToken = continuationToken;</span>
+<span class="nc" id="L118">            return this;</span>
         }
 
         public GetMsis200Response build() {
-<span class="nc" id="L99">            return new GetMsis200Response(this.b.msis, this.b.continuationToken);</span>
+<span class="nc" id="L122">            return new GetMsis200Response(this.b.msis, this.b.continuationToken);</span>
         }
     }
 
     public static BuilderWithMsis msis(Msis msis) {
-<span class="nc" id="L104">        return builder().msis(msis);</span>
+<span class="nc" id="L127">        return builder().msis(msis);</span>
     }
 
-    public Msis msis() {
-<span class="nc" id="L108">        return msis;</span>
-    }
-
-    public Optional&lt;ContinuationToken&gt; continuationToken() {
-<span class="nc" id="L112">        return Optional.ofNullable(continuationToken);</span>
-    }
-
-    public GetMsis200Response withMsis(Msis msis) {
-<span class="nc" id="L116">        return new GetMsis200Response(msis, Optional.ofNullable(continuationToken));</span>
-    }
-
-    public GetMsis200Response withContinuationToken(Optional&lt;ContinuationToken&gt; continuationToken) {
-<span class="nc" id="L120">        return new GetMsis200Response(msis, continuationToken);</span>
-    }
-
-    public GetMsis200Response withContinuationToken(ContinuationToken continuationToken) {
-<span class="nc" id="L124">        return new GetMsis200Response(msis, Optional.of(continuationToken));</span>
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    @JsonAutoDetect(fieldVisibility = Visibility.ANY, creatorVisibility = Visibility.ANY, setterVisibility = Visibility.ANY)
+    @JsonInclude(Include.NON_ABSENT)
+    @JsonAutoDetect(
+            fieldVisibility = JsonAutoDetect.Visibility.ANY,
+            creatorVisibility = JsonAutoDetect.Visibility.ANY,
+            setterVisibility = JsonAutoDetect.Visibility.ANY)
     public static final class Msis {
 
         @JsonValue
         private final List&lt;Msi&gt; value;
 
         @JsonCreator
-        @ConstructorBinding
         public Msis(
-<span class="nc" id="L137">                List&lt;Msi&gt; value) {</span>
-<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Msis.class)) {</span>
-<span class="nc" id="L139">                Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+<span class="nc" id="L142">                List&lt;Msi&gt; value) {</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Msis.class)) {</span>
+<span class="nc" id="L144">                Preconditions.checkNotNull(value, &quot;value&quot;);</span>
             }
-<span class="nc" id="L141">            this.value = value;</span>
-<span class="nc" id="L142">        }</span>
-
-        public static Msis value(List&lt;Msi&gt; value) {
-<span class="nc" id="L145">            return new Msis(value);</span>
-        }
+<span class="nc" id="L146">            this.value = value;</span>
+<span class="nc" id="L147">        }</span>
 
         public List&lt;Msi&gt; value() {
-<span class="nc" id="L149">            return value;</span>
+<span class="nc" id="L150">            return value;</span>
+        }
+
+        Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L154">            return Maps</span>
+<span class="nc" id="L155">                    .put(&quot;msisItem&quot;, (Object) value)</span>
+<span class="nc" id="L156">                    .build();</span>
+        }
+
+        public static Msis of(List&lt;Msi&gt; value) {
+<span class="nc" id="L160">            return new Msis(value);</span>
         }
 
         @Override
         public boolean equals(Object o) {
-<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (this == o) {</span>
-<span class="nc" id="L155">                return true;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L166">                return true;</span>
             }
-<span class="nc bnc" id="L157" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L158">                return false;</span>
+<span class="nc bnc" id="L168" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L169">                return false;</span>
             }
-<span class="nc" id="L160">            Msis other = (Msis) o;</span>
-<span class="nc" id="L161">            return </span>
-<span class="nc" id="L162">                Objects.equals(this.value, other.value);</span>
+<span class="nc" id="L171">            Msis other = (Msis) o;</span>
+<span class="nc" id="L172">            return </span>
+<span class="nc" id="L173">                Objects.deepEquals(this.value, other.value);</span>
         }
 
         @Override
         public int hashCode() {
-<span class="nc" id="L167">            return Objects.hash(value);</span>
+<span class="nc" id="L178">            return Objects.hash(value);</span>
         }
 
         @Override
         public String toString() {
-<span class="nc" id="L172">            return Util.toString(Msis.class, &quot;value&quot;, value);</span>
+<span class="nc" id="L183">            return Util.toString(Msis.class, &quot;value&quot;, value);</span>
         }
     }
 
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (this == o) {</span>
-<span class="nc" id="L179">            return true;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L190">            return true;</span>
         }
-<span class="nc bnc" id="L181" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
-<span class="nc" id="L182">            return false;</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L193">            return false;</span>
         }
-<span class="nc" id="L184">        GetMsis200Response other = (GetMsis200Response) o;</span>
-<span class="nc" id="L185">        return </span>
-<span class="nc bnc" id="L186" title="All 2 branches missed.">            Objects.equals(this.msis, other.msis) &amp;&amp; </span>
-<span class="nc bnc" id="L187" title="All 2 branches missed.">            Objects.equals(this.continuationToken, other.continuationToken);</span>
+<span class="nc" id="L195">        GetMsis200Response other = (GetMsis200Response) o;</span>
+<span class="nc" id="L196">        return </span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            Objects.deepEquals(this.msis, other.msis) &amp;&amp; </span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            Objects.deepEquals(this.continuationToken, other.continuationToken);</span>
     }
 
     @Override
     public int hashCode() {
-<span class="nc" id="L192">        return Objects.hash(msis, continuationToken);</span>
+<span class="nc" id="L203">        return Objects.hash(msis, continuationToken);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L197">        return Util.toString(GetMsis200Response.class, &quot;msis&quot;, msis, &quot;continuationToken&quot;, continuationToken);</span>
+<span class="nc" id="L208">        return Util.toString(GetMsis200Response.class, &quot;msis&quot;, msis, &quot;continuationToken&quot;, continuationToken);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

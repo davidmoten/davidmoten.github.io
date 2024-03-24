@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NullEnumDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-runtime</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.runtime</a> &gt; <span class="el_source">NullEnumDeserializer.java</span></div><h1>NullEnumDeserializer.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.runtime;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
+public class NullEnumDeserializer&lt;T&gt; extends JsonDeserializer&lt;T&gt; {
+
+    private final Class&lt;T&gt; enumCls;
+    private final Class&lt;?&gt; valueCls;
+    private final T nullValue;
+
+    public NullEnumDeserializer(Class&lt;T&gt; enumCls, Class&lt;?&gt; valueCls, T nullValue) {
+<span class="nc" id="L20">        super();</span>
+<span class="nc" id="L21">        this.enumCls = enumCls;</span>
+<span class="nc" id="L22">        this.valueCls = valueCls;</span>
+<span class="nc" id="L23">        this.nullValue = nullValue;</span>
+<span class="nc" id="L24">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
+        try {
+<span class="nc" id="L30">            Object o = p.readValueAs(valueCls);</span>
+<span class="nc" id="L31">            Method m = enumCls.getMethod(&quot;fromValue&quot;, Object.class);</span>
+<span class="nc" id="L32">            return (T) m.invoke(null, o);</span>
+<span class="nc" id="L33">        } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException</span>
+                | InvocationTargetException e) {
+<span class="nc" id="L35">            throw new RuntimeException(e);</span>
+        }
+    }
+
+    @Override
+    public T getNullValue(DeserializationContext ctxt) throws JsonMappingException {
+<span class="nc" id="L41">        return nullValue;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

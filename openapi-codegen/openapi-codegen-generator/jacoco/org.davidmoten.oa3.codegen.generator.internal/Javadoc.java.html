@@ -8,107 +8,130 @@ import java.util.Optional;
 
 import org.davidmoten.text.utils.WordWrap;
 
+import com.github.davidmoten.guavamini.Maps;
 import com.github.davidmoten.guavamini.Preconditions;
 
-<span class="nc" id="L13">public final class Javadoc {</span>
+<span class="nc" id="L14">public final class Javadoc {</span>
 
     private static final int MAX_JAVADOC_WIDTH = 80;
 
     public static boolean printJavadoc(CodePrintWriter out, Indent indent, String text, boolean isHtml) {
-<span class="fc" id="L18">        Preconditions.checkNotNull(text);</span>
-<span class="fc" id="L19">        return printJavadoc(out, Optional.of(text), Collections.emptyList(), Optional.empty(), Optional.empty(),</span>
-<span class="fc" id="L20">                Collections.emptyMap(), isHtml);</span>
+<span class="fc" id="L19">        Preconditions.checkNotNull(text);</span>
+<span class="fc" id="L20">        return printJavadoc(out, Optional.of(text), Collections.emptyList(), Optional.empty(), Optional.empty(),</span>
+<span class="fc" id="L21">                Collections.emptyMap(), isHtml, Maps.empty());</span>
     }
 
     public static boolean printJavadoc(CodePrintWriter p, Optional&lt;String&gt; text, List&lt;Annotation&gt; annotations,
-            Optional&lt;String&gt; preamble, Optional&lt;String&gt; returns, Map&lt;String, String&gt; parameterDoc, boolean isHtml) {
-<span class="pc bpc" id="L25" title="5 of 6 branches missed.">        boolean hasText = text.isPresent() || !annotations.isEmpty() || returns.isPresent();</span>
-<span class="fc" id="L26">        boolean addParagraph = false;</span>
-<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        if (hasText) {</span>
-<span class="fc" id="L28">            p.println();</span>
-<span class="fc" id="L29">            p.line(&quot;/**&quot;);</span>
-<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            if (preamble.isPresent()) {</span>
-<span class="nc" id="L31">                p.line(&quot; * %s&quot;, encodeAndWrapForJavadoc(preamble.get(), p.indent(), false));</span>
-<span class="nc" id="L32">                addParagraph = true;</span>
+            Optional&lt;String&gt; preamble, Optional&lt;String&gt; returns, Map&lt;String, String&gt; parameterDoc, boolean isHtml,
+            Map&lt;String, String&gt; throwing) {
+<span class="pc bpc" id="L27" title="5 of 6 branches missed.">        boolean hasText = text.isPresent() || !annotations.isEmpty() || returns.isPresent();</span>
+<span class="fc" id="L28">        boolean addParagraph = false;</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">        if (hasText) {</span>
+<span class="fc" id="L30">            p.println();</span>
+<span class="fc" id="L31">            p.line(&quot;/**&quot;);</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">            if (preamble.isPresent()) {</span>
+<span class="nc" id="L33">                p.line(&quot; * %s&quot;, encodeAndWrapForJavadoc(preamble.get(), p.indent(), false));</span>
+<span class="nc" id="L34">                addParagraph = true;</span>
             }
         }
-<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (text.isPresent()) {</span>
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            if (addParagraph) {</span>
-<span class="nc" id="L37">                p.line(&quot; * &lt;p&gt;&quot;);</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (text.isPresent()) {</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (addParagraph) {</span>
+<span class="nc" id="L39">                p.line(&quot; * &lt;p&gt;&quot;);</span>
             }
-<span class="fc" id="L39">            p.line(&quot; * %s&quot;, encodeAndWrapForJavadoc(text.get(), p.indent(), isHtml));</span>
+<span class="fc" id="L41">            p.line(&quot; * %s&quot;, encodeAndWrapForJavadoc(text.get(), p.indent(), isHtml));</span>
         }
-<span class="fc" id="L41">        annotations.forEach(a -&gt; {</span>
-<span class="nc" id="L42">            p.line(&quot; * &lt;p&gt;&quot;);</span>
-<span class="nc" id="L43">            p.line(&quot; * &lt;b&gt;%s&lt;/b&gt;&quot;, a.getTerm());</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (a.getString().isPresent()) {</span>
-<span class="nc" id="L45">                p.line(&quot; * &lt;p&gt;&quot;);</span>
-<span class="nc" id="L46">                p.line(&quot; * %s&quot;, a.getString().get());</span>
+<span class="fc" id="L43">        annotations.forEach(a -&gt; {</span>
+<span class="nc" id="L44">            p.line(&quot; * &lt;p&gt;&quot;);</span>
+<span class="nc" id="L45">            p.line(&quot; * &lt;b&gt;%s&lt;/b&gt;&quot;, a.getTerm());</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (a.getString().isPresent()) {</span>
+<span class="nc" id="L47">                p.line(&quot; * &lt;p&gt;&quot;);</span>
+<span class="nc" id="L48">                p.line(&quot; * %s&quot;, a.getString().get());</span>
             }
-<span class="nc bnc" id="L48" title="All 2 branches missed.">            if (a.getBool().isPresent()) {</span>
-<span class="nc" id="L49">                p.line(&quot; * &lt;p&gt;&quot;);</span>
-<span class="nc" id="L50">                p.line(&quot; * %s&quot;, a.getBool().get());</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (a.getBool().isPresent()) {</span>
+<span class="nc" id="L51">                p.line(&quot; * &lt;p&gt;&quot;);</span>
+<span class="nc" id="L52">                p.line(&quot; * %s&quot;, a.getBool().get());</span>
             }
-<span class="nc bnc" id="L52" title="All 2 branches missed.">            for (String record : a.getRecords()) {</span>
-<span class="nc" id="L53">                p.line(&quot; * &lt;p&gt;&quot;);</span>
-<span class="nc" id="L54">                p.line(&quot; * %s&quot;, record);</span>
-<span class="nc" id="L55">            }</span>
-<span class="nc" id="L56">        });</span>
-<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (hasText) {</span>
-<span class="fc" id="L58">            boolean first = true;</span>
-<span class="fc bfc" id="L59" title="All 2 branches covered.">            for (Entry&lt;String, String&gt; entry : parameterDoc.entrySet()) {</span>
-<span class="fc bfc" id="L60" title="All 2 branches covered.">                if (first) {</span>
-<span class="fc" id="L61">                    p.line(&quot; * &quot;);</span>
-<span class="fc" id="L62">                    first = false;</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            for (String record : a.getRecords()) {</span>
+<span class="nc" id="L55">                p.line(&quot; * &lt;p&gt;&quot;);</span>
+<span class="nc" id="L56">                p.line(&quot; * %s&quot;, record);</span>
+<span class="nc" id="L57">            }</span>
+<span class="nc" id="L58">        });</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (hasText) {</span>
+<span class="fc" id="L60">            boolean first = true;</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            for (Entry&lt;String, String&gt; entry : parameterDoc.entrySet()) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                if (first) {</span>
+<span class="fc" id="L63">                    p.line(&quot; * &quot;);</span>
+<span class="fc" id="L64">                    first = false;</span>
                 }
-<span class="fc" id="L64">                p.line(&quot; * @param %s&quot;, entry.getKey());</span>
-<span class="fc" id="L65">                p.line(&quot; *            %s&quot;, entry.getValue());</span>
-<span class="fc" id="L66">            }</span>
-<span class="fc bfc" id="L67" title="All 2 branches covered.">            if (returns.isPresent()) {</span>
-<span class="fc bfc" id="L68" title="All 2 branches covered.">                if (first) {</span>
-<span class="fc" id="L69">                    p.line(&quot; * &quot;);</span>
+<span class="fc" id="L66">                p.line(&quot; * @param %s&quot;, entry.getKey());</span>
+<span class="fc" id="L67">                String encoded = encodeAndWrapForJavadoc(entry.getValue(), true,</span>
+<span class="fc" id="L68">                        String.format(&quot;\n%s *            &quot;, p.indent()));</span>
+<span class="fc" id="L69">                p.line(&quot; *            %s&quot;, encoded);</span>
+<span class="fc" id="L70">            }</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (returns.isPresent()) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (first) {</span>
+<span class="fc" id="L73">                    p.line(&quot; * &quot;);</span>
                 }
-<span class="fc" id="L71">                p.line(&quot; * @return %s&quot;, returns.get());</span>
+<span class="fc" id="L75">                p.line(&quot; * @return %s&quot;, returns.get());</span>
             }
-<span class="fc" id="L73">            p.line(&quot; */&quot;);</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (!throwing.isEmpty()) {</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (first) {</span>
+<span class="nc" id="L79">                    p.line(&quot; * &quot;);</span>
+                }
+<span class="nc" id="L81">                throwing //</span>
+<span class="nc" id="L82">                        .entrySet() //</span>
+<span class="nc" id="L83">                        .stream() //</span>
+<span class="nc" id="L84">                        .forEach(entry -&gt; {</span>
+<span class="nc" id="L85">                            p.line(&quot; * @throws %s&quot;, entry.getKey());</span>
+<span class="nc" id="L86">                            p.line(&quot; *             %s&quot;, entry.getValue());</span>
+<span class="nc" id="L87">                        });</span>
+            }
+<span class="fc" id="L89">            p.line(&quot; */&quot;);</span>
         }
-<span class="fc" id="L75">        return hasText;</span>
+<span class="fc" id="L91">        return hasText;</span>
     }
 
     private static String encodeAndWrapForJavadoc(String s, Indent indent, boolean isHtml) {
-<span class="fc" id="L79">        s = s.trim().replace(&quot;{@&quot;, &quot;zxxz&quot;);</span>
-<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (!isHtml) {</span>
-<span class="fc" id="L81">            s = wrap(s);</span>
+<span class="fc" id="L95">        return encodeAndWrapForJavadoc(s, isHtml, String.format(&quot;\n%s * &quot;, indent));</span>
+    }
+
+    private static String encodeAndWrapForJavadoc(String s, boolean isHtml, String linePrefix) {
+<span class="fc" id="L99">        s = s //</span>
+<span class="fc" id="L100">                .trim() //</span>
+<span class="fc" id="L101">                .replace(&quot;{@link &quot;, &quot;{@code &quot;) //</span>
+<span class="fc" id="L102">                .replace(&quot;{@&quot;, &quot;zxxz&quot;);</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (!isHtml) {</span>
+<span class="nc" id="L104">            s = wrap(s);</span>
         }
-<span class="fc" id="L83">        return encodeJavadoc(s, isHtml) //</span>
-<span class="fc" id="L84">                .replace(&quot;\n&quot;, String.format(&quot;\n%s * &quot;, indent)) //</span>
-<span class="fc" id="L85">                .replace(&quot;zxxz&quot;, &quot;{@&quot;);</span>
+<span class="fc" id="L106">        return encodeJavadoc(s, isHtml) //</span>
+<span class="fc" id="L107">                .replace(&quot;\n&quot;, linePrefix) //</span>
+<span class="fc" id="L108">                .replace(&quot;zxxz&quot;, &quot;{@&quot;);</span>
     }
 
     private static String encodeJavadoc(String x, boolean isHtml) {
-<span class="fc" id="L89">        x = x.replace(&quot;@&quot;, &quot;&amp;#064;&quot;) //</span>
-<span class="fc" id="L90">                .replace(&quot;\\&quot;, &quot;{@literal \\}&quot;) //</span>
+<span class="fc" id="L112">        x = x.replace(&quot;@&quot;, &quot;&amp;#064;&quot;) //</span>
+<span class="fc" id="L113">                .replace(&quot;\\&quot;, &quot;{@literal \\}&quot;) //</span>
         ;
 //                .replace(&quot;&amp;&quot;, &quot;&amp;amp;&quot;);
-<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (isHtml) {</span>
-<span class="fc" id="L94">            x = x.replace(&quot;&lt;/p&gt;&quot;, &quot;&quot;).replace(&quot;*/&quot;, &quot;*&amp;#47;&quot;);</span>
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">        if (isHtml) {</span>
+<span class="fc" id="L117">            x = x.replace(&quot;&lt;/p&gt;&quot;, &quot;&quot;);</span>
         } else {
-<span class="fc" id="L96">            x = x.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;) //</span>
-<span class="fc" id="L97">                    .replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span>
+<span class="nc" id="L119">            x = x.replace(&quot;&lt;&quot;, &quot;&amp;lt;&quot;) //</span>
+<span class="nc" id="L120">                    .replace(&quot;&gt;&quot;, &quot;&amp;gt;&quot;);</span>
         }
-<span class="fc" id="L99">        return x;</span>
+<span class="fc" id="L122">        return x.replace(&quot;*/&quot;, &quot;*&amp;#47;&quot;);</span>
     }
 
     private static String wrap(String s) {
-<span class="fc" id="L103">        return WordWrap //</span>
-<span class="fc" id="L104">                .from(s) //</span>
-<span class="fc" id="L105">                .breakWords(false) //</span>
-<span class="fc" id="L106">                .extraWordChars(&quot;0123456789&quot;) //</span>
-<span class="fc" id="L107">                .maxWidth(MAX_JAVADOC_WIDTH) //</span>
-<span class="fc" id="L108">                .newLine(&quot;\n&quot;) //</span>
-<span class="fc" id="L109">                .wrap() //</span>
-<span class="fc" id="L110">                .trim();</span>
+<span class="nc" id="L126">        return WordWrap //</span>
+<span class="nc" id="L127">                .from(s) //</span>
+<span class="nc" id="L128">                .breakWords(false) //</span>
+<span class="nc" id="L129">                .extraWordChars(&quot;0123456789&quot;) //</span>
+<span class="nc" id="L130">                .maxWidth(MAX_JAVADOC_WIDTH) //</span>
+<span class="nc" id="L131">                .newLine(&quot;\n&quot;) //</span>
+<span class="nc" id="L132">                .wrap() //</span>
+<span class="nc" id="L133">                .trim();</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

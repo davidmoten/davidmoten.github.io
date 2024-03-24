@@ -8,68 +8,75 @@ public final class ParameterValue {
     private final Optional&lt;?&gt; value;
     private final ParameterType type;
     private final Optional&lt;String&gt; contentType;
+    private final Optional&lt;String&gt; filename;
 
-<span class="fc" id="L12">    public ParameterValue(String name, Optional&lt;?&gt; value, ParameterType type, Optional&lt;String&gt; contentType) {</span>
-<span class="fc" id="L13">        this.name = name;</span>
-<span class="fc" id="L14">        this.value = value;</span>
-<span class="fc" id="L15">        this.type = type;</span>
-<span class="fc" id="L16">        this.contentType = contentType;</span>
-<span class="fc" id="L17">    }</span>
+    public ParameterValue(String name, Optional&lt;?&gt; value, ParameterType type, Optional&lt;String&gt; contentType,
+<span class="fc" id="L14">            Optional&lt;String&gt; filename) {</span>
+<span class="fc" id="L15">        this.name = name;</span>
+<span class="fc" id="L16">        this.value = value;</span>
+<span class="fc" id="L17">        this.type = type;</span>
+<span class="fc" id="L18">        this.contentType = contentType;</span>
+<span class="fc" id="L19">        this.filename = filename;</span>
+<span class="fc" id="L20">    }</span>
 
     public static ParameterValue query(String name, Optional&lt;?&gt; value) {
-<span class="fc" id="L20">        return new ParameterValue(name, value, ParameterType.QUERY, Optional.empty());</span>
+<span class="fc" id="L23">        return new ParameterValue(name, value, ParameterType.QUERY, Optional.empty(), Optional.empty());</span>
     }
 
     public static ParameterValue query(String name, Object value) {
-<span class="fc" id="L24">        return query(name, Optional.ofNullable(value));</span>
+<span class="fc" id="L27">        return query(name, Optional.ofNullable(value));</span>
     }
 
     public static ParameterValue path(String name, Optional&lt;?&gt; value) {
-<span class="fc" id="L28">        return new ParameterValue(name, value, ParameterType.PATH, Optional.empty());</span>
+<span class="fc" id="L31">        return new ParameterValue(name, value, ParameterType.PATH, Optional.empty(), Optional.empty());</span>
     }
 
     public static ParameterValue path(String name, Object value) {
-<span class="fc" id="L32">        return path(name, Optional.ofNullable(value));</span>
+<span class="fc" id="L35">        return path(name, Optional.ofNullable(value));</span>
     }
 
     public static ParameterValue cookie(String name, Optional&lt;?&gt; value) {
-<span class="nc" id="L36">        return new ParameterValue(name, value, ParameterType.COOKIE, Optional.empty());</span>
+<span class="nc" id="L39">        return new ParameterValue(name, value, ParameterType.COOKIE, Optional.empty(), Optional.empty());</span>
     }
 
     public static ParameterValue cookie(String name, Object value) {
-<span class="nc" id="L40">        return cookie(name, Optional.ofNullable(value));</span>
+<span class="nc" id="L43">        return cookie(name, Optional.ofNullable(value));</span>
     }
 
     public static ParameterValue header(String name, Optional&lt;?&gt; value) {
-<span class="nc" id="L44">        return new ParameterValue(name, value, ParameterType.HEADER, Optional.empty());</span>
+<span class="nc" id="L47">        return new ParameterValue(name, value, ParameterType.HEADER, Optional.empty(), Optional.empty());</span>
     }
 
     public static ParameterValue header(String name, Object value) {
-<span class="nc" id="L48">        return header(name, Optional.ofNullable(value));</span>
+<span class="nc" id="L51">        return header(name, Optional.ofNullable(value));</span>
     }
 
     public static ParameterValue body(Object value, String contentType) {
-<span class="fc" id="L52">        return body(Optional.ofNullable(value), contentType);</span>
+<span class="fc" id="L55">        return body(Optional.ofNullable(value), contentType);</span>
     }
 
     public static ParameterValue body(Optional&lt;?&gt; value, String contentType) {
-<span class="fc" id="L56">        return new ParameterValue(&quot;requestBody&quot;, value, ParameterType.BODY, Optional.of(contentType));</span>
+<span class="fc" id="L59">        return new ParameterValue(&quot;requestBody&quot;, value, ParameterType.BODY, Optional.of(contentType), Optional.empty());</span>
     }
 
     public String name() {
-<span class="fc" id="L60">        return name;</span>
+<span class="fc" id="L63">        return name;</span>
     }
 
     public Optional&lt;?&gt; value() {
-<span class="fc" id="L64">        return value;</span>
+<span class="fc" id="L67">        return value;</span>
     }
 
     public ParameterType type() {
-<span class="fc" id="L68">        return type;</span>
+<span class="fc" id="L71">        return type;</span>
     }
 
     public Optional&lt;String&gt; contentType() {
-<span class="fc" id="L72">        return contentType;</span>
+<span class="fc" id="L75">        return contentType;</span>
+    }
+    
+    public Optional&lt;String&gt; filename() {
+<span class="nc" id="L79">        return filename;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
