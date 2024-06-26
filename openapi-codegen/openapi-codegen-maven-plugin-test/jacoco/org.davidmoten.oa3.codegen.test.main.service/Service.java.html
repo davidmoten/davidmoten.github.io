@@ -164,7 +164,7 @@ import org.davidmoten.oa3.codegen.test.main.schema.Status;
  * occurs and the user should be able to see the actual broadcast times.
  * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; discuss with satellite providers
  */
-@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.17&quot;)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.22&quot;)
 public interface Service extends ErrorHandler {
 
 <span class="nc" id="L170">    Service DEFAULT = new Service() {};</span>
@@ -224,11 +224,6 @@ public interface Service extends ErrorHandler {
      *            then filters MSIs on startTime &amp;gt;= startTimeMin.
      *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
      *            on startTime &amp;gt; startTimeMin.
-     * @param startTimeMin
-     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
-     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
-     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
-     *            on startTime &amp;gt; startTimeMin.
      * @param limit
      *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
      *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
@@ -236,6 +231,11 @@ public interface Service extends ErrorHandler {
      *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
      *            no more items available then the response will not contain
      *            a &lt;code&gt;continuationToken&lt;/code&gt;.
+     * @param startTimeMin
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
      * @param startTimeMinInclusive
      *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
      *            then filters MSIs on startTime &amp;gt;= startTimeMin.
@@ -248,24 +248,13 @@ public interface Service extends ErrorHandler {
      *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
      *            on endTime &amp;gt; endTimeMin.
      *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
      * @param startTimeMax
      *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
      *            then filters MSIs on startTime &amp;lt;= startTimeMax.
      *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
      *            on startTime &amp;lt; startTimeMax.
-     * @param broadcastType
-     *            &lt;p&gt;the type of broadcast
-     * @param startTimeMaxInclusive
-     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
-     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
-     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
-     *            on startTime &amp;lt; startTimeMax.
-     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
-     * @param status
-     *            &lt;p&gt;Only MSIs that have a status in the given list
-     *            are returned. If the list is empty (or the parameter
-     *            is not present) then no filtering on status occurs.
-     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
      * @param continuationToken
      *            &lt;p&gt;Describes to the server the starting point of
      *            the next page of results and is obtained from
@@ -275,6 +264,17 @@ public interface Service extends ErrorHandler {
      *            token may return en empty list (but an empty list return
      *            should not have a continuation token on it so at
      *            that point paging would stop).
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param startTimeMaxInclusive
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
      * @return primary response status code 200
      */
     default GetMsis200Response getMsis(
@@ -395,4 +395,4 @@ public interface Service extends ErrorHandler {
 <span class="nc" id="L395">        throw notImplemented();</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

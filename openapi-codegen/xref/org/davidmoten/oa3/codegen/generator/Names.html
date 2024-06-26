@@ -170,7 +170,7 @@
 <a class="jxr_linenumber" name="L162" href="#L162">162</a>     }
 <a class="jxr_linenumber" name="L163" href="#L163">163</a> 
 <a class="jxr_linenumber" name="L164" href="#L164">164</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String simpleClassName(String fullClassName) {
-<a class="jxr_linenumber" name="L165" href="#L165">165</a>         <strong class="jxr_keyword">return</strong> stripGenerics(getLastItemInDotDelimitedString(fullClassName));
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>         <strong class="jxr_keyword">return</strong> getLastItemInDotDelimitedString(stripGenerics(fullClassName));
 <a class="jxr_linenumber" name="L166" href="#L166">166</a>     }
 <a class="jxr_linenumber" name="L167" href="#L167">167</a> 
 <a class="jxr_linenumber" name="L168" href="#L168">168</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String stripGenerics(String name) {
@@ -418,9 +418,9 @@
 <a class="jxr_linenumber" name="L410" href="#L410">410</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String toIdentifier(ImmutableList&lt;String&gt; list) {
 <a class="jxr_linenumber" name="L411" href="#L411">411</a>         StringBuilder b = <strong class="jxr_keyword">new</strong> StringBuilder();
 <a class="jxr_linenumber" name="L412" href="#L412">412</a>         <strong class="jxr_keyword">for</strong> (String s : list) {
-<a class="jxr_linenumber" name="L413" href="#L413">413</a>             b.append(Names.upperFirst(camelifyOnSeparatorCharacters(s)));
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>             b.append(upperFirst(camelifyOnSeparatorCharacters(s)));
 <a class="jxr_linenumber" name="L414" href="#L414">414</a>         }
-<a class="jxr_linenumber" name="L415" href="#L415">415</a>         <strong class="jxr_keyword">return</strong> Names.toIdentifier(b.toString());
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>         <strong class="jxr_keyword">return</strong> toIdentifier(b.toString());
 <a class="jxr_linenumber" name="L416" href="#L416">416</a>     }
 <a class="jxr_linenumber" name="L417" href="#L417">417</a> 
 <a class="jxr_linenumber" name="L418" href="#L418">418</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String camelifyOnSeparatorCharacters(String s) {
@@ -552,7 +552,15 @@
 <a class="jxr_linenumber" name="L544" href="#L544">544</a>         <strong class="jxr_keyword">return</strong> Optional.ofNullable(classes.get(fullClassName));
 <a class="jxr_linenumber" name="L545" href="#L545">545</a>     }
 <a class="jxr_linenumber" name="L546" href="#L546">546</a> 
-<a class="jxr_linenumber" name="L547" href="#L547">547</a> }
+<a class="jxr_linenumber" name="L547" href="#L547">547</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> applyReadOnly() {
+<a class="jxr_linenumber" name="L548" href="#L548">548</a>         <strong class="jxr_keyword">return</strong> definition.applyReadOnly();
+<a class="jxr_linenumber" name="L549" href="#L549">549</a>     }
+<a class="jxr_linenumber" name="L550" href="#L550">550</a> 
+<a class="jxr_linenumber" name="L551" href="#L551">551</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> applyWriteOnly() {
+<a class="jxr_linenumber" name="L552" href="#L552">552</a>         <strong class="jxr_keyword">return</strong> definition.applyWriteOnly();
+<a class="jxr_linenumber" name="L553" href="#L553">553</a>     }
+<a class="jxr_linenumber" name="L554" href="#L554">554</a> 
+<a class="jxr_linenumber" name="L555" href="#L555">555</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2023&#x2013;2024. All rights reserved.</div>

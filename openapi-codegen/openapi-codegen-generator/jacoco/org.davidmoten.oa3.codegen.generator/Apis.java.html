@@ -239,81 +239,83 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 <span class="pc bpc" id="L239" title="1 of 2 branches missed.">        } else if (schema.getNot() != null) {</span>
 <span class="nc" id="L240">            visitSchemas(category, schemaPath.add(new SchemaWithName(&quot;not&quot;, schema.getNot())), Maps.empty(), visitor);</span>
         }
-<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (schema.getProperties() != null) {</span>
-<span class="fc" id="L243">            schema.getProperties().entrySet().forEach(</span>
+<span class="pc bpc" id="L242" title="1 of 4 branches missed.">        if (schema.getProperties() != null &amp;&amp; !(schema instanceof ArraySchema)) {</span>
+            // note that doesn't make sense that an ArraySchema has properties but if provided 
+            // in openapi definition the swagger-parser doesn't ignore them unfortunately
+<span class="fc" id="L245">            schema.getProperties().entrySet().forEach(</span>
                     x -&gt; {
                         final Schema&lt;?&gt; sch;
-<span class="fc bfc" id="L246" title="All 4 branches covered.">                        if (propertyEncoding != null &amp;&amp; propertyEncoding.containsKey(x.getKey())) {</span>
-<span class="fc" id="L247">                            Encoding encoding = propertyEncoding.get(x.getKey());</span>
-<span class="fc bfc" id="L248" title="All 2 branches covered.">                            if (encoding.getContentType() != null) {</span>
-<span class="fc" id="L249">                                List&lt;String&gt; contentTypes = Arrays.stream(encoding.getContentType() //</span>
-<span class="fc" id="L250">                                        .split(&quot;,&quot;)) //</span>
-<span class="fc" id="L251">                                        .map(y -&gt; y.trim()) //</span>
-<span class="fc" id="L252">                                        .collect(Collectors.toList());</span>
-<span class="fc" id="L253">                                Schema&lt;String&gt; contentTypeSchema = enumSchema(contentTypes);</span>
-<span class="pc bpc" id="L254" title="1 of 2 branches missed.">                                if (contentTypes.size() == 1) {</span>
-<span class="fc" id="L255">                                    contentTypeSchema.setDefault(contentTypes.get(0));</span>
+<span class="fc bfc" id="L248" title="All 4 branches covered.">                        if (propertyEncoding != null &amp;&amp; propertyEncoding.containsKey(x.getKey())) {</span>
+<span class="fc" id="L249">                            Encoding encoding = propertyEncoding.get(x.getKey());</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                            if (encoding.getContentType() != null) {</span>
+<span class="fc" id="L251">                                List&lt;String&gt; contentTypes = Arrays.stream(encoding.getContentType() //</span>
+<span class="fc" id="L252">                                        .split(&quot;,&quot;)) //</span>
+<span class="fc" id="L253">                                        .map(y -&gt; y.trim()) //</span>
+<span class="fc" id="L254">                                        .collect(Collectors.toList());</span>
+<span class="fc" id="L255">                                Schema&lt;String&gt; contentTypeSchema = enumSchema(contentTypes);</span>
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">                                if (contentTypes.size() == 1) {</span>
+<span class="fc" id="L257">                                    contentTypeSchema.setDefault(contentTypes.get(0));</span>
                                 }
-<span class="fc" id="L257">                                contentTypeSchema.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
-<span class="fc" id="L258">                                ObjectSchema combined = new ObjectSchema();</span>
-<span class="fc" id="L259">                                combined.setProperties(new LinkedHashMap&lt;&gt;());</span>
-<span class="fc" id="L260">                                combined.getProperties().put(&quot;contentType&quot;, contentTypeSchema);</span>
-<span class="fc" id="L261">                                combined.getProperties().put(&quot;value&quot;, x.getValue());</span>
-<span class="fc" id="L262">                                combined.setRequired(Lists.of(&quot;value&quot;, &quot;contentType&quot;));</span>
-<span class="fc" id="L263">                                combined.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
+<span class="fc" id="L259">                                contentTypeSchema.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
+<span class="fc" id="L260">                                ObjectSchema combined = new ObjectSchema();</span>
+<span class="fc" id="L261">                                combined.setProperties(new LinkedHashMap&lt;&gt;());</span>
+<span class="fc" id="L262">                                combined.getProperties().put(&quot;contentType&quot;, contentTypeSchema);</span>
+<span class="fc" id="L263">                                combined.getProperties().put(&quot;value&quot;, x.getValue());</span>
+<span class="fc" id="L264">                                combined.setRequired(Lists.of(&quot;value&quot;, &quot;contentType&quot;));</span>
+<span class="fc" id="L265">                                combined.setExtensions(Maps.hashMap().put(ExtensionKeys.HAS_ENCODING, (Object) Boolean.TRUE).build());</span>
                                 
-<span class="fc" id="L265">                                sch = combined;</span>
-<span class="fc" id="L266">                            } else {</span>
-<span class="fc" id="L267">                                sch = x.getValue();</span>
+<span class="fc" id="L267">                                sch = combined;</span>
+<span class="fc" id="L268">                            } else {</span>
+<span class="fc" id="L269">                                sch = x.getValue();</span>
                             }
-<span class="fc" id="L269">                        } else {</span>
-<span class="fc" id="L270">                            sch = x.getValue();</span>
+<span class="fc" id="L271">                        } else {</span>
+<span class="fc" id="L272">                            sch = x.getValue();</span>
                         }
-<span class="fc" id="L272">                        visitSchemas(category, schemaPath.add(new SchemaWithName(x.getKey(), sch)),</span>
-<span class="fc" id="L273">                                Maps.empty(), visitor);</span>
-<span class="fc" id="L274">                    });</span>
+<span class="fc" id="L274">                        visitSchemas(category, schemaPath.add(new SchemaWithName(x.getKey(), sch)),</span>
+<span class="fc" id="L275">                                Maps.empty(), visitor);</span>
+<span class="fc" id="L276">                    });</span>
         }
-<span class="fc bfc" id="L276" title="All 2 branches covered.">        if (schema instanceof ArraySchema) {</span>
-<span class="fc" id="L277">            ArraySchema a = (ArraySchema) schema;</span>
-<span class="pc bpc" id="L278" title="1 of 2 branches missed.">            if (a.getItems() != null) {</span>
-<span class="fc" id="L279">                visitSchemas(category,</span>
-<span class="fc" id="L280">                        schemaPath.add(new SchemaWithName(schemaPath.last().name + &quot;Item&quot;, a.getItems())), Maps.empty(), visitor);</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (schema instanceof ArraySchema) {</span>
+<span class="fc" id="L279">            ArraySchema a = (ArraySchema) schema;</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">            if (a.getItems() != null) {</span>
+<span class="fc" id="L281">                visitSchemas(category,</span>
+<span class="fc" id="L282">                        schemaPath.add(new SchemaWithName(schemaPath.last().name + &quot;Item&quot;, a.getItems())), Maps.empty(), visitor);</span>
             }
-<span class="fc bfc" id="L282" title="All 2 branches covered.">        } else if (schema instanceof ComposedSchema) {</span>
-<span class="fc" id="L283">            ComposedSchema a = (ComposedSchema) schema;</span>
-<span class="fc bfc" id="L284" title="All 2 branches covered.">            if (a.getAllOf() != null) {</span>
-<span class="fc" id="L285">                a.getAllOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">        } else if (schema instanceof ComposedSchema) {</span>
+<span class="fc" id="L285">            ComposedSchema a = (ComposedSchema) schema;</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">            if (a.getAllOf() != null) {</span>
+<span class="fc" id="L287">                a.getAllOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
-<span class="fc bfc" id="L287" title="All 2 branches covered.">            if (a.getOneOf() != null) {</span>
-<span class="fc" id="L288">                a.getOneOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">            if (a.getOneOf() != null) {</span>
+<span class="fc" id="L290">                a.getOneOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
-<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (a.getAnyOf() != null) {</span>
-<span class="fc" id="L291">                a.getAnyOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">            if (a.getAnyOf() != null) {</span>
+<span class="fc" id="L293">                a.getAnyOf().forEach(x -&gt; visitSchemas(category, schemaPath.add(new SchemaWithName(null, x)), Maps.empty(), visitor));</span>
             }
         }
         // MapSchema, ObjectSchema have nothing to add
 
-<span class="fc" id="L296">        visitor.finishSchema(category, schemaPath);</span>
-<span class="fc" id="L297">    }</span>
+<span class="fc" id="L298">        visitor.finishSchema(category, schemaPath);</span>
+<span class="fc" id="L299">    }</span>
 
     private static Schema&lt;String&gt; enumSchema(List&lt;String&gt; values) {
-<span class="fc" id="L300">        Schema&lt;String&gt; schema = new Schema&lt;&gt;();</span>
-<span class="fc" id="L301">        schema.setType(&quot;string&quot;);</span>
-<span class="fc" id="L302">        schema.setEnum(values);</span>
-<span class="fc" id="L303">        return schema;</span>
+<span class="fc" id="L302">        Schema&lt;String&gt; schema = new Schema&lt;&gt;();</span>
+<span class="fc" id="L303">        schema.setType(&quot;string&quot;);</span>
+<span class="fc" id="L304">        schema.setEnum(values);</span>
+<span class="fc" id="L305">        return schema;</span>
     }
 
     static final boolean isComplexSchema(Schema&lt;?&gt; schema) {
-<span class="fc bfc" id="L307" title="All 2 branches covered.">        for (Class&lt;? extends Schema&lt;?&gt;&gt; cls : COMPLEX_SCHEMA_CLASSES) {</span>
-<span class="fc bfc" id="L308" title="All 2 branches covered.">            if (cls.isAssignableFrom(schema.getClass())) {</span>
-<span class="fc" id="L309">                return true;</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        for (Class&lt;? extends Schema&lt;?&gt;&gt; cls : COMPLEX_SCHEMA_CLASSES) {</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            if (cls.isAssignableFrom(schema.getClass())) {</span>
+<span class="fc" id="L311">                return true;</span>
             }
-<span class="fc" id="L311">        }</span>
-<span class="fc bfc" id="L312" title="All 2 branches covered.">        return schema.getProperties() != null;</span>
+<span class="fc" id="L313">        }</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        return schema.getProperties() != null;</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
-<span class="fc" id="L316">    private static List&lt;Class&lt;? extends Schema&lt;?&gt;&gt;&gt; COMPLEX_SCHEMA_CLASSES = Lists.of( //</span>
+<span class="fc" id="L318">    private static List&lt;Class&lt;? extends Schema&lt;?&gt;&gt;&gt; COMPLEX_SCHEMA_CLASSES = Lists.of( //</span>
             ObjectSchema.class, MapSchema.class, ComposedSchema.class, ArraySchema.class);
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

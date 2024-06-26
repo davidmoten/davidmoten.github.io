@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WriteOnly.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">WriteOnly.java</span></div><h1>WriteOnly.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.OptionalEmptyDeserializer;
+import org.davidmoten.oa3.codegen.runtime.OptionalMustBePresentConverter;
+import org.davidmoten.oa3.codegen.runtime.OptionalMustBePresentOctetsSerializer;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.1.22&quot;)
+public final class WriteOnly {
+
+    @JsonProperty(&quot;name&quot;)
+    private final String name;
+
+    @JsonProperty(&quot;writeOnly&quot;)
+    @JsonSerialize(converter = OptionalMustBePresentConverter.class)
+    private final Optional&lt;String&gt; writeOnly;
+
+    @JsonProperty(&quot;writeOnlyOptional&quot;)
+    private final Optional&lt;String&gt; writeOnlyOptional;
+
+    @JsonProperty(&quot;writeOnlyOctets&quot;)
+    @JsonSerialize(using = OptionalMustBePresentOctetsSerializer.class)
+    private final Optional&lt;byte[]&gt; writeOnlyOctets;
+
+    @JsonCreator
+    public WriteOnly(
+            @JsonProperty(&quot;name&quot;) String name,
+            @JsonProperty(&quot;writeOnly&quot;) @JsonDeserialize(using = OptionalEmptyDeserializer.class) Optional&lt;String&gt; writeOnly,
+            @JsonProperty(&quot;writeOnlyOptional&quot;) @JsonDeserialize(using = OptionalEmptyDeserializer.class) Optional&lt;String&gt; writeOnlyOptional,
+<span class="fc" id="L55">            @JsonProperty(&quot;writeOnlyOctets&quot;) @JsonDeserialize(using = OptionalEmptyDeserializer.class) Optional&lt;byte[]&gt; writeOnlyOctets) {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(WriteOnly.class)) {</span>
+<span class="fc" id="L57">            Preconditions.checkNotNull(name, &quot;name&quot;);</span>
+<span class="fc" id="L58">            Preconditions.checkNotNull(writeOnly, &quot;writeOnly&quot;);</span>
+<span class="fc" id="L59">            Preconditions.checkNotNull(writeOnlyOptional, &quot;writeOnlyOptional&quot;);</span>
+<span class="fc" id="L60">            Preconditions.checkNotNull(writeOnlyOctets, &quot;writeOnlyOctets&quot;);</span>
+        }
+<span class="fc" id="L62">        this.name = name;</span>
+<span class="fc" id="L63">        this.writeOnly = writeOnly;</span>
+<span class="fc" id="L64">        this.writeOnlyOptional = writeOnlyOptional;</span>
+<span class="fc" id="L65">        this.writeOnlyOctets = writeOnlyOctets;</span>
+<span class="fc" id="L66">    }</span>
+
+    public String name() {
+<span class="nc" id="L69">        return name;</span>
+    }
+
+    public Optional&lt;String&gt; writeOnly() {
+<span class="fc" id="L73">        return writeOnly;</span>
+    }
+
+    public Optional&lt;String&gt; writeOnlyOptional() {
+<span class="fc" id="L77">        return writeOnlyOptional;</span>
+    }
+
+    public Optional&lt;byte[]&gt; writeOnlyOctets() {
+<span class="fc" id="L81">        return writeOnlyOctets;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L85">        return Maps</span>
+<span class="nc" id="L86">                .put(&quot;name&quot;, (Object) name)</span>
+<span class="nc" id="L87">                .put(&quot;writeOnly&quot;, (Object) writeOnly)</span>
+<span class="nc" id="L88">                .put(&quot;writeOnlyOptional&quot;, (Object) writeOnlyOptional)</span>
+<span class="nc" id="L89">                .put(&quot;writeOnlyOctets&quot;, (Object) writeOnlyOctets)</span>
+<span class="nc" id="L90">                .build();</span>
+    }
+
+    public WriteOnly withName(String name) {
+<span class="nc" id="L94">        return new WriteOnly(name, writeOnly, writeOnlyOptional, writeOnlyOctets);</span>
+    }
+
+    public WriteOnly withWriteOnly(Optional&lt;String&gt; writeOnly) {
+<span class="nc" id="L98">        return new WriteOnly(name, writeOnly, writeOnlyOptional, writeOnlyOctets);</span>
+    }
+
+    public WriteOnly withWriteOnlyOptional(Optional&lt;String&gt; writeOnlyOptional) {
+<span class="nc" id="L102">        return new WriteOnly(name, writeOnly, writeOnlyOptional, writeOnlyOctets);</span>
+    }
+
+    public WriteOnly withWriteOnlyOptional(String writeOnlyOptional) {
+<span class="nc" id="L106">        return new WriteOnly(name, writeOnly, Optional.of(writeOnlyOptional), writeOnlyOctets);</span>
+    }
+
+    public WriteOnly withWriteOnlyOctets(Optional&lt;byte[]&gt; writeOnlyOctets) {
+<span class="nc" id="L110">        return new WriteOnly(name, writeOnly, writeOnlyOptional, writeOnlyOctets);</span>
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L114">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private String name;
+<span class="fc" id="L120">        private Optional&lt;String&gt; writeOnly = Optional.empty();</span>
+<span class="fc" id="L121">        private Optional&lt;String&gt; writeOnlyOptional = Optional.empty();</span>
+<span class="fc" id="L122">        private Optional&lt;byte[]&gt; writeOnlyOctets = Optional.empty();</span>
+
+<span class="fc" id="L124">        Builder() {</span>
+<span class="fc" id="L125">        }</span>
+
+        public BuilderWithName name(String name) {
+<span class="fc" id="L128">            this.name = name;</span>
+<span class="fc" id="L129">            return new BuilderWithName(this);</span>
+        }
+    }
+
+    public static final class BuilderWithName {
+
+        private final Builder b;
+
+<span class="fc" id="L137">        BuilderWithName(Builder b) {</span>
+<span class="fc" id="L138">            this.b = b;</span>
+<span class="fc" id="L139">        }</span>
+
+        public BuilderWithName writeOnly(String writeOnly) {
+<span class="fc" id="L142">            this.b.writeOnly = Optional.of(writeOnly);</span>
+<span class="fc" id="L143">            return this;</span>
+        }
+
+        public BuilderWithName writeOnly(Optional&lt;String&gt; writeOnly) {
+<span class="nc" id="L147">            this.b.writeOnly = writeOnly;</span>
+<span class="nc" id="L148">            return this;</span>
+        }
+
+        public BuilderWithName writeOnlyOptional(String writeOnlyOptional) {
+<span class="nc" id="L152">            this.b.writeOnlyOptional = Optional.of(writeOnlyOptional);</span>
+<span class="nc" id="L153">            return this;</span>
+        }
+
+        public BuilderWithName writeOnlyOptional(Optional&lt;String&gt; writeOnlyOptional) {
+<span class="nc" id="L157">            this.b.writeOnlyOptional = writeOnlyOptional;</span>
+<span class="nc" id="L158">            return this;</span>
+        }
+
+        public BuilderWithName writeOnlyOctets(byte[] writeOnlyOctets) {
+<span class="fc" id="L162">            this.b.writeOnlyOctets = Optional.of(writeOnlyOctets);</span>
+<span class="fc" id="L163">            return this;</span>
+        }
+
+        public BuilderWithName writeOnlyOctets(Optional&lt;byte[]&gt; writeOnlyOctets) {
+<span class="nc" id="L167">            this.b.writeOnlyOctets = writeOnlyOctets;</span>
+<span class="nc" id="L168">            return this;</span>
+        }
+
+        public WriteOnly build() {
+<span class="fc" id="L172">            return new WriteOnly(this.b.name, this.b.writeOnly, this.b.writeOnlyOptional, this.b.writeOnlyOctets);</span>
+        }
+    }
+
+    public static BuilderWithName name(String name) {
+<span class="nc" id="L177">        return builder().name(name);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L183">            return true;</span>
+        }
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L186">            return false;</span>
+        }
+<span class="nc" id="L188">        WriteOnly other = (WriteOnly) o;</span>
+<span class="nc" id="L189">        return </span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            Objects.deepEquals(this.name, other.name) &amp;&amp; </span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            Objects.deepEquals(this.writeOnly, other.writeOnly) &amp;&amp; </span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            Objects.deepEquals(this.writeOnlyOptional, other.writeOnlyOptional) &amp;&amp; </span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            Objects.deepEquals(this.writeOnlyOctets, other.writeOnlyOctets);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L198">        return Objects.hash(</span>
+                name, 
+                writeOnly, 
+                writeOnlyOptional, 
+                writeOnlyOctets);
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L207">        return Util.toString(WriteOnly.class,</span>
+                &quot;name&quot;, name,
+                &quot;writeOnly&quot;, writeOnly,
+                &quot;writeOnlyOptional&quot;, writeOnlyOptional,
+                &quot;writeOnlyOctets&quot;, writeOnlyOctets);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

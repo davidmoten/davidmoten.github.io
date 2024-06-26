@@ -51,7 +51,7 @@
 <a class="jxr_linenumber" name="L43" href="#L43">43</a>          File generatedSourceDirectory = <strong class="jxr_keyword">new</strong> File(directory, <span class="jxr_string">"src/main/java"</span>);
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          generatedSourceDirectory.mkdirs();
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>          <a name="Definition" href="../../../../../org/davidmoten/oa3/codegen/generator/Definition.html#Definition">Definition</a> definition = <strong class="jxr_keyword">new</strong> <a name="Definition" href="../../../../../org/davidmoten/oa3/codegen/generator/Definition.html#Definition">Definition</a>(openapiFilename, <strong class="jxr_keyword">new</strong> <a name="Packages" href="../../../../../org/davidmoten/oa3/codegen/generator/Packages.html#Packages">Packages</a>(basePackage), generatedSourceDirectory,
-<a class="jxr_linenumber" name="L46" href="#L46">46</a>                  x -&gt; x, Collections.emptySet(), Collections.emptySet(), false, false, <strong class="jxr_keyword">true</strong>, Optional.empty(), generateServer);
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>                  x -&gt; x, Collections.emptySet(), Collections.emptySet(), false, false, <strong class="jxr_keyword">true</strong>, Optional.empty(), generateServer, <strong class="jxr_keyword">true</strong>, <strong class="jxr_keyword">true</strong>);
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>          <a name="Generator" href="../../../../../org/davidmoten/oa3/codegen/generator/Generator.html#Generator">Generator</a> g = <strong class="jxr_keyword">new</strong> <a name="Generator" href="../../../../../org/davidmoten/oa3/codegen/generator/Generator.html#Generator">Generator</a>(definition);
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>          g.generate();
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  
@@ -85,37 +85,41 @@
 <a class="jxr_linenumber" name="L77" href="#L77">77</a>                      } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (i &gt; j) {
 <a class="jxr_linenumber" name="L78" href="#L78">78</a>                          <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(START_SERVER + <span class="jxr_string">" marker not found, check does not have trailing spaces"</span>);
 <a class="jxr_linenumber" name="L79" href="#L79">79</a>                      }
-<a class="jxr_linenumber" name="L80" href="#L80">80</a>                      pom = pom.substring(0, i) + pom.substring(j + END_SERVER.length());
-<a class="jxr_linenumber" name="L81" href="#L81">81</a>                  }
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>              } <strong class="jxr_keyword">else</strong> {
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>                  pom = pom <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L84" href="#L84">84</a>                          .replaceAll(START_SERVER, <span class="jxr_string">""</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L85" href="#L85">85</a>                          .replaceAll(END_SERVER, <span class="jxr_string">""</span>);
-<a class="jxr_linenumber" name="L86" href="#L86">86</a>              }
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>              File pomFile = <strong class="jxr_keyword">new</strong> File(directory, <span class="jxr_string">"pom.xml"</span>);
-<a class="jxr_linenumber" name="L88" href="#L88">88</a>              Files.write(pomFile.toPath(), pom.getBytes(StandardCharsets.UTF_8));
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>          }
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>      }
-<a class="jxr_linenumber" name="L91" href="#L91">91</a>  
-<a class="jxr_linenumber" name="L92" href="#L92">92</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> zipDirectory(File sourceDirectory, OutputStream out) <strong class="jxr_keyword">throws</strong> IOException {
-<a class="jxr_linenumber" name="L93" href="#L93">93</a>          <strong class="jxr_keyword">try</strong> (ZipOutputStream zs = <strong class="jxr_keyword">new</strong> ZipOutputStream(out)) {
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>              Path pp = sourceDirectory.toPath();
-<a class="jxr_linenumber" name="L95" href="#L95">95</a>              <strong class="jxr_keyword">try</strong> (Stream&lt;Path&gt; paths = Files.walk(pp)) {
-<a class="jxr_linenumber" name="L96" href="#L96">96</a>                  paths.filter(path -&gt; !Files.isDirectory(path)).forEach(path -&gt; {
-<a class="jxr_linenumber" name="L97" href="#L97">97</a>                      ZipEntry zipEntry = <strong class="jxr_keyword">new</strong> ZipEntry(pp.relativize(path).toString());
-<a class="jxr_linenumber" name="L98" href="#L98">98</a>                      <strong class="jxr_keyword">try</strong> {
-<a class="jxr_linenumber" name="L99" href="#L99">99</a>                          zs.putNextEntry(zipEntry);
-<a class="jxr_linenumber" name="L100" href="#L100">100</a>                         Files.copy(path, zs);
-<a class="jxr_linenumber" name="L101" href="#L101">101</a>                         zs.closeEntry();
-<a class="jxr_linenumber" name="L102" href="#L102">102</a>                     } <strong class="jxr_keyword">catch</strong> (IOException e) {
-<a class="jxr_linenumber" name="L103" href="#L103">103</a>                         System.err.println(e);
-<a class="jxr_linenumber" name="L104" href="#L104">104</a>                     }
-<a class="jxr_linenumber" name="L105" href="#L105">105</a>                 });
-<a class="jxr_linenumber" name="L106" href="#L106">106</a>             }
-<a class="jxr_linenumber" name="L107" href="#L107">107</a>         }
-<a class="jxr_linenumber" name="L108" href="#L108">108</a>     }
-<a class="jxr_linenumber" name="L109" href="#L109">109</a> 
-<a class="jxr_linenumber" name="L110" href="#L110">110</a> }
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>                      <strong class="jxr_keyword">int</strong> k = i;
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>                      <strong class="jxr_keyword">while</strong> (k &gt; 0 &amp;&amp; pom.charAt(k - 1) == ' ') {
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>                          k--;
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>                      }
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>                      pom = pom.substring(0, k) + pom.substring(j + END_SERVER.length());
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>                  }
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>              } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>                  pom = pom <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                          .replaceAll(START_SERVER, <span class="jxr_string">""</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>                          .replaceAll(END_SERVER, <span class="jxr_string">""</span>);
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>              }
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>              File pomFile = <strong class="jxr_keyword">new</strong> File(directory, <span class="jxr_string">"pom.xml"</span>);
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>              Files.write(pomFile.toPath(), pom.getBytes(StandardCharsets.UTF_8));
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>          }
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>      }
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> zipDirectory(File sourceDirectory, OutputStream out) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>          <strong class="jxr_keyword">try</strong> (ZipOutputStream zs = <strong class="jxr_keyword">new</strong> ZipOutputStream(out)) {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>              Path pp = sourceDirectory.toPath();
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>              <strong class="jxr_keyword">try</strong> (Stream&lt;Path&gt; paths = Files.walk(pp)) {
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                 paths.filter(path -&gt; !Files.isDirectory(path)).forEach(path -&gt; {
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>                     ZipEntry zipEntry = <strong class="jxr_keyword">new</strong> ZipEntry(pp.relativize(path).toString());
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>                         zs.putNextEntry(zipEntry);
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                         Files.copy(path, zs);
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>                         zs.closeEntry();
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                     } <strong class="jxr_keyword">catch</strong> (IOException e) {
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>                         System.err.println(e);
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>                     }
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>                 });
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>             }
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>         }
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>     }
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> }
 </pre>
 <hr/>
 <div id="footer">Copyright &#169; 2023&#x2013;2024. All rights reserved.</div>

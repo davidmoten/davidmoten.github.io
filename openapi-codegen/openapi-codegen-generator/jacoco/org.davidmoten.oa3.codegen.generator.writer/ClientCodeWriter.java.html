@@ -85,125 +85,131 @@ import com.github.davidmoten.guavamini.Maps;
 <span class="fc" id="L85">            out.println();</span>
 <span class="fc" id="L86">            out.line(&quot;public enum Server {&quot;);</span>
 <span class="fc" id="L87">            out.println();</span>
-<span class="fc bfc" id="L88" title="All 2 branches covered.">            for (int i = 0; i &lt; servers.size(); i++) {</span>
-<span class="fc" id="L89">                Server server = servers.get(i);</span>
-<span class="fc" id="L90">                String name = Names.enumNameToEnumConstant(server.description.orElse(&quot;server&quot; + (i+1)));</span>
-<span class="fc bfc" id="L91" title="All 2 branches covered.">                final String delimiter = i == servers.size() - 1 ? &quot;;&quot;: &quot;,&quot;;</span>
-<span class="fc" id="L92">                out.line(&quot;%s(\&quot;%s\&quot;)%s&quot;, name, server.url, delimiter);</span>
+<span class="fc" id="L88">            Set&lt;String&gt; enumNames = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            for (int i = 0; i &lt; servers.size(); i++) {</span>
+<span class="fc" id="L90">                Server server = servers.get(i);</span>
+<span class="fc" id="L91">                String fallbackName = &quot;server&quot; + (i + 1);</span>
+<span class="fc" id="L92">                String name = Names.enumNameToEnumConstant(server.description.orElse(fallbackName));</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                if (enumNames.contains(name)) {</span>
+<span class="fc" id="L94">                    name = Names.enumNameToEnumConstant(fallbackName);</span>
+                }
+<span class="fc" id="L96">                enumNames.add(name);</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                final String delimiter = i == servers.size() - 1 ? &quot;;&quot;: &quot;,&quot;;</span>
+<span class="fc" id="L98">                out.line(&quot;%s(\&quot;%s\&quot;)%s&quot;, name, server.url, delimiter);</span>
             }
-<span class="fc" id="L94">            out.println();</span>
-<span class="fc" id="L95">            out.line(&quot;private String url;&quot;);</span>
-<span class="fc" id="L96">            out.println();</span>
-<span class="fc" id="L97">            out.line(&quot;Server(String url) {&quot;);</span>
-<span class="fc" id="L98">            out.line(&quot;this.url = url;&quot;);</span>
-<span class="fc" id="L99">            out.closeParen();</span>
 <span class="fc" id="L100">            out.println();</span>
-<span class="fc" id="L101">            out.line(&quot;public String url() {&quot;);</span>
-<span class="fc" id="L102">            out.line(&quot;return url;&quot;);</span>
-<span class="fc" id="L103">            out.closeParen();</span>
-<span class="fc" id="L104">            out.closeParen();</span>
+<span class="fc" id="L101">            out.line(&quot;private String url;&quot;);</span>
+<span class="fc" id="L102">            out.println();</span>
+<span class="fc" id="L103">            out.line(&quot;Server(String url) {&quot;);</span>
+<span class="fc" id="L104">            out.line(&quot;this.url = url;&quot;);</span>
+<span class="fc" id="L105">            out.closeParen();</span>
+<span class="fc" id="L106">            out.println();</span>
+<span class="fc" id="L107">            out.line(&quot;public String url() {&quot;);</span>
+<span class="fc" id="L108">            out.line(&quot;return url;&quot;);</span>
+<span class="fc" id="L109">            out.closeParen();</span>
+<span class="fc" id="L110">            out.closeParen();</span>
         }
         
-<span class="fc" id="L107">    }</span>
+<span class="fc" id="L113">    }</span>
 	
     private static void writeClientUtilityMethods(CodePrintWriter out) {
-<span class="fc" id="L110">    	out.println();</span>
-<span class="fc" id="L111">    	out.line(&quot;private %s http(%s method, %s path) {&quot;, Http.Builder.class, HttpMethod.class, String.class);</span>
-<span class="fc" id="L112">    	out.line(&quot;return %s&quot;, Http.class);</span>
-<span class="fc" id="L113">    	out.right();</span>
-<span class="fc" id="L114">    	out.right();</span>
-<span class="fc" id="L115">    	out.line(&quot;.method(method)&quot;);</span>
-<span class="fc" id="L116">    	out.line(&quot;.basePath(this.basePath)&quot;);</span>
-<span class="fc" id="L117">    	out.line(&quot;.path(path)&quot;);</span>
-<span class="fc" id="L118">    	out.line(&quot;.serializer(this.serializer)&quot;);</span>
-<span class="fc" id="L119">    	out.line(&quot;.interceptors(this.interceptors)&quot;);</span>
-<span class="fc" id="L120">    	out.line(&quot;.httpService(this.httpService);&quot;);</span>
-<span class="fc" id="L121">    	out.left();</span>
-<span class="fc" id="L122">    	out.left();</span>
-<span class="fc" id="L123">    	out.closeParen();</span>
-<span class="fc" id="L124">	}</span>
+<span class="fc" id="L116">    	out.println();</span>
+<span class="fc" id="L117">    	out.line(&quot;private %s http(%s method, %s path) {&quot;, Http.Builder.class, HttpMethod.class, String.class);</span>
+<span class="fc" id="L118">    	out.line(&quot;return %s&quot;, Http.class);</span>
+<span class="fc" id="L119">    	out.right();</span>
+<span class="fc" id="L120">    	out.right();</span>
+<span class="fc" id="L121">    	out.line(&quot;.method(method)&quot;);</span>
+<span class="fc" id="L122">    	out.line(&quot;.basePath(this.basePath)&quot;);</span>
+<span class="fc" id="L123">    	out.line(&quot;.path(path)&quot;);</span>
+<span class="fc" id="L124">    	out.line(&quot;.serializer(this.serializer)&quot;);</span>
+<span class="fc" id="L125">    	out.line(&quot;.interceptors(this.interceptors)&quot;);</span>
+<span class="fc" id="L126">    	out.line(&quot;.httpService(this.httpService);&quot;);</span>
+<span class="fc" id="L127">    	out.left();</span>
+<span class="fc" id="L128">    	out.left();</span>
+<span class="fc" id="L129">    	out.closeParen();</span>
+<span class="fc" id="L130">	}</span>
 
     private static void writeClientClassMethods(CodePrintWriter out, List&lt;Method&gt; methods) {
-<span class="fc" id="L127">        methods.forEach(m -&gt; {</span>
-<span class="fc" id="L128">            out.right().right();</span>
-<span class="fc" id="L129">            String params = m.parameters //</span>
-<span class="fc" id="L130">                    .stream() //</span>
-<span class="fc" id="L131">                    .map(p -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(),</span>
-<span class="fc" id="L132">                            ServerCodeWriterSpringBoot.toImportedType(p, out.imports()), p.identifier)) //</span>
-<span class="fc" id="L133">                    .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L134">            out.left().left();</span>
+<span class="fc" id="L133">        methods.forEach(m -&gt; {</span>
+<span class="fc" id="L134">            out.right().right();</span>
+<span class="fc" id="L135">            String params = m.parameters //</span>
+<span class="fc" id="L136">                    .stream() //</span>
+<span class="fc" id="L137">                    .map(p -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(),</span>
+<span class="fc" id="L138">                            ServerCodeWriterSpringBoot.toImportedType(p, out.imports()), p.identifier)) //</span>
+<span class="fc" id="L139">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L140">            out.left().left();</span>
             final String importedReturnType;
-<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (!m.returnFullClassName.isPresent()) {</span>
-<span class="fc" id="L137">                importedReturnType = out.add(Void.class.getCanonicalName());</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            if (!m.returnFullClassName.isPresent()) {</span>
+<span class="fc" id="L143">                importedReturnType = out.add(Void.class.getCanonicalName());</span>
             } else {
-<span class="fc" id="L139">                importedReturnType = out.add(m.returnFullClassName.get());</span>
+<span class="fc" id="L145">                importedReturnType = out.add(m.returnFullClassName.get());</span>
             }
             // we don't want the Resource type being used on the client side
             // TODO use actual type (usually wrapped binary)?
-<span class="fc bfc" id="L143" title="All 4 branches covered.">            boolean hasPrimaryResponse = m.primaryStatusCode.isPresent() &amp;&amp; m.primaryMediaType.isPresent();</span>
-<span class="fc" id="L144">            ServerCodeWriterSpringBoot.writeMethodJavadoc(out, m,</span>
-<span class="fc" id="L145">                    Optional.of(&quot;call builder&quot;), Maps.empty());</span>
-<span class="fc" id="L146">            out.line(&quot;public %s&lt;%s&gt; %s(%s) {&quot;, RequestBuilder.class, importedReturnType, m.methodName, params);</span>
-<span class="fc" id="L147">            out.line(&quot;return http(%s.%s, \&quot;%s\&quot;)&quot;, HttpMethod.class, m.httpMethod.name(), m.path);</span>
-<span class="fc" id="L148">            out.right().right();</span>
-<span class="fc" id="L149">            Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">            for (ResponseDescriptor rd : m.responseDescriptors) {</span>
-<span class="fc bfc" id="L151" title="All 2 branches covered.">                if (!used.contains(rd.mediaType())) {</span>
-<span class="fc bfc" id="L152" title="All 2 branches covered.">                    if (MediaType.isJson(rd.mediaType())) {</span>
-<span class="fc" id="L153">                        out.line(&quot;.acceptApplicationJson()&quot;);</span>
+<span class="fc bfc" id="L149" title="All 4 branches covered.">            boolean hasPrimaryResponse = m.primaryStatusCode.isPresent() &amp;&amp; m.primaryMediaType.isPresent();</span>
+<span class="fc" id="L150">            ServerCodeWriterSpringBoot.writeMethodJavadoc(out, m,</span>
+<span class="fc" id="L151">                    Optional.of(&quot;call builder&quot;), Maps.empty());</span>
+<span class="fc" id="L152">            out.line(&quot;public %s&lt;%s&gt; %s(%s) {&quot;, RequestBuilder.class, importedReturnType, m.methodName, params);</span>
+<span class="fc" id="L153">            out.line(&quot;return http(%s.%s, \&quot;%s\&quot;)&quot;, HttpMethod.class, m.httpMethod.name(), m.path);</span>
+<span class="fc" id="L154">            out.right().right();</span>
+<span class="fc" id="L155">            Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            for (ResponseDescriptor rd : m.responseDescriptors) {</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                if (!used.contains(rd.mediaType())) {</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">                    if (MediaType.isJson(rd.mediaType())) {</span>
+<span class="fc" id="L159">                        out.line(&quot;.acceptApplicationJson()&quot;);</span>
                     } else {
-<span class="fc" id="L155">                        out.line(&quot;.accept(\&quot;%s\&quot;)&quot;, rd.mediaType());</span>
+<span class="fc" id="L161">                        out.line(&quot;.accept(\&quot;%s\&quot;)&quot;, rd.mediaType());</span>
                     }
-<span class="fc" id="L157">                    used.add(rd.mediaType());</span>
+<span class="fc" id="L163">                    used.add(rd.mediaType());</span>
                 }
-<span class="fc" id="L159">            }</span>
-<span class="fc" id="L160">            m.parameters.forEach(p -&gt; {</span>
-<span class="fc bfc" id="L161" title="All 2 branches covered.">                if (p.type == ParamType.QUERY) {</span>
-<span class="fc" id="L162">                    out.line(&quot;.queryParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
-<span class="fc bfc" id="L163" title="All 2 branches covered.">                } else if (p.type == ParamType.PATH) {</span>
-<span class="fc" id="L164">                    out.line(&quot;.pathParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
-<span class="fc bfc" id="L165" title="All 2 branches covered.">                } else if (p.type == ParamType.BODY) {</span>
-<span class="fc" id="L166">                    out.line(&quot;.body(%s)&quot;, p.identifier);</span>
-<span class="fc" id="L167">                    out.line(&quot;.contentTypeApplicationJson()&quot;);</span>
-<span class="fc bfc" id="L168" title="All 2 branches covered.">                } else if (p.type == ParamType.COOKIE) {</span>
-<span class="fc" id="L169">                    out.line(&quot;.cookie(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
-<span class="fc bfc" id="L170" title="All 2 branches covered.">                } else if (p.type == ParamType.HEADER) {</span>
-<span class="fc" id="L171">                    out.line(&quot;.header(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
-<span class="fc bfc" id="L172" title="All 2 branches covered.">                } else if (p.type == ParamType.MULTIPART_FORM_DATA) {</span>
-<span class="fc" id="L173">                    out.line(&quot;.multipartFormData(%s)&quot;, p.identifier);</span>
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">                } else if (p.type == ParamType.FORM_URLENCODED) {</span>
-<span class="fc" id="L175">                    out.line(&quot;.formUrlEncoded(%s)&quot;, p.identifier);</span>
+<span class="fc" id="L165">            }</span>
+<span class="fc" id="L166">            m.parameters.forEach(p -&gt; {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                if (p.type == ParamType.QUERY) {</span>
+<span class="fc" id="L168">                    out.line(&quot;.queryParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                } else if (p.type == ParamType.PATH) {</span>
+<span class="fc" id="L170">                    out.line(&quot;.pathParam(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">                } else if (p.type == ParamType.BODY) {</span>
+<span class="fc" id="L172">                    out.line(&quot;.body(%s)&quot;, p.identifier);</span>
+<span class="fc" id="L173">                    out.line(&quot;.contentTypeApplicationJson()&quot;);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                } else if (p.type == ParamType.COOKIE) {</span>
+<span class="fc" id="L175">                    out.line(&quot;.cookie(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                } else if (p.type == ParamType.HEADER) {</span>
+<span class="fc" id="L177">                    out.line(&quot;.header(\&quot;%s\&quot;, %s)&quot;, p.name, p.identifier);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">                } else if (p.type == ParamType.MULTIPART_FORM_DATA) {</span>
+<span class="fc" id="L179">                    out.line(&quot;.multipartFormData(%s)&quot;, p.identifier);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">                } else if (p.type == ParamType.FORM_URLENCODED) {</span>
+<span class="fc" id="L181">                    out.line(&quot;.formUrlEncoded(%s)&quot;, p.identifier);</span>
                 }
-<span class="fc" id="L177">            });</span>
-<span class="fc" id="L178">            m.responseDescriptors.forEach(r -&gt; {</span>
-<span class="fc" id="L179">                out.line(&quot;.responseAs(%s.class)&quot;, out.add(r.fullClassName()));</span>
-<span class="fc" id="L180">                out.line(&quot;.whenStatusCodeMatches(\&quot;%s\&quot;)&quot;, r.statusCode());</span>
-<span class="fc" id="L181">                out.line(&quot;.whenContentTypeMatches(\&quot;%s\&quot;)&quot;, r.mediaType());</span>
-<span class="fc" id="L182">            });</span>
-<span class="fc bfc" id="L183" title="All 2 branches covered.">			if (hasPrimaryResponse) {</span>
-<span class="fc" id="L184">				out.line(&quot;.&lt;%s&gt;requestBuilder(\&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, importedReturnType, m.primaryStatusCode.get(),</span>
-<span class="fc" id="L185">						m.primaryMediaType.get());</span>
+<span class="fc" id="L183">            });</span>
+<span class="fc" id="L184">            m.responseDescriptors.forEach(r -&gt; {</span>
+<span class="fc" id="L185">                out.line(&quot;.responseAs(%s.class)&quot;, out.add(r.fullClassName()));</span>
+<span class="fc" id="L186">                out.line(&quot;.whenStatusCodeMatches(\&quot;%s\&quot;)&quot;, r.statusCode());</span>
+<span class="fc" id="L187">                out.line(&quot;.whenContentTypeMatches(\&quot;%s\&quot;)&quot;, r.mediaType());</span>
+<span class="fc" id="L188">            });</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">			if (hasPrimaryResponse) {</span>
+<span class="fc" id="L190">				out.line(&quot;.&lt;%s&gt;requestBuilder(\&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, importedReturnType, m.primaryStatusCode.get(),</span>
+<span class="fc" id="L191">						m.primaryMediaType.get());</span>
 			} else {
-<span class="fc" id="L187">				out.line(&quot;.&lt;%s&gt;requestBuilder();&quot;, importedReturnType);</span>
+<span class="fc" id="L193">				out.line(&quot;.&lt;%s&gt;requestBuilder();&quot;, importedReturnType);</span>
 			}
-<span class="fc" id="L189">            out.left().left();</span>
-<span class="fc" id="L190">            out.closeParen();</span>
-<span class="fc" id="L191">        });</span>
-<span class="fc" id="L192">    }</span>
+<span class="fc" id="L195">            out.left().left();</span>
+<span class="fc" id="L196">            out.closeParen();</span>
+<span class="fc" id="L197">        });</span>
+<span class="fc" id="L198">    }</span>
     
     private static void writeCustomMethod(CodePrintWriter out) {
-<span class="fc" id="L195">        out.println();</span>
-<span class="fc" id="L196">        out.line(&quot;public %s _custom(%s method, %s path) {&quot; , Http.Builder.class, HttpMethod.class, String.class);</span>
-<span class="fc" id="L197">        out.line(&quot;return %s&quot;, Http.class);</span>
-<span class="fc" id="L198">        out.right().right();</span>
-<span class="fc" id="L199">        out.line(&quot;.method(method)&quot;);</span>
-<span class="fc" id="L200">        out.line(&quot;.basePath(this.basePath)&quot;);</span>
-<span class="fc" id="L201">        out.line(&quot;.path(path)&quot;);</span>
-<span class="fc" id="L202">        out.line(&quot;.serializer(this.serializer)&quot;);</span>
-<span class="fc" id="L203">        out.line(&quot;.httpService(this.httpService);&quot;);</span>
-<span class="fc" id="L204">        out.left().left();</span>
-<span class="fc" id="L205">        out.closeParen();</span>
-<span class="fc" id="L206">    }</span>
+<span class="fc" id="L201">        out.println();</span>
+<span class="fc" id="L202">        out.line(&quot;public %s _custom(%s method, %s path) {&quot; , Http.Builder.class, HttpMethod.class, String.class);</span>
+<span class="fc" id="L203">        out.line(&quot;return %s&quot;, Http.class);</span>
+<span class="fc" id="L204">        out.right().right();</span>
+<span class="fc" id="L205">        out.line(&quot;.method(method)&quot;);</span>
+<span class="fc" id="L206">        out.line(&quot;.basePath(this.basePath)&quot;);</span>
+<span class="fc" id="L207">        out.line(&quot;.path(path)&quot;);</span>
+<span class="fc" id="L208">        out.line(&quot;.serializer(this.serializer)&quot;);</span>
+<span class="fc" id="L209">        out.line(&quot;.httpService(this.httpService);&quot;);</span>
+<span class="fc" id="L210">        out.left().left();</span>
+<span class="fc" id="L211">        out.closeParen();</span>
+<span class="fc" id="L212">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
