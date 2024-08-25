@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LeafHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal</a> &gt; <span class="el_source">LeafHelper.java</span></div><h1>LeafHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal;
+
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import com.github.davidmoten.rtree.Context;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.Leaf;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.ListPair;
+
+import rx.Subscriber;
+import rx.functions.Func1;
+
+import static java.util.Optional.of;
+
+public final class LeafHelper {
+
+    private LeafHelper() {
+        // prevent instantiation
+    }
+
+    public static &lt;T, S extends Geometry&gt; NodeAndEntries&lt;T, S&gt; delete(
+            Entry&lt;? extends T, ? extends S&gt; entry, boolean all, Leaf&lt;T, S&gt; leaf) {
+<span class="fc" id="L29">        List&lt;Entry&lt;T, S&gt;&gt; entries = leaf.entries();</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (!entries.contains(entry)) {</span>
+<span class="fc" id="L31">            return new NodeAndEntries&lt;&gt;(of(leaf), Collections.emptyList(), 0);</span>
+        } else {
+<span class="fc" id="L33">            final List&lt;Entry&lt;T, S&gt;&gt; entries2 = new ArrayList&lt;&gt;(entries);</span>
+<span class="fc" id="L34">            entries2.remove(entry);</span>
+<span class="fc" id="L35">            int numDeleted = 1;</span>
+            // keep deleting if all specified
+<span class="fc bfc" id="L37" title="All 4 branches covered.">            while (all &amp;&amp; entries2.remove(entry))</span>
+<span class="fc" id="L38">                numDeleted += 1;</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (entries2.size() &gt;= leaf.context().minChildren()) {</span>
+<span class="fc" id="L41">                Leaf&lt;T, S&gt; node = leaf.context().factory().createLeaf(entries2, leaf.context());</span>
+<span class="fc" id="L42">                return new NodeAndEntries&lt;&gt;(of(node), Collections.emptyList(),</span>
+                        numDeleted);
+            } else {
+<span class="fc" id="L45">                return new NodeAndEntries&lt;T, S&gt;(Optional.empty(), entries2,</span>
+                        numDeleted);
+            }
+        }
+    }
+
+    public static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; add(
+            Entry&lt;? extends T, ? extends S&gt; entry, Leaf&lt;T, S&gt; leaf) {
+<span class="fc" id="L53">        List&lt;Entry&lt;T, S&gt;&gt; entries = leaf.entries();</span>
+<span class="fc" id="L54">        Context&lt;T, S&gt; context = leaf.context();</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L56">        final List&lt;Entry&lt;T, S&gt;&gt; entries2 = Util.add(entries, (Entry&lt;T, S&gt;) entry);</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (entries2.size() &lt;= context.maxChildren())</span>
+<span class="fc" id="L58">            return Collections</span>
+<span class="fc" id="L59">                    .singletonList((Node&lt;T, S&gt;) context.factory().createLeaf(entries2, context));</span>
+        else {
+<span class="fc" id="L61">            ListPair&lt;Entry&lt;T, S&gt;&gt; pair = context.splitter().split(entries2, context.minChildren());</span>
+<span class="fc" id="L62">            return makeLeaves(pair, context);</span>
+        }
+    }
+
+    private static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; makeLeaves(ListPair&lt;Entry&lt;T, S&gt;&gt; pair,
+            Context&lt;T, S&gt; context) {
+<span class="fc" id="L68">        List&lt;Node&lt;T, S&gt;&gt; list = new ArrayList&lt;Node&lt;T, S&gt;&gt;(2);</span>
+<span class="fc" id="L69">        list.add(context.factory().createLeaf(pair.group1().list(), context));</span>
+<span class="fc" id="L70">        list.add(context.factory().createLeaf(pair.group2().list(), context));</span>
+<span class="fc" id="L71">        return list;</span>
+    }
+
+    public static &lt;T, S extends Geometry&gt; void search(Func1&lt;? super Geometry, Boolean&gt; condition,
+            Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber, Leaf&lt;T, S&gt; leaf) {
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (!condition.call(leaf.geometry().mbr())) {</span>
+<span class="fc" id="L78">            return;</span>
+        }
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (int i = 0; i &lt; leaf.count(); i++) {</span>
+<span class="fc" id="L82">            Entry&lt;T, S&gt; entry = leaf.entry(i);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L84">                return;</span>
+            } else {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                if (condition.call(entry.geometry())) {</span>
+<span class="fc" id="L87">                    subscriber.onNext(entry);</span>
+                }
+            }
+        }
+<span class="fc" id="L91">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

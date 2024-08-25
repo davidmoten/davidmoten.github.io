@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="" lang="">
 <head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <title>SplitterRStar xref</title>
 <link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
@@ -18,11 +18,11 @@
 <a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.HasGeometry;
 <a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> com.github.davidmoten.rtree.geometry.ListPair;
 <a class="jxr_linenumber" name="L12" href="#L12">12</a>  
-<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../com/github/davidmoten/rtree/SplitterRStar.html">SplitterRStar</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../com/github/davidmoten/rtree/Splitter.html">Splitter</a> {
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a name="SplitterRStar" href="../../../../com/github/davidmoten/rtree/SplitterRStar.html#SplitterRStar">SplitterRStar</a> <strong class="jxr_keyword">implements</strong> <a name="Splitter" href="../../../../com/github/davidmoten/rtree/Splitter.html#Splitter">Splitter</a> {
 <a class="jxr_linenumber" name="L14" href="#L14">14</a>  
 <a class="jxr_linenumber" name="L15" href="#L15">15</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Comparator&lt;ListPair&lt;?&gt;&gt; comparator;
 <a class="jxr_linenumber" name="L16" href="#L16">16</a>  
-<a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../com/github/davidmoten/rtree/SplitterRStar.html">SplitterRStar</a>() {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>      <strong class="jxr_keyword">public</strong> <a name="SplitterRStar" href="../../../../com/github/davidmoten/rtree/SplitterRStar.html#SplitterRStar">SplitterRStar</a>() {
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>          <strong class="jxr_keyword">this</strong>.comparator = <strong class="jxr_keyword">new</strong> Comparator&lt;ListPair&lt;?&gt;&gt;() {
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>              @Override
@@ -48,7 +48,7 @@
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>          <em class="jxr_comment">// the list with the least S is then used to find minimum overlap</em>
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  
 <a class="jxr_linenumber" name="L42" href="#L42">42</a>          List&lt;ListPair&lt;T&gt;&gt; pairs = <strong class="jxr_keyword">null</strong>;
-<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">float</strong> lowestMarginSum = Float.MAX_VALUE;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>          <strong class="jxr_keyword">double</strong> lowestMarginSum = Double.POSITIVE_INFINITY;
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>          List&lt;T&gt; list = <strong class="jxr_keyword">null</strong>;
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>          <strong class="jxr_keyword">for</strong> (SortType sortType : SortType.values()) {
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>              <strong class="jxr_keyword">if</strong> (list == <strong class="jxr_keyword">null</strong>) {
@@ -56,8 +56,8 @@
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>              }
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>              Collections.sort(list, comparator(sortType));
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>              List&lt;ListPair&lt;T&gt;&gt; p = getPairs(minSize, list);
-<a class="jxr_linenumber" name="L51" href="#L51">51</a>              <strong class="jxr_keyword">float</strong> marginSum = marginValueSum(p);
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>              <strong class="jxr_keyword">if</strong> (marginSum &lt; lowestMarginSum) {
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>              <strong class="jxr_keyword">double</strong> marginSum = marginValueSum(p);
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>              <strong class="jxr_keyword">if</strong> (marginSum &lt;= lowestMarginSum) {
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>                  lowestMarginSum = marginSum;
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>                  pairs = p;
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>                  <em class="jxr_comment">// because p uses subViews of list we need to create a new one</em>
@@ -68,7 +68,7 @@
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>          <strong class="jxr_keyword">return</strong> Collections.min(pairs, comparator);
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>      }
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>  
-<a class="jxr_linenumber" name="L63" href="#L63">63</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Comparator&lt;HasGeometry&gt; comparator(<a href="../../../../com/github/davidmoten/rtree/SplitterRStar.html">SortType</a> sortType) {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Comparator&lt;HasGeometry&gt; comparator(SortType sortType) {
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>          <strong class="jxr_keyword">switch</strong> (sortType) {
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>          <strong class="jxr_keyword">case</strong> X_LOWER:
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>              <strong class="jxr_keyword">return</strong> INCREASING_X_LOWER;
@@ -83,12 +83,12 @@
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>          }
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>      }
 <a class="jxr_linenumber" name="L77" href="#L77">77</a>  
-<a class="jxr_linenumber" name="L78" href="#L78">78</a>      <strong class="jxr_keyword">private</strong> enum <a href="../../../../com/github/davidmoten/rtree/SplitterRStar.html">SortType</a> {
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      <strong class="jxr_keyword">private</strong> enum SortType {
 <a class="jxr_linenumber" name="L79" href="#L79">79</a>          X_LOWER, X_UPPER, Y_LOWER, Y_UPPER;
 <a class="jxr_linenumber" name="L80" href="#L80">80</a>      }
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>  
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T <strong class="jxr_keyword">extends</strong> HasGeometry&gt; <strong class="jxr_keyword">float</strong> marginValueSum(List&lt;ListPair&lt;T&gt;&gt; list) {
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>          <strong class="jxr_keyword">float</strong> sum = 0;
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> &lt;T <strong class="jxr_keyword">extends</strong> HasGeometry&gt; <strong class="jxr_keyword">double</strong> marginValueSum(List&lt;ListPair&lt;T&gt;&gt; list) {
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          <strong class="jxr_keyword">double</strong> sum = 0;
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>          <strong class="jxr_keyword">for</strong> (ListPair&lt;T&gt; p : list)
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>              sum += p.marginSum();
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>          <strong class="jxr_keyword">return</strong> sum;
@@ -112,7 +112,7 @@
 <a class="jxr_linenumber" name="L104" href="#L104">104</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Comparator&lt;HasGeometry&gt; INCREASING_X_LOWER = <strong class="jxr_keyword">new</strong> Comparator&lt;HasGeometry&gt;() {
 <a class="jxr_linenumber" name="L105" href="#L105">105</a> 
 <a class="jxr_linenumber" name="L106" href="#L106">106</a>         @Override
-<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n1, <a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n2) {
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n1, <a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n2) {
 <a class="jxr_linenumber" name="L108" href="#L108">108</a>             <strong class="jxr_keyword">return</strong> Double.compare(n1.geometry().mbr().x1(), n2.geometry().mbr().x1());
 <a class="jxr_linenumber" name="L109" href="#L109">109</a>         }
 <a class="jxr_linenumber" name="L110" href="#L110">110</a>     };
@@ -120,7 +120,7 @@
 <a class="jxr_linenumber" name="L112" href="#L112">112</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Comparator&lt;HasGeometry&gt; INCREASING_X_UPPER = <strong class="jxr_keyword">new</strong> Comparator&lt;HasGeometry&gt;() {
 <a class="jxr_linenumber" name="L113" href="#L113">113</a> 
 <a class="jxr_linenumber" name="L114" href="#L114">114</a>         @Override
-<a class="jxr_linenumber" name="L115" href="#L115">115</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n1, <a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n2) {
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n1, <a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n2) {
 <a class="jxr_linenumber" name="L116" href="#L116">116</a>             <strong class="jxr_keyword">return</strong> Double.compare(n1.geometry().mbr().x2(), n2.geometry().mbr().x2());
 <a class="jxr_linenumber" name="L117" href="#L117">117</a>         }
 <a class="jxr_linenumber" name="L118" href="#L118">118</a>     };
@@ -128,7 +128,7 @@
 <a class="jxr_linenumber" name="L120" href="#L120">120</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Comparator&lt;HasGeometry&gt; INCREASING_Y_LOWER = <strong class="jxr_keyword">new</strong> Comparator&lt;HasGeometry&gt;() {
 <a class="jxr_linenumber" name="L121" href="#L121">121</a> 
 <a class="jxr_linenumber" name="L122" href="#L122">122</a>         @Override
-<a class="jxr_linenumber" name="L123" href="#L123">123</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n1, <a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n2) {
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n1, <a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n2) {
 <a class="jxr_linenumber" name="L124" href="#L124">124</a>             <strong class="jxr_keyword">return</strong> Double.compare(n1.geometry().mbr().y1(), n2.geometry().mbr().y1());
 <a class="jxr_linenumber" name="L125" href="#L125">125</a>         }
 <a class="jxr_linenumber" name="L126" href="#L126">126</a>     };
@@ -136,7 +136,7 @@
 <a class="jxr_linenumber" name="L128" href="#L128">128</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Comparator&lt;HasGeometry&gt; INCREASING_Y_UPPER = <strong class="jxr_keyword">new</strong> Comparator&lt;HasGeometry&gt;() {
 <a class="jxr_linenumber" name="L129" href="#L129">129</a> 
 <a class="jxr_linenumber" name="L130" href="#L130">130</a>         @Override
-<a class="jxr_linenumber" name="L131" href="#L131">131</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n1, <a href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html">HasGeometry</a> n2) {
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compare(<a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n1, <a name="HasGeometry" href="../../../../com/github/davidmoten/rtree/geometry/HasGeometry.html#HasGeometry">HasGeometry</a> n2) {
 <a class="jxr_linenumber" name="L132" href="#L132">132</a>             <strong class="jxr_keyword">return</strong> Double.compare(n1.geometry().mbr().y2(), n2.geometry().mbr().y2());
 <a class="jxr_linenumber" name="L133" href="#L133">133</a>         }
 <a class="jxr_linenumber" name="L134" href="#L134">134</a>     };
@@ -148,6 +148,6 @@
 <a class="jxr_linenumber" name="L140" href="#L140">140</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2013&#x2013;2018. All rights reserved.</div>
+<div id="footer">© 2013–2024</div>
 </body>
 </html>

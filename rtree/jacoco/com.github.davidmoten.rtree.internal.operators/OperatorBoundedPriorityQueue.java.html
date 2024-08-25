@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OperatorBoundedPriorityQueue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal.operators</a> &gt; <span class="el_source">OperatorBoundedPriorityQueue.java</span></div><h1>OperatorBoundedPriorityQueue.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal.operators;
+
+import java.util.Comparator;
+import java.util.List;
+
+import com.github.davidmoten.rtree.internal.util.BoundedPriorityQueue;
+
+import rx.Observable.Operator;
+import rx.Subscriber;
+
+public final class OperatorBoundedPriorityQueue&lt;T&gt; implements Operator&lt;T, T&gt; {
+
+    private final int maximumSize;
+    private final Comparator&lt;? super T&gt; comparator;
+
+<span class="fc" id="L16">    public OperatorBoundedPriorityQueue(int maximumSize, Comparator&lt;? super T&gt; comparator) {</span>
+<span class="fc" id="L17">        this.maximumSize = maximumSize;</span>
+<span class="fc" id="L18">        this.comparator = comparator;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public Subscriber&lt;? super T&gt; call(final Subscriber&lt;? super T&gt; child) {
+<span class="fc" id="L23">        final BoundedPriorityQueue&lt;T&gt; q = new BoundedPriorityQueue&lt;T&gt;(maximumSize, comparator);</span>
+<span class="fc" id="L24">        return new Subscriber&lt;T&gt;(child) {</span>
+
+            @Override
+            public void onStart() {
+<span class="fc" id="L28">                request(Long.MAX_VALUE);</span>
+<span class="fc" id="L29">            }</span>
+
+            @Override
+            public void onCompleted() {
+<span class="fc" id="L33">                List&lt;T&gt; list = q.asOrderedList();</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                for (T t:list) {</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">                    if (isUnsubscribed()) {</span>
+<span class="fc" id="L36">                        return;</span>
+                    } else {
+<span class="fc" id="L38">                        child.onNext(t);</span>
+                    }
+<span class="fc" id="L40">                }</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                if (!isUnsubscribed()) {</span>
+<span class="fc" id="L42">                    child.onCompleted();</span>
+                }
+<span class="fc" id="L44">            }</span>
+
+            @Override
+            public void onError(Throwable t) {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                if (!isUnsubscribed())</span>
+<span class="fc" id="L49">                    child.onError(t);</span>
+<span class="fc" id="L50">            }</span>
+
+            @Override
+            public void onNext(T t) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                if (!isUnsubscribed())</span>
+<span class="fc" id="L55">                    q.add(t);</span>
+<span class="fc" id="L56">            }</span>
+        };
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

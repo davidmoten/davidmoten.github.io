@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Visualizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree</a> &gt; <span class="el_source">Visualizer.java</span></div><h1>Visualizer.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree;
+
+import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.*;
+
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+
+public final class Visualizer {
+
+    private final RTree&lt;?, Geometry&gt; tree;
+    private final int width;
+    private final int height;
+    private final Rectangle view;
+    private final int maxDepth;
+
+<span class="fc" id="L22">    Visualizer(RTree&lt;?, Geometry&gt; tree, int width, int height, Rectangle view) {</span>
+<span class="fc" id="L23">        this.tree = tree;</span>
+<span class="fc" id="L24">        this.width = width;</span>
+<span class="fc" id="L25">        this.height = height;</span>
+<span class="fc" id="L26">        this.view = view;</span>
+<span class="fc" id="L27">        this.maxDepth = calculateMaxDepth(tree.root());</span>
+<span class="fc" id="L28">    }</span>
+
+    private static &lt;R, S extends Geometry&gt; int calculateMaxDepth(
+            Optional&lt;? extends Node&lt;R, S&gt;&gt; root) {
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (!root.isPresent()) {</span>
+<span class="fc" id="L33">            return 0;</span>
+        } else {
+<span class="fc" id="L35">            return calculateDepth(root.get(), 0);</span>
+        }
+    }
+
+    private static &lt;R, S extends Geometry&gt; int calculateDepth(Node&lt;R, S&gt; node, int depth) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (node instanceof Leaf) {</span>
+<span class="fc" id="L41">            return depth + 1;</span>
+        } else {
+<span class="fc" id="L43">            return calculateDepth(((NonLeaf&lt;R, S&gt;) node).child(0), depth + 1);</span>
+        }
+    }
+
+    public BufferedImage createImage() {
+<span class="fc" id="L48">        final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);</span>
+<span class="fc" id="L49">        final Graphics2D g = (Graphics2D) image.getGraphics();</span>
+<span class="fc" id="L50">        g.setBackground(Color.white);</span>
+<span class="fc" id="L51">        g.clearRect(0, 0, width, height);</span>
+<span class="fc" id="L52">        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));</span>
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (tree.root().isPresent()) {</span>
+<span class="fc" id="L55">            final List&lt;RectangleDepth&gt; nodeDepths = getNodeDepthsSortedByDepth(tree.root().get());</span>
+<span class="fc" id="L56">            drawNode(g, nodeDepths);</span>
+        }
+<span class="fc" id="L58">        return image;</span>
+    }
+
+    private &lt;T, S extends Geometry&gt; List&lt;RectangleDepth&gt; getNodeDepthsSortedByDepth(
+            Node&lt;T, S&gt; root) {
+<span class="fc" id="L63">        final List&lt;RectangleDepth&gt; list = getRectangleDepths(root, 0);</span>
+<span class="fc" id="L64">        list.sort(Comparator.comparing(RectangleDepth::getDepth));</span>
+<span class="fc" id="L65">        return list;</span>
+    }
+
+    private &lt;T, S extends Geometry&gt; List&lt;RectangleDepth&gt; getRectangleDepths(Node&lt;T, S&gt; node,
+            int depth) {
+<span class="fc" id="L70">        final List&lt;RectangleDepth&gt; list = new ArrayList&lt;RectangleDepth&gt;();</span>
+<span class="fc" id="L71">        list.add(new RectangleDepth(node.geometry().mbr(), depth));</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (node instanceof Leaf) {</span>
+<span class="fc" id="L73">            final Leaf&lt;T, S&gt; leaf = (Leaf&lt;T, S&gt;) node;</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            for (final Entry&lt;T, S&gt; entry : leaf.entries()) {</span>
+<span class="fc" id="L75">                list.add(new RectangleDepth(entry.geometry().mbr(), depth + 2));</span>
+<span class="fc" id="L76">            }</span>
+<span class="fc" id="L77">        } else {</span>
+<span class="fc" id="L78">            final NonLeaf&lt;T, S&gt; n = (NonLeaf&lt;T, S&gt;) node;</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            for (int i = 0; i &lt; n.count(); i++) {</span>
+<span class="fc" id="L80">                list.addAll(getRectangleDepths(n.child(i), depth + 1));</span>
+            }
+        }
+<span class="fc" id="L83">        return list;</span>
+    }
+
+    private void drawNode(Graphics2D g, List&lt;RectangleDepth&gt; nodes) {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (final RectangleDepth node : nodes) {</span>
+<span class="fc" id="L88">            final Color color = Color.getHSBColor(node.getDepth() / (maxDepth + 1f), 1f, 1f);</span>
+<span class="fc" id="L89">            g.setStroke(new BasicStroke(Math.max(0.5f, maxDepth - node.getDepth() + 1 - 1)));</span>
+<span class="fc" id="L90">            g.setColor(color);</span>
+<span class="fc" id="L91">            final Rectangle r = node.getRectangle();</span>
+<span class="fc" id="L92">            drawRectangle(g, r);</span>
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">    }</span>
+
+    private void drawRectangle(Graphics2D g, Rectangle r) {
+<span class="fc" id="L97">        final double x1 = (r.x1() - view.x1()) / (view.x2() - view.x1()) * width;</span>
+<span class="fc" id="L98">        final double y1 = (r.y1() - view.y1()) / (view.y2() - view.y1()) * height;</span>
+<span class="fc" id="L99">        final double x2 = (r.x2() - view.x1()) / (view.x2() - view.x1()) * width;</span>
+<span class="fc" id="L100">        final double y2 = (r.y2() - view.y1()) / (view.y2() - view.y1()) * height;</span>
+<span class="fc" id="L101">        g.drawRect(rnd(x1), rnd(y1), Math.max(rnd(x2 - x1), 1), Math.max(rnd(y2 - y1), 1));</span>
+<span class="fc" id="L102">    }</span>
+
+    private static int rnd(double d) {
+<span class="fc" id="L105">        return (int) Math.round(d);</span>
+    }
+
+    public void save(File file, String imageFormat) {
+<span class="fc" id="L109">        ImageSaver.save(createImage(), file, imageFormat);</span>
+<span class="fc" id="L110">    }</span>
+
+    public void save(String filename, String imageFormat) {
+<span class="fc" id="L113">        save(new File(filename), imageFormat);</span>
+<span class="fc" id="L114">    }</span>
+
+    public void save(String filename) {
+<span class="fc" id="L117">        save(new File(filename), &quot;PNG&quot;);</span>
+<span class="fc" id="L118">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

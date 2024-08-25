@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OnSubscribeSearch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree</a> &gt; <span class="el_source">OnSubscribeSearch.java</span></div><h1>OnSubscribeSearch.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.internal.util.ImmutableStack;
+
+import rx.Observable.OnSubscribe;
+import rx.Producer;
+import rx.Subscriber;
+import rx.functions.Func1;
+
+final class OnSubscribeSearch&lt;T, S extends Geometry&gt; implements OnSubscribe&lt;Entry&lt;T, S&gt;&gt; {
+
+    private final Node&lt;T, S&gt; node;
+    private final Func1&lt;? super Geometry, Boolean&gt; condition;
+
+<span class="fc" id="L19">    OnSubscribeSearch(Node&lt;T, S&gt; node, Func1&lt;? super Geometry, Boolean&gt; condition) {</span>
+<span class="fc" id="L20">        this.node = node;</span>
+<span class="fc" id="L21">        this.condition = condition;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public void call(Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber) {
+<span class="fc" id="L26">        subscriber.setProducer(new SearchProducer&lt;T, S&gt;(node, condition, subscriber));</span>
+<span class="fc" id="L27">    }</span>
+
+    @VisibleForTesting
+    static class SearchProducer&lt;T, S extends Geometry&gt; implements Producer {
+
+        private final Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber;
+        private final Node&lt;T, S&gt; node;
+        private final Func1&lt;? super Geometry, Boolean&gt; condition;
+        private volatile ImmutableStack&lt;NodePosition&lt;T, S&gt;&gt; stack;
+<span class="fc" id="L36">        private final AtomicLong requested = new AtomicLong(0);</span>
+
+        SearchProducer(Node&lt;T, S&gt; node, Func1&lt;? super Geometry, Boolean&gt; condition,
+<span class="fc" id="L39">                Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber) {</span>
+<span class="fc" id="L40">            this.node = node;</span>
+<span class="fc" id="L41">            this.condition = condition;</span>
+<span class="fc" id="L42">            this.subscriber = subscriber;</span>
+<span class="fc" id="L43">            stack = ImmutableStack.create(new NodePosition&lt;T, S&gt;(node, 0));</span>
+<span class="fc" id="L44">        }</span>
+
+        @Override
+        public void request(long n) {
+            try {
+<span class="fc bfc" id="L49" title="All 4 branches covered.">                if (n &lt;= 0 || requested.get() == Long.MAX_VALUE)</span>
+                    // none requested or already started with fast path
+<span class="fc" id="L51">                    return;</span>
+<span class="fc bfc" id="L52" title="All 4 branches covered.">                else if (n == Long.MAX_VALUE &amp;&amp; requested.compareAndSet(0, Long.MAX_VALUE)) {</span>
+                    // fast path
+<span class="fc" id="L54">                    requestAll();</span>
+                } else
+<span class="fc" id="L56">                    requestSome(n);</span>
+<span class="fc" id="L57">            } catch (RuntimeException e) {</span>
+<span class="fc" id="L58">                subscriber.onError(e);</span>
+<span class="fc" id="L59">            }</span>
+<span class="fc" id="L60">        }</span>
+
+        private void requestAll() {
+<span class="fc" id="L63">            node.searchWithoutBackpressure(condition, subscriber);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (!subscriber.isUnsubscribed())</span>
+<span class="fc" id="L65">                subscriber.onCompleted();</span>
+<span class="fc" id="L66">        }</span>
+
+        private void requestSome(long n) {
+            // back pressure path
+            // this algorithm copied roughly from
+            // rxjava-core/OnSubscribeFromIterable.java
+
+            // rxjava used AtomicLongFieldUpdater instead of AtomicLong
+            // but benchmarks showed no benefit here so reverted to AtomicLong
+<span class="fc" id="L75">            long previousCount = getAndAddRequest(requested, n);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (previousCount == 0) {</span>
+                // don't touch stack every time during the loop because
+                // is a volatile and every write forces a thread memory
+                // cache flush
+<span class="fc" id="L80">                ImmutableStack&lt;NodePosition&lt;T, S&gt;&gt; st = stack;</span>
+                while (true) {
+                    // minimize atomic reads by assigning to a variable here
+<span class="fc" id="L83">                    long r = requested.get();</span>
+<span class="fc" id="L84">                    st = Backpressure.search(condition, subscriber, st, r);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                    if (st.isEmpty()) {</span>
+                        // release some state for gc (although empty stack so not very significant)
+<span class="fc" id="L87">                        stack = null;</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                        if (!subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L89">                            subscriber.onCompleted();</span>
+                        }
+<span class="fc" id="L91">                        return;</span>
+                    } else {
+<span class="fc" id="L93">                        stack = st;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                        if (requested.addAndGet(-r) == 0)</span>
+<span class="fc" id="L95">                            return;</span>
+                    }
+<span class="fc" id="L97">                }</span>
+
+            }
+<span class="fc" id="L100">        }</span>
+    }
+    
+    /**
+     * Adds {@code n} to {@code requested} and returns the value prior to
+     * addition once the addition is successful (uses CAS semantics). If
+     * overflows then sets {@code requested} field to {@code Long.MAX_VALUE}.
+     * 
+     * @param requested
+     *            atomic field updater for a request count
+     * @param n
+     *            the number of requests to add to the requested count
+     * @return requested value just prior to successful addition
+     */
+    private static long getAndAddRequest(AtomicLong requested, long n) {
+        // add n to field but check for overflow
+        while (true) {
+<span class="fc" id="L117">            long current = requested.get();</span>
+<span class="fc" id="L118">            long next = current + n;</span>
+            // check for overflow
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            if (next &lt; 0) {</span>
+<span class="fc" id="L121">                next = Long.MAX_VALUE;</span>
+            }
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (requested.compareAndSet(current, next)) {</span>
+<span class="fc" id="L124">                return current;</span>
+            }
+<span class="nc" id="L126">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

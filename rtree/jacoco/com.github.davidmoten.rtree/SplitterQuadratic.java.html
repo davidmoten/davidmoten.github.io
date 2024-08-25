@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SplitterQuadratic.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree</a> &gt; <span class="el_source">SplitterQuadratic.java</span></div><h1>SplitterQuadratic.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rtree.geometry.HasGeometry;
+import com.github.davidmoten.rtree.geometry.ListPair;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.internal.Util;
+import com.github.davidmoten.rtree.internal.util.Pair;
+
+import static java.util.Optional.of;
+
+<span class="fc" id="L18">public final class SplitterQuadratic implements Splitter {</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public &lt;T extends HasGeometry&gt; ListPair&lt;T&gt; split(List&lt;T&gt; items, int minSize) {
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        Preconditions.checkArgument(items.size() &gt;= 2);</span>
+
+        // according to
+        // http://en.wikipedia.org/wiki/R-tree#Splitting_an_overflowing_node
+
+        // find the worst combination pairwise in the list and use them to start
+        // the two groups
+<span class="fc" id="L30">        final Pair&lt;T&gt; worstCombination = worstCombination(items);</span>
+
+        // worst combination to have in the same node is now e1,e2.
+
+        // establish a group around e1 and another group around e2
+<span class="fc" id="L35">        final List&lt;T&gt; group1 = Lists.newArrayList(worstCombination.value1());</span>
+<span class="fc" id="L36">        final List&lt;T&gt; group2 = Lists.newArrayList(worstCombination.value2());</span>
+
+<span class="fc" id="L38">        final List&lt;T&gt; remaining = new ArrayList&lt;T&gt;(items);</span>
+<span class="fc" id="L39">        remaining.remove(worstCombination.value1());</span>
+<span class="fc" id="L40">        remaining.remove(worstCombination.value2());</span>
+
+<span class="fc" id="L42">        final int minGroupSize = items.size() / 2;</span>
+
+        // now add the remainder to the groups using least mbr area increase
+        // except in the case where minimumSize would be contradicted
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        while (remaining.size() &gt; 0) {</span>
+<span class="fc" id="L47">            assignRemaining(group1, group2, remaining, minGroupSize);</span>
+        }
+<span class="fc" id="L49">        return new ListPair&lt;T&gt;(group1, group2);</span>
+    }
+
+    private &lt;T extends HasGeometry&gt; void assignRemaining(final List&lt;T&gt; group1, final List&lt;T&gt; group2,
+            final List&lt;T&gt; remaining, final int minGroupSize) {
+<span class="fc" id="L54">        final Rectangle mbr1 = Util.mbr(group1);</span>
+<span class="fc" id="L55">        final Rectangle mbr2 = Util.mbr(group2);</span>
+<span class="fc" id="L56">        final T item1 = getBestCandidateForGroup(remaining, group1, mbr1);</span>
+<span class="fc" id="L57">        final T item2 = getBestCandidateForGroup(remaining, group2, mbr2);</span>
+<span class="fc" id="L58">        final boolean area1LessThanArea2 = item1.geometry().mbr().add(mbr1).area() &lt;= item2</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                .geometry().mbr().add(mbr2).area();</span>
+
+<span class="fc bfc" id="L61" title="All 6 branches covered.">        if (area1LessThanArea2 &amp;&amp; (group2.size() + remaining.size() - 1 &gt;= minGroupSize)</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                || !area1LessThanArea2 &amp;&amp; (group1.size() + remaining.size() == minGroupSize)) {</span>
+<span class="fc" id="L63">            group1.add(item1);</span>
+<span class="fc" id="L64">            remaining.remove(item1);</span>
+        } else {
+<span class="fc" id="L66">            group2.add(item2);</span>
+<span class="fc" id="L67">            remaining.remove(item2);</span>
+        }
+<span class="fc" id="L69">    }</span>
+
+    @VisibleForTesting
+    static &lt;T extends HasGeometry&gt; T getBestCandidateForGroup(List&lt;T&gt; list, List&lt;T&gt; group,
+            Rectangle groupMbr) {
+        // TODO reduce allocations by not using Optional
+<span class="fc" id="L75">        Optional&lt;T&gt; minEntry = Optional.empty();</span>
+<span class="fc" id="L76">        Optional&lt;Double&gt; minArea = Optional.empty();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (final T entry : list) {</span>
+<span class="fc" id="L78">            double area = groupMbr.add(entry.geometry().mbr()).area();</span>
+<span class="fc bfc" id="L79" title="All 4 branches covered.">            if (!minArea.isPresent() || area &lt; minArea.get()) {</span>
+<span class="fc" id="L80">                minArea = of(area);</span>
+<span class="fc" id="L81">                minEntry = of(entry);</span>
+            }
+<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">        return minEntry.get();</span>
+    }
+
+    @VisibleForTesting
+    static &lt;T extends HasGeometry&gt; Pair&lt;T&gt; worstCombination(List&lt;T&gt; items) {
+        //TODO reduce allocations by not using Optional
+<span class="fc" id="L90">        Optional&lt;T&gt; e1 = Optional.empty();</span>
+<span class="fc" id="L91">        Optional&lt;T&gt; e2 = Optional.empty();</span>
+        {
+<span class="fc" id="L93">            Optional&lt;Double&gt; maxArea = Optional.empty();</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            for (int i = 0; i &lt; items.size(); i++) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                for (int j = i + 1; j &lt; items.size(); j++) {</span>
+<span class="fc" id="L96">                    T entry1 = items.get(i);</span>
+<span class="fc" id="L97">                    T entry2 = items.get(j);</span>
+<span class="fc" id="L98">                    final double area = entry1.geometry().mbr().add(entry2.geometry().mbr()).area();</span>
+<span class="fc bfc" id="L99" title="All 4 branches covered.">                    if (!maxArea.isPresent() || area &gt; maxArea.get()) {</span>
+<span class="fc" id="L100">                        e1 = of(entry1);</span>
+<span class="fc" id="L101">                        e2 = of(entry2);</span>
+<span class="fc" id="L102">                        maxArea = of(area);</span>
+                    }
+                }
+            }
+        }
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (e1.isPresent()) {</span>
+<span class="fc" id="L108">            return new Pair&lt;&gt;(e1.get(), e2.get());</span>
+        } else {
+            // all items are the same item
+<span class="nc" id="L111">            return new Pair&lt;&gt;(items.get(0), items.get(1));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

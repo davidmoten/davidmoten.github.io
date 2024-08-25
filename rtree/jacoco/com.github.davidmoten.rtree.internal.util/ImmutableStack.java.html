@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImmutableStack.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal.util</a> &gt; <span class="el_source">ImmutableStack.java</span></div><h1>ImmutableStack.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal.util;
+
+
+import java.util.Iterator;
+import java.util.Optional;
+
+import static java.util.Optional.of;
+
+
+public final class ImmutableStack&lt;T&gt; implements Iterable&lt;T&gt; {
+    private final Optional&lt;T&gt; head;
+    private final Optional&lt;ImmutableStack&lt;T&gt;&gt; tail;
+
+<span class="fc" id="L14">    private static ImmutableStack&lt;?&gt; EMPTY = new ImmutableStack&lt;&gt;();</span>
+
+    public ImmutableStack(final T head, final ImmutableStack&lt;T&gt; tail) {
+<span class="fc" id="L17">        this(of(head), of(tail));</span>
+<span class="fc" id="L18">    }</span>
+
+<span class="fc" id="L20">    private ImmutableStack(Optional&lt;T&gt; head, Optional&lt;ImmutableStack&lt;T&gt;&gt; tail) {</span>
+<span class="fc" id="L21">        this.head = head;</span>
+<span class="fc" id="L22">        this.tail = tail;</span>
+<span class="fc" id="L23">    }</span>
+
+    public static &lt;T&gt; ImmutableStack&lt;T&gt; create(T t) {
+<span class="fc" id="L26">        return new ImmutableStack&lt;&gt;(of(t), of(ImmutableStack.empty()));</span>
+    }
+
+    public ImmutableStack() {
+<span class="fc" id="L30">        this(Optional.empty(), Optional.empty());</span>
+<span class="fc" id="L31">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;S&gt; ImmutableStack&lt;S&gt; empty() {
+<span class="fc" id="L35">        return (ImmutableStack&lt;S&gt;) EMPTY;</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        return !head.isPresent();</span>
+    }
+
+    public T peek() {
+        // if (isEmpty())
+        // throw new RuntimeException(&quot;cannot peek on empty stack&quot;);
+        // else
+<span class="fc" id="L46">        return this.head.get();</span>
+    }
+
+    public ImmutableStack&lt;T&gt; pop() {
+        // if (isEmpty())
+        // throw new RuntimeException(&quot;cannot pop on empty stack&quot;);
+        // else
+<span class="fc" id="L53">        return this.tail.get();</span>
+    }
+
+    public ImmutableStack&lt;T&gt; push(T value) {
+<span class="fc" id="L57">        return new ImmutableStack&lt;T&gt;(value, this);</span>
+    }
+
+    @Override
+    public Iterator&lt;T&gt; iterator() {
+<span class="fc" id="L62">        return new StackIterator&lt;T&gt;(this);</span>
+    }
+
+    private static class StackIterator&lt;U&gt; implements Iterator&lt;U&gt; {
+        private ImmutableStack&lt;U&gt; stack;
+
+<span class="fc" id="L68">        public StackIterator(final ImmutableStack&lt;U&gt; stack) {</span>
+<span class="fc" id="L69">            this.stack = stack;</span>
+<span class="fc" id="L70">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            return !this.stack.isEmpty();</span>
+        }
+
+        @Override
+        public U next() {
+<span class="fc" id="L79">            final U result = this.stack.peek();</span>
+<span class="fc" id="L80">            this.stack = this.stack.pop();</span>
+<span class="fc" id="L81">            return result;</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="fc" id="L86">            throw new RuntimeException(&quot;not supported&quot;);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

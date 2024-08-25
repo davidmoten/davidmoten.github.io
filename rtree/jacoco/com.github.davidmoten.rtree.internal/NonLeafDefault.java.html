@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NonLeafDefault.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal</a> &gt; <span class="el_source">NonLeafDefault.java</span></div><h1>NonLeafDefault.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal;
+
+import java.util.List;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rtree.Context;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.NonLeaf;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+
+import rx.Subscriber;
+import rx.functions.Func1;
+
+public final class NonLeafDefault&lt;T, S extends Geometry&gt; implements NonLeaf&lt;T, S&gt; {
+
+    private final List&lt;? extends Node&lt;T, S&gt;&gt; children;
+    private final Rectangle mbr;
+    private final Context&lt;T, S&gt; context;
+
+<span class="fc" id="L22">    public NonLeafDefault(List&lt;? extends Node&lt;T, S&gt;&gt; children, Context&lt;T, S&gt; context) {</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        Preconditions.checkArgument(!children.isEmpty());</span>
+<span class="fc" id="L24">        this.context = context;</span>
+<span class="fc" id="L25">        this.children = children;</span>
+<span class="fc" id="L26">        this.mbr = Util.mbr(children);</span>
+<span class="fc" id="L27">    }</span>
+
+    @Override
+    public Geometry geometry() {
+<span class="fc" id="L31">        return mbr;</span>
+    }
+
+    @Override
+    public void searchWithoutBackpressure(Func1&lt;? super Geometry, Boolean&gt; criterion,
+            Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber) {
+<span class="fc" id="L37">        NonLeafHelper.search(criterion, subscriber, this);</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public int count() {
+<span class="fc" id="L42">        return children.size();</span>
+    }
+
+    @Override
+    public List&lt;Node&lt;T, S&gt;&gt; add(Entry&lt;? extends T, ? extends S&gt; entry) {
+<span class="fc" id="L47">        return NonLeafHelper.add(entry, this);</span>
+    }
+
+    @Override
+    public NodeAndEntries&lt;T, S&gt; delete(Entry&lt;? extends T, ? extends S&gt; entry, boolean all) {
+<span class="fc" id="L52">        return NonLeafHelper.delete(entry, all, this);</span>
+    }
+
+    @Override
+    public Context&lt;T, S&gt; context() {
+<span class="fc" id="L57">        return context;</span>
+    }
+
+    @Override
+    public Node&lt;T, S&gt; child(int i) {
+<span class="fc" id="L62">        return children.get(i);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public List&lt;Node&lt;T, S&gt;&gt; children() {
+<span class="fc" id="L68">        return (List&lt;Node&lt;T, S&gt;&gt;) children;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

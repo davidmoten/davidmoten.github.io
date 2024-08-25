@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LeafFlatBuffers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.fbs</a> &gt; <span class="el_source">LeafFlatBuffers.java</span></div><h1>LeafFlatBuffers.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.fbs;
+
+import java.util.List;
+
+import com.github.davidmoten.rtree.Context;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.Leaf;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.fbs.generated.BoundsType_;
+import com.github.davidmoten.rtree.fbs.generated.Bounds_;
+import com.github.davidmoten.rtree.fbs.generated.BoxDouble_;
+import com.github.davidmoten.rtree.fbs.generated.BoxFloat_;
+import com.github.davidmoten.rtree.fbs.generated.Node_;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.internal.LeafHelper;
+import com.github.davidmoten.rtree.internal.NodeAndEntries;
+import com.google.flatbuffers.FlatBufferBuilder;
+
+import rx.Subscriber;
+import rx.functions.Func1;
+
+final class LeafFlatBuffers&lt;T, S extends Geometry&gt; implements Leaf&lt;T, S&gt; {
+
+    private final Node_ node;
+    private final Context&lt;T, S&gt; context;
+    private final Func1&lt;byte[], ? extends T&gt; deserializer;
+
+    LeafFlatBuffers(List&lt;Entry&lt;T, S&gt;&gt; entries, Context&lt;T, S&gt; context,
+            Func1&lt;? super T, byte[]&gt; serializer, Func1&lt;byte[], ? extends T&gt; deserializer) {
+<span class="fc" id="L31">        this(createNode(entries, serializer), context, deserializer);</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="fc" id="L34">    LeafFlatBuffers(Node_ node, Context&lt;T, S&gt; context, Func1&lt;byte[], ? extends T&gt; deserializer) {</span>
+<span class="fc" id="L35">        this.context = context;</span>
+<span class="fc" id="L36">        this.deserializer = deserializer;</span>
+<span class="fc" id="L37">        this.node = node;</span>
+<span class="fc" id="L38">    }</span>
+
+    private static &lt;T, S extends Geometry&gt; Node_ createNode(List&lt;Entry&lt;T, S&gt;&gt; entries,
+            Func1&lt;? super T, byte[]&gt; serializer) {
+<span class="fc" id="L42">        FlatBufferBuilder builder = new FlatBufferBuilder(0);</span>
+<span class="fc" id="L43">        builder.finish(FlatBuffersHelper.addEntries(entries, builder, serializer));</span>
+<span class="fc" id="L44">        return Node_.getRootAsNode_(builder.dataBuffer());</span>
+    }
+
+    @Override
+    public List&lt;Node&lt;T, S&gt;&gt; add(Entry&lt;? extends T, ? extends S&gt; entry) {
+<span class="fc" id="L49">        return LeafHelper.add(entry, this);</span>
+    }
+
+    @Override
+    public NodeAndEntries&lt;T, S&gt; delete(Entry&lt;? extends T, ? extends S&gt; entry, boolean all) {
+<span class="fc" id="L54">        return LeafHelper.delete(entry, all, this);</span>
+    }
+
+    @Override
+    public void searchWithoutBackpressure(Func1&lt;? super Geometry, Boolean&gt; condition,
+            Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber) {
+        // only called when the root of the tree is a Leaf
+        // normally the searchWithoutBackpressure is executed completely within the
+        // NonLeafFlatBuffers class to reduce object creation
+<span class="fc" id="L63">        LeafHelper.search(condition, subscriber, this);</span>
+<span class="fc" id="L64">    }</span>
+
+    @Override
+    public int count() {
+<span class="fc" id="L68">        return node.entriesLength();</span>
+    }
+
+    @Override
+    public Context&lt;T, S&gt; context() {
+<span class="fc" id="L73">        return context;</span>
+    }
+
+    @Override
+    public Geometry geometry() {
+<span class="fc" id="L78">        Bounds_ b = node.mbb();</span>
+        // create on demand to reduce memory use (though not gc pressure)
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (b.type() == BoundsType_.BoundsDouble) {</span>
+<span class="fc" id="L81">            BoxDouble_ r = b.boxDouble();</span>
+<span class="fc" id="L82">            return Geometries.rectangle(r.minX(), r.minY(), r.maxX(), r.maxY());</span>
+        } else {
+<span class="fc" id="L84">            BoxFloat_ r = b.boxFloat();</span>
+<span class="fc" id="L85">            return Geometries.rectangle(r.minX(), r.minY(), r.maxX(), r.maxY());</span>
+        }
+    }
+
+    @Override
+    public List&lt;Entry&lt;T, S&gt;&gt; entries() {
+<span class="fc" id="L91">        return FlatBuffersHelper.createEntries(node, deserializer);</span>
+    }
+
+    @Override
+    public Entry&lt;T, S&gt; entry(int i) {
+<span class="fc" id="L96">        return FlatBuffersHelper.createEntry(node, deserializer, i);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

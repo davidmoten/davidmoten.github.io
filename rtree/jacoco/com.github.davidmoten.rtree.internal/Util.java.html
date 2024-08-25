@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Util.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal</a> &gt; <span class="el_source">Util.java</span></div><h1>Util.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.HasGeometry;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+
+/**
+ * @author dxm
+ *
+ */
+public final class Util {
+
+    private Util() {
+        // prevent instantiation
+    }
+
+    /**
+     * Returns the minimum bounding rectangle of a number of items. Benchmarks below
+     * indicate that when the number of items is &amp;gt;1 this method is more
+     * performant than one using {@link Rectangle#add(Rectangle)}.
+     * 
+     * &lt;pre&gt;
+     * Benchmark                             Mode  Samples         Score  Score error  Units
+     * c.g.d.r.BenchmarksMbr.mbrList1       thrpt       10  48450492.301   436127.960  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrList2       thrpt       10  46658242.728   987901.581  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrList3       thrpt       10  40357809.306   937827.660  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrList4       thrpt       10  35930532.557   605535.237  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrOldList1    thrpt       10  55848118.198  1342997.309  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrOldList2    thrpt       10  25171873.903   395127.918  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrOldList3    thrpt       10  19222116.139   246965.178  ops/s
+     * c.g.d.r.BenchmarksMbr.mbrOldList4    thrpt       10  14891862.638   198765.157  ops/s
+     * &lt;/pre&gt;
+     * 
+     * @param items
+     *            items to bound
+     * @return the minimum bounding rectangle containings items
+     */
+    public static Rectangle mbr(Collection&lt;? extends HasGeometry&gt; items) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        Preconditions.checkArgument(!items.isEmpty());</span>
+<span class="fc" id="L45">        double minX1 = Double.MAX_VALUE;</span>
+<span class="fc" id="L46">        double minY1 = Double.MAX_VALUE;</span>
+<span class="fc" id="L47">        double maxX2 = -Double.MAX_VALUE;</span>
+<span class="fc" id="L48">        double maxY2 = -Double.MAX_VALUE;</span>
+<span class="fc" id="L49">        boolean isDoublePrecision = false;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (final HasGeometry item : items) {</span>
+<span class="fc" id="L51">            Rectangle r = item.geometry().mbr();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (r.isDoublePrecision()) {</span>
+<span class="fc" id="L53">                isDoublePrecision = true;</span>
+            }
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            if (r.x1() &lt; minX1)</span>
+<span class="fc" id="L56">                minX1 = r.x1();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (r.y1() &lt; minY1)</span>
+<span class="fc" id="L58">                minY1 = r.y1();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (r.x2() &gt; maxX2)</span>
+<span class="fc" id="L60">                maxX2 = r.x2();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (r.y2() &gt; maxY2)</span>
+<span class="fc" id="L62">                maxY2 = r.y2();</span>
+<span class="fc" id="L63">        }</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (isDoublePrecision) {</span>
+<span class="fc" id="L65">            return Geometries.rectangle(minX1, minY1, maxX2, maxY2);</span>
+        } else {
+<span class="fc" id="L67">            return Geometries.rectangle((float) minX1, (float) minY1, (float) maxX2, (float) maxY2);</span>
+        }
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; add(List&lt;T&gt; list, T element) {
+<span class="fc" id="L72">        final ArrayList&lt;T&gt; result = new ArrayList&lt;T&gt;(list.size() + 2);</span>
+<span class="fc" id="L73">        result.addAll(list);</span>
+<span class="fc" id="L74">        result.add(element);</span>
+<span class="fc" id="L75">        return result;</span>
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; remove(List&lt;? extends T&gt; list, List&lt;? extends T&gt; elements) {
+<span class="fc" id="L79">        final ArrayList&lt;T&gt; result = new ArrayList&lt;T&gt;(list);</span>
+<span class="fc" id="L80">        result.removeAll(elements);</span>
+<span class="fc" id="L81">        return result;</span>
+    }
+
+    public static &lt;T&gt; List&lt;? extends T&gt; replace(List&lt;? extends T&gt; list, T element,
+            List&lt;T&gt; replacements) {
+<span class="fc" id="L86">        List&lt;T&gt; list2 = new ArrayList&lt;T&gt;(list.size() + replacements.size());</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (T node : list)</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            if (node != element)</span>
+<span class="fc" id="L89">                list2.add(node);</span>
+<span class="fc" id="L90">        list2.addAll(replacements);</span>
+<span class="fc" id="L91">        return list2;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

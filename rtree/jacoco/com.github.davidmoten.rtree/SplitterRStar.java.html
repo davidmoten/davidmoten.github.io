@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SplitterRStar.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree</a> &gt; <span class="el_source">SplitterRStar.java</span></div><h1>SplitterRStar.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rtree.geometry.HasGeometry;
+import com.github.davidmoten.rtree.geometry.ListPair;
+
+public final class SplitterRStar implements Splitter {
+
+    private final Comparator&lt;ListPair&lt;?&gt;&gt; comparator;
+
+<span class="fc" id="L17">    public SplitterRStar() {</span>
+<span class="fc" id="L18">        this.comparator = new Comparator&lt;ListPair&lt;?&gt;&gt;() {</span>
+
+            @Override
+            public int compare(ListPair&lt;?&gt; p1, ListPair&lt;?&gt; p2) {
+                // check overlap first then areaSum
+<span class="fc" id="L23">                int value = Double.compare(overlap(p1), overlap(p2));</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">                if (value == 0) {</span>
+<span class="fc" id="L25">                    return Double.compare(p1.areaSum(), p2.areaSum());</span>
+                } else {
+<span class="fc" id="L27">                    return value;</span>
+                }
+            }
+        };
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public &lt;T extends HasGeometry&gt; ListPair&lt;T&gt; split(List&lt;T&gt; items, int minSize) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        Preconditions.checkArgument(!items.isEmpty());</span>
+        // sort nodes into increasing x, calculate min overlap where both groups
+        // have more than minChildren
+
+        // compute S the sum of all margin-values of the lists above
+        // the list with the least S is then used to find minimum overlap
+
+<span class="fc" id="L42">        List&lt;ListPair&lt;T&gt;&gt; pairs = null;</span>
+<span class="fc" id="L43">        double lowestMarginSum = Double.POSITIVE_INFINITY;</span>
+<span class="fc" id="L44">        List&lt;T&gt; list = null;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (SortType sortType : SortType.values()) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (list == null) {</span>
+<span class="fc" id="L47">                list = new ArrayList&lt;T&gt;(items);</span>
+            }
+<span class="fc" id="L49">            Collections.sort(list, comparator(sortType));</span>
+<span class="fc" id="L50">            List&lt;ListPair&lt;T&gt;&gt; p = getPairs(minSize, list);</span>
+<span class="fc" id="L51">            double marginSum = marginValueSum(p);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (marginSum &lt;= lowestMarginSum) {</span>
+<span class="fc" id="L53">                lowestMarginSum = marginSum;</span>
+<span class="fc" id="L54">                pairs = p;</span>
+                // because p uses subViews of list we need to create a new one
+                // for further comparisons
+<span class="fc" id="L57">                list = null;</span>
+            }
+        }
+<span class="fc" id="L60">        return Collections.min(pairs, comparator);</span>
+    }
+
+    private static Comparator&lt;HasGeometry&gt; comparator(SortType sortType) {
+<span class="pc bpc" id="L64" title="1 of 5 branches missed.">        switch (sortType) {</span>
+        case X_LOWER:
+<span class="fc" id="L66">            return INCREASING_X_LOWER;</span>
+        case X_UPPER:
+<span class="fc" id="L68">            return INCREASING_X_UPPER;</span>
+        case Y_LOWER:
+<span class="fc" id="L70">            return INCREASING_Y_LOWER;</span>
+        case Y_UPPER:
+<span class="fc" id="L72">            return INCREASING_Y_UPPER;</span>
+        default:
+<span class="nc" id="L74">            throw new IllegalArgumentException(&quot;unknown SortType &quot; + sortType);</span>
+        }
+    }
+
+<span class="fc" id="L78">    private enum SortType {</span>
+<span class="fc" id="L79">        X_LOWER, X_UPPER, Y_LOWER, Y_UPPER;</span>
+    }
+
+    private static &lt;T extends HasGeometry&gt; double marginValueSum(List&lt;ListPair&lt;T&gt;&gt; list) {
+<span class="fc" id="L83">        double sum = 0;</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        for (ListPair&lt;T&gt; p : list)</span>
+<span class="fc" id="L85">            sum += p.marginSum();</span>
+<span class="fc" id="L86">        return sum;</span>
+    }
+
+    @VisibleForTesting
+    static &lt;T extends HasGeometry&gt; List&lt;ListPair&lt;T&gt;&gt; getPairs(int minSize, List&lt;T&gt; list) {
+<span class="fc" id="L91">        List&lt;ListPair&lt;T&gt;&gt; pairs = new ArrayList&lt;ListPair&lt;T&gt;&gt;(list.size() - 2 * minSize + 1);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        for (int i = minSize; i &lt; list.size() - minSize + 1; i++) {</span>
+            // Note that subList returns a view of list so creating list1 and
+            // list2 doesn't
+            // necessarily incur array allocation costs.
+<span class="fc" id="L96">            List&lt;T&gt; list1 = list.subList(0, i);</span>
+<span class="fc" id="L97">            List&lt;T&gt; list2 = list.subList(i, list.size());</span>
+<span class="fc" id="L98">            ListPair&lt;T&gt; pair = new ListPair&lt;T&gt;(list1, list2);</span>
+<span class="fc" id="L99">            pairs.add(pair);</span>
+        }
+<span class="fc" id="L101">        return pairs;</span>
+    }
+
+<span class="fc" id="L104">    private static final Comparator&lt;HasGeometry&gt; INCREASING_X_LOWER = new Comparator&lt;HasGeometry&gt;() {</span>
+
+        @Override
+        public int compare(HasGeometry n1, HasGeometry n2) {
+<span class="fc" id="L108">            return Double.compare(n1.geometry().mbr().x1(), n2.geometry().mbr().x1());</span>
+        }
+    };
+
+<span class="fc" id="L112">    private static final Comparator&lt;HasGeometry&gt; INCREASING_X_UPPER = new Comparator&lt;HasGeometry&gt;() {</span>
+
+        @Override
+        public int compare(HasGeometry n1, HasGeometry n2) {
+<span class="fc" id="L116">            return Double.compare(n1.geometry().mbr().x2(), n2.geometry().mbr().x2());</span>
+        }
+    };
+
+<span class="fc" id="L120">    private static final Comparator&lt;HasGeometry&gt; INCREASING_Y_LOWER = new Comparator&lt;HasGeometry&gt;() {</span>
+
+        @Override
+        public int compare(HasGeometry n1, HasGeometry n2) {
+<span class="fc" id="L124">            return Double.compare(n1.geometry().mbr().y1(), n2.geometry().mbr().y1());</span>
+        }
+    };
+
+<span class="fc" id="L128">    private static final Comparator&lt;HasGeometry&gt; INCREASING_Y_UPPER = new Comparator&lt;HasGeometry&gt;() {</span>
+
+        @Override
+        public int compare(HasGeometry n1, HasGeometry n2) {
+<span class="fc" id="L132">            return Double.compare(n1.geometry().mbr().y2(), n2.geometry().mbr().y2());</span>
+        }
+    };
+
+    private static double overlap(ListPair&lt;? extends HasGeometry&gt; pair) {
+<span class="fc" id="L137">        return pair.group1().geometry().mbr().intersectionArea(pair.group2().geometry().mbr());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

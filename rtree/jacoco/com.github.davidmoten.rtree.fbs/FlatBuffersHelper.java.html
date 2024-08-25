@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FlatBuffersHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.fbs</a> &gt; <span class="el_source">FlatBuffersHelper.java</span></div><h1>FlatBuffersHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.fbs;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rtree.Entries;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.fbs.generated.BoundsType_;
+import com.github.davidmoten.rtree.fbs.generated.Bounds_;
+import com.github.davidmoten.rtree.fbs.generated.BoxDouble_;
+import com.github.davidmoten.rtree.fbs.generated.BoxFloat_;
+import com.github.davidmoten.rtree.fbs.generated.CircleDouble_;
+import com.github.davidmoten.rtree.fbs.generated.CircleFloat_;
+import com.github.davidmoten.rtree.fbs.generated.Entry_;
+import com.github.davidmoten.rtree.fbs.generated.GeometryType_;
+import com.github.davidmoten.rtree.fbs.generated.Geometry_;
+import com.github.davidmoten.rtree.fbs.generated.LineDouble_;
+import com.github.davidmoten.rtree.fbs.generated.LineFloat_;
+import com.github.davidmoten.rtree.fbs.generated.Node_;
+import com.github.davidmoten.rtree.fbs.generated.PointDouble_;
+import com.github.davidmoten.rtree.fbs.generated.PointFloat_;
+import com.github.davidmoten.rtree.geometry.Circle;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Line;
+import com.github.davidmoten.rtree.geometry.Point;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.internal.Util;
+import com.google.flatbuffers.FlatBufferBuilder;
+
+import rx.functions.Func1;
+
+final class FlatBuffersHelper {
+
+    private FlatBuffersHelper() {
+        // prevent instantiation
+    }
+
+    static &lt;T, S extends Geometry&gt; int addEntries(List&lt;Entry&lt;T, S&gt;&gt; entries,
+            FlatBufferBuilder builder, Func1&lt;? super T, byte[]&gt; serializer) {
+<span class="fc" id="L44">        int[] entries2 = new int[entries.size()];</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (int i = 0; i &lt; entries.size(); i++) {</span>
+<span class="fc" id="L46">            Geometry g = entries.get(i).geometry();</span>
+            final int geom;
+            final byte geomType;
+            // Must check Point before Rectangle because Point is instance of
+            // Rectangle
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (g instanceof Point) {</span>
+<span class="fc" id="L52">                Point p = (Point) g;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (p.isDoublePrecision()) {</span>
+<span class="fc" id="L54">                    geom = PointDouble_.createPointDouble_(builder, p.x(), p.y());</span>
+<span class="fc" id="L55">                    geomType = GeometryType_.PointDouble;</span>
+                } else {
+<span class="fc" id="L57">                    geom = PointFloat_.createPointFloat_(builder, (float) p.x(), (float) p.y());</span>
+<span class="fc" id="L58">                    geomType = GeometryType_.PointFloat;</span>
+                }
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            } else if (g instanceof Rectangle) {</span>
+<span class="fc" id="L61">                Rectangle b = (Rectangle) g;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                if (b.isDoublePrecision()) {</span>
+<span class="fc" id="L63">                    geom = BoxDouble_.createBoxDouble_(builder, b.x1(), b.y1(), b.x2(), b.y2());</span>
+<span class="fc" id="L64">                    geomType = GeometryType_.BoxDouble;</span>
+                } else {
+<span class="fc" id="L66">                    geom = BoxFloat_.createBoxFloat_(builder, (float) b.x1(), (float) b.y1(),</span>
+<span class="fc" id="L67">                            (float) b.x2(), (float) b.y2());</span>
+<span class="fc" id="L68">                    geomType = GeometryType_.BoxFloat;</span>
+                }
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            } else if (g instanceof Circle) {</span>
+<span class="fc" id="L71">                Circle c = (Circle) g;</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (c.isDoublePrecision()) {</span>
+<span class="fc" id="L73">                    geom = CircleDouble_.createCircleDouble_(builder, c.x(), c.y(), c.radius());</span>
+<span class="fc" id="L74">                    geomType = GeometryType_.CircleDouble;</span>
+                } else {
+<span class="fc" id="L76">                    geom = CircleFloat_.createCircleFloat_(builder, (float) c.x(), (float) c.y(),</span>
+<span class="fc" id="L77">                            (float) c.radius());</span>
+<span class="fc" id="L78">                    geomType = GeometryType_.CircleFloat;</span>
+                }
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            } else if (g instanceof Line) {</span>
+<span class="fc" id="L81">                Line c = (Line) g;</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                if (c.isDoublePrecision()) {</span>
+<span class="fc" id="L83">                    geom = LineDouble_.createLineDouble_(builder, c.x1(), c.y1(), c.x2(), c.y2());</span>
+<span class="fc" id="L84">                    geomType = GeometryType_.LineDouble;</span>
+                } else {
+<span class="fc" id="L86">                    geom = LineFloat_.createLineFloat_(builder, (float) c.x1(), (float) c.y1(),</span>
+<span class="fc" id="L87">                            (float) c.x2(), (float) c.y2());</span>
+<span class="fc" id="L88">                    geomType = GeometryType_.LineFloat;</span>
+                }
+<span class="fc" id="L90">            } else</span>
+<span class="nc" id="L91">                throw new RuntimeException(&quot;unexpected&quot;);</span>
+
+<span class="fc" id="L93">            Geometry_.startGeometry_(builder);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            if (geomType == GeometryType_.BoxFloat) {</span>
+<span class="fc" id="L95">                Geometry_.addBoxFloat(builder, geom);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            } else if (geomType == GeometryType_.BoxDouble) {</span>
+<span class="fc" id="L97">                Geometry_.addBoxDouble(builder, geom);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            } else if (geomType == GeometryType_.PointFloat) {</span>
+<span class="fc" id="L99">                Geometry_.addPointFloat(builder, geom);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            } else if (geomType == GeometryType_.PointDouble) {</span>
+<span class="fc" id="L101">                Geometry_.addPointDouble(builder, geom);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            } else if (geomType == GeometryType_.CircleFloat) {</span>
+<span class="fc" id="L103">                Geometry_.addCircleFloat(builder, geom);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            } else if (geomType == GeometryType_.CircleDouble) {</span>
+<span class="fc" id="L105">                Geometry_.addCircleDouble(builder, geom);</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            } else if (geomType == GeometryType_.LineFloat) {</span>
+<span class="fc" id="L107">                Geometry_.addLineFloat(builder, geom);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            } else if (geomType == GeometryType_.LineDouble) {</span>
+<span class="fc" id="L109">                Geometry_.addLineDouble(builder, geom);</span>
+            } else
+<span class="nc" id="L111">                throw new RuntimeException(&quot;unexpected&quot;);</span>
+
+<span class="fc" id="L113">            Geometry_.addType(builder, geomType);</span>
+<span class="fc" id="L114">            int geo = Geometry_.endGeometry_(builder);</span>
+<span class="fc" id="L115">            int obj = Entry_.createObjectVector(builder, serializer.call(entries.get(i).value()));</span>
+<span class="fc" id="L116">            entries2[i] = Entry_.createEntry_(builder, geo, obj);</span>
+        }
+
+<span class="fc" id="L119">        int ents = Node_.createEntriesVector(builder, entries2);</span>
+
+<span class="fc" id="L121">        Rectangle mbb = Util.mbr(entries);</span>
+<span class="fc" id="L122">        Bounds_.startBounds_(builder);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (mbb.isDoublePrecision()) {</span>
+<span class="fc" id="L124">            int b = BoxDouble_.createBoxDouble_(builder, mbb.x1(), mbb.y1(), mbb.x2(), mbb.y2());</span>
+<span class="fc" id="L125">            Bounds_.addBoxDouble(builder, b);</span>
+<span class="fc" id="L126">            Bounds_.addType(builder, BoundsType_.BoundsDouble);</span>
+<span class="fc" id="L127">        } else {</span>
+<span class="fc" id="L128">            int b = BoxFloat_.createBoxFloat_(builder, (float) mbb.x1(), (float) mbb.y1(),</span>
+<span class="fc" id="L129">                    (float) mbb.x2(), (float) mbb.y2());</span>
+<span class="fc" id="L130">            Bounds_.addBoxFloat(builder, b);</span>
+<span class="fc" id="L131">            Bounds_.addType(builder, BoundsType_.BoundsFloat);</span>
+        }
+<span class="fc" id="L133">        int bounds = Bounds_.endBounds_(builder);</span>
+
+<span class="fc" id="L135">        Node_.startNode_(builder);</span>
+<span class="fc" id="L136">        Node_.addMbb(builder, bounds);</span>
+<span class="fc" id="L137">        Node_.addEntries(builder, ents);</span>
+<span class="fc" id="L138">        return Node_.endNode_(builder);</span>
+
+    }
+
+    static &lt;T, S extends Geometry&gt; List&lt;Entry&lt;T, S&gt;&gt; createEntries(Node_ node,
+            Func1&lt;byte[], ? extends T&gt; deserializer) {
+<span class="fc" id="L144">        int numEntries = node.entriesLength();</span>
+<span class="fc" id="L145">        List&lt;Entry&lt;T, S&gt;&gt; entries = new ArrayList&lt;Entry&lt;T, S&gt;&gt;(numEntries);</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        Preconditions.checkArgument(numEntries &gt; 0);</span>
+<span class="fc" id="L147">        Entry_ entry = new Entry_();</span>
+<span class="fc" id="L148">        Geometry_ geom = new Geometry_();</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        for (int i = 0; i &lt; numEntries; i++) {</span>
+<span class="fc" id="L150">            Entry&lt;T, S&gt; ent = createEntry(node, deserializer, entry, geom, i);</span>
+<span class="fc" id="L151">            entries.add(ent);</span>
+        }
+<span class="fc" id="L153">        return entries;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T, S extends Geometry&gt; Entry&lt;T, S&gt; createEntry(Node_ node,
+            Func1&lt;byte[], ? extends T&gt; deserializer, Entry_ entry, Geometry_ geom, int i) {
+<span class="fc" id="L159">        node.entries(entry, i);</span>
+<span class="fc" id="L160">        entry.geometry(geom);</span>
+<span class="fc" id="L161">        final Geometry g = toGeometry(geom);</span>
+<span class="fc" id="L162">        return Entries.entry(parseObject(deserializer, entry), (S) g);</span>
+    }
+
+    static &lt;T, S extends Geometry&gt; Entry&lt;T, S&gt; createEntry(Node_ node,
+            Func1&lt;byte[], ? extends T&gt; deserializer, int i) {
+<span class="fc" id="L167">        return createEntry(node, deserializer, new Entry_(), new Geometry_(), i);</span>
+    }
+
+    static &lt;T&gt; T parseObject(Func1&lt;byte[], ? extends T&gt; deserializer, Entry_ entry) {
+<span class="fc" id="L171">        ByteBuffer bb = entry.objectAsByteBuffer();</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (bb == null) {</span>
+<span class="nc" id="L173">            return null;</span>
+        } else {
+<span class="fc" id="L175">            byte[] bytes = Arrays.copyOfRange(bb.array(), bb.position(), bb.limit());</span>
+<span class="fc" id="L176">            T t = deserializer.call(bytes);</span>
+<span class="fc" id="L177">            return t;</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    static &lt;S extends Geometry&gt; S toGeometry(Geometry_ g) {
+        final Geometry result;
+<span class="fc" id="L184">        byte type = g.type();</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (type == GeometryType_.BoxFloat) {</span>
+<span class="fc" id="L186">            result = createBox(g.boxFloat());</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        } else if (type == GeometryType_.BoxDouble) {</span>
+<span class="fc" id="L188">            result = createBox(g.boxDouble());</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        } else if (type == GeometryType_.PointFloat) {</span>
+<span class="fc" id="L190">            PointFloat_ p = g.pointFloat();</span>
+<span class="fc" id="L191">            result = Geometries.point(p.x(), p.y());</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        } else if (type == GeometryType_.PointDouble) {</span>
+<span class="fc" id="L193">            PointDouble_ p = g.pointDouble();</span>
+<span class="fc" id="L194">            result = Geometries.point(p.x(), p.y());</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        } else if (type == GeometryType_.CircleFloat) {</span>
+<span class="fc" id="L196">            CircleFloat_ c = g.circleFloat();</span>
+<span class="fc" id="L197">            result = Geometries.circle(c.x(), c.y(), c.radius());</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        } else if (type == GeometryType_.CircleDouble) {</span>
+<span class="fc" id="L199">            CircleDouble_ c = g.circleDouble();</span>
+<span class="fc" id="L200">            result = Geometries.circle(c.x(), c.y(), c.radius());</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        } else if (type == GeometryType_.LineFloat) {</span>
+<span class="fc" id="L202">            result = createLine(g.lineFloat());</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        } else if (type == GeometryType_.LineDouble) {</span>
+<span class="fc" id="L204">            result = createLine(g.lineDouble());</span>
+        } else
+<span class="nc" id="L206">            throw new RuntimeException(&quot;unexpected&quot;);</span>
+<span class="fc" id="L207">        return (S) result;</span>
+    }
+
+    private static Geometry createBox(BoxDouble_ b) {
+<span class="fc" id="L211">        return Geometries.rectangle(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+    }
+
+    private static Geometry createBox(BoxFloat_ b) {
+<span class="fc" id="L215">        return Geometries.rectangle(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+    }
+
+    static Rectangle createBox(Bounds_ b) {
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (b.type() == BoundsType_.BoundsDouble) {</span>
+<span class="nc" id="L220">            BoxDouble_ r = b.boxDouble();</span>
+<span class="nc" id="L221">            return Geometries.rectangle(r.minX(), r.minY(), r.maxX(), r.maxY());</span>
+        } else {
+<span class="fc" id="L223">            BoxFloat_ r = b.boxFloat();</span>
+<span class="fc" id="L224">            return Geometries.rectangle(r.minX(), r.minY(), r.maxX(), r.maxY());</span>
+        }
+    }
+
+    static Line createLine(BoxFloat_ b) {
+<span class="fc" id="L229">        return Geometries.line(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+    }
+
+    static Line createLine(BoxDouble_ b) {
+<span class="fc" id="L233">        return Geometries.line(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

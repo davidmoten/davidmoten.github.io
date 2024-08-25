@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RTree.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree</a> &gt; <span class="el_source">RTree.java</span></div><h1>RTree.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree;
+
+import static com.github.davidmoten.rtree.geometry.Geometries.rectangle;
+import static java.util.Optional.of;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+import com.github.davidmoten.guavamini.Lists;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import com.github.davidmoten.rtree.geometry.Circle;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.HasGeometry;
+import com.github.davidmoten.rtree.geometry.Intersects;
+import com.github.davidmoten.rtree.geometry.Line;
+import com.github.davidmoten.rtree.geometry.Point;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.internal.Comparators;
+import com.github.davidmoten.rtree.internal.NodeAndEntries;
+import com.github.davidmoten.rtree.internal.operators.OperatorBoundedPriorityQueue;
+
+import rx.Observable;
+import rx.functions.Func1;
+import rx.functions.Func2;
+
+/**
+ * Immutable in-memory 2D R-Tree with configurable splitter heuristic.
+ *
+ * @param &lt;T&gt;
+ *            the entry value type
+ * @param &lt;S&gt;
+ *            the entry geometry type
+ */
+public final class RTree&lt;T, S extends Geometry&gt; {
+
+<span class="fc" id="L39">    public static final Rectangle ZERO_RECTANGLE = rectangle(0, 0, 0, 0);</span>
+    private final Optional&lt;? extends Node&lt;T, S&gt;&gt; root;
+    private final Context&lt;T, S&gt; context;
+
+    /**
+     * Benchmarks show that this is a good choice for up to O(10,000) entries when
+     * using Quadratic splitter (Guttman).
+     */
+    public static final int MAX_CHILDREN_DEFAULT_GUTTMAN = 4;
+
+    /**
+     * Benchmarks show that this is the sweet spot for up to O(10,000) entries when
+     * using R*-tree heuristics.
+     */
+    public static final int MAX_CHILDREN_DEFAULT_STAR = 4;
+
+    /**
+     * Current size in Entries of the RTree.
+     */
+    private final int size;
+<span class="fc" id="L59">    private static final Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;Object, Geometry&gt;, Optional&lt;Rectangle&gt;&gt; RECTANGLE_ACCUMULATOR =</span>
+            (rectangle, entry) -&gt;
+<span class="fc" id="L61">                    rectangle.map(value -&gt; Optional.of(value.add(entry.geometry().mbr())))</span>
+<span class="fc" id="L62">                            .orElseGet(() -&gt; Optional.of(entry.geometry().mbr()));</span>
+
+    /**
+     * Constructor.
+     *
+     * @param root
+     *            the root node of the tree if present
+     * @param context
+     *            options for the R-tree
+     */
+<span class="fc" id="L72">    private RTree(Optional&lt;? extends Node&lt;T, S&gt;&gt; root, int size, Context&lt;T, S&gt; context) {</span>
+<span class="fc" id="L73">        this.root = root;</span>
+<span class="fc" id="L74">        this.size = size;</span>
+<span class="fc" id="L75">        this.context = context;</span>
+<span class="fc" id="L76">    }</span>
+
+    private RTree() {
+<span class="nc" id="L79">        this(Optional.empty(), 0, null);</span>
+<span class="nc" id="L80">    }</span>
+
+    /**
+     * Constructor.
+     * 
+     * @param root
+     *            the root node of the R-tree
+     * @param context
+     *            options for the R-tree
+     */
+    private RTree(Node&lt;T, S&gt; root, int size, Context&lt;T, S&gt; context) {
+<span class="fc" id="L91">        this(of(root), size, context);</span>
+<span class="fc" id="L92">    }</span>
+
+    static &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; create(Optional&lt;? extends Node&lt;T, S&gt;&gt; root, int size,
+            Context&lt;T, S&gt; context) {
+<span class="fc" id="L96">        return new RTree&lt;T, S&gt;(root, size, context);</span>
+    }
+
+    /**
+     * Returns a new Builder instance for {@link RTree}. Defaults to
+     * maxChildren=128, minChildren=64, splitter=QuadraticSplitter.
+     * 
+     * @param &lt;T&gt;
+     *            the value type of the entries in the tree
+     * @param &lt;S&gt;
+     *            the geometry type of the entries in the tree
+     * @return a new RTree instance
+     */
+    public static &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; create() {
+<span class="fc" id="L110">        return new Builder().create();</span>
+    }
+
+    /**
+     * Construct an Rtree through STR bulk loading. Default to maxChildren=128,
+     * minChildren=64 and fill nodes by a factor of 0.7
+     * 
+     * @param entries
+     *            entries to add to the R-tree
+     *
+     * @param &lt;T&gt;
+     *            the value type of the entries in the tree
+     * @param &lt;S&gt;
+     *            the geometry type of the entries in the tree
+     * @return a new RTree instance
+     */
+    public static &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; create(List&lt;Entry&lt;T, S&gt;&gt; entries) {
+<span class="fc" id="L127">        return new Builder().create(entries);</span>
+    }
+
+    /**
+     * The tree is scanned for depth and the depth returned. This involves recursing
+     * down to the leaf level of the tree to get the current depth. Should be
+     * &lt;code&gt;log(n)&lt;/code&gt; in complexity.
+     * 
+     * @return depth of the R-tree
+     */
+    public int calculateDepth() {
+<span class="fc" id="L138">        return calculateDepth(root);</span>
+    }
+
+    private static &lt;T, S extends Geometry&gt; int calculateDepth(Optional&lt;? extends Node&lt;T, S&gt;&gt; root) {
+<span class="fc" id="L142">        return root.map(node -&gt; calculateDepth(node, 0)).orElse(0);</span>
+    }
+
+    private static &lt;T, S extends Geometry&gt; int calculateDepth(Node&lt;T, S&gt; node, int depth) {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (node instanceof Leaf) {</span>
+<span class="fc" id="L147">            return depth + 1;</span>
+        } else {
+<span class="fc" id="L149">            return calculateDepth(((NonLeaf&lt;T, S&gt;) node).child(0), depth + 1);</span>
+        }
+    }
+
+    /**
+     * When the number of children in an R-tree node drops below this number the
+     * node is deleted and the children are added on to the R-tree again.
+     * 
+     * @param minChildren
+     *            less than this number of children in a node triggers a node
+     *            deletion and redistribution of its members
+     * @return builder
+     */
+    public static Builder minChildren(int minChildren) {
+<span class="fc" id="L163">        return new Builder().minChildren(minChildren);</span>
+    }
+
+    /**
+     * Sets the max number of children in an R-tree node.
+     * 
+     * @param maxChildren
+     *            max number of children in an R-tree node
+     * @return builder
+     */
+    public static Builder maxChildren(int maxChildren) {
+<span class="fc" id="L174">        return new Builder().maxChildren(maxChildren);</span>
+    }
+
+    /**
+     * Sets the {@link Splitter} to use when maxChildren is reached.
+     * 
+     * @param splitter
+     *            the splitter algorithm to use
+     * @return builder
+     */
+    public static Builder splitter(Splitter splitter) {
+<span class="fc" id="L185">        return new Builder().splitter(splitter);</span>
+    }
+
+    /**
+     * Sets the node {@link Selector} which decides which branches to follow when
+     * inserting or searching.
+     * 
+     * @param selector
+     *            determines which branches to follow when inserting or searching
+     * @return builder
+     */
+    public static Builder selector(Selector selector) {
+<span class="fc" id="L197">        return new Builder().selector(selector);</span>
+    }
+
+    /**
+     * Sets the splitter to {@link SplitterRStar} and selector to
+     * {@link SelectorRStar} and defaults to minChildren=10.
+     * 
+     * @return builder
+     */
+    public static Builder star() {
+<span class="fc" id="L207">        return new Builder().star();</span>
+    }
+
+    /**
+     * RTree Builder.
+     */
+    public static class Builder {
+
+        /**
+         * According to http://dbs.mathematik.uni-marburg.de/publications/myPapers
+         * /1990/BKSS90.pdf (R*-tree paper), best filling ratio is 0.4 for both
+         * quadratic split and R*-tree split.
+         */
+        private static final double DEFAULT_FILLING_FACTOR = 0.4;
+        private static final double DEFAULT_LOADING_FACTOR = 0.7;
+<span class="fc" id="L222">        private Optional&lt;Integer&gt; maxChildren = Optional.empty();</span>
+<span class="fc" id="L223">        private Optional&lt;Integer&gt; minChildren = Optional.empty();</span>
+<span class="fc" id="L224">        private Splitter splitter = new SplitterQuadratic();</span>
+<span class="fc" id="L225">        private Selector selector = new SelectorMinimalAreaIncrease();</span>
+        private double loadingFactor;
+<span class="fc" id="L227">        private boolean star = false;</span>
+<span class="fc" id="L228">        private Factory&lt;Object, Geometry&gt; factory = Factories.defaultFactory();</span>
+
+<span class="fc" id="L230">        private Builder() {</span>
+<span class="fc" id="L231">            loadingFactor = DEFAULT_LOADING_FACTOR;</span>
+<span class="fc" id="L232">        }</span>
+
+        /**
+         * The factor is used as the fill ratio during bulk loading.
+         * 
+         * @param factor
+         *            loading factor
+         * @return this
+         */
+        public Builder loadingFactor(double factor) {
+<span class="nc" id="L242">            this.loadingFactor = factor;</span>
+<span class="nc" id="L243">            return this;</span>
+        }
+
+        /**
+         * When the number of children in an R-tree node drops below this number the
+         * node is deleted and the children are added on to the R-tree again.
+         * 
+         * @param minChildren
+         *            less than this number of children in a node triggers a
+         *            redistribution of its children.
+         * @return builder
+         */
+        public Builder minChildren(int minChildren) {
+<span class="fc" id="L256">            this.minChildren = of(minChildren);</span>
+<span class="fc" id="L257">            return this;</span>
+        }
+
+        /**
+         * Sets the max number of children in an R-tree node.
+         * 
+         * @param maxChildren
+         *            max number of children in R-tree node.
+         * @return builder
+         */
+        public Builder maxChildren(int maxChildren) {
+<span class="fc" id="L268">            this.maxChildren = of(maxChildren);</span>
+<span class="fc" id="L269">            return this;</span>
+        }
+
+        /**
+         * Sets the {@link Splitter} to use when maxChildren is reached.
+         * 
+         * @param splitter
+         *            node splitting method to use
+         * @return builder
+         */
+        public Builder splitter(Splitter splitter) {
+<span class="fc" id="L280">            this.splitter = splitter;</span>
+<span class="fc" id="L281">            return this;</span>
+        }
+
+        /**
+         * Sets the node {@link Selector} which decides which branches to follow when
+         * inserting or searching.
+         * 
+         * @param selector
+         *            selects the branch to follow when inserting or searching
+         * @return builder
+         */
+        public Builder selector(Selector selector) {
+<span class="fc" id="L293">            this.selector = selector;</span>
+<span class="fc" id="L294">            return this;</span>
+        }
+
+        /**
+         * Sets the splitter to {@link SplitterRStar} and selector to
+         * {@link SelectorRStar} and defaults to minChildren=10.
+         * 
+         * @return builder
+         */
+        public Builder star() {
+<span class="fc" id="L304">            selector = new SelectorRStar();</span>
+<span class="fc" id="L305">            splitter = new SplitterRStar();</span>
+<span class="fc" id="L306">            star = true;</span>
+<span class="fc" id="L307">            return this;</span>
+        }
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public Builder factory(Factory&lt;?, ? extends Geometry&gt; factory) {
+            // TODO could change the signature of Builder to have types to
+            // support this method but would be breaking change for existing
+            // clients
+<span class="fc" id="L315">            this.factory = (Factory&lt;Object, Geometry&gt;) factory;</span>
+<span class="fc" id="L316">            return this;</span>
+        }
+
+        /**
+         * Builds the {@link RTree}.
+         * 
+         * @param &lt;T&gt;
+         *            value type
+         * @param &lt;S&gt;
+         *            geometry type
+         * @return RTree
+         */
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; create() {
+<span class="fc" id="L330">            setDefaultCapacity();</span>
+
+<span class="fc" id="L332">            return new RTree&lt;T, S&gt;(Optional.&lt;Node&lt;T, S&gt;&gt;empty(), 0,</span>
+<span class="fc" id="L333">                    new Context&lt;T, S&gt;(minChildren.get(), maxChildren.get(), selector, splitter,</span>
+                            (Factory&lt;T, S&gt;) factory));
+        }
+
+        /**
+         * Create an RTree by bulk loading, using the STR method. STR: a simple and
+         * efficient algorithm for R-tree packing
+         * http://ieeexplore.ieee.org/abstract/document/582015/
+         * &lt;p&gt;
+         * Note: this method mutates the input entries, the internal order of the List
+         * may be changed.
+         * &lt;/p&gt;
+         * 
+         * @param entries
+         *            entries to be added to the r-tree
+         * @return a loaded RTree
+         */
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; create(List&lt;Entry&lt;T, S&gt;&gt; entries) {
+<span class="fc" id="L352">            setDefaultCapacity();</span>
+
+<span class="fc" id="L354">            Context&lt;T, S&gt; context = new Context&lt;T, S&gt;(minChildren.get(), maxChildren.get(),</span>
+                    selector, splitter, (Factory&lt;T, S&gt;) factory);
+<span class="fc" id="L356">            return packingSTR(entries, true, entries.size(), context);</span>
+        }
+
+        private void setDefaultCapacity() {
+<span class="fc bfc" id="L360" title="All 2 branches covered.">            if (!maxChildren.isPresent()) {</span>
+<span class="fc bfc" id="L361" title="All 2 branches covered.">                if (star) {</span>
+<span class="fc" id="L362">                    maxChildren = Optional.of(MAX_CHILDREN_DEFAULT_STAR);</span>
+                } else {
+<span class="fc" id="L364">                    maxChildren = Optional.of(MAX_CHILDREN_DEFAULT_GUTTMAN);</span>
+                }
+            }
+<span class="fc bfc" id="L367" title="All 2 branches covered.">            if (!minChildren.isPresent()) {</span>
+<span class="fc" id="L368">                minChildren = Optional.of((int) Math.round(maxChildren.get() * DEFAULT_FILLING_FACTOR));</span>
+            }
+<span class="fc" id="L370">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        private &lt;T, S extends Geometry&gt; RTree&lt;T, S&gt; packingSTR(List&lt;? extends HasGeometry&gt; objects,
+                boolean isLeaf, int size, Context&lt;T, S&gt; context) {
+<span class="fc" id="L375">            int capacity = (int) Math.round(maxChildren.get() * loadingFactor);</span>
+<span class="fc" id="L376">            int nodeCount = (int) Math.ceil(1.0 * objects.size() / capacity);</span>
+
+<span class="fc bfc" id="L378" title="All 2 branches covered.">            if (nodeCount == 0) {</span>
+<span class="fc" id="L379">                return create();</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">            } else if (nodeCount == 1) {</span>
+                Node&lt;T, S&gt; root;
+<span class="fc bfc" id="L382" title="All 2 branches covered.">                if (isLeaf) {</span>
+<span class="fc" id="L383">                    root = context.factory().createLeaf((List&lt;Entry&lt;T, S&gt;&gt;) objects, context);</span>
+                } else {
+<span class="fc" id="L385">                    root = context.factory().createNonLeaf((List&lt;Node&lt;T, S&gt;&gt;) objects, context);</span>
+                }
+<span class="fc" id="L387">                return new RTree&lt;T, S&gt;(of(root), size, context);</span>
+            }
+
+<span class="fc" id="L390">            int nodePerSlice = (int) Math.ceil(Math.sqrt(nodeCount));</span>
+<span class="fc" id="L391">            int sliceCapacity = nodePerSlice * capacity;</span>
+<span class="fc" id="L392">            int sliceCount = (int) Math.ceil(1.0 * objects.size() / sliceCapacity);</span>
+<span class="fc" id="L393">            Collections.sort(objects, new MidComparator((short) 0));</span>
+
+<span class="fc" id="L395">            List&lt;Node&lt;T, S&gt;&gt; nodes = new ArrayList&lt;Node&lt;T, S&gt;&gt;(nodeCount);</span>
+<span class="fc bfc" id="L396" title="All 2 branches covered.">            for (int s = 0; s &lt; sliceCount; s++) {</span>
+                @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L398">                List slice = objects.subList(s * sliceCapacity,</span>
+<span class="fc" id="L399">                        Math.min((s + 1) * sliceCapacity, objects.size()));</span>
+<span class="fc" id="L400">                Collections.sort(slice, new MidComparator((short) 1));</span>
+
+<span class="fc bfc" id="L402" title="All 2 branches covered.">                for (int i = 0; i &lt; slice.size(); i += capacity) {</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">                    if (isLeaf) {</span>
+<span class="fc" id="L404">                        List&lt;Entry&lt;T, S&gt;&gt; entries = slice.subList(i,</span>
+<span class="fc" id="L405">                                Math.min(slice.size(), i + capacity));</span>
+<span class="fc" id="L406">                        Node&lt;T, S&gt; leaf = context.factory().createLeaf(entries, context);</span>
+<span class="fc" id="L407">                        nodes.add(leaf);</span>
+<span class="fc" id="L408">                    } else {</span>
+<span class="fc" id="L409">                        List&lt;Node&lt;T, S&gt;&gt; children = slice.subList(i,</span>
+<span class="fc" id="L410">                                Math.min(slice.size(), i + capacity));</span>
+<span class="fc" id="L411">                        Node&lt;T, S&gt; nonleaf = context.factory().createNonLeaf(children, context);</span>
+<span class="fc" id="L412">                        nodes.add(nonleaf);</span>
+                    }
+                }
+            }
+<span class="fc" id="L416">            return packingSTR(nodes, false, size, context);</span>
+        }
+
+        private static final class MidComparator implements Comparator&lt;HasGeometry&gt; {
+            private final short dimension; // leave space for multiple dimensions, 0 for x, 1 for y,
+                                           // ...
+
+<span class="fc" id="L423">            public MidComparator(short dim) {</span>
+<span class="fc" id="L424">                dimension = dim;</span>
+<span class="fc" id="L425">            }</span>
+
+            @Override
+            public int compare(HasGeometry o1, HasGeometry o2) {
+<span class="fc" id="L429">                return Double.compare(mid(o1), mid(o2));</span>
+            }
+
+            private double mid(HasGeometry o) {
+<span class="fc" id="L433">                Rectangle mbr = o.geometry().mbr();</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">                if (dimension == 0)</span>
+<span class="fc" id="L435">                    return (mbr.x1() + mbr.x2()) / 2;</span>
+                else
+<span class="fc" id="L437">                    return (mbr.y1() + mbr.y2()) / 2;</span>
+            }
+        }
+
+    }
+
+    /**
+     * Returns an immutable copy of the RTree with the addition of given entry.
+     * 
+     * @param entry
+     *            item to add to the R-tree.
+     * @return a new immutable R-tree including the new entry
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public RTree&lt;T, S&gt; add(Entry&lt;? extends T, ? extends S&gt; entry) {
+<span class="fc bfc" id="L452" title="All 2 branches covered.">        if (root.isPresent()) {</span>
+<span class="fc" id="L453">            List&lt;Node&lt;T, S&gt;&gt; nodes = root.get().add(entry);</span>
+            Node&lt;T, S&gt; node;
+<span class="fc bfc" id="L455" title="All 2 branches covered.">            if (nodes.size() == 1)</span>
+<span class="fc" id="L456">                node = nodes.get(0);</span>
+            else {
+<span class="fc" id="L458">                node = context.factory().createNonLeaf(nodes, context);</span>
+            }
+<span class="fc" id="L460">            return new RTree&lt;T, S&gt;(node, size + 1, context);</span>
+        } else {
+<span class="fc" id="L462">            Leaf&lt;T, S&gt; node = context.factory().createLeaf(Lists.newArrayList((Entry&lt;T, S&gt;) entry),</span>
+                    context);
+<span class="fc" id="L464">            return new RTree&lt;T, S&gt;(node, size + 1, context);</span>
+        }
+    }
+
+    /**
+     * Returns an immutable copy of the RTree with the addition of an entry
+     * comprised of the given value and Geometry.
+     * 
+     * @param value
+     *            the value of the {@link Entry} to be added
+     * @param geometry
+     *            the geometry of the {@link Entry} to be added
+     * @return a new immutable R-tree including the new entry
+     */
+    public RTree&lt;T, S&gt; add(T value, S geometry) {
+<span class="fc" id="L479">        return add(context.factory().createEntry(value, geometry));</span>
+    }
+
+    /**
+     * Returns an immutable RTree with the current entries and the additional
+     * entries supplied as a parameter.
+     * 
+     * @param entries
+     *            entries to add
+     * @return R-tree with entries added
+     */
+    public RTree&lt;T, S&gt; add(Iterable&lt;Entry&lt;T, S&gt;&gt; entries) {
+<span class="fc" id="L491">        RTree&lt;T, S&gt; tree = this;</span>
+<span class="fc bfc" id="L492" title="All 2 branches covered.">        for (Entry&lt;T, S&gt; entry : entries)</span>
+<span class="fc" id="L493">            tree = tree.add(entry);</span>
+<span class="fc" id="L494">        return tree;</span>
+    }
+
+    /**
+     * Returns the Observable sequence of trees created by progressively adding
+     * entries.
+     * 
+     * @param entries
+     *            the entries to add
+     * @return a sequence of trees
+     */
+    public Observable&lt;RTree&lt;T, S&gt;&gt; add(Observable&lt;Entry&lt;T, S&gt;&gt; entries) {
+<span class="fc" id="L506">        return entries.scan(this, (tree, entry) -&gt; tree.add(entry));</span>
+    }
+
+    /**
+     * Returns the Observable sequence of trees created by progressively deleting
+     * entries.
+     * 
+     * @param entries
+     *            the entries to add
+     * @param all
+     *            if true delete all matching otherwise just first matching
+     * @return a sequence of trees
+     */
+    public Observable&lt;RTree&lt;T, S&gt;&gt; delete(Observable&lt;Entry&lt;T, S&gt;&gt; entries, final boolean all) {
+<span class="fc" id="L520">        return entries.scan(this, new Func2&lt;RTree&lt;T, S&gt;, Entry&lt;T, S&gt;, RTree&lt;T, S&gt;&gt;() {</span>
+
+            @Override
+            public RTree&lt;T, S&gt; call(RTree&lt;T, S&gt; tree, Entry&lt;T, S&gt; entry) {
+<span class="fc" id="L524">                return tree.delete(entry, all);</span>
+            }
+        });
+    }
+
+    /**
+     * Returns a new R-tree with the given entries deleted. If &lt;code&gt;all&lt;/code&gt; is
+     * false deletes only one if exists. If &lt;code&gt;all&lt;/code&gt; is true deletes all
+     * matching entries.
+     * 
+     * @param entries
+     *            entries to delete
+     * @param all
+     *            if false deletes one if exists else deletes all
+     * @return R-tree with entries deleted
+     */
+    public RTree&lt;T, S&gt; delete(Iterable&lt;Entry&lt;T, S&gt;&gt; entries, boolean all) {
+<span class="fc" id="L541">        RTree&lt;T, S&gt; tree = this;</span>
+<span class="fc bfc" id="L542" title="All 2 branches covered.">        for (Entry&lt;T, S&gt; entry : entries)</span>
+<span class="fc" id="L543">            tree = tree.delete(entry, all);</span>
+<span class="fc" id="L544">        return tree;</span>
+    }
+
+    /**
+     * Returns a new R-tree with the given entries deleted but only one matching
+     * occurence of each entry is deleted.
+     * 
+     * @param entries
+     *            entries to delete
+     * @return R-tree with entries deleted up to one matching occurence per entry
+     */
+    public RTree&lt;T, S&gt; delete(Iterable&lt;Entry&lt;T, S&gt;&gt; entries) {
+<span class="fc" id="L556">        RTree&lt;T, S&gt; tree = this;</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">        for (Entry&lt;T, S&gt; entry : entries)</span>
+<span class="fc" id="L558">            tree = tree.delete(entry);</span>
+<span class="fc" id="L559">        return tree;</span>
+    }
+
+    /**
+     * If &lt;code&gt;all&lt;/code&gt; is false deletes one entry matching the given value and
+     * Geometry. If &lt;code&gt;all&lt;/code&gt; is true deletes all entries matching the given
+     * value and geometry. This method has no effect if the entry is not present.
+     * The entry must match on both value and geometry to be deleted.
+     * 
+     * @param value
+     *            the value of the {@link Entry} to be deleted
+     * @param geometry
+     *            the geometry of the {@link Entry} to be deleted
+     * @param all
+     *            if false deletes one if exists else deletes all
+     * @return a new immutable R-tree without one or many instances of the specified
+     *         entry if it exists otherwise returns the original RTree object
+     */
+    public RTree&lt;T, S&gt; delete(T value, S geometry, boolean all) {
+<span class="fc" id="L578">        return delete(context.factory().createEntry(value, geometry), all);</span>
+    }
+
+    /**
+     * Deletes maximum one entry matching the given value and geometry. This method
+     * has no effect if the entry is not present. The entry must match on both value
+     * and geometry to be deleted.
+     * 
+     * @param value
+     *            the value to be matched for deletion
+     * @param geometry
+     *            the geometry to be matched for deletion
+     * @return an immutable RTree without one entry (if found) matching the given
+     *         value and geometry
+     */
+    public RTree&lt;T, S&gt; delete(T value, S geometry) {
+<span class="fc" id="L594">        return delete(context.factory().createEntry(value, geometry), false);</span>
+    }
+
+    /**
+     * Deletes one or all matching entries depending on the value of
+     * &lt;code&gt;all&lt;/code&gt;. If multiple copies of the entry are in the R-tree only one
+     * will be deleted if all is false otherwise all matching entries will be
+     * deleted. The entry must match on both value and geometry to be deleted.
+     * 
+     * @param entry
+     *            the {@link Entry} to be deleted
+     * @param all
+     *            if true deletes all matches otherwise deletes first found
+     * @return a new immutable R-tree without one instance of the specified entry
+     */
+    public RTree&lt;T, S&gt; delete(Entry&lt;? extends T, ? extends S&gt; entry, boolean all) {
+<span class="fc bfc" id="L610" title="All 2 branches covered.">        if (root.isPresent()) {</span>
+<span class="fc" id="L611">            NodeAndEntries&lt;T, S&gt; nodeAndEntries = root.get().delete(entry, all);</span>
+<span class="fc bfc" id="L612" title="All 4 branches covered.">            if (nodeAndEntries.node().isPresent() &amp;&amp; nodeAndEntries.node().get() == root.get())</span>
+<span class="fc" id="L613">                return this;</span>
+            else
+<span class="fc" id="L615">                return new RTree&lt;T, S&gt;(nodeAndEntries.node(),</span>
+<span class="fc" id="L616">                        size - nodeAndEntries.countDeleted() - nodeAndEntries.entriesToAdd().size(),</span>
+<span class="fc" id="L617">                        context).add(nodeAndEntries.entriesToAdd());</span>
+        } else
+<span class="fc" id="L619">            return this;</span>
+    }
+
+    /**
+     * Deletes one entry if it exists, returning an immutable copy of the RTree
+     * without that entry. If multiple copies of the entry are in the R-tree only
+     * one will be deleted. The entry must match on both value and geometry to be
+     * deleted.
+     * 
+     * @param entry
+     *            the {@link Entry} to be deleted
+     * @return a new immutable R-tree without one instance of the specified entry
+     */
+    public RTree&lt;T, S&gt; delete(Entry&lt;? extends T, ? extends S&gt; entry) {
+<span class="fc" id="L633">        return delete(entry, false);</span>
+    }
+
+    /**
+     * &lt;p&gt;
+     * Returns an Observable sequence of {@link Entry} that satisfy the given
+     * condition. Note that this method is well-behaved only if:
+     *
+     * 
+     * &lt;p&gt;
+     * {@code condition(g)} is true for {@link Geometry} g implies
+     * {@code condition(r)} is true for the minimum bounding rectangles of the
+     * ancestor nodes.
+     * 
+     * &lt;p&gt;
+     * {@code distance(g) &lt; D} is an example of such a condition.
+     * 
+     * 
+     * @param condition
+     *            return Entries whose geometry satisfies the given condition
+     * @return sequence of matching entries
+     */
+    @VisibleForTesting
+    Observable&lt;Entry&lt;T, S&gt;&gt; search(Func1&lt;? super Geometry, Boolean&gt; condition) {
+<span class="fc" id="L657">        return root</span>
+<span class="fc" id="L658">                .map(node -&gt; Observable.unsafeCreate(new OnSubscribeSearch&lt;&gt;(node, condition)))</span>
+<span class="fc" id="L659">                .orElseGet(Observable::empty);</span>
+    }
+
+    /**
+     * Returns a predicate function that indicates if {@link Geometry} intersects
+     * with a given rectangle.
+     * 
+     * @param r
+     *            the rectangle to check intersection with
+     * @return whether the geometry and the rectangle intersect
+     */
+    public static Func1&lt;Geometry, Boolean&gt; intersects(final Rectangle r) {
+<span class="fc" id="L671">        return g -&gt; g.intersects(r);</span>
+    }
+
+    /**
+     * Returns the always true predicate. See {@link RTree#entries()} for example
+     * use.
+     */
+<span class="fc" id="L678">    private static final Func1&lt;Geometry, Boolean&gt; ALWAYS_TRUE = rectangle -&gt; true;</span>
+
+    /**
+     * Returns an {@link Observable} sequence of all {@link Entry}s in the R-tree
+     * whose minimum bounding rectangle intersects with the given rectangle.
+     * 
+     * @param r
+     *            rectangle to check intersection with the entry mbr
+     * @return entries that intersect with the rectangle r
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(final Rectangle r) {
+<span class="fc" id="L689">        return search(intersects(r));</span>
+    }
+
+    /**
+     * Returns an {@link Observable} sequence of all {@link Entry}s in the R-tree
+     * whose minimum bounding rectangle intersects with the given point.
+     * 
+     * @param p
+     *            point to check intersection with the entry mbr
+     * @return entries that intersect with the point p
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(final Point p) {
+<span class="fc" id="L701">        return search(p.mbr());</span>
+    }
+
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(Circle circle) {
+<span class="fc" id="L705">        return search(circle, Intersects.geometryIntersectsCircle);</span>
+    }
+
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(Line line) {
+<span class="fc" id="L709">        return search(line, Intersects.geometryIntersectsLine);</span>
+    }
+
+    /**
+     * Returns an {@link Observable} sequence of all {@link Entry}s in the R-tree
+     * whose minimum bounding rectangles are strictly less than maxDistance from the
+     * given rectangle.
+     * 
+     * @param r
+     *            rectangle to measure distance from
+     * @param maxDistance
+     *            entries returned must be within this distance from rectangle r
+     * @return the sequence of matching entries
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(final Rectangle r, final double maxDistance) {
+<span class="fc bfc" id="L724" title="All 2 branches covered.">        return search(g -&gt; g.distance(r) &lt; maxDistance);</span>
+    }
+
+    /**
+     * Returns the intersections with the the given (arbitrary) geometry using an
+     * intersection function to filter the search results returned from a search of
+     * the mbr of &lt;code&gt;g&lt;/code&gt;.
+     * 
+     * @param &lt;R&gt;
+     *            type of geometry being searched for intersection with
+     * @param g
+     *            geometry being searched for intersection with
+     * @param intersects
+     *            function to determine if the two geometries intersect
+     * @return a sequence of entries that intersect with g
+     */
+    public &lt;R extends Geometry&gt; Observable&lt;Entry&lt;T, S&gt;&gt; search(final R g,
+                                                               final Func2&lt;? super S, ? super R, Boolean&gt; intersects) {
+<span class="fc" id="L742">        return search(g.mbr()).filter(entry -&gt; intersects.call(entry.geometry(), g));</span>
+    }
+
+    /**
+     * Returns all entries strictly less than &lt;code&gt;maxDistance&lt;/code&gt; from the
+     * given geometry. Because the geometry may be of an arbitrary type it is
+     * necessary to also pass a distance function.
+     * 
+     * @param &lt;R&gt;
+     *            type of the geometry being searched for
+     * @param g
+     *            geometry to search for entries within maxDistance of
+     * @param maxDistance
+     *            strict max distance that entries must be from g
+     * @param distance
+     *            function to calculate the distance between geometries of type S
+     *            and R.
+     * @return entries strictly less than maxDistance from g
+     */
+    public &lt;R extends Geometry&gt; Observable&lt;Entry&lt;T, S&gt;&gt; search(final R g, final double maxDistance,
+        final Func2&lt;? super S, ? super R, Double&gt; distance) {
+        // just use the mbr initially
+<span class="fc bfc" id="L764" title="All 2 branches covered.">        return search(entry -&gt; entry.distance(g.mbr()) &lt; maxDistance)</span>
+                // refine with distance function
+<span class="fc bfc" id="L766" title="All 2 branches covered.">                .filter(entry -&gt; distance.call(entry.geometry(), g) &lt; maxDistance);</span>
+    }
+
+    /**
+     * Returns an {@link Observable} sequence of all {@link Entry}s in the R-tree
+     * whose minimum bounding rectangles are within maxDistance from the given
+     * point.
+     * 
+     * @param p
+     *            point to measure distance from
+     * @param maxDistance
+     *            entries returned must be within this distance from point p
+     * @return the sequence of matching entries
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; search(final Point p, final double maxDistance) {
+<span class="fc" id="L781">        return search(p.mbr(), maxDistance);</span>
+    }
+
+    /**
+     * Returns the nearest k entries (k=maxCount) to the given rectangle where the
+     * entries are strictly less than a given maximum distance from the rectangle.
+     * 
+     * @param r
+     *            rectangle
+     * @param maxDistance
+     *            max distance of returned entries from the rectangle
+     * @param maxCount
+     *            max number of entries to return
+     * @return nearest entries to maxCount, in ascending order of distance
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; nearest(final Rectangle r, final double maxDistance,
+            int maxCount) {
+<span class="fc" id="L798">        return search(r, maxDistance).lift(new OperatorBoundedPriorityQueue&lt;Entry&lt;T, S&gt;&gt;(maxCount,</span>
+<span class="fc" id="L799">                Comparators.&lt;T, S&gt;ascendingDistance(r)));</span>
+    }
+
+    /**
+     * Returns the nearest k entries (k=maxCount) to the given point where the
+     * entries are strictly less than a given maximum distance from the point.
+     * 
+     * @param p
+     *            point
+     * @param maxDistance
+     *            max distance of returned entries from the point
+     * @param maxCount
+     *            max number of entries to return
+     * @return nearest entries to maxCount, in ascending order of distance
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; nearest(final Point p, final double maxDistance, int maxCount) {
+<span class="fc" id="L815">        return nearest(p.mbr(), maxDistance, maxCount);</span>
+    }
+
+    /**
+     * Returns all entries in the tree as an {@link Observable} sequence.
+     * 
+     * @return all entries in the R-tree
+     */
+    public Observable&lt;Entry&lt;T, S&gt;&gt; entries() {
+<span class="fc" id="L824">        return search(ALWAYS_TRUE);</span>
+    }
+
+    /**
+     * Returns a {@link Visualizer} for an image of given width and height and
+     * restricted to the given view of the coordinates. The points in the view are
+     * scaled to match the aspect ratio defined by the width and height.
+     * 
+     * @param width
+     *            of the image in pixels
+     * @param height
+     *            of the image in pixels
+     * @param view
+     *            using the coordinate system of the entries
+     * @return visualizer
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Visualizer visualize(int width, int height, Rectangle view) {
+<span class="fc" id="L842">        return new Visualizer((RTree&lt;?, Geometry&gt;) this, width, height, view);</span>
+    }
+
+    /**
+     * Returns a {@link Visualizer} for an image of given width and height and
+     * restricted to the the smallest view that fully contains the coordinates. The
+     * points in the view are scaled to match the aspect ratio defined by the width
+     * and height.
+     * 
+     * @param width
+     *            of the image in pixels
+     * @param height
+     *            of the image in pixels
+     * @return visualizer
+     */
+    public Visualizer visualize(int width, int height) {
+<span class="fc" id="L858">        return visualize(width, height, calculateMaxView(this));</span>
+    }
+
+    private Rectangle calculateMaxView(RTree&lt;T, S&gt; tree) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L863">        Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;T, S&gt;, Optional&lt;Rectangle&gt;&gt; ra = //</span>
+                (Func2&lt;Optional&lt;Rectangle&gt;, Entry&lt;T, S&gt;, Optional&lt;Rectangle&gt;&gt;) //
+                (Func2&lt;?,?,?&gt;) //
+                RECTANGLE_ACCUMULATOR;
+<span class="fc" id="L867">        return tree.entries()</span>
+<span class="fc" id="L868">                .reduce(Optional.empty(), ra)</span>
+<span class="fc" id="L869">                .toBlocking().single()</span>
+<span class="fc" id="L870">                .orElse(ZERO_RECTANGLE);</span>
+    }
+
+    public Optional&lt;? extends Node&lt;T, S&gt;&gt; root() {
+<span class="fc" id="L874">        return root;</span>
+    }
+
+    /**
+     * If the RTree has no entries returns {@link Optional#absent} otherwise returns
+     * the minimum bounding rectangle of all entries in the RTree.
+     * 
+     * @return minimum bounding rectangle of all entries in RTree
+     */
+    public Optional&lt;Rectangle&gt; mbr() {
+<span class="fc" id="L884">        return root.map(r -&gt; r.geometry().mbr());</span>
+    }
+
+    /**
+     * Returns true if and only if the R-tree is empty of entries.
+     * 
+     * @return is R-tree empty
+     */
+    public boolean isEmpty() {
+<span class="fc bfc" id="L893" title="All 2 branches covered.">        return size == 0;</span>
+    }
+
+    /**
+     * Returns the number of entries in the RTree.
+     * 
+     * @return the number of entries
+     */
+    public int size() {
+<span class="fc" id="L902">        return size;</span>
+    }
+
+    /**
+     * Returns a {@link Context} containing the configuration of the RTree at the
+     * time of instantiation.
+     * 
+     * @return the configuration of the RTree prior to instantiation
+     */
+    public Context&lt;T, S&gt; context() {
+<span class="fc" id="L912">        return context;</span>
+    }
+
+    /**
+     * Returns a human readable form of the RTree. Here's an example:
+     * 
+     * &lt;pre&gt;
+     * mbr=Rectangle [x1=10.0, y1=4.0, x2=62.0, y2=85.0]
+     *   mbr=Rectangle [x1=28.0, y1=4.0, x2=34.0, y2=85.0]
+     *     entry=Entry [value=2, geometry=Point [x=29.0, y=4.0]]
+     *     entry=Entry [value=1, geometry=Point [x=28.0, y=19.0]]
+     *     entry=Entry [value=4, geometry=Point [x=34.0, y=85.0]]
+     *   mbr=Rectangle [x1=10.0, y1=45.0, x2=62.0, y2=63.0]
+     *     entry=Entry [value=5, geometry=Point [x=62.0, y=45.0]]
+     *     entry=Entry [value=3, geometry=Point [x=10.0, y=63.0]]
+     * &lt;/pre&gt;
+     * 
+     * @return a string representation of the RTree
+     */
+    public String asString() {
+<span class="fc bfc" id="L932" title="All 2 branches covered.">        if (!root.isPresent())</span>
+<span class="fc" id="L933">            return &quot;&quot;;</span>
+        else
+<span class="fc" id="L935">            return asString(root.get(), &quot;&quot;);</span>
+    }
+
+    private static final String MARGIN_INCREMENT = &quot;  &quot;;
+
+    private String asString(Node&lt;T, S&gt; node, String margin) {
+<span class="fc" id="L941">        StringBuilder s = new StringBuilder();</span>
+<span class="fc" id="L942">        s.append(margin);</span>
+<span class="fc" id="L943">        s.append(&quot;mbr=&quot;);</span>
+<span class="fc" id="L944">        s.append(node.geometry());</span>
+<span class="fc" id="L945">        s.append('\n');</span>
+<span class="fc bfc" id="L946" title="All 2 branches covered.">        if (node instanceof NonLeaf) {</span>
+<span class="fc" id="L947">            NonLeaf&lt;T, S&gt; n = (NonLeaf&lt;T, S&gt;) node;</span>
+<span class="fc bfc" id="L948" title="All 2 branches covered.">            for (int i = 0; i &lt; n.count(); i++) {</span>
+<span class="fc" id="L949">                Node&lt;T, S&gt; child = n.child(i);</span>
+<span class="fc" id="L950">                s.append(asString(child, margin + MARGIN_INCREMENT));</span>
+            }
+<span class="fc" id="L952">        } else {</span>
+<span class="fc" id="L953">            Leaf&lt;T, S&gt; leaf = (Leaf&lt;T, S&gt;) node;</span>
+
+<span class="fc bfc" id="L955" title="All 2 branches covered.">            for (Entry&lt;T, S&gt; entry : leaf.entries()) {</span>
+<span class="fc" id="L956">                s.append(margin);</span>
+<span class="fc" id="L957">                s.append(MARGIN_INCREMENT);</span>
+<span class="fc" id="L958">                s.append(&quot;entry=&quot;);</span>
+<span class="fc" id="L959">                s.append(entry);</span>
+<span class="fc" id="L960">                s.append('\n');</span>
+<span class="fc" id="L961">            }</span>
+        }
+<span class="fc" id="L963">        return s.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

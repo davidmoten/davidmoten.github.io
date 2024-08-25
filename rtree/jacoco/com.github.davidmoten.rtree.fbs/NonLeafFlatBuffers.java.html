@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NonLeafFlatBuffers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.fbs</a> &gt; <span class="el_source">NonLeafFlatBuffers.java</span></div><h1>NonLeafFlatBuffers.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.fbs;
+
+import static com.github.davidmoten.rtree.fbs.FlatBuffersHelper.createBox;
+import static com.github.davidmoten.rtree.fbs.FlatBuffersHelper.parseObject;
+import static com.github.davidmoten.rtree.fbs.FlatBuffersHelper.toGeometry;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.rtree.Context;
+import com.github.davidmoten.rtree.Entries;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.NonLeaf;
+import com.github.davidmoten.rtree.fbs.generated.BoundsType_;
+import com.github.davidmoten.rtree.fbs.generated.Bounds_;
+import com.github.davidmoten.rtree.fbs.generated.BoxDouble_;
+import com.github.davidmoten.rtree.fbs.generated.BoxFloat_;
+import com.github.davidmoten.rtree.fbs.generated.Entry_;
+import com.github.davidmoten.rtree.fbs.generated.Geometry_;
+import com.github.davidmoten.rtree.fbs.generated.Node_;
+import com.github.davidmoten.rtree.geometry.Geometries;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+import com.github.davidmoten.rtree.internal.NodeAndEntries;
+import com.github.davidmoten.rtree.internal.NonLeafHelper;
+
+import rx.Subscriber;
+import rx.functions.Func1;
+
+final class NonLeafFlatBuffers&lt;T, S extends Geometry&gt; implements NonLeaf&lt;T, S&gt; {
+
+    private final Node_ node;
+    private final Context&lt;T, S&gt; context;
+    private final Func1&lt;byte[], ? extends T&gt; deserializer;
+
+<span class="fc" id="L38">    NonLeafFlatBuffers(Node_ node, Context&lt;T, S&gt; context, Func1&lt;byte[], ? extends T&gt; deserializer) {</span>
+<span class="fc" id="L39">        Preconditions.checkNotNull(node);</span>
+        // remove precondition because reduces performance
+        // Preconditions.checkArgument(node.childrenLength() &gt; 0);
+<span class="fc" id="L42">        this.node = node;</span>
+<span class="fc" id="L43">        this.context = context;</span>
+<span class="fc" id="L44">        this.deserializer = deserializer;</span>
+<span class="fc" id="L45">    }</span>
+
+    @Override
+    public List&lt;Node&lt;T, S&gt;&gt; add(Entry&lt;? extends T, ? extends S&gt; entry) {
+<span class="fc" id="L49">        return NonLeafHelper.add(entry, this);</span>
+    }
+
+    @Override
+    public NodeAndEntries&lt;T, S&gt; delete(Entry&lt;? extends T, ? extends S&gt; entry, boolean all) {
+<span class="fc" id="L54">        return NonLeafHelper.delete(entry, all, this);</span>
+    }
+
+    @Override
+    public void searchWithoutBackpressure(Func1&lt;? super Geometry, Boolean&gt; criterion,
+            Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber) {
+        // pass through entry and geometry and box instances to be reused for
+        // flatbuffers extraction this reduces allocation/gc costs (but of
+        // course introduces some mutable ugliness into the codebase)
+<span class="fc" id="L63">        searchWithoutBackpressure(node, criterion, subscriber, deserializer, new Entry_(),</span>
+                new Geometry_(), new Bounds_());
+<span class="fc" id="L65">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T, S extends Geometry&gt; void searchWithoutBackpressure(Node_ node,
+            Func1&lt;? super Geometry, Boolean&gt; criterion, Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber,
+            Func1&lt;byte[], ? extends T&gt; deserializer, Entry_ entry, Geometry_ geometry,
+            Bounds_ bounds) {
+        {
+            // write bounds from node to bounds variable
+<span class="fc" id="L74">            node.mbb(bounds);</span>
+            final Rectangle rect;
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (bounds.type() == BoundsType_.BoundsDouble) {</span>
+<span class="nc" id="L77">                BoxDouble_ b = bounds.boxDouble();</span>
+<span class="nc" id="L78">                rect = Geometries.rectangle(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+<span class="nc" id="L79">            } else {</span>
+<span class="fc" id="L80">                BoxFloat_ b = bounds.boxFloat();</span>
+<span class="fc" id="L81">                rect = Geometries.rectangle(b.minX(), b.minY(), b.maxX(), b.maxY());</span>
+            }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (!criterion.call(rect)) {</span>
+<span class="fc" id="L84">                return;</span>
+            }
+        }
+<span class="fc" id="L87">        int numChildren = node.childrenLength();</span>
+        // reduce allocations by reusing objects
+<span class="fc" id="L89">        Node_ child = new Node_();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (numChildren &gt; 0) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            for (int i = 0; i &lt; numChildren; i++) {</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                if (subscriber.isUnsubscribed())</span>
+<span class="nc" id="L93">                    return;</span>
+<span class="fc" id="L94">                node.children(child, i);</span>
+<span class="fc" id="L95">                searchWithoutBackpressure(child, criterion, subscriber, deserializer, entry,</span>
+                        geometry, bounds);
+            }
+        } else {
+<span class="fc" id="L99">            int numEntries = node.entriesLength();</span>
+            // reduce allocations by reusing objects
+            // check all entries
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            for (int i = 0; i &lt; numEntries; i++) {</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                if (subscriber.isUnsubscribed())</span>
+<span class="nc" id="L104">                    return;</span>
+                // set entry
+<span class="fc" id="L106">                node.entries(entry, i);</span>
+                // set geometry
+<span class="fc" id="L108">                entry.geometry(geometry);</span>
+<span class="fc" id="L109">                final Geometry g = toGeometry(geometry);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                if (criterion.call(g)) {</span>
+<span class="fc" id="L111">                    T t = parseObject(deserializer, entry);</span>
+<span class="fc" id="L112">                    Entry&lt;T, S&gt; ent = Entries.entry(t, (S) g);</span>
+<span class="fc" id="L113">                    subscriber.onNext(ent);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L118">    }</span>
+
+    private List&lt;Node&lt;T, S&gt;&gt; createChildren() {
+
+        // reduce allocations by resusing objects
+<span class="fc" id="L123">        int numChildren = node.childrenLength();</span>
+<span class="fc" id="L124">        List&lt;Node&lt;T, S&gt;&gt; children = new ArrayList&lt;Node&lt;T, S&gt;&gt;(numChildren);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (int i = 0; i &lt; numChildren; i++) {</span>
+<span class="fc" id="L126">            Node_ child = node.children(i);</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">            if (child.childrenLength() &gt; 0) {</span>
+<span class="nc" id="L128">                children.add(new NonLeafFlatBuffers&lt;T, S&gt;(child, context, deserializer));</span>
+            } else {
+<span class="fc" id="L130">                children.add(new LeafFlatBuffers&lt;T, S&gt;(child, context, deserializer));</span>
+            }
+        }
+<span class="fc" id="L133">        return children;</span>
+    }
+
+    @Override
+    public int count() {
+<span class="fc" id="L138">        return node.childrenLength();</span>
+    }
+
+    @Override
+    public Context&lt;T, S&gt; context() {
+<span class="fc" id="L143">        return context;</span>
+    }
+
+    @Override
+    public Geometry geometry() {
+<span class="fc" id="L148">        return FlatBuffersHelper.createBox(node.mbb());</span>
+    }
+
+    @Override
+    public Node&lt;T, S&gt; child(int i) {
+<span class="fc" id="L153">        Node_ child = node.children(i);</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (child.childrenLength() &gt; 0)</span>
+<span class="fc" id="L155">            return new NonLeafFlatBuffers&lt;T, S&gt;(child, context, deserializer);</span>
+        else
+<span class="fc" id="L157">            return new LeafFlatBuffers&lt;T, S&gt;(child, context, deserializer);</span>
+    }
+
+    @Override
+    public List&lt;Node&lt;T, S&gt;&gt; children() {
+<span class="fc" id="L162">        return createChildren();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        return &quot;Node [&quot; + (node.childrenLength() &gt; 0 ? &quot;NonLeaf&quot; : &quot;Leaf&quot;) + &quot;,&quot;</span>
+<span class="fc" id="L168">                + createBox(node.mbb()).toString() + &quot;]&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

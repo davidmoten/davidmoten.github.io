@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NonLeafHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.internal</a> &gt; <span class="el_source">NonLeafHelper.java</span></div><h1>NonLeafHelper.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.internal;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import com.github.davidmoten.rtree.Context;
+import com.github.davidmoten.rtree.Entry;
+import com.github.davidmoten.rtree.Node;
+import com.github.davidmoten.rtree.NonLeaf;
+import com.github.davidmoten.rtree.geometry.Geometry;
+import com.github.davidmoten.rtree.geometry.ListPair;
+
+import rx.Subscriber;
+import rx.functions.Func1;
+
+import static java.util.Optional.of;
+
+public final class NonLeafHelper {
+
+    private NonLeafHelper() {
+        // prevent instantiation
+    }
+
+    public static &lt;T, S extends Geometry&gt; void search(Func1&lt;? super Geometry, Boolean&gt; criterion,
+            Subscriber&lt;? super Entry&lt;T, S&gt;&gt; subscriber, NonLeaf&lt;T, S&gt; node) {
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (!criterion.call(node.geometry().mbr()))</span>
+<span class="fc" id="L29">            return;</span>
+
+<span class="fc" id="L31">        int numChildren = node.count();</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        for (int i = 0; i &lt; numChildren; i++) {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            if (subscriber.isUnsubscribed()) {</span>
+<span class="fc" id="L34">                return;</span>
+            } else {
+<span class="fc" id="L36">                Node&lt;T, S&gt; child = node.child(i);</span>
+<span class="fc" id="L37">                child.searchWithoutBackpressure(criterion, subscriber);</span>
+            }
+        }
+<span class="fc" id="L40">    }</span>
+
+    public static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; add(
+            Entry&lt;? extends T, ? extends S&gt; entry, NonLeaf&lt;T, S&gt; node) {
+<span class="fc" id="L44">        Context&lt;T, S&gt; context = node.context();</span>
+<span class="fc" id="L45">        List&lt;Node&lt;T, S&gt;&gt; children = node.children();</span>
+<span class="fc" id="L46">        final Node&lt;T, S&gt; child = context.selector().select(entry.geometry().mbr(), children);</span>
+<span class="fc" id="L47">        List&lt;Node&lt;T, S&gt;&gt; list = child.add(entry);</span>
+<span class="fc" id="L48">        List&lt;? extends Node&lt;T, S&gt;&gt; children2 = Util.replace(children, child, list);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (children2.size() &lt;= context.maxChildren())</span>
+<span class="fc" id="L50">            return Collections.singletonList(</span>
+<span class="fc" id="L51">                    (Node&lt;T, S&gt;) context.factory().createNonLeaf(children2, context));</span>
+        else {
+<span class="fc" id="L53">            ListPair&lt;? extends Node&lt;T, S&gt;&gt; pair = context.splitter().split(children2,</span>
+<span class="fc" id="L54">                    context.minChildren());</span>
+<span class="fc" id="L55">            return makeNonLeaves(pair, context);</span>
+        }
+    }
+
+    private static &lt;T, S extends Geometry&gt; List&lt;Node&lt;T, S&gt;&gt; makeNonLeaves(
+            ListPair&lt;? extends Node&lt;T, S&gt;&gt; pair, Context&lt;T, S&gt; context) {
+<span class="fc" id="L61">        List&lt;Node&lt;T, S&gt;&gt; list = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L62">        list.add(context.factory().createNonLeaf(pair.group1().list(), context));</span>
+<span class="fc" id="L63">        list.add(context.factory().createNonLeaf(pair.group2().list(), context));</span>
+<span class="fc" id="L64">        return list;</span>
+    }
+
+    public static &lt;T, S extends Geometry&gt; NodeAndEntries&lt;T, S&gt; delete(
+            Entry&lt;? extends T, ? extends S&gt; entry, boolean all, NonLeaf&lt;T, S&gt; node) {
+        // the result of performing a delete of the given entry from this node
+        // will be that zero or more entries will be needed to be added back to
+        // the root of the tree (because num entries of their node fell below
+        // minChildren),
+        // zero or more children will need to be removed from this node,
+        // zero or more nodes to be added as children to this node(because
+        // entries have been deleted from them and they still have enough
+        // members to be active)
+<span class="fc" id="L77">        List&lt;Entry&lt;T, S&gt;&gt; addTheseEntries = new ArrayList&lt;Entry&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L78">        List&lt;Node&lt;T, S&gt;&gt; removeTheseNodes = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L79">        List&lt;Node&lt;T, S&gt;&gt; addTheseNodes = new ArrayList&lt;Node&lt;T, S&gt;&gt;();</span>
+<span class="fc" id="L80">        int countDeleted = 0;</span>
+<span class="fc" id="L81">        List&lt;? extends Node&lt;T, S&gt;&gt; children = node.children();</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        for (final Node&lt;T, S&gt; child : children) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (entry.geometry().intersects(child.geometry().mbr())) {</span>
+<span class="fc" id="L84">                final NodeAndEntries&lt;T, S&gt; result = child.delete(entry, all);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                if (result.node().isPresent()) {</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                    if (result.node().get() != child) {</span>
+                        // deletion occurred and child is above minChildren so
+                        // we update it
+<span class="fc" id="L89">                        addTheseNodes.add(result.node().get());</span>
+<span class="fc" id="L90">                        removeTheseNodes.add(child);</span>
+<span class="fc" id="L91">                        addTheseEntries.addAll(result.entriesToAdd());</span>
+<span class="fc" id="L92">                        countDeleted += result.countDeleted();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                        if (!all)</span>
+<span class="fc" id="L94">                            break;</span>
+                    }
+                    // else nothing was deleted from that child
+                } else {
+                    // deletion occurred and brought child below minChildren
+                    // so we redistribute its entries
+<span class="fc" id="L100">                    removeTheseNodes.add(child);</span>
+<span class="fc" id="L101">                    addTheseEntries.addAll(result.entriesToAdd());</span>
+<span class="fc" id="L102">                    countDeleted += result.countDeleted();</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                    if (!all)</span>
+<span class="fc" id="L104">                        break;</span>
+                }
+            }
+<span class="fc" id="L107">        }</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (removeTheseNodes.isEmpty())</span>
+<span class="fc" id="L109">            return new NodeAndEntries&lt;&gt;(of(node), Collections.emptyList(), 0);</span>
+        else {
+<span class="fc" id="L111">            List&lt;Node&lt;T, S&gt;&gt; nodes = Util.remove(children, removeTheseNodes);</span>
+<span class="fc" id="L112">            nodes.addAll(addTheseNodes);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (nodes.isEmpty())</span>
+<span class="fc" id="L114">                return new NodeAndEntries&lt;&gt;(Optional.empty(), addTheseEntries,</span>
+                        countDeleted);
+            else {
+<span class="fc" id="L117">                NonLeaf&lt;T, S&gt; nd = node.context().factory().createNonLeaf(nodes, node.context());</span>
+<span class="fc" id="L118">                return new NodeAndEntries&lt;&gt;(of(nd), addTheseEntries, countDeleted);</span>
+            }
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

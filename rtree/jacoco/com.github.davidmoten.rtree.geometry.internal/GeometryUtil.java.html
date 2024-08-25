@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeometryUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rtree</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.rtree.geometry.internal</a> &gt; <span class="el_source">GeometryUtil.java</span></div><h1>GeometryUtil.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.rtree.geometry.internal;
+
+import com.github.davidmoten.rtree.geometry.Circle;
+import com.github.davidmoten.rtree.geometry.Rectangle;
+
+public final class GeometryUtil {
+
+    private GeometryUtil() {
+        // prevent instantiation
+    }
+
+    public static double distanceSquared(double x1, double y1, double x2, double y2) {
+<span class="fc" id="L13">        double dx = x2 - x1;</span>
+<span class="fc" id="L14">        double dy = y2 - y1;</span>
+<span class="fc" id="L15">        return dx * dx + dy * dy;</span>
+    }
+
+    public static double max(double a, double b) {
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (a &lt; b)</span>
+<span class="fc" id="L20">            return b;</span>
+        else
+<span class="fc" id="L22">            return a;</span>
+    }
+
+    public static float max(float a, float b) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (a &lt; b)</span>
+<span class="fc" id="L27">            return b;</span>
+        else
+<span class="fc" id="L29">            return a;</span>
+    }
+
+    public static double min(double a, double b) {
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (a &lt; b)</span>
+<span class="fc" id="L34">            return a;</span>
+        else
+<span class="fc" id="L36">            return b;</span>
+    }
+
+    public static float min(float a, float b) {
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (a &lt; b)</span>
+<span class="fc" id="L41">            return a;</span>
+        else
+<span class="fc" id="L43">            return b;</span>
+    }
+
+    public static double distance(double x, double y, Rectangle r) {
+<span class="fc" id="L47">        return distance(x, y, r.x1(), r.y1(), r.x2(), r.y2());</span>
+    }
+
+    public static double distance(double x, double y, double a1, double b1, double a2, double b2) {
+<span class="fc" id="L51">        return distance(x, y, x, y, a1, b1, a2, b2);</span>
+    }
+
+    public static double distance(double x1, double y1, double x2, double y2, double a1, double b1,
+            double a2, double b2) {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (intersects(x1, y1, x2, y2, a1, b1, a2, b2)) {</span>
+<span class="fc" id="L57">            return 0;</span>
+        }
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        boolean xyMostLeft = x1 &lt; a1;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        double mostLeftX1 = xyMostLeft ? x1 : a1;</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        double mostRightX1 = xyMostLeft ? a1 : x1;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        double mostLeftX2 = xyMostLeft ? x2 : a2;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        double xDifference = max(0, mostLeftX1 == mostRightX1 ? 0 : mostRightX1 - mostLeftX2);</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        boolean xyMostDown = y1 &lt; b1;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        double mostDownY1 = xyMostDown ? y1 : b1;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        double mostUpY1 = xyMostDown ? b1 : y1;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        double mostDownY2 = xyMostDown ? y2 : b2;</span>
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        double yDifference = max(0, mostDownY1 == mostUpY1 ? 0 : mostUpY1 - mostDownY2);</span>
+
+<span class="fc" id="L72">        return Math.sqrt(xDifference * xDifference + yDifference * yDifference);</span>
+    }
+
+    public static boolean intersects(double x1, double y1, double x2, double y2, double a1,
+            double b1, double a2, double b2) {
+<span class="fc bfc" id="L77" title="All 8 branches covered.">        return x1 &lt;= a2 &amp;&amp; a1 &lt;= x2 &amp;&amp; y1 &lt;= b2 &amp;&amp; b1 &lt;= y2;</span>
+    }
+    
+    public static boolean lineIntersects(double x1, double y1, double x2, double y2, Circle circle) {
+
+        // using Vector Projection
+        // https://en.wikipedia.org/wiki/Vector_projection
+<span class="fc" id="L84">        Vector c = Vector.create(circle.x(), circle.y());</span>
+<span class="fc" id="L85">        Vector a = Vector.create(x1, y1);</span>
+<span class="fc" id="L86">        Vector cMinusA = c.minus(a);</span>
+<span class="fc" id="L87">        double radiusSquared = circle.radius() * circle.radius();</span>
+<span class="fc bfc" id="L88" title="All 4 branches covered.">        if (x1 == x2 &amp;&amp; y1 == y2) {</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            return cMinusA.modulusSquared() &lt;= radiusSquared;</span>
+        } else {
+<span class="fc" id="L91">            Vector b = Vector.create(x2, y2);</span>
+<span class="fc" id="L92">            Vector bMinusA = b.minus(a);</span>
+<span class="fc" id="L93">            double bMinusAModulus = bMinusA.modulus();</span>
+<span class="fc" id="L94">            double lambda = cMinusA.dot(bMinusA) / bMinusAModulus;</span>
+            // if projection is on the segment
+<span class="fc bfc" id="L96" title="All 4 branches covered.">            if (lambda &gt;= 0 &amp;&amp; lambda &lt;= bMinusAModulus) {</span>
+<span class="fc" id="L97">                Vector dMinusA = bMinusA.times(lambda / bMinusAModulus);</span>
+                // calculate distance to line from c using pythagoras' theorem
+<span class="fc bfc" id="L99" title="All 2 branches covered.">                return cMinusA.modulusSquared() - dMinusA.modulusSquared() &lt;= radiusSquared;</span>
+            } else {
+                // return true if and only if an endpoint is within radius of
+                // centre
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                return cMinusA.modulusSquared() &lt;= radiusSquared</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                        || c.minus(b).modulusSquared() &lt;= radiusSquared;</span>
+            }
+        }
+
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
