@@ -4,96 +4,104 @@ import java.util.Arrays;
 
 final class StringBuilder2 implements CharSequence {
 
-	private char[] chars;
-	private int length;
+    private char[] chars;
+    private int length;
 
-	StringBuilder2(String s) {
-<span class="fc" id="L11">		this(s.toCharArray(), s.length());</span>
-<span class="fc" id="L12">	}</span>
+    StringBuilder2(String s) {
+<span class="fc" id="L11">        this(s.toCharArray(), s.length());</span>
+<span class="fc" id="L12">    }</span>
 
-	StringBuilder2() {
-<span class="fc" id="L15">		this(new char[16], 0);</span>
-<span class="fc" id="L16">	}</span>
+    StringBuilder2() {
+<span class="fc" id="L15">        this(new char[16], 0);</span>
+<span class="fc" id="L16">    }</span>
 
-<span class="fc" id="L18">	private StringBuilder2(char[] chars, int length) {</span>
-<span class="fc" id="L19">		this.chars = chars;</span>
-<span class="fc" id="L20">		this.length = length;</span>
-<span class="fc" id="L21">	}</span>
+<span class="fc" id="L18">    private StringBuilder2(char[] chars, int length) {</span>
+<span class="fc" id="L19">        this.chars = chars;</span>
+<span class="fc" id="L20">        this.length = length;</span>
+<span class="fc" id="L21">    }</span>
 
-	char[] internalArray() {
-<span class="fc" id="L24">		return chars;</span>
-	}
+    char[] internalArray() {
+<span class="fc" id="L24">        return chars;</span>
+    }
 
-	@Override
-	public int length() {
-<span class="fc" id="L29">		return length;</span>
-	}
+    @Override
+    public int length() {
+<span class="fc" id="L29">        return length;</span>
+    }
 
-	@Override
-	public char charAt(int index) {
-<span class="fc" id="L34">		return chars[index];</span>
-	}
+    @Override
+    public char charAt(int index) {
+<span class="fc" id="L34">        return chars[index];</span>
+    }
 
-	@Override
-	public CharSequence subSequence(int start, int end) {
-<span class="fc" id="L39">		char[] chars2 = new char[end - start];</span>
-<span class="fc" id="L40">		System.arraycopy(chars, start, chars2, 0, end - start);</span>
-<span class="fc" id="L41">		return new StringBuilder2(chars2, chars2.length);</span>
-	}
+    @Override
+    public CharSequence subSequence(int start, int end) {
+<span class="fc" id="L39">        char[] chars2 = new char[end - start];</span>
+<span class="fc" id="L40">        System.arraycopy(chars, start, chars2, 0, end - start);</span>
+<span class="fc" id="L41">        return new StringBuilder2(chars2, chars2.length);</span>
+    }
 
-	public void append(StringBuilder2 s) {
-<span class="fc" id="L45">		int len = s.length();</span>
-<span class="fc" id="L46">		checkSize(len);</span>
-<span class="fc" id="L47">		System.arraycopy(s.chars, 0, chars, length, len);</span>
-<span class="fc" id="L48">		length += len;</span>
-<span class="fc" id="L49">	}</span>
+    public void append(StringBuilder2 s) {
+<span class="fc" id="L45">        int len = s.length();</span>
+<span class="fc" id="L46">        checkSize(len);</span>
+<span class="fc" id="L47">        System.arraycopy(s.chars, 0, chars, length, len);</span>
+<span class="fc" id="L48">        length += len;</span>
+<span class="fc" id="L49">    }</span>
 
-	private void checkSize(int len) {
-<span class="fc bfc" id="L52" title="All 2 branches covered.">		if (length + len &gt; chars.length) {</span>
-<span class="fc" id="L53">			chars = Arrays.copyOf(chars, chars.length * 2);</span>
-		}
-<span class="fc" id="L55">	}</span>
+    private void checkSize(int len) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (length + len &gt; chars.length) {</span>
+<span class="fc" id="L53">            chars = Arrays.copyOf(chars, newSize(len));</span>
+        }
+<span class="fc" id="L55">    }</span>
 
-	public void setLength(int length) {
-<span class="fc" id="L58">		this.length = length;</span>
-<span class="fc" id="L59">	}</span>
+    private int newSize(int len) {
+<span class="fc" id="L58">        int newSize = chars.length * 2;</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (newSize &lt; length + len) {</span>
+<span class="fc" id="L60">            newSize = length + len;</span>
+        }
+<span class="fc" id="L62">        return newSize;</span>
+    }
 
-	public void append(char ch) {
-<span class="fc" id="L62">		checkSize(1);</span>
-<span class="fc" id="L63">		chars[length] = ch;</span>
-<span class="fc" id="L64">		length++;</span>
-<span class="fc" id="L65">	}</span>
+    public void setLength(int length) {
+<span class="fc" id="L66">        this.length = length;</span>
+<span class="fc" id="L67">    }</span>
 
-	public void delete(int start, int end) {
-<span class="fc" id="L68">		System.arraycopy(chars, end, chars, start, length - end);</span>
-<span class="fc" id="L69">		length -= end - start;</span>
-<span class="fc" id="L70">	}</span>
+    public void append(char ch) {
+<span class="fc" id="L70">        checkSize(1);</span>
+<span class="fc" id="L71">        chars[length] = ch;</span>
+<span class="fc" id="L72">        length++;</span>
+<span class="fc" id="L73">    }</span>
 
-	public String substring(int start, int end) {
-<span class="fc" id="L73">		return new String(chars, start, end - start);</span>
-	}
+    public void delete(int start, int end) {
+<span class="fc" id="L76">        System.arraycopy(chars, end, chars, start, length - end);</span>
+<span class="fc" id="L77">        length -= end - start;</span>
+<span class="fc" id="L78">    }</span>
 
-	@Override
-	public String toString() {
-<span class="fc" id="L78">		return new String(chars, 0, length);</span>
-	}
+    public String substring(int start, int end) {
+<span class="fc" id="L81">        return new String(chars, start, end - start);</span>
+    }
 
-	/**
-	 * Trims right space from this and returns {@code this}.
-	 * 
-	 * @return this
-	 */
-	StringBuilder2 rightTrim() {
-<span class="fc" id="L87">		int i = length();</span>
-<span class="fc bfc" id="L88" title="All 2 branches covered.">		while (i &gt; 0) {</span>
-<span class="fc bfc" id="L89" title="All 2 branches covered.">			if (!Character.isWhitespace(charAt(i - 1))) {</span>
-<span class="fc" id="L90">				break;</span>
-			}
-<span class="fc" id="L92">			i--;</span>
-		}
-<span class="fc" id="L94">		length = i;</span>
-<span class="fc" id="L95">		return this;</span>
-	}
+    @Override
+    public String toString() {
+<span class="fc" id="L86">        return new String(chars, 0, length);</span>
+    }
+
+    /**
+     * Trims right space from this and returns {@code this}.
+     * 
+     * @return this
+     */
+    StringBuilder2 rightTrim() {
+<span class="fc" id="L95">        int i = length();</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        while (i &gt; 0) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (!Character.isWhitespace(charAt(i - 1))) {</span>
+<span class="fc" id="L98">                break;</span>
+            }
+<span class="fc" id="L100">            i--;</span>
+        }
+<span class="fc" id="L102">        length = i;</span>
+<span class="fc" id="L103">        return this;</span>
+    }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
