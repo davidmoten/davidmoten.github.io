@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Request.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">Request.java</span></div><h1>Request.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +10,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.github.davidmoten.aws.lw.client.internal.Retries;
 import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
 import com.github.davidmoten.aws.lw.client.internal.util.Util;
 import com.github.davidmoten.aws.lw.client.xml.XmlElement;
@@ -21,12 +20,13 @@ public final class Request {
     private final Client client;
     private Optional&lt;String&gt; region;
     private String url;
-<span class="fc" id="L24">    private HttpMethod method = HttpMethod.GET;</span>
-<span class="fc" id="L25">    private final Map&lt;String, List&lt;String&gt;&gt; headers = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L23">    private HttpMethod method = HttpMethod.GET;</span>
+<span class="fc" id="L24">    private final Map&lt;String, List&lt;String&gt;&gt; headers = new HashMap&lt;&gt;();</span>
     private byte[] requestBody;
     private int connectTimeoutMs;
     private int readTimeoutMs;
-<span class="fc" id="L29">    private int attributeNumber = 1;</span>
+<span class="fc" id="L28">    private int attributeNumber = 1;</span>
+    private Retries&lt;ResponseInputStream&gt; retries;
 <span class="fc" id="L30">    private String attributePrefix = &quot;Attribute&quot;;</span>
     private String[] pathSegments;
 <span class="fc" id="L32">    private final List&lt;NameValue&gt; queries = new ArrayList&lt;&gt;();</span>
@@ -39,51 +39,52 @@ public final class Request {
 <span class="fc" id="L39">        this.region = client.region();</span>
 <span class="fc" id="L40">        this.connectTimeoutMs = client.connectTimeoutMs();</span>
 <span class="fc" id="L41">        this.readTimeoutMs = client.readTimeoutMs();</span>
-<span class="fc" id="L42">    }</span>
+<span class="fc" id="L42">        this.retries = client.retries().copy();</span>
+<span class="fc" id="L43">    }</span>
 
     public Request method(HttpMethod method) {
-<span class="fc" id="L45">        Preconditions.checkNotNull(method);</span>
-<span class="fc" id="L46">        this.method = method;</span>
-<span class="fc" id="L47">        return this;</span>
+<span class="fc" id="L46">        Preconditions.checkNotNull(method);</span>
+<span class="fc" id="L47">        this.method = method;</span>
+<span class="fc" id="L48">        return this;</span>
     }
 
     public Request query(String name, String value) {
-<span class="fc" id="L51">        Preconditions.checkNotNull(name);</span>
-<span class="fc" id="L52">        queries.add(new NameValue(name, value));</span>
-<span class="fc" id="L53">        return this;</span>
+<span class="fc" id="L52">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L53">        queries.add(new NameValue(name, value));</span>
+<span class="fc" id="L54">        return this;</span>
     }
 
     public Request query(String name) {
-<span class="fc" id="L57">        return query(name, null);</span>
+<span class="fc" id="L58">        return query(name, null);</span>
     }
 
     public Request attributePrefix(String attributePrefix) {
-<span class="fc" id="L61">        this.attributePrefix = attributePrefix;</span>
-<span class="fc" id="L62">        this.attributeNumber = 1;</span>
-<span class="fc" id="L63">        return this;</span>
+<span class="fc" id="L62">        this.attributePrefix = attributePrefix;</span>
+<span class="fc" id="L63">        this.attributeNumber = 1;</span>
+<span class="fc" id="L64">        return this;</span>
     }
 
     public Request attribute(String name, String value) {
-<span class="fc" id="L67">        int i = attributeNumber;</span>
-<span class="fc" id="L68">        attributeNumber++;</span>
-<span class="fc" id="L69">        return query(attributePrefix + &quot;.&quot; + i + &quot;.Name&quot;, name) //</span>
-<span class="fc" id="L70">                .query(attributePrefix + &quot;.&quot; + i + &quot;.Value&quot;, value);</span>
+<span class="fc" id="L68">        int i = attributeNumber;</span>
+<span class="fc" id="L69">        attributeNumber++;</span>
+<span class="fc" id="L70">        return query(attributePrefix + &quot;.&quot; + i + &quot;.Name&quot;, name) //</span>
+<span class="fc" id="L71">                .query(attributePrefix + &quot;.&quot; + i + &quot;.Value&quot;, value);</span>
     }
 
     public Request header(String name, String value) {
-<span class="fc" id="L74">        Preconditions.checkNotNull(name);</span>
-<span class="fc" id="L75">        Preconditions.checkNotNull(value);</span>
-<span class="fc" id="L76">        RequestHelper.put(headers, name, value);</span>
-<span class="fc" id="L77">        return this;</span>
+<span class="fc" id="L75">        Preconditions.checkNotNull(name);</span>
+<span class="fc" id="L76">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L77">        RequestHelper.put(headers, name, value);</span>
+<span class="fc" id="L78">        return this;</span>
     }
 
     public Request signPayload(boolean signPayload) {
-<span class="fc" id="L81">        this.signPayload = signPayload;</span>
-<span class="fc" id="L82">        return this;</span>
+<span class="fc" id="L82">        this.signPayload = signPayload;</span>
+<span class="fc" id="L83">        return this;</span>
     }
 
     public Request unsignedPayload() {
-<span class="fc" id="L86">        return signPayload(false);</span>
+<span class="fc" id="L87">        return signPayload(false);</span>
     }
 
     /**
@@ -96,38 +97,82 @@ public final class Request {
      * @return request builder
      */
     public Request metadata(String key, String value) {
-<span class="fc" id="L99">        Preconditions.checkNotNull(key);</span>
-<span class="fc" id="L100">        Preconditions.checkNotNull(value);</span>
-<span class="fc" id="L101">        return header(&quot;x-amz-meta-&quot; + Util.canonicalMetadataKey(key), value);</span>
+<span class="fc" id="L100">        Preconditions.checkNotNull(key);</span>
+<span class="fc" id="L101">        Preconditions.checkNotNull(value);</span>
+<span class="fc" id="L102">        return header(&quot;x-amz-meta-&quot; + Util.canonicalMetadataKey(key), value);</span>
     }
 
     public Request requestBody(byte[] requestBody) {
-<span class="fc" id="L105">        Preconditions.checkNotNull(requestBody);</span>
-<span class="fc" id="L106">        this.requestBody = requestBody;</span>
-<span class="fc" id="L107">        return this;</span>
+<span class="fc" id="L106">        Preconditions.checkNotNull(requestBody);</span>
+<span class="fc" id="L107">        this.requestBody = requestBody;</span>
+<span class="fc" id="L108">        return this;</span>
     }
 
     public Request requestBody(String requestBody) {
-<span class="fc" id="L111">        Preconditions.checkNotNull(requestBody);</span>
-<span class="fc" id="L112">        return requestBody(requestBody.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L112">        Preconditions.checkNotNull(requestBody);</span>
+<span class="fc" id="L113">        return requestBody(requestBody.getBytes(StandardCharsets.UTF_8));</span>
     }
 
     public Request region(String region) {
-<span class="fc" id="L116">        Preconditions.checkNotNull(region);</span>
-<span class="fc" id="L117">        this.region = Optional.of(region);</span>
-<span class="fc" id="L118">        return this;</span>
+<span class="fc" id="L117">        Preconditions.checkNotNull(region);</span>
+<span class="fc" id="L118">        this.region = Optional.of(region);</span>
+<span class="fc" id="L119">        return this;</span>
     }
 
     public Request connectTimeout(long duration, TimeUnit unit) {
-<span class="fc bfc" id="L122" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0);</span>
-<span class="fc" id="L123">        this.connectTimeoutMs = (int) unit.toMillis(duration);</span>
-<span class="fc" id="L124">        return this;</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L124">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L125">        this.connectTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L126">        return this;</span>
     }
 
     public Request readTimeout(long duration, TimeUnit unit) {
-<span class="fc bfc" id="L128" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0);</span>
-<span class="fc" id="L129">        this.readTimeoutMs = (int) unit.toMillis(duration);</span>
-<span class="fc" id="L130">        return this;</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L131">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L132">        this.readTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L133">        return this;</span>
+    }
+
+    public Request retryInitialInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L138">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L139">        retries = retries.withInitialIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L140">        return this;</span>
+    }
+
+    public Request retryMaxAttempts(int maxAttempts) {
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        Preconditions.checkArgument(maxAttempts &gt;=0, &quot;retryMaxAttempts cannot be negative&quot;);</span>
+<span class="fc" id="L145">        retries = retries.withMaxAttempts(maxAttempts);</span>
+<span class="fc" id="L146">        return this;</span>
+    }
+    
+    /**
+     * Sets the level of randomness applied to the next retry interval. The next
+     * calculated retry interval is multiplied by
+     * {@code (1 - jitter * Math.random())}. A value of zero means no jitter, 1
+     * means max jitter.
+     * 
+     * @param jitter level of randomness applied to the retry interval
+     * @return this
+     */
+    public Request retryJitter(double jitter) {
+<span class="pc bpc" id="L159" title="1 of 4 branches missed.">        Preconditions.checkArgument(jitter &gt;= 0 &amp;&amp; jitter &lt;= 1, &quot;jitter must be between 0 and 1&quot;);</span>
+<span class="fc" id="L160">        retries = retries.withJitter(jitter);</span>
+<span class="fc" id="L161">        return this;</span>
+    }
+
+
+    public Request retryBackoffFactor(double factor) {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        Preconditions.checkArgument(factor &gt;=0, &quot;retryBackoffFactor cannot be negative&quot;);</span>
+<span class="fc" id="L167">        retries = retries.withBackoffFactor(factor);</span>
+<span class="fc" id="L168">        return this;</span>
+    }
+
+    public Request retryMaxInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L173">        Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L174">        retries = retries.withMaxIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L175">        return this;</span>
     }
 
     /**
@@ -141,15 +186,12 @@ public final class Request {
      *         finished with it
      */
     public ResponseInputStream responseInputStream() {
-<span class="fc" id="L144">        String u = calculateUrl(url, client.serviceName(), region, queries,</span>
-<span class="fc" id="L145">                Arrays.asList(pathSegments));</span>
-        try {
-<span class="fc" id="L147">            return RequestHelper.request(client.clock(), client.httpClient(), u, method,</span>
-<span class="fc" id="L148">                    RequestHelper.combineHeaders(headers), requestBody, client.serviceName(),</span>
-<span class="fc" id="L149">                    region, client.credentials(), connectTimeoutMs, readTimeoutMs, signPayload);</span>
-<span class="fc" id="L150">        } catch (IOException e) {</span>
-<span class="fc" id="L151">            throw new UncheckedIOException(e);</span>
-        }
+<span class="fc" id="L189">        String u = calculateUrl(url, client.serviceName(), region, queries, Arrays.asList(pathSegments),</span>
+<span class="fc" id="L190">                client.baseUrlFactory());</span>
+<span class="fc" id="L191">        return retries //</span>
+<span class="fc" id="L192">                .call(() -&gt; RequestHelper.request(client.clock(), client.httpClient(), u, method,</span>
+<span class="fc" id="L193">                        RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,</span>
+<span class="fc" id="L194">                        client.credentials(), connectTimeoutMs, readTimeoutMs, signPayload));</span>
     }
 
     /**
@@ -161,14 +203,14 @@ public final class Request {
      * @return all response information
      */
     public Response response() {
-<span class="fc" id="L164">        ResponseInputStream r = responseInputStream();</span>
+<span class="fc" id="L206">        ResponseInputStream r = responseInputStream();</span>
         final byte[] bytes;
-<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (hasBody(r)) {</span>
-<span class="fc" id="L167">            bytes = Util.readBytesAndClose(r);</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (hasBody(r)) {</span>
+<span class="fc" id="L209">            bytes = Util.readBytesAndClose(r);</span>
         } else {
-<span class="fc" id="L169">            bytes = new byte[0];</span>
+<span class="fc" id="L211">            bytes = new byte[0];</span>
         }
-<span class="fc" id="L171">        return new Response(r.headers(), bytes, r.statusCode());</span>
+<span class="fc" id="L213">        return new Response(r.headers(), bytes, r.statusCode());</span>
     }
 
     /**
@@ -181,57 +223,66 @@ public final class Request {
      * @throws ServiceException
      */
     public Response responseExpectStatusCode(int expectedStatusCode) {
-<span class="fc" id="L184">        Response r = response();</span>
-<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (r.statusCode() == expectedStatusCode) {</span>
-<span class="fc" id="L186">            return r;</span>
+<span class="fc" id="L226">        Response r = response();</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (r.statusCode() == expectedStatusCode) {</span>
+<span class="fc" id="L228">            return r;</span>
         } else {
-<span class="fc" id="L188">            throw new ServiceException(r.statusCode(), r.contentUtf8());</span>
+<span class="fc" id="L230">            throw new ServiceException(r.statusCode(), r.contentUtf8());</span>
         }
     }
 
     // VisibleForTesting
     static boolean hasBody(ResponseInputStream r) {
-<span class="fc bfc" id="L194" title="All 2 branches covered.">        return r.header(&quot;Content-Length&quot;).isPresent()</span>
-<span class="fc bfc" id="L195" title="All 2 branches covered.">                || r.header(&quot;Transfer-Encoding&quot;).orElse(&quot;&quot;).equalsIgnoreCase(&quot;chunked&quot;);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        return r.header(&quot;Content-Length&quot;).isPresent()</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">                || r.header(&quot;Transfer-Encoding&quot;).orElse(&quot;&quot;).equalsIgnoreCase(&quot;chunked&quot;);</span>
     }
 
-    private static String calculateUrl(String url, String serviceName, Optional&lt;String&gt; region,
-            List&lt;NameValue&gt; queries, List&lt;String&gt; pathSegments) {
-<span class="fc" id="L200">        String u = url;</span>
-<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (u == null) {</span>
-<span class="fc" id="L202">            u = &quot;https://&quot; //</span>
-                    + serviceName //
-<span class="fc" id="L204">                    + region.map(x -&gt; &quot;.&quot; + x).orElse(&quot;&quot;) //</span>
-                    + &quot;.amazonaws.com/&quot; //
+    private static String calculateUrl(String url, String serviceName, Optional&lt;String&gt; region, List&lt;NameValue&gt; queries,
+            List&lt;String&gt; pathSegments, BaseUrlFactory baseUrlFactory) {
+<span class="fc" id="L242">        String u = url;</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">        if (u == null) {</span>
+<span class="fc" id="L244">            String baseUrl = baseUrlFactory.create(serviceName, region);</span>
+<span class="fc" id="L245">            Preconditions.checkNotNull(baseUrl, &quot;baseUrl cannot be null&quot;);</span>
+<span class="fc" id="L246">            u = trimAndEnsureHasTrailingSlash(baseUrl) //</span>
                     + pathSegments //
-<span class="fc" id="L207">                            .stream() //</span>
-<span class="fc" id="L208">                            .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) //</span>
-<span class="fc" id="L209">                            .collect(Collectors.joining(&quot;/&quot;));</span>
+<span class="fc" id="L248">                            .stream() //</span>
+<span class="fc" id="L249">                            .map(x -&gt; trimAndRemoveLeadingAndTrailingSlashes(x)) //</span>
+<span class="fc" id="L250">                            .collect(Collectors.joining(&quot;/&quot;));</span>
         }
         // add queries
-<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (NameValue nv : queries) {</span>
-<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (!u.contains(&quot;?&quot;)) {</span>
-<span class="fc" id="L214">                u += &quot;?&quot;;</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        for (NameValue nv : queries) {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">            if (!u.contains(&quot;?&quot;)) {</span>
+<span class="fc" id="L255">                u += &quot;?&quot;;</span>
             }
-<span class="fc bfc" id="L216" title="All 2 branches covered.">            if (!u.endsWith(&quot;?&quot;)) {</span>
-<span class="fc" id="L217">                u += &quot;&amp;&quot;;</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            if (!u.endsWith(&quot;?&quot;)) {</span>
+<span class="fc" id="L258">                u += &quot;&amp;&quot;;</span>
             }
-<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (nv.value != null) {</span>
-<span class="fc" id="L220">                u += Util.urlEncode(nv.name, false) + &quot;=&quot; + Util.urlEncode(nv.value, false);</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">            if (nv.value != null) {</span>
+<span class="fc" id="L261">                u += Util.urlEncode(nv.name, false) + &quot;=&quot; + Util.urlEncode(nv.value, false);</span>
             } else {
-<span class="fc" id="L222">                u += Util.urlEncode(nv.name, false);</span>
+<span class="fc" id="L263">                u += Util.urlEncode(nv.name, false);</span>
             }
-<span class="fc" id="L224">        }</span>
-<span class="fc" id="L225">        return u;</span>
+<span class="fc" id="L265">        }</span>
+<span class="fc" id="L266">        return u;</span>
+    }
+
+    // VisibleForTesting
+    static String trimAndEnsureHasTrailingSlash(String s) {
+<span class="fc" id="L271">        String r = s.trim();</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (r.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L273">            return r;</span>
+        } else {
+<span class="fc" id="L275">            return r + &quot;/&quot;;</span>
+        }
     }
 
     public byte[] responseAsBytes() {
-<span class="fc" id="L229">        Response r = response();</span>
-<span class="fc" id="L230">        Optional&lt;? extends RuntimeException&gt; exception = client.exceptionFactory().create(r);</span>
-<span class="fc bfc" id="L231" title="All 2 branches covered.">        if (!exception.isPresent()) {</span>
-<span class="fc" id="L232">            return r.content();</span>
+<span class="fc" id="L280">        Response r = response();</span>
+<span class="fc" id="L281">        Optional&lt;? extends RuntimeException&gt; exception = client.exceptionFactory().create(r);</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">        if (!exception.isPresent()) {</span>
+<span class="fc" id="L283">            return r.content();</span>
         } else {
-<span class="fc" id="L234">            throw exception.get();</span>
+<span class="fc" id="L285">            throw exception.get();</span>
         }
     }
 
@@ -244,51 +295,50 @@ public final class Request {
      * @throws ServiceException if status code other than 2xx or 404
      */
     public boolean exists() {
-<span class="fc" id="L247">        return response().exists();</span>
+<span class="fc" id="L298">        return response().exists();</span>
     }
 
     public void execute() {
-<span class="fc" id="L251">        responseAsBytes();</span>
-<span class="fc" id="L252">    }</span>
+<span class="fc" id="L302">        responseAsBytes();</span>
+<span class="fc" id="L303">    }</span>
 
     public String responseAsUtf8() {
-<span class="fc" id="L255">        return new String(responseAsBytes(), StandardCharsets.UTF_8);</span>
+<span class="fc" id="L306">        return new String(responseAsBytes(), StandardCharsets.UTF_8);</span>
     }
 
     public XmlElement responseAsXml() {
-<span class="fc" id="L259">        return XmlElement.parse(responseAsUtf8());</span>
+<span class="fc" id="L310">        return XmlElement.parse(responseAsUtf8());</span>
     }
 
     public String presignedUrl(long expiryDuration, TimeUnit unit) {
-<span class="fc" id="L263">        String u = calculateUrl(url, client.serviceName(), region, queries,</span>
-<span class="fc" id="L264">                Arrays.asList(pathSegments));</span>
-<span class="fc" id="L265">        return RequestHelper.presignedUrl(client.clock(), u, method.toString(),</span>
-<span class="fc" id="L266">                RequestHelper.combineHeaders(headers), requestBody, client.serviceName(), region,</span>
-<span class="fc" id="L267">                client.credentials(), connectTimeoutMs, readTimeoutMs,</span>
-<span class="fc" id="L268">                unit.toSeconds(expiryDuration), signPayload);</span>
+<span class="fc" id="L314">        String u = calculateUrl(url, client.serviceName(), region, queries, Arrays.asList(pathSegments),</span>
+<span class="fc" id="L315">                client.baseUrlFactory());</span>
+<span class="fc" id="L316">        return RequestHelper.presignedUrl(client.clock(), u, method.toString(), RequestHelper.combineHeaders(headers),</span>
+<span class="fc" id="L317">                requestBody, client.serviceName(), region, client.credentials(), connectTimeoutMs, readTimeoutMs,</span>
+<span class="fc" id="L318">                unit.toSeconds(expiryDuration), signPayload);</span>
     }
 
     // VisibleForTesting
     static String trimAndRemoveLeadingAndTrailingSlashes(String s) {
-<span class="fc" id="L273">        Preconditions.checkNotNull(s);</span>
-<span class="fc" id="L274">        s = s.trim();</span>
-<span class="fc bfc" id="L275" title="All 2 branches covered.">        if (s.startsWith(&quot;/&quot;)) {</span>
-<span class="fc" id="L276">            s = s.substring(1);</span>
+<span class="fc" id="L323">        Preconditions.checkNotNull(s);</span>
+<span class="fc" id="L324">        s = s.trim();</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        if (s.startsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L326">            s = s.substring(1);</span>
         }
-<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (s.endsWith(&quot;/&quot;)) {</span>
-<span class="fc" id="L279">            s = s.substring(0, s.length() - 1);</span>
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        if (s.endsWith(&quot;/&quot;)) {</span>
+<span class="fc" id="L329">            s = s.substring(0, s.length() - 1);</span>
         }
-<span class="fc" id="L281">        return s;</span>
+<span class="fc" id="L331">        return s;</span>
     }
 
     private static final class NameValue {
         final String name;
         final String value;
 
-<span class="fc" id="L288">        NameValue(String name, String value) {</span>
-<span class="fc" id="L289">            this.name = name;</span>
-<span class="fc" id="L290">            this.value = value;</span>
-<span class="fc" id="L291">        }</span>
+<span class="fc" id="L338">        NameValue(String name, String value) {</span>
+<span class="fc" id="L339">            this.name = name;</span>
+<span class="fc" id="L340">            this.value = value;</span>
+<span class="fc" id="L341">        }</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

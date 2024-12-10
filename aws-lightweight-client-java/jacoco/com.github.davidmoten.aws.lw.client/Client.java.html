@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -8,6 +14,7 @@ import java.util.function.Predicate;
 import com.github.davidmoten.aws.lw.client.internal.Clock;
 import com.github.davidmoten.aws.lw.client.internal.Environment;
 import com.github.davidmoten.aws.lw.client.internal.ExceptionFactoryExtended;
+import com.github.davidmoten.aws.lw.client.internal.Retries;
 import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
 
 public final class Client {
@@ -20,23 +27,27 @@ public final class Client {
     private final int connectTimeoutMs;
     private final int readTimeoutMs;
     private final ExceptionFactory exceptionFactory;
+    private final BaseUrlFactory baseUrlFactory;
+    private final Retries&lt;ResponseInputStream&gt; retries;
 
     private Client(Clock clock, String serviceName, Optional&lt;String&gt; region, Credentials credentials,
-            HttpClient httpClient, int connectTimeoutMs, int readTimeoutMs,
-<span class="fc" id="L26">            ExceptionFactory exceptionFactory) {</span>
-<span class="fc" id="L27">        this.clock = clock;</span>
-<span class="fc" id="L28">        this.serviceName = serviceName;</span>
-<span class="fc" id="L29">        this.region = region;</span>
-<span class="fc" id="L30">        this.credentials = credentials;</span>
-<span class="fc" id="L31">        this.httpClient = httpClient;</span>
-<span class="fc" id="L32">        this.connectTimeoutMs = connectTimeoutMs;</span>
-<span class="fc" id="L33">        this.readTimeoutMs = readTimeoutMs;</span>
-<span class="fc" id="L34">        this.exceptionFactory = exceptionFactory;</span>
-<span class="fc" id="L35">    }</span>
+            HttpClient httpClient, int connectTimeoutMs, int readTimeoutMs, ExceptionFactory exceptionFactory,
+<span class="fc" id="L35">            BaseUrlFactory baseUrlFactory, Retries&lt;ResponseInputStream&gt; retries) {</span>
+<span class="fc" id="L36">        this.clock = clock;</span>
+<span class="fc" id="L37">        this.serviceName = serviceName;</span>
+<span class="fc" id="L38">        this.region = region;</span>
+<span class="fc" id="L39">        this.credentials = credentials;</span>
+<span class="fc" id="L40">        this.httpClient = httpClient;</span>
+<span class="fc" id="L41">        this.connectTimeoutMs = connectTimeoutMs;</span>
+<span class="fc" id="L42">        this.readTimeoutMs = readTimeoutMs;</span>
+<span class="fc" id="L43">        this.exceptionFactory = exceptionFactory;</span>
+<span class="fc" id="L44">        this.baseUrlFactory = baseUrlFactory;</span>
+<span class="fc" id="L45">        this.retries = retries;</span>
+<span class="fc" id="L46">    }</span>
 
     public static Builder service(String serviceName) {
-<span class="fc" id="L38">        Preconditions.checkNotNull(serviceName);</span>
-<span class="fc" id="L39">        return new Builder(serviceName);</span>
+<span class="fc" id="L49">        Preconditions.checkNotNull(serviceName);</span>
+<span class="fc" id="L50">        return new Builder(serviceName);</span>
     }
 
     ///////////////////////////////////////////////////
@@ -47,66 +58,74 @@ public final class Client {
     ///////////////////////////////////////////////////
 
     public static Builder s3() {
-<span class="fc" id="L50">        return service(&quot;s3&quot;);</span>
+<span class="fc" id="L61">        return service(&quot;s3&quot;);</span>
     }
 
     public static Builder sqs() {
-<span class="fc" id="L54">        return service(&quot;sqs&quot;);</span>
+<span class="fc" id="L65">        return service(&quot;sqs&quot;);</span>
     }
 
     public static Builder iam() {
-<span class="fc" id="L58">        return service(&quot;iam&quot;);</span>
+<span class="fc" id="L69">        return service(&quot;iam&quot;);</span>
     }
 
     public static Builder ec2() {
-<span class="fc" id="L62">        return service(&quot;ec2&quot;);</span>
+<span class="fc" id="L73">        return service(&quot;ec2&quot;);</span>
     }
 
     public static Builder sns() {
-<span class="fc" id="L66">        return service(&quot;sns&quot;);</span>
+<span class="fc" id="L77">        return service(&quot;sns&quot;);</span>
     }
 
     public static Builder lambda() {
-<span class="fc" id="L70">        return service(&quot;lambda&quot;);</span>
+<span class="fc" id="L81">        return service(&quot;lambda&quot;);</span>
     }
 
     ///////////////////////////////////////////////////
 
     String serviceName() {
-<span class="fc" id="L76">        return serviceName;</span>
+<span class="fc" id="L87">        return serviceName;</span>
     }
 
     public Optional&lt;String&gt; region() {
-<span class="fc" id="L80">        return region;</span>
+<span class="fc" id="L91">        return region;</span>
     }
 
     Credentials credentials() {
-<span class="fc" id="L84">        return credentials;</span>
+<span class="fc" id="L95">        return credentials;</span>
     }
 
     HttpClient httpClient() {
-<span class="fc" id="L88">        return httpClient;</span>
+<span class="fc" id="L99">        return httpClient;</span>
     }
 
     Clock clock() {
-<span class="fc" id="L92">        return clock;</span>
+<span class="fc" id="L103">        return clock;</span>
     }
 
     ExceptionFactory exceptionFactory() {
-<span class="fc" id="L96">        return exceptionFactory;</span>
+<span class="fc" id="L107">        return exceptionFactory;</span>
+    }
+
+    BaseUrlFactory baseUrlFactory() {
+<span class="fc" id="L111">        return baseUrlFactory;</span>
     }
 
     int connectTimeoutMs() {
-<span class="fc" id="L100">        return connectTimeoutMs;</span>
+<span class="fc" id="L115">        return connectTimeoutMs;</span>
     }
 
     int readTimeoutMs() {
-<span class="fc" id="L104">        return readTimeoutMs;</span>
+<span class="fc" id="L119">        return readTimeoutMs;</span>
+    }
+
+    Retries&lt;ResponseInputStream&gt; retries() {
+<span class="fc" id="L123">        return retries;</span>
     }
 
     public Request url(String url) {
-<span class="fc" id="L108">        Preconditions.checkNotNull(url);</span>
-<span class="fc" id="L109">        return new Request(this, url);</span>
+<span class="fc" id="L127">        Preconditions.checkNotNull(url);</span>
+<span class="fc" id="L128">        return new Request(this, url);</span>
     }
 
     /**
@@ -116,176 +135,268 @@ public final class Client {
      * @return request
      */
     public Request path(String... segments) {
-<span class="fc" id="L119">        Preconditions.checkNotNull(segments, &quot;segments cannot be null&quot;);</span>
-<span class="fc" id="L120">        return new Request(this, null, segments);</span>
+<span class="fc" id="L138">        Preconditions.checkNotNull(segments, &quot;segments cannot be null&quot;);</span>
+<span class="fc" id="L139">        return new Request(this, null, segments);</span>
     }
 
     public Request query(String name, String value) {
-<span class="fc" id="L124">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
-<span class="fc" id="L125">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
-<span class="fc" id="L126">        return path(&quot;&quot;).query(name, value);</span>
+<span class="fc" id="L143">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="fc" id="L144">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
+<span class="fc" id="L145">        return path(&quot;&quot;).query(name, value);</span>
     }
 
     public Request attributePrefix(String attributePrefix) {
-<span class="fc" id="L130">        return path(&quot;&quot;).attributePrefix(attributePrefix);</span>
+<span class="fc" id="L149">        return path(&quot;&quot;).attributePrefix(attributePrefix);</span>
     }
 
     public Request attribute(String name, String value) {
-<span class="fc" id="L134">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
-<span class="fc" id="L135">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
-<span class="fc" id="L136">        return path(&quot;&quot;).attribute(name, value);</span>
+<span class="fc" id="L153">        Preconditions.checkNotNull(name, &quot;name cannot be null&quot;);</span>
+<span class="fc" id="L154">        Preconditions.checkNotNull(value, &quot;value cannot be null&quot;);</span>
+<span class="fc" id="L155">        return path(&quot;&quot;).attribute(name, value);</span>
     }
 
     public static final class Builder {
 
+        // from
+        // https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html
+<span class="fc" id="L162">        private static final Set&lt;Integer&gt; RETRY_STATUS_CODES = new HashSet&lt;&gt;( //</span>
+<span class="fc" id="L163">                Arrays.asList( //</span>
+<span class="fc" id="L164">                        400, // BAD_REQUEST</span>
+<span class="fc" id="L165">                        403, // FORBIDDEN</span>
+<span class="fc" id="L166">                        408, // REQUEST_TIMEOUT</span>
+<span class="fc" id="L167">                        429, // TOO_MANY_REQUESTS</span>
+<span class="fc" id="L168">                        500, // INTERNAL_SERVER_ERROR</span>
+<span class="fc" id="L169">                        502, // BAD_GATEWAY</span>
+<span class="fc" id="L170">                        503, // SERVICE_UNAVAILABLE</span>
+<span class="fc" id="L171">                        509 // BANDWIDTH_LIMIT_EXCEEDED</span>
+                ));
+        
+
         private final String serviceName;
-<span class="fc" id="L142">        private Optional&lt;String&gt; region = Optional.empty();</span>
+<span class="fc" id="L176">        private Optional&lt;String&gt; region = Optional.empty();</span>
         private String accessKey;
         private Credentials credentials;
-<span class="fc" id="L145">        private HttpClient httpClient = HttpClient.defaultClient();</span>
-<span class="fc" id="L146">        private int connectTimeoutMs = 30000;</span>
-<span class="fc" id="L147">        private int readTimeoutMs = 300000;</span>
-<span class="fc" id="L148">        private ExceptionFactory exceptionFactory = ExceptionFactory.DEFAULT;</span>
-<span class="fc" id="L149">        private Clock clock = Clock.DEFAULT;</span>
-<span class="fc" id="L150">        private Environment environment = Environment.instance();</span>
+<span class="fc" id="L179">        private HttpClient httpClient = HttpClient.defaultClient();</span>
+<span class="fc" id="L180">        private int connectTimeoutMs = 30000;</span>
+<span class="fc" id="L181">        private int readTimeoutMs = 300000;</span>
+<span class="fc" id="L182">        private ExceptionFactory exceptionFactory = ExceptionFactory.DEFAULT;</span>
+<span class="fc" id="L183">        private Clock clock = Clock.DEFAULT;</span>
+<span class="fc" id="L184">        private Environment environment = Environment.instance();</span>
+<span class="fc" id="L185">        private BaseUrlFactory baseUrlFactory = BaseUrlFactory.DEFAULT;</span>
+<span class="fc" id="L186">        private Retries&lt;ResponseInputStream&gt; retries = Retries.create(</span>
+<span class="fc" id="L187">                ris -&gt; RETRY_STATUS_CODES.contains(ris.statusCode()), //</span>
+<span class="fc bfc" id="L188" title="All 4 branches covered.">        t -&gt; t instanceof IOException || t instanceof UncheckedIOException);</span>
 
-<span class="fc" id="L152">        private Builder(String serviceName) {</span>
-<span class="fc" id="L153">            this.serviceName = serviceName;</span>
-<span class="fc" id="L154">        }</span>
+<span class="fc" id="L190">        private Builder(String serviceName) {</span>
+<span class="fc" id="L191">            this.serviceName = serviceName;</span>
+<span class="fc" id="L192">        }</span>
 
         // VisibleForTesting
         Builder environment(Environment environment) {
-<span class="fc" id="L158">            Preconditions.checkNotNull(environment, &quot;environment cannot be null&quot;);</span>
-<span class="fc" id="L159">            this.environment = environment;</span>
-<span class="fc" id="L160">            return this;</span>
+<span class="fc" id="L196">            Preconditions.checkNotNull(environment, &quot;environment cannot be null&quot;);</span>
+<span class="fc" id="L197">            this.environment = environment;</span>
+<span class="fc" id="L198">            return this;</span>
         }
 
         public Builder4 defaultClient() {
-<span class="fc" id="L164">            return regionFromEnvironment().credentialsFromEnvironment();</span>
+<span class="fc" id="L202">            return regionFromEnvironment().credentialsFromEnvironment();</span>
         }
 
         public Builder4 from(Client client) {
-<span class="fc" id="L168">            Preconditions.checkNotNull(client, &quot;client cannot be null&quot;);</span>
-<span class="fc" id="L169">            this.region = client.region;</span>
-<span class="fc" id="L170">            this.credentials = client.credentials;</span>
-<span class="fc" id="L171">            this.httpClient = client.httpClient;</span>
-<span class="fc" id="L172">            this.connectTimeoutMs = client.connectTimeoutMs;</span>
-<span class="fc" id="L173">            this.readTimeoutMs = client.readTimeoutMs;</span>
-<span class="fc" id="L174">            this.exceptionFactory = client.exceptionFactory;</span>
-<span class="fc" id="L175">            return new Builder4(this);</span>
+<span class="fc" id="L206">            Preconditions.checkNotNull(client, &quot;client cannot be null&quot;);</span>
+<span class="fc" id="L207">            this.region = client.region;</span>
+<span class="fc" id="L208">            this.credentials = client.credentials;</span>
+<span class="fc" id="L209">            this.httpClient = client.httpClient;</span>
+<span class="fc" id="L210">            this.connectTimeoutMs = client.connectTimeoutMs;</span>
+<span class="fc" id="L211">            this.readTimeoutMs = client.readTimeoutMs;</span>
+<span class="fc" id="L212">            this.exceptionFactory = client.exceptionFactory;</span>
+<span class="fc" id="L213">            return new Builder4(this);</span>
         }
 
         public Builder2 regionFromEnvironment() {
-<span class="fc" id="L179">            return region(environment.get(&quot;AWS_REGION&quot;));</span>
+<span class="fc" id="L217">            return region(environment.get(&quot;AWS_REGION&quot;));</span>
         }
 
         public Builder2 region(Optional&lt;String&gt; region) {
-<span class="fc" id="L183">            Preconditions.checkNotNull(region, &quot;region cannot be null&quot;);</span>
-<span class="fc" id="L184">            this.region = region;</span>
-<span class="fc" id="L185">            return new Builder2(this);</span>
-        }
-        
-        public Builder2 region(String region) {
-<span class="fc" id="L189">            Preconditions.checkNotNull(region, &quot;region cannot be null&quot;);</span>
-<span class="fc" id="L190">            return region(Optional.of(region));</span>
+<span class="fc" id="L221">            Preconditions.checkNotNull(region, &quot;region cannot be null&quot;);</span>
+<span class="fc" id="L222">            this.region = region;</span>
+<span class="fc" id="L223">            return new Builder2(this);</span>
         }
 
-		public Builder2 regionNone() {
-<span class="fc" id="L194">			return region(Optional.empty());</span>
-		}
+        public Builder2 region(String region) {
+<span class="fc" id="L227">            Preconditions.checkNotNull(region, &quot;region cannot be null&quot;);</span>
+<span class="fc" id="L228">            return region(Optional.of(region));</span>
+        }
+
+        public Builder2 regionNone() {
+<span class="fc" id="L232">            return region(Optional.empty());</span>
+        }
     }
 
     public static final class Builder2 {
         private final Builder b;
 
-<span class="fc" id="L201">        private Builder2(Builder b) {</span>
-<span class="fc" id="L202">            this.b = b;</span>
-<span class="fc" id="L203">        }</span>
+<span class="fc" id="L239">        private Builder2(Builder b) {</span>
+<span class="fc" id="L240">            this.b = b;</span>
+<span class="fc" id="L241">        }</span>
 
         public Builder4 credentialsFromEnvironment() {
-<span class="fc" id="L206">            b.credentials = b.environment.credentials();</span>
-<span class="fc" id="L207">            return new Builder4(b);</span>
+<span class="fc" id="L244">            b.credentials = b.environment.credentials();</span>
+<span class="fc" id="L245">            return new Builder4(b);</span>
         }
 
         public Builder4 credentialsFromSystemProperties() {
-<span class="fc" id="L211">            return credentials(Credentials.fromSystemProperties());</span>
+<span class="fc" id="L249">            return credentials(Credentials.fromSystemProperties());</span>
         }
 
         public Builder3 accessKey(String accessKey) {
-<span class="fc" id="L215">            Preconditions.checkNotNull(accessKey);</span>
-<span class="fc" id="L216">            b.accessKey = accessKey;</span>
-<span class="fc" id="L217">            return new Builder3(b);</span>
+<span class="fc" id="L253">            Preconditions.checkNotNull(accessKey);</span>
+<span class="fc" id="L254">            b.accessKey = accessKey;</span>
+<span class="fc" id="L255">            return new Builder3(b);</span>
         }
 
         public Builder4 credentials(Credentials credentials) {
-<span class="fc" id="L221">            Preconditions.checkNotNull(credentials);</span>
-<span class="fc" id="L222">            b.credentials = credentials;</span>
-<span class="fc" id="L223">            return new Builder4(b);</span>
+<span class="fc" id="L259">            Preconditions.checkNotNull(credentials);</span>
+<span class="fc" id="L260">            b.credentials = credentials;</span>
+<span class="fc" id="L261">            return new Builder4(b);</span>
         }
     }
 
     public static final class Builder3 {
         private final Builder b;
 
-<span class="fc" id="L230">        private Builder3(Builder b) {</span>
-<span class="fc" id="L231">            this.b = b;</span>
-<span class="fc" id="L232">        }</span>
+<span class="fc" id="L268">        private Builder3(Builder b) {</span>
+<span class="fc" id="L269">            this.b = b;</span>
+<span class="fc" id="L270">        }</span>
 
         public Builder4 secretKey(String secretKey) {
-<span class="fc" id="L235">            Preconditions.checkNotNull(secretKey);</span>
-<span class="fc" id="L236">            b.credentials = Credentials.of(b.accessKey, secretKey);</span>
-<span class="fc" id="L237">            return new Builder4(b);</span>
+<span class="fc" id="L273">            Preconditions.checkNotNull(secretKey);</span>
+<span class="fc" id="L274">            b.credentials = Credentials.of(b.accessKey, secretKey);</span>
+<span class="fc" id="L275">            return new Builder4(b);</span>
         }
     }
 
     public static final class Builder4 {
         private final Builder b;
 
-<span class="fc" id="L244">        private Builder4(Builder b) {</span>
-<span class="fc" id="L245">            this.b = b;</span>
-<span class="fc" id="L246">        }</span>
+<span class="fc" id="L282">        private Builder4(Builder b) {</span>
+<span class="fc" id="L283">            this.b = b;</span>
+<span class="fc" id="L284">        }</span>
 
-        public Builder4 httpClient(HttpClient httpClient) {
-<span class="fc" id="L249">            b.httpClient = httpClient;</span>
-<span class="fc" id="L250">            return this;</span>
+        public Builder4 baseUrlFactory(BaseUrlFactory factory) {
+<span class="fc" id="L287">            b.baseUrlFactory = factory;</span>
+<span class="fc" id="L288">            return this;</span>
         }
 
+        public Builder4 httpClient(HttpClient httpClient) {
+<span class="fc" id="L292">            b.httpClient = httpClient;</span>
+<span class="fc" id="L293">            return this;</span>
+        }
+
+        public Builder4 retryInitialInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L297" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L298">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L299">            b.retries = b.retries.withInitialIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L300">            return this;</span>
+        }
+
+        public Builder4 retryMaxAttempts(int maxAttempts) {
+<span class="fc bfc" id="L304" title="All 2 branches covered.">            Preconditions.checkArgument(maxAttempts &gt;= 0, &quot;maxAttempts cannot be negative&quot;);</span>
+<span class="fc" id="L305">            b.retries = b.retries.withMaxAttempts( maxAttempts);</span>
+<span class="fc" id="L306">            return this;</span>
+        }
+
+        public Builder4 retryBackoffFactor(double factor) {
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            Preconditions.checkArgument(factor &gt;= 0, &quot;backoffFactor cannot be negative&quot;);</span>
+<span class="fc" id="L311">            b.retries = b.retries.withBackoffFactor(factor);</span>
+<span class="fc" id="L312">            return this;</span>
+        }
+
+        public Builder4 retryMaxInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L316" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L317">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L318">            b.retries = b.retries.withMaxIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L319">            return this;</span>
+        }
+        
+        /**
+         * Sets the level of randomness applied to the next retry interval. The next
+         * calculated retry interval is multiplied by
+         * {@code (1 - jitter * Math.random())}. A value of zero means no jitter, 1
+         * means max jitter.
+         * 
+         * @param jitter level of randomness applied to the retry interval
+         * @return this
+         */
+        public Builder4 retryJitter(double jitter) {
+<span class="fc bfc" id="L332" title="All 4 branches covered.">            Preconditions.checkArgument(jitter &gt;= 0 &amp;&amp; jitter &lt;= 1, &quot;jitter must be between 0 and 1&quot;);</span>
+<span class="fc" id="L333">            b.retries = b.retries.withJitter(jitter);</span>
+<span class="fc" id="L334">            return this;</span>
+        }
+        
+        public Builder4 retryCondition(Predicate&lt;? super ResponseInputStream&gt; shouldRetry) {
+<span class="fc" id="L338">            Preconditions.checkNotNull(shouldRetry, &quot;shouldRetry cannot be null&quot;);</span>
+<span class="fc" id="L339">            b.retries = b.retries.withValueShouldRetry(shouldRetry);</span>
+<span class="fc" id="L340">            return this;</span>
+        }
+
+        public Builder4 retryStatusCodes(Integer... statusCodes) {
+<span class="fc" id="L344">            return retryStatusCodes(Arrays.asList(statusCodes));</span>
+        }
+        
+        public Builder4 retryStatusCodes(Collection&lt;Integer&gt; statusCodes) {
+<span class="fc" id="L348">            Preconditions.checkNotNull(statusCodes, &quot;statusCodes cannot be null&quot;);</span>
+<span class="fc" id="L349">            Set&lt;Integer&gt; set = new HashSet&lt;&gt;(statusCodes);</span>
+<span class="fc" id="L350">            return retryCondition(ris -&gt; set.contains(ris.statusCode()));</span>
+        }
+        
+        /**
+         * Default behaviour is to retry IOException and UncheckedIOException.
+         * 
+         * @param shouldRetry returns true if should retry
+         * @return this
+         */
+        public Builder4 retryException(Predicate&lt;? super Throwable&gt; shouldRetry) {
+<span class="fc" id="L360">            Preconditions.checkNotNull(shouldRetry, &quot;shouldRetry cannot be null&quot;);</span>
+<span class="fc" id="L361">            b.retries = b.retries.withThrowableShouldRetry(shouldRetry);</span>
+<span class="fc" id="L362">            return this;</span>
+        }
+        
         public Builder4 connectTimeout(long duration, TimeUnit unit) {
-<span class="fc bfc" id="L254" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
-<span class="fc" id="L255">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
-<span class="fc" id="L256">            b.connectTimeoutMs = (int) unit.toMillis(duration);</span>
-<span class="fc" id="L257">            return this;</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L367">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L368">            b.connectTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L369">            return this;</span>
         }
 
         public Builder4 readTimeout(long duration, TimeUnit unit) {
-<span class="fc bfc" id="L261" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
-<span class="fc" id="L262">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
-<span class="fc" id="L263">            b.readTimeoutMs = (int) unit.toMillis(duration);</span>
-<span class="fc" id="L264">            return this;</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L374">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L375">            b.readTimeoutMs = (int) unit.toMillis(duration);</span>
+<span class="fc" id="L376">            return this;</span>
         }
 
         public Builder4 exceptionFactory(ExceptionFactory exceptionFactory) {
-<span class="fc" id="L268">            b.exceptionFactory = exceptionFactory;</span>
-<span class="fc" id="L269">            return this;</span>
+<span class="fc" id="L380">            b.exceptionFactory = exceptionFactory;</span>
+<span class="fc" id="L381">            return this;</span>
         }
 
         public Builder4 exception(Predicate&lt;? super Response&gt; predicate,
                 Function&lt;? super Response, ? extends RuntimeException&gt; factory) {
-<span class="fc" id="L274">            b.exceptionFactory = new ExceptionFactoryExtended(b.exceptionFactory, predicate,</span>
-                    factory);
-<span class="fc" id="L276">            return this;</span>
+<span class="fc" id="L386">            b.exceptionFactory = new ExceptionFactoryExtended(b.exceptionFactory, predicate, factory);</span>
+<span class="fc" id="L387">            return this;</span>
         }
 
         public Builder4 clock(Clock clock) {
-<span class="fc" id="L280">            b.clock = clock;</span>
-<span class="fc" id="L281">            return this;</span>
+<span class="fc" id="L391">            b.clock = clock;</span>
+<span class="fc" id="L392">            return this;</span>
         }
 
         public Client build() {
-<span class="fc" id="L285">            return new Client(b.clock, b.serviceName, b.region, b.credentials, b.httpClient,</span>
-<span class="fc" id="L286">                    b.connectTimeoutMs, b.readTimeoutMs, b.exceptionFactory);</span>
+<span class="fc" id="L396">            return new Client(b.clock, b.serviceName, b.region, b.credentials, b.httpClient, b.connectTimeoutMs,</span>
+<span class="fc" id="L397">                    b.readTimeoutMs, b.exceptionFactory, b.baseUrlFactory, b.retries);</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

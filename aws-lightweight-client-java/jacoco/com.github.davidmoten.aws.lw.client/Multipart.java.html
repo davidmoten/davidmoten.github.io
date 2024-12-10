@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import com.github.davidmoten.aws.lw.client.internal.Retries;
 import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
 
 public final class Multipart {
@@ -22,8 +23,8 @@ public final class Multipart {
     }
 
     public static Builder s3(Client s3) {
-<span class="fc" id="L25">        Preconditions.checkNotNull(s3);</span>
-<span class="fc" id="L26">        return new Builder(s3);</span>
+<span class="fc" id="L26">        Preconditions.checkNotNull(s3);</span>
+<span class="fc" id="L27">        return new Builder(s3);</span>
     }
 
     public static final class Builder {
@@ -32,20 +33,20 @@ public final class Multipart {
         private String bucket;
         public String key;
         public ExecutorService executor;
-<span class="fc" id="L35">        public long timeoutMs = TimeUnit.HOURS.toMillis(1);</span>
-<span class="fc" id="L36">        public Function&lt;? super Request, ? extends Request&gt; transform = x -&gt; x;</span>
-<span class="fc" id="L37">        public int maxAttempts = 3;</span>
-<span class="fc" id="L38">        public long retryIntervalMs = 10000;</span>
-<span class="fc" id="L39">        public int partSize = 5 * 1024 * 1024;</span>
+<span class="fc" id="L36">        public long timeoutMs = TimeUnit.HOURS.toMillis(1);</span>
+<span class="fc" id="L37">        public Function&lt;? super Request, ? extends Request&gt; transform = x -&gt; x;</span>
+<span class="fc" id="L38">        public int partSize = 5 * 1024 * 1024;</span>
+        public Retries&lt;Void&gt; retries;
 
 <span class="fc" id="L41">        Builder(Client s3) {</span>
 <span class="fc" id="L42">            this.s3 = s3;</span>
-<span class="fc" id="L43">        }</span>
+<span class="pc" id="L43">            this.retries = s3.retries().withValueShouldRetry(values -&gt; false);</span>
+<span class="fc" id="L44">        }</span>
 
         public Builder2 bucket(String bucket) {
-<span class="fc" id="L46">            Preconditions.checkNotNull(bucket, &quot;bucket cannot be null&quot;);</span>
-<span class="fc" id="L47">            this.bucket = bucket;</span>
-<span class="fc" id="L48">            return new Builder2(this);</span>
+<span class="fc" id="L47">            Preconditions.checkNotNull(bucket, &quot;bucket cannot be null&quot;);</span>
+<span class="fc" id="L48">            this.bucket = bucket;</span>
+<span class="fc" id="L49">            return new Builder2(this);</span>
         }
     }
 
@@ -53,14 +54,14 @@ public final class Multipart {
 
         private final Builder b;
 
-<span class="fc" id="L56">        Builder2(Builder b) {</span>
-<span class="fc" id="L57">            this.b = b;</span>
-<span class="fc" id="L58">        }</span>
+<span class="fc" id="L57">        Builder2(Builder b) {</span>
+<span class="fc" id="L58">            this.b = b;</span>
+<span class="fc" id="L59">        }</span>
 
         public Builder3 key(String key) {
-<span class="fc" id="L61">            Preconditions.checkNotNull(key, &quot;key cannot be null&quot;);</span>
-<span class="fc" id="L62">            b.key = key;</span>
-<span class="fc" id="L63">            return new Builder3(b);</span>
+<span class="fc" id="L62">            Preconditions.checkNotNull(key, &quot;key cannot be null&quot;);</span>
+<span class="fc" id="L63">            b.key = key;</span>
+<span class="fc" id="L64">            return new Builder3(b);</span>
         }
     }
 
@@ -68,96 +69,125 @@ public final class Multipart {
 
         private final Builder b;
 
-<span class="fc" id="L71">        Builder3(Builder b) {</span>
-<span class="fc" id="L72">            this.b = b;</span>
-<span class="fc" id="L73">        }</span>
+<span class="fc" id="L72">        Builder3(Builder b) {</span>
+<span class="fc" id="L73">            this.b = b;</span>
+<span class="fc" id="L74">        }</span>
 
         public Builder3 executor(ExecutorService executor) {
-<span class="fc" id="L76">            Preconditions.checkNotNull(executor, &quot;executor cannot be null&quot;);</span>
-<span class="fc" id="L77">            b.executor = executor;</span>
-<span class="fc" id="L78">            return this;</span>
+<span class="fc" id="L77">            Preconditions.checkNotNull(executor, &quot;executor cannot be null&quot;);</span>
+<span class="fc" id="L78">            b.executor = executor;</span>
+<span class="fc" id="L79">            return this;</span>
         }
 
         public Builder3 partTimeout(long duration, TimeUnit unit) {
-<span class="fc bfc" id="L82" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt; 0);</span>
-<span class="fc" id="L83">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
-<span class="fc" id="L84">            b.timeoutMs = unit.toMillis(duration);</span>
-<span class="fc" id="L85">            return this;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt; 0, &quot;duration must be positive&quot;);</span>
+<span class="fc" id="L84">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L85">            b.timeoutMs = unit.toMillis(duration);</span>
+<span class="fc" id="L86">            return this;</span>
         }
 
         public Builder3 partSize(int partSize) {
-<span class="fc bfc" id="L89" title="All 2 branches covered.">            Preconditions.checkArgument(partSize &gt;= 5 * 1024 * 1024);</span>
-<span class="fc" id="L90">            b.partSize = partSize;</span>
-<span class="fc" id="L91">            return this;</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            Preconditions.checkArgument(partSize &gt;= 5 * 1024 * 1024);</span>
+<span class="fc" id="L91">            b.partSize = partSize;</span>
+<span class="fc" id="L92">            return this;</span>
         }
 
         public Builder3 partSizeMb(int partSizeMb) {
-<span class="fc" id="L95">            return partSize(partSizeMb * 1024 * 1024);</span>
+<span class="fc" id="L96">            return partSize(partSizeMb * 1024 * 1024);</span>
         }
 
         public Builder3 maxAttemptsPerAction(int maxAttempts) {
-<span class="fc bfc" id="L99" title="All 2 branches covered.">            Preconditions.checkArgument(maxAttempts &gt;= 1);</span>
-<span class="fc" id="L100">            b.maxAttempts = maxAttempts;</span>
-<span class="fc" id="L101">            return this;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            Preconditions.checkArgument(maxAttempts &gt;= 1, &quot;maxAttempts must be at least one&quot;);</span>
+<span class="fc" id="L101">            b.retries = b.retries.withMaxAttempts(maxAttempts);</span>
+<span class="fc" id="L102">            return this;</span>
         }
 
-        public Builder3 retryIntervalMs(long retryIntervalMs) {
-<span class="fc bfc" id="L105" title="All 2 branches covered.">            Preconditions.checkArgument(retryIntervalMs &gt;= 0);</span>
-<span class="fc" id="L106">            b.retryIntervalMs = retryIntervalMs;</span>
-<span class="fc" id="L107">            return this;</span>
+        public Builder3 retryInitialInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L107">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L108">            b.retries = b.retries.withInitialIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L109">            return this;</span>
         }
 
-        public Builder3 transformCreateRequest(
-                Function&lt;? super Request, ? extends Request&gt; transform) {
-<span class="fc" id="L112">            Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
-<span class="fc" id="L113">            b.transform = transform;</span>
-<span class="fc" id="L114">            return this;</span>
+        public Builder3 retryBackoffFactor(double factor) {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            Preconditions.checkArgument(factor &gt;= 0, &quot;retryBackoffFactory cannot be negative&quot;);</span>
+<span class="fc" id="L114">            b.retries = b.retries.withBackoffFactor(factor);</span>
+<span class="fc" id="L115">            return this;</span>
+        }
+
+        public Builder3 retryMaxInterval(long duration, TimeUnit unit) {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            Preconditions.checkArgument(duration &gt;= 0, &quot;duration cannot be negative&quot;);</span>
+<span class="fc" id="L120">            Preconditions.checkNotNull(unit, &quot;unit cannot be null&quot;);</span>
+<span class="fc" id="L121">            b.retries = b.retries.withMaxIntervalMs(unit.toMillis(duration));</span>
+<span class="fc" id="L122">            return this;</span>
+        }
+        
+        /**
+         * Sets the level of randomness applied to the next retry interval. The next
+         * calculated retry interval is multiplied by
+         * {@code (1 - jitter * Math.random())}. A value of zero means no jitter, 1
+         * means max jitter.
+         * 
+         * @param jitter level of randomness applied to the retry interval
+         * @return this
+         */
+        public Builder3 retryJitter(double jitter) {
+<span class="fc bfc" id="L135" title="All 4 branches covered.">            Preconditions.checkArgument(jitter &gt;= 0 &amp;&amp; jitter &lt;= 1, &quot;jitter must be between 0 and 1&quot;);</span>
+<span class="fc" id="L136">            b.retries = b.retries.withJitter(jitter);</span>
+<span class="fc" id="L137">            return this;</span>
+        }
+
+
+        public Builder3 transformCreateRequest(Function&lt;? super Request, ? extends Request&gt; transform) {
+<span class="fc" id="L142">            Preconditions.checkNotNull(transform, &quot;transform cannot be null&quot;);</span>
+<span class="fc" id="L143">            b.transform = transform;</span>
+<span class="fc" id="L144">            return this;</span>
         }
 
         public void upload(byte[] bytes, int offset, int length) {
-<span class="fc" id="L118">            Preconditions.checkNotNull(bytes, &quot;bytes cannot be null&quot;);</span>
-<span class="fc" id="L119">            try (OutputStream out = outputStream()) {</span>
-<span class="fc" id="L120">                out.write(bytes, offset, length);</span>
-<span class="nc" id="L121">            } catch (IOException e) {</span>
-<span class="nc" id="L122">                throw new UncheckedIOException(e);</span>
-<span class="fc" id="L123">            }</span>
-<span class="fc" id="L124">        }</span>
+<span class="fc" id="L148">            Preconditions.checkNotNull(bytes, &quot;bytes cannot be null&quot;);</span>
+<span class="fc" id="L149">            try (OutputStream out = outputStream()) {</span>
+<span class="fc" id="L150">                out.write(bytes, offset, length);</span>
+<span class="nc" id="L151">            } catch (IOException e) {</span>
+<span class="nc" id="L152">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L153">            }</span>
+<span class="fc" id="L154">        }</span>
 
         public void upload(byte[] bytes) {
-<span class="fc" id="L127">            upload(bytes, 0, bytes.length);</span>
-<span class="fc" id="L128">        }</span>
+<span class="fc" id="L157">            upload(bytes, 0, bytes.length);</span>
+<span class="fc" id="L158">        }</span>
 
         public void upload(File file) {
-<span class="fc" id="L131">            Preconditions.checkNotNull(file, &quot;file cannot be null&quot;);</span>
-<span class="fc" id="L132">            upload(() -&gt; new BufferedInputStream(new FileInputStream(file)));</span>
-<span class="fc" id="L133">        }</span>
+<span class="fc" id="L161">            Preconditions.checkNotNull(file, &quot;file cannot be null&quot;);</span>
+<span class="fc" id="L162">            upload(() -&gt; new BufferedInputStream(new FileInputStream(file)));</span>
+<span class="fc" id="L163">        }</span>
 
         public void upload(Callable&lt;? extends InputStream&gt; factory) {
-<span class="fc" id="L136">            Preconditions.checkNotNull(factory, &quot;factory cannot be null&quot;);</span>
-<span class="fc" id="L137">            try (InputStream in = factory.call(); MultipartOutputStream out = outputStream()) {</span>
-<span class="fc" id="L138">                copy(in, out);</span>
-<span class="fc" id="L139">            } catch (IOException e) {</span>
-<span class="fc" id="L140">                throw new UncheckedIOException(e);</span>
-<span class="fc" id="L141">            } catch (Exception e) {</span>
-<span class="fc" id="L142">                throw new RuntimeException(e);</span>
-<span class="fc" id="L143">            }</span>
-<span class="fc" id="L144">        }</span>
+<span class="fc" id="L166">            Preconditions.checkNotNull(factory, &quot;factory cannot be null&quot;);</span>
+<span class="fc" id="L167">            try (InputStream in = factory.call(); MultipartOutputStream out = outputStream()) {</span>
+<span class="fc" id="L168">                copy(in, out);</span>
+<span class="fc" id="L169">            } catch (IOException e) {</span>
+<span class="fc" id="L170">                throw new UncheckedIOException(e);</span>
+<span class="fc" id="L171">            } catch (Exception e) {</span>
+<span class="fc" id="L172">                throw new RuntimeException(e);</span>
+<span class="fc" id="L173">            }</span>
+<span class="fc" id="L174">        }</span>
 
         public MultipartOutputStream outputStream() {
-<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (b.executor == null) {</span>
-<span class="fc" id="L148">                b.executor = Executors.newCachedThreadPool();</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">            if (b.executor == null) {</span>
+<span class="fc" id="L178">                b.executor = Executors.newCachedThreadPool();</span>
             }
-<span class="fc" id="L150">            return new MultipartOutputStream(b.s3, b.bucket, b.key, b.transform, b.executor,</span>
-                    b.timeoutMs, b.maxAttempts, b.retryIntervalMs, b.partSize);
+<span class="fc" id="L180">            return new MultipartOutputStream(b.s3, b.bucket, b.key, b.transform, b.executor, b.timeoutMs, b.retries,</span>
+                    b.partSize);
         }
     }
 
     private static void copy(InputStream in, OutputStream out) throws IOException {
-<span class="fc" id="L156">        byte[] buffer = new byte[8192];</span>
+<span class="fc" id="L186">        byte[] buffer = new byte[8192];</span>
         int n;
-<span class="fc bfc" id="L158" title="All 2 branches covered.">        while ((n = in.read(buffer)) != -1) {</span>
-<span class="fc" id="L159">            out.write(buffer, 0, n);</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="fc" id="L189">            out.write(buffer, 0, n);</span>
         }
-<span class="fc" id="L161">    }</span>
+<span class="fc" id="L191">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

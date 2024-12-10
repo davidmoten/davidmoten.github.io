@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Retries.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">aws-lightweight-client-java</a> &gt; <a href="index.source.html" class="el_package">com.github.davidmoten.aws.lw.client.internal</a> &gt; <span class="el_source">Retries.java</span></div><h1>Retries.java</h1><pre class="source lang-java linenums">package com.github.davidmoten.aws.lw.client.internal;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.concurrent.Callable;
+import java.util.function.Predicate;
+
+import com.github.davidmoten.aws.lw.client.MaxAttemptsExceededException;
+import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
+
+public final class Retries&lt;T&gt; {
+
+    private final long initialIntervalMs;
+    private final int maxAttempts;
+    private final double backoffFactor;
+    private final long maxIntervalMs;
+    private final double jitter;
+    private final Predicate&lt;? super T&gt; valueShouldRetry;
+    private final Predicate&lt;? super Throwable&gt; throwableShouldRetry;
+
+    public Retries(long initialIntervalMs, int maxAttempts, double backoffFactor, double jitter, long maxIntervalMs,
+<span class="fc" id="L22">            Predicate&lt;? super T&gt; valueShouldRetry, Predicate&lt;? super Throwable&gt; throwableShouldRetry) {</span>
+<span class="fc bfc" id="L23" title="All 4 branches covered.">        Preconditions.checkArgument(jitter &gt;= 0 &amp;&amp; jitter &lt;= 1, &quot;jitter must be between 0 and 1 inclusive&quot;);</span>
+<span class="fc" id="L24">        this.initialIntervalMs = initialIntervalMs;</span>
+<span class="fc" id="L25">        this.maxAttempts = maxAttempts;</span>
+<span class="fc" id="L26">        this.backoffFactor = backoffFactor;</span>
+<span class="fc" id="L27">        this.jitter = jitter;</span>
+<span class="fc" id="L28">        this.maxIntervalMs = maxIntervalMs;</span>
+<span class="fc" id="L29">        this.valueShouldRetry = valueShouldRetry;</span>
+<span class="fc" id="L30">        this.throwableShouldRetry = throwableShouldRetry;</span>
+<span class="fc" id="L31">    }</span>
+
+    public static &lt;T&gt; Retries&lt;T&gt; create(Predicate&lt;? super T&gt; valueShouldRetry,
+            Predicate&lt;? super Throwable&gt; throwableShouldRetry) {
+<span class="fc" id="L35">        return new Retries&lt;T&gt;( //</span>
+                100, //
+                4, //
+                2.0, //
+                0.0, // no jitter
+                20000, //
+                valueShouldRetry, //
+                throwableShouldRetry);
+    }
+
+    public T call(Callable&lt;T&gt; callable) {
+<span class="fc" id="L46">        return call(callable, valueShouldRetry);</span>
+    }
+
+    public &lt;S&gt; S call(Callable&lt;S&gt; callable, Predicate&lt;? super S&gt; valueShouldRetry) {
+<span class="fc" id="L50">        long intervalMs = initialIntervalMs;</span>
+<span class="fc" id="L51">        int attempt = 0;</span>
+        while (true) {
+            S value;
+            try {
+<span class="fc" id="L55">                attempt++;</span>
+<span class="fc" id="L56">                value = callable.call();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                if (!valueShouldRetry.test(value)) {</span>
+<span class="fc" id="L58">                    return value;</span>
+                }
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                if (reachedMaxAttempts(attempt, maxAttempts)) {</span>
+                    // note that caller is not aware that maxAttempts were reached, the caller just
+                    // receives the last error response
+<span class="fc" id="L63">                    return value;</span>
+                }
+<span class="fc" id="L65">            } catch (Throwable t) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (!throwableShouldRetry.test(t)) {</span>
+<span class="nc" id="L67">                    rethrow(t);</span>
+                }
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                if (reachedMaxAttempts(attempt, maxAttempts)) {</span>
+<span class="fc" id="L70">                    throw new MaxAttemptsExceededException(&quot;exceeded max attempts &quot; + maxAttempts, t);</span>
+                }
+<span class="fc" id="L72">            }</span>
+<span class="fc" id="L73">            sleep(intervalMs);</span>
+            //calculate the interval for the next retry
+<span class="fc" id="L75">            intervalMs = Math.round(backoffFactor * intervalMs);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (maxIntervalMs &gt; 0) {</span>
+<span class="fc" id="L77">                intervalMs = Math.min(maxIntervalMs, intervalMs);</span>
+            }
+            // apply jitter (if 0 then no change)
+<span class="fc" id="L80">            intervalMs = Math.round((1 - jitter * Math.random()) * intervalMs);</span>
+        }
+    }
+
+    // VisibleForTesting
+    static boolean reachedMaxAttempts(int attempt, int maxAttempts) {
+<span class="fc bfc" id="L86" title="All 4 branches covered.">        return maxAttempts &gt; 0 &amp;&amp; attempt &gt;= maxAttempts;</span>
+    }
+
+    static void sleep(long intervalMs) {
+        try {
+<span class="fc" id="L91">            Thread.sleep(intervalMs);</span>
+<span class="nc" id="L92">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L93">            throw new RuntimeException(e);</span>
+<span class="fc" id="L94">        }</span>
+<span class="fc" id="L95">    }</span>
+
+    public &lt;S&gt; Retries&lt;S&gt; withValueShouldRetry(Predicate&lt;? super S&gt; valueShouldRetry) {
+<span class="fc" id="L98">        return new Retries&lt;S&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; withInitialIntervalMs(long initialIntervalMs) {
+<span class="fc" id="L103">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; withMaxAttempts(int maxAttempts) {
+<span class="fc" id="L108">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; withBackoffFactor(double backoffFactor) {
+<span class="fc" id="L113">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; withMaxIntervalMs(long maxIntervalMs) {
+<span class="fc" id="L118">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+    
+    public Retries&lt;T&gt; withJitter(double jitter) {
+<span class="fc" id="L123">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; withThrowableShouldRetry(Predicate&lt;? super Throwable&gt; throwableShouldRetry) {
+<span class="fc" id="L128">        return new Retries&lt;T&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    public Retries&lt;T&gt; copy() {
+<span class="fc" id="L133">        return new Retries&lt;&gt;(initialIntervalMs, maxAttempts, backoffFactor, jitter, maxIntervalMs, valueShouldRetry,</span>
+                throwableShouldRetry);
+    }
+
+    // VisibleForTesting
+    static void rethrow(Throwable t) throws Error {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (t instanceof RuntimeException) {</span>
+<span class="fc" id="L140">            throw (RuntimeException) t;</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        } else if (t instanceof Error) {</span>
+<span class="fc" id="L142">            throw (Error) t;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        } else if (t instanceof IOException) {</span>
+<span class="fc" id="L144">            throw new UncheckedIOException((IOException) t);</span>
+        } else {
+<span class="fc" id="L146">            throw new RuntimeException(t);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

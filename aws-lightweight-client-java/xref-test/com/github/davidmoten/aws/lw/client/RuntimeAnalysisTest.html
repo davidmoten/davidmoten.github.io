@@ -1,5 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="" lang="">
 <head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <title>RuntimeAnalysisTest xref</title>
 <link type="text/css" rel="stylesheet" href="../../../../../../stylesheet.css" />
@@ -125,67 +125,71 @@
 <a class="jxr_linenumber" name="L117" href="#L117">117</a> <em class="jxr_comment">//                        .map(x -&gt; x.subList(1, x.size())) //</em>
 <a class="jxr_linenumber" name="L118" href="#L118">118</a> <em class="jxr_comment">//                        .println().go();</em>
 <a class="jxr_linenumber" name="L119" href="#L119">119</a>         Stream&lt;HashMap&lt;Integer, List&lt;String&gt;&gt;&gt; o = lines(
-<a class="jxr_linenumber" name="L120" href="#L120">120</a>                 <span class="jxr_string">"src/test/resources/one-time-link-hourly-store-request-times-raw.txt"</span>).skip(1) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L121" href="#L121">121</a>                         .bufferUntil((list, x) -&gt; x.contains(<span class="jxr_string">"AEST"</span>), <strong class="jxr_keyword">true</strong>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L122" href="#L122">122</a>                         .map(list -&gt; list.subList(1, list.size())) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L123" href="#L123">123</a>                         .map(list -&gt; Stream.from(list).map(y -&gt; y.substring(10, y.length() - 1))
-<a class="jxr_linenumber" name="L124" href="#L124">124</a>                                 .toList().get()) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L125" href="#L125">125</a>                         .filter(list -&gt; !list.stream().anyMatch(x -&gt; Double.parseDouble(x) &gt; 10))
-<a class="jxr_linenumber" name="L126" href="#L126">126</a>                         .map(x -&gt; Stream.from(x) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L127" href="#L127">127</a>                                 .mapWithIndex() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L128" href="#L128">128</a>                                 .groupByList( <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L129" href="#L129">129</a>                                         HashMap::<strong class="jxr_keyword">new</strong>, <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L130" href="#L130">130</a>                                         y -&gt; y.index() % 3, <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L131" href="#L131">131</a>                                         y -&gt; y.value())
-<a class="jxr_linenumber" name="L132" href="#L132">132</a>                                 .get());
-<a class="jxr_linenumber" name="L133" href="#L133">133</a> 
-<a class="jxr_linenumber" name="L134" href="#L134">134</a>         System.out.println(<span class="jxr_string">"cold start"</span>);
-<a class="jxr_linenumber" name="L135" href="#L135">135</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
-<a class="jxr_linenumber" name="L136" href="#L136">136</a>             <strong class="jxr_keyword">int</strong> j = i;
-<a class="jxr_linenumber" name="L137" href="#L137">137</a>             o.map(x -&gt; x.get(j)).map(x -&gt; x.get(0)).statistics(Double::parseDouble).println().go();
-<a class="jxr_linenumber" name="L138" href="#L138">138</a>         }
-<a class="jxr_linenumber" name="L139" href="#L139">139</a> 
-<a class="jxr_linenumber" name="L140" href="#L140">140</a>         System.out.println(<span class="jxr_string">"warm start"</span>);
-<a class="jxr_linenumber" name="L141" href="#L141">141</a>         Statistics light = o.map(x -&gt; x.get(0)).flatMap(x -&gt; Stream.from(x.subList(1, x.size())))
-<a class="jxr_linenumber" name="L142" href="#L142">142</a>                 .statistics(Double::parseDouble).get();
-<a class="jxr_linenumber" name="L143" href="#L143">143</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
-<a class="jxr_linenumber" name="L144" href="#L144">144</a>             <strong class="jxr_keyword">int</strong> j = i;
-<a class="jxr_linenumber" name="L145" href="#L145">145</a>             Statistics stats = o.map(x -&gt; x.get(j))
-<a class="jxr_linenumber" name="L146" href="#L146">146</a>                     .flatMap(x -&gt; Stream.from(x.subList(1, x.size())))
-<a class="jxr_linenumber" name="L147" href="#L147">147</a>                     .statistics(Double::parseDouble).println().get();
-<a class="jxr_linenumber" name="L148" href="#L148">148</a>             System.out.println(<span class="jxr_string">"z score="</span> + Math.abs(light.mean() - stats.mean())
-<a class="jxr_linenumber" name="L149" href="#L149">149</a>                     / stats.standardDeviation() * Math.sqrt(light.count()));
-<a class="jxr_linenumber" name="L150" href="#L150">150</a>         }
-<a class="jxr_linenumber" name="L151" href="#L151">151</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
-<a class="jxr_linenumber" name="L152" href="#L152">152</a>             <strong class="jxr_keyword">int</strong> j = i;
-<a class="jxr_linenumber" name="L153" href="#L153">153</a>             o.map(x -&gt; x.get(j)).flatMap(x -&gt; Stream <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L154" href="#L154">154</a>                     .from(x.subList(1, x.size()))) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L155" href="#L155">155</a>                     .statistics(Double::parseDouble) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L156" href="#L156">156</a>                     .map(x -&gt; markdownRow(j + <span class="jxr_string">""</span>, x)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L157" href="#L157">157</a>                     .println().go();
-<a class="jxr_linenumber" name="L158" href="#L158">158</a>         }
-<a class="jxr_linenumber" name="L159" href="#L159">159</a>     }
-<a class="jxr_linenumber" name="L160" href="#L160">160</a> 
-<a class="jxr_linenumber" name="L161" href="#L161">161</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> reportRequestTimeStats(String name, <strong class="jxr_keyword">int</strong> index) {
-<a class="jxr_linenumber" name="L162" href="#L162">162</a>         lines(<span class="jxr_string">"src/test/resources/one-time-link-hourly-store-request-times.txt"</span>) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L163" href="#L163">163</a>                 .map(line -&gt; line.split(<span class="jxr_string">"&#92;&#92;s+"</span>)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L164" href="#L164">164</a>                 .map(items -&gt; Double.parseDouble(items[index])) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L165" href="#L165">165</a>                 .statistics(x -&gt; x) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L166" href="#L166">166</a>                 .map(x -&gt; markdownRow(name, x)) <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L167" href="#L167">167</a>                 .println() <em class="jxr_comment">//</em>
-<a class="jxr_linenumber" name="L168" href="#L168">168</a>                 .go();
-<a class="jxr_linenumber" name="L169" href="#L169">169</a>     }
-<a class="jxr_linenumber" name="L170" href="#L170">170</a> 
-<a class="jxr_linenumber" name="L171" href="#L171">171</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String markdownRow(String name, Statistics x) {
-<a class="jxr_linenumber" name="L172" href="#L172">172</a>         DecimalFormat df = <strong class="jxr_keyword">new</strong> DecimalFormat(<span class="jxr_string">"0.000"</span>);
-<a class="jxr_linenumber" name="L173" href="#L173">173</a>         <strong class="jxr_keyword">return</strong> <span class="jxr_string">"| **"</span> + name + <span class="jxr_string">"** | "</span> + df.format(x.mean()) + <span class="jxr_string">" | "</span>
-<a class="jxr_linenumber" name="L174" href="#L174">174</a>                 + df.format(x.standardDeviation()) + <span class="jxr_string">" | "</span> + df.format(x.min()) + <span class="jxr_string">" | "</span>
-<a class="jxr_linenumber" name="L175" href="#L175">175</a>                 + df.format(x.max()) + <span class="jxr_string">" | "</span> + x.count() + <span class="jxr_string">" |"</span>;
-<a class="jxr_linenumber" name="L176" href="#L176">176</a>     }
-<a class="jxr_linenumber" name="L177" href="#L177">177</a> 
-<a class="jxr_linenumber" name="L178" href="#L178">178</a> }
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>                 <span class="jxr_string">"src/test/resources/one-time-link-hourly-store-request-times-raw.txt"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>                         .skip(1) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>                         .bufferUntil((list, x) -&gt; x.contains(<span class="jxr_string">"AEST"</span>), <strong class="jxr_keyword">true</strong>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>                         .map(list -&gt; list.subList(1, list.size())) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>                         .map(list -&gt; Stream <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                                 .from(list) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                                 .filter(x -&gt; !x.contains(<span class="jxr_string">"AEST"</span>)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>                                 .map(y -&gt; y.substring(10, y.length() - 1)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>                                 .toList().get()) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>                         .filter(list -&gt; !list.stream().anyMatch(x -&gt; Double.parseDouble(x) &gt; 10))
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>                         .map(x -&gt; Stream.from(x) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>                                 .mapWithIndex() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>                                 .groupByList( <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>                                         HashMap::<strong class="jxr_keyword">new</strong>, <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>                                         y -&gt; (<strong class="jxr_keyword">int</strong>) (y.index() % 3), <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>                                         y -&gt; y.value())
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>                                 .get());
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>         System.out.println(<span class="jxr_string">"cold start"</span>);
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>             <strong class="jxr_keyword">int</strong> j = i;
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>             o.map(x -&gt; x.get(j)).map(x -&gt; x.get(0)).statistics(Double::parseDouble).println().go();
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         }
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         System.out.println(<span class="jxr_string">"warm start"</span>);
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>         Statistics light = o.map(x -&gt; x.get(0)).flatMap(x -&gt; Stream.from(x.subList(1, x.size())))
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>                 .statistics(Double::parseDouble).get();
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>             <strong class="jxr_keyword">int</strong> j = i;
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>             Statistics stats = o.map(x -&gt; x.get(j))
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>                     .flatMap(x -&gt; Stream.from(x.subList(1, x.size())))
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>                     .statistics(Double::parseDouble).println().get();
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>             System.out.println(<span class="jxr_string">"z score="</span> + Math.abs(light.mean() - stats.mean())
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>                     / stats.standardDeviation() * Math.sqrt(light.count()));
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         }
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; 3; i++) {
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>             <strong class="jxr_keyword">int</strong> j = i;
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>             o.map(x -&gt; x.get(j)).flatMap(x -&gt; Stream <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>                     .from(x.subList(1, x.size()))) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     .statistics(Double::parseDouble) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>                     .map(x -&gt; markdownRow(j + <span class="jxr_string">""</span>, x)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>                     .println().go();
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>         }
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>     }
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> reportRequestTimeStats(String name, <strong class="jxr_keyword">int</strong> index) {
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>         lines(<span class="jxr_string">"src/test/resources/one-time-link-hourly-store-request-times.txt"</span>) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>                 .map(line -&gt; line.split(<span class="jxr_string">"&#92;&#92;s+"</span>)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>                 .map(items -&gt; Double.parseDouble(items[index])) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>                 .statistics(x -&gt; x) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>                 .map(x -&gt; markdownRow(name, x)) <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>                 .println() <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>                 .go();
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>     }
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> 
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String markdownRow(String name, Statistics x) {
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>         DecimalFormat df = <strong class="jxr_keyword">new</strong> DecimalFormat(<span class="jxr_string">"0.000"</span>);
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>         <strong class="jxr_keyword">return</strong> <span class="jxr_string">"| **"</span> + name + <span class="jxr_string">"** | "</span> + df.format(x.mean()) + <span class="jxr_string">" | "</span>
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>                 + df.format(x.standardDeviation()) + <span class="jxr_string">" | "</span> + df.format(x.min()) + <span class="jxr_string">" | "</span>
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>                 + df.format(x.max()) + <span class="jxr_string">" | "</span> + x.count() + <span class="jxr_string">" |"</span>;
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     }
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> }
 </pre>
 <hr/>
-<div id="footer">Copyright &#169; 2021&#x2013;2022. All rights reserved.</div>
+<div id="footer">© 2021–2024</div>
 </body>
 </html>

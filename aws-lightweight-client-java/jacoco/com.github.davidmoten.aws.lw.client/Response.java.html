@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -14,31 +15,37 @@ import com.github.davidmoten.aws.lw.client.internal.util.Preconditions;
 public final class Response {
 
     private final Map&lt;String, List&lt;String&gt;&gt; headers;
+    private final Map&lt;String, List&lt;String&gt;&gt; headersLowerCaseKey;
     private final byte[] content;
     private final int statusCode;
 
-<span class="fc" id="L20">    public Response(Map&lt;String, List&lt;String&gt;&gt; headers, byte[] content, int statusCode) {</span>
-<span class="fc" id="L21">        this.headers = headers;</span>
-<span class="fc" id="L22">        this.content = content;</span>
-<span class="fc" id="L23">        this.statusCode = statusCode;</span>
-<span class="fc" id="L24">    }</span>
+<span class="fc" id="L22">    public Response(Map&lt;String, List&lt;String&gt;&gt; headers, byte[] content, int statusCode) {</span>
+<span class="fc" id="L23">        this.headers = headers;</span>
+<span class="fc" id="L24">        this.headersLowerCaseKey = lowerCaseKey(headers);</span>
+<span class="fc" id="L25">        this.content = content;</span>
+<span class="fc" id="L26">        this.statusCode = statusCode;</span>
+<span class="fc" id="L27">    }</span>
 
     public Map&lt;String, List&lt;String&gt;&gt; headers() {
-<span class="fc" id="L27">        return headers;</span>
+<span class="fc" id="L30">        return headers;</span>
+    }
+    
+    public Map&lt;String, List&lt;String&gt;&gt; headersLowerCaseKey() {
+<span class="fc" id="L34">        return headersLowerCaseKey;</span>
     }
 
     public Optional&lt;String&gt; firstHeader(String name) {
-<span class="fc" id="L31">        List&lt;String&gt; h = headers.get(name);</span>
-<span class="fc bfc" id="L32" title="All 4 branches covered.">        if (h == null || h.isEmpty()) {</span>
-<span class="fc" id="L33">            return Optional.empty();</span>
+<span class="fc" id="L38">        List&lt;String&gt; h = headersLowerCaseKey.get(lowerCase(name));</span>
+<span class="fc bfc" id="L39" title="All 4 branches covered.">        if (h == null || h.isEmpty()) {</span>
+<span class="fc" id="L40">            return Optional.empty();</span>
         } else {
-<span class="fc" id="L35">            return Optional.of(h.get(0));</span>
+<span class="fc" id="L42">            return Optional.of(h.get(0));</span>
         }
     }
 
     public Optional&lt;Instant&gt; firstHeaderFullDate(String name) {
-<span class="fc" id="L40">        return firstHeader(name) //</span>
-<span class="fc" id="L41">                .map(x -&gt; ZonedDateTime.parse(x, Formats.FULL_DATE).toInstant());</span>
+<span class="fc" id="L47">        return firstHeader(name) //</span>
+<span class="fc" id="L48">                .map(x -&gt; ZonedDateTime.parse(x, Formats.FULL_DATE).toInstant());</span>
     }
 
     /**
@@ -48,35 +55,36 @@ public final class Response {
      * @return headers that start with {@code x-amz-meta-} (and removes that prefix)
      */
     public Metadata metadata() {
-<span class="fc" id="L51">        return new Metadata(headers //</span>
-<span class="fc" id="L52">                .entrySet() //</span>
-<span class="fc" id="L53">                .stream() //</span>
-<span class="fc bfc" id="L54" title="All 2 branches covered.">                .filter(x -&gt; x.getKey() != null) //</span>
-<span class="fc" id="L55">                .filter(x -&gt; x.getKey().startsWith(&quot;x-amz-meta-&quot;)) //</span>
-<span class="fc" id="L56">                .collect(Collectors.toMap( //</span>
-<span class="fc" id="L57">                        x -&gt; x.getKey().substring(11), //</span>
-<span class="fc" id="L58">                        x -&gt; x.getValue().get(0))));</span>
+<span class="fc" id="L58">        return new Metadata(headersLowerCaseKey //</span>
+<span class="fc" id="L59">                .entrySet() //</span>
+<span class="fc" id="L60">                .stream() //</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                .filter(x -&gt; x.getKey() != null) //</span>
+<span class="fc" id="L62">                .filter(x -&gt; x.getKey().startsWith(&quot;x-amz-meta-&quot;)) //</span>
+<span class="fc" id="L63">                .collect(Collectors.toMap( //</span>
+<span class="fc" id="L64">                        x -&gt; x.getKey().substring(11), //</span>
+<span class="fc" id="L65">                        x -&gt; x.getValue().get(0))));</span>
     }
 
     public Optional&lt;String&gt; metadata(String name) {
-<span class="fc" id="L62">        Preconditions.checkNotNull(name);</span>
-<span class="fc" id="L63">        return metadata().value(name);</span>
+<span class="fc" id="L69">        Preconditions.checkNotNull(name);</span>
+        // value() method does conversion of name to lower case
+<span class="fc" id="L71">        return metadata().value(name);</span>
     }
 
     public byte[] content() {
-<span class="fc" id="L67">        return content;</span>
+<span class="fc" id="L75">        return content;</span>
     }
 
     public String contentUtf8() {
-<span class="fc" id="L71">        return new String(content, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L79">        return new String(content, StandardCharsets.UTF_8);</span>
     }
 
     public int statusCode() {
-<span class="fc" id="L75">        return statusCode;</span>
+<span class="fc" id="L83">        return statusCode;</span>
     }
 
     public boolean isOk() {
-<span class="fc bfc" id="L79" title="All 4 branches covered.">        return statusCode &gt;= 200 &amp;&amp; statusCode &lt;= 299;</span>
+<span class="fc bfc" id="L87" title="All 4 branches covered.">        return statusCode &gt;= 200 &amp;&amp; statusCode &lt;= 299;</span>
     }
 
     /**
@@ -88,15 +96,26 @@ public final class Response {
      * @throws ServiceException if status code other than 2xx or 404
      */
     public boolean exists() {
-<span class="fc bfc" id="L91" title="All 4 branches covered.">        if (statusCode &gt;= 200 &amp;&amp; statusCode &lt;= 299) {</span>
-<span class="fc" id="L92">            return true;</span>
-<span class="fc bfc" id="L93" title="All 2 branches covered.">        } else if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {</span>
-<span class="fc" id="L94">            return false;</span>
+<span class="fc bfc" id="L99" title="All 4 branches covered.">        if (statusCode &gt;= 200 &amp;&amp; statusCode &lt;= 299) {</span>
+<span class="fc" id="L100">            return true;</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        } else if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {</span>
+<span class="fc" id="L102">            return false;</span>
         } else {
-<span class="fc" id="L96">            throw new ServiceException(statusCode, &quot;call failed&quot;);</span>
+<span class="fc" id="L104">            throw new ServiceException(statusCode, &quot;call failed&quot;);</span>
         }
     }
 
+    private static Map&lt;String, List&lt;String&gt;&gt; lowerCaseKey(Map&lt;String, List&lt;String&gt;&gt; m) {
+<span class="fc" id="L109">        return m.entrySet().stream().collect( //</span>
+<span class="fc" id="L110">                Collectors.toMap( //</span>
+<span class="fc" id="L111">                        entry -&gt; lowerCase(entry.getKey()), //</span>
+<span class="fc" id="L112">                        entry -&gt; entry.getValue()));</span>
+    }
+    
+    private static String lowerCase(String s) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        return s == null ? s : s.toLowerCase(Locale.ENGLISH);</span>
+    }
+    
     // TODO add toString method
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
