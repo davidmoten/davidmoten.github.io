@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnyOfThing.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">AnyOfThing.java</span></div><h1>AnyOfThing.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.AnyOfDeserializer;
+import org.davidmoten.oa3.codegen.runtime.AnyOfMember;
+import org.davidmoten.oa3.codegen.runtime.AnyOfSerializer;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.runtime.RuntimeUtil;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = AnyOfThing._Deserializer.class)
+@JsonSerialize(using = AnyOfThing._Serializer.class)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class AnyOfThing {
+
+    private final Optional&lt;Dog&gt; dog;
+
+    private final Optional&lt;EnumProperty&gt; enumProperty;
+
+    private AnyOfThing(
+            Optional&lt;Dog&gt; dog,
+<span class="nc" id="L34">            Optional&lt;EnumProperty&gt; enumProperty) {</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(AnyOfThing.class)) {</span>
+<span class="nc" id="L36">            Preconditions.checkNotNull(dog, &quot;dog&quot;);</span>
+<span class="nc" id="L37">            Preconditions.checkNotNull(enumProperty, &quot;enumProperty&quot;);</span>
+        }
+<span class="nc" id="L39">        this.dog = dog;</span>
+<span class="nc" id="L40">        this.enumProperty = enumProperty;</span>
+<span class="nc" id="L41">    }</span>
+
+    public static AnyOfThing of(
+            Optional&lt;Dog&gt; dog,
+            Optional&lt;EnumProperty&gt; enumProperty) {
+<span class="nc" id="L46">        AnyOfThing $o = new AnyOfThing(dog, enumProperty);</span>
+<span class="nc" id="L47">        RuntimeUtil.checkCanSerialize(Globals.config(), $o);</span>
+<span class="nc" id="L48">        return $o;</span>
+    }
+
+    public Optional&lt;Dog&gt; dog() {
+<span class="nc" id="L52">        return dog;</span>
+    }
+
+    public Optional&lt;EnumProperty&gt; enumProperty() {
+<span class="nc" id="L56">        return enumProperty;</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L60">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+<span class="nc" id="L65">        private Optional&lt;Dog&gt; dog = Optional.empty();</span>
+<span class="nc" id="L66">        private Optional&lt;EnumProperty&gt; enumProperty = Optional.empty();</span>
+
+<span class="nc" id="L68">        Builder() {</span>
+<span class="nc" id="L69">        }</span>
+
+        public Builder dog(Dog dog) {
+<span class="nc" id="L72">            this.dog = Optional.of(dog);</span>
+<span class="nc" id="L73">            return this;</span>
+        }
+
+        public Builder dog(Optional&lt;Dog&gt; dog) {
+<span class="nc" id="L77">            this.dog = dog;</span>
+<span class="nc" id="L78">            return this;</span>
+        }
+
+        public Builder enumProperty(EnumProperty enumProperty) {
+<span class="nc" id="L82">            this.enumProperty = Optional.of(enumProperty);</span>
+<span class="nc" id="L83">            return this;</span>
+        }
+
+        public Builder enumProperty(Optional&lt;EnumProperty&gt; enumProperty) {
+<span class="nc" id="L87">            this.enumProperty = enumProperty;</span>
+<span class="nc" id="L88">            return this;</span>
+        }
+
+        public AnyOfThing build() {
+<span class="nc" id="L92">            return AnyOfThing.of(this.dog, this.enumProperty);</span>
+        }
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends AnyOfDeserializer&lt;AnyOfThing&gt; {
+
+        public _Deserializer() {
+<span class="nc" id="L100">            super(Globals.config(), AnyOfThing.class, AnyOfMember.nonNullable(Dog.class), AnyOfMember.nonNullable(EnumProperty.class));</span>
+<span class="nc" id="L101">        }</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Serializer extends AnyOfSerializer&lt;AnyOfThing&gt; {
+
+        public _Serializer() {
+<span class="nc" id="L108">            super(Globals.config(), AnyOfThing.class);</span>
+<span class="nc" id="L109">        }</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L115">            return true;</span>
+        }
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L118">            return false;</span>
+        }
+<span class="nc" id="L120">        AnyOfThing other = (AnyOfThing) o;</span>
+<span class="nc" id="L121">        return </span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            Objects.deepEquals(this.dog, other.dog) &amp;&amp; </span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            Objects.deepEquals(this.enumProperty, other.enumProperty);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L128">        return Objects.hash(dog, enumProperty);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L133">        return Util.toString(AnyOfThing.class, &quot;dog&quot;, dog, &quot;enumProperty&quot;, enumProperty);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

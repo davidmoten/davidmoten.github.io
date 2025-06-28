@@ -267,7 +267,7 @@ import com.github.davidmoten.guavamini.Maps;
 <span class="fc" id="L267">                .stream() //</span>
 <span class="fc" id="L268">                .collect(Collectors.toMap(x -&gt; x.identifier,</span>
 <span class="fc" id="L269">                        x -&gt; WriterUtil.markdownToHtml(x.description.orElse(x.identifier))));</span>
-<span class="fc" id="L270">        String html = m.description.map(x -&gt; WriterUtil.markdownToHtml(x))</span>
+<span class="fc" id="L270">        String html = m.description.map(WriterUtil::markdownToHtml)</span>
 <span class="fc" id="L271">                .orElse(&quot;&lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.&lt;/p&gt;&quot;);</span>
 <span class="fc" id="L272">        String more = m.responseDescriptors.stream() //</span>
 <span class="fc" id="L273">                .map(rd -&gt; {</span>
@@ -306,62 +306,48 @@ import com.github.davidmoten.guavamini.Maps;
 <span class="fc" id="L306">            m.parameters.forEach(p -&gt; {</span>
 <span class="fc" id="L307">                Constraints x = p.constraints;</span>
 <span class="fc bfc" id="L308" title="All 2 branches covered.">                if (x.atLeastOnePresent()) {</span>
-<span class="fc bfc" id="L309" title="All 2 branches covered.">                    if (x.minLength.isPresent()) {</span>
-<span class="fc" id="L310">                        out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="fc" id="L311">                                x.minLength.get(), p.identifier);</span>
+<span class="fc" id="L309">                    x.minLength.ifPresent(integer -&gt; out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+                            integer, p.identifier));
+<span class="fc" id="L311">                    x.maxLength.ifPresent(integer -&gt; out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+                            integer, p.identifier));
+<span class="pc" id="L313">                    x.pattern.ifPresent(s -&gt; out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, RequestPreconditions.class,</span>
+<span class="nc" id="L314">                            p.identifier, WriterUtil.escapePattern(s), p.identifier));</span>
+<span class="fc" id="L315">                    x.min.ifPresent(bigDecimal -&gt; out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="fc" id="L316">                            bigDecimal.toString(), p.identifier, false));</span>
+<span class="pc" id="L317">                    x.max.ifPresent(bigDecimal -&gt; out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L318">                            bigDecimal.toString(), p.identifier, false));</span>
+<span class="pc" id="L319">                    x.minExclusive.ifPresent(bigDecimal -&gt; out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L320">                            bigDecimal.toString(), p.identifier, true));</span>
+<span class="pc" id="L321">                    x.maxExclusive.ifPresent(bigDecimal -&gt; out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L322">                            bigDecimal.toString(), p.identifier, true));</span>
+<span class="pc bpc" id="L323" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.minItems.isPresent()) {</span>
+<span class="nc" id="L324">                        out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L325">                                x.minItems.get(), p.identifier);</span>
                     }
-<span class="fc bfc" id="L313" title="All 2 branches covered.">                    if (x.maxLength.isPresent()) {</span>
-<span class="fc" id="L314">                        out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="fc" id="L315">                                x.maxLength.get(), p.identifier);</span>
-                    }
-<span class="pc bpc" id="L317" title="1 of 2 branches missed.">                    if (x.pattern.isPresent()) {</span>
-<span class="nc" id="L318">                        out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, RequestPreconditions.class,</span>
-<span class="nc" id="L319">                                p.identifier, WriterUtil.escapePattern(x.pattern.get()), p.identifier);</span>
-                    }
-<span class="fc bfc" id="L321" title="All 2 branches covered.">                    if (x.min.isPresent()) {</span>
-<span class="fc" id="L322">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="fc" id="L323">                                x.min.get().toString(), p.identifier, false);</span>
-                    }
-<span class="pc bpc" id="L325" title="1 of 2 branches missed.">                    if (x.max.isPresent()) {</span>
-<span class="nc" id="L326">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L327">                                x.max.get().toString(), p.identifier, false);</span>
-                    }
-<span class="pc bpc" id="L329" title="1 of 2 branches missed.">                    if (x.minExclusive.isPresent()) {</span>
-<span class="nc" id="L330">                        out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L331">                                x.minExclusive.get().toString(), p.identifier, true);</span>
-                    }
-<span class="pc bpc" id="L333" title="1 of 2 branches missed.">                    if (x.maxExclusive.isPresent()) {</span>
-<span class="nc" id="L334">                        out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L335">                                x.maxExclusive.get().toString(), p.identifier, true);</span>
-                    }
-<span class="pc bpc" id="L337" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.minItems.isPresent()) {</span>
-<span class="nc" id="L338">                        out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L339">                                x.minItems.get(), p.identifier);</span>
-                    }
-<span class="pc bpc" id="L341" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
-<span class="nc" id="L342">                        out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
-<span class="nc" id="L343">                                x.maxItems.get(), p.identifier);</span>
+<span class="pc bpc" id="L327" title="1 of 4 branches missed.">                    if (p.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
+<span class="nc" id="L328">                        out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, RequestPreconditions.class, p.identifier,</span>
+<span class="nc" id="L329">                                x.maxItems.get(), p.identifier);</span>
                     }
                 }
-<span class="fc" id="L346">            });</span>
-<span class="fc" id="L347">            out.closeParen();</span>
+<span class="fc" id="L332">            });</span>
+<span class="fc" id="L333">            out.closeParen();</span>
         }
-<span class="fc" id="L349">    }</span>
+<span class="fc" id="L335">    }</span>
 
     static String toImportedType(Param p, Imports imports) {
-<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (p.isArray) {</span>
-<span class="pc bpc" id="L353" title="1 of 2 branches missed.">            if (p.required) {</span>
-<span class="nc" id="L354">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(p.fullClassName));</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        if (p.isArray) {</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">            if (p.required) {</span>
+<span class="nc" id="L340">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(p.fullClassName));</span>
             } else {
-<span class="fc" id="L356">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
-<span class="fc" id="L357">                        imports.add(p.fullClassName));</span>
+<span class="fc" id="L342">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
+<span class="fc" id="L343">                        imports.add(p.fullClassName));</span>
             }
-<span class="fc bfc" id="L359" title="All 4 branches covered.">        } else if (p.required || p.defaultValue.isPresent()) {</span>
-<span class="fc" id="L360">            return imports.add(Util.toPrimitive(p.fullClassName));</span>
+<span class="fc bfc" id="L345" title="All 4 branches covered.">        } else if (p.required || p.defaultValue.isPresent()) {</span>
+<span class="fc" id="L346">            return imports.add(Util.toPrimitive(p.fullClassName));</span>
         } else {
-<span class="fc" id="L362">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(p.fullClassName));</span>
+<span class="fc" id="L348">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(p.fullClassName));</span>
         }
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

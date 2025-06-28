@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DownloadExtras.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-generator</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.generator</a> &gt; <span class="el_source">DownloadExtras.java</span></div><h1>DownloadExtras.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.generator;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,51 +9,51 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 
-<span class="nc" id="L13">public class DownloadExtras {</span>
+<span class="nc" id="L12">public class DownloadExtras {</span>
 
     public static void run(File list, File cacheDirectory) {
         try {
-<span class="nc" id="L17">            cacheDirectory.mkdirs();</span>
-<span class="nc" id="L18">            Files.readAllLines(list.toPath()) //</span>
-<span class="nc" id="L19">                    .stream().map(x -&gt; x.trim()) //</span>
-<span class="nc bnc" id="L20" title="All 2 branches missed.">                    .filter(x -&gt; !x.isEmpty()) //</span>
-<span class="nc" id="L21">                    .map(x -&gt; x.split(&quot;,&quot;)) //</span>
-<span class="nc" id="L22">                    .forEach(items -&gt; download(items[0], items[1], cacheDirectory));</span>
-<span class="nc" id="L23">        } catch (IOException e) {</span>
-<span class="nc" id="L24">            throw new UncheckedIOException(e);</span>
-<span class="nc" id="L25">        }</span>
-<span class="nc" id="L26">    }</span>
+<span class="nc" id="L16">            cacheDirectory.mkdirs();</span>
+<span class="nc" id="L17">            Files.readAllLines(list.toPath()) //</span>
+<span class="nc" id="L18">                    .stream().map(String::trim) //</span>
+<span class="nc bnc" id="L19" title="All 2 branches missed.">                    .filter(x -&gt; !x.isEmpty()) //</span>
+<span class="nc" id="L20">                    .map(x -&gt; x.split(&quot;,&quot;)) //</span>
+<span class="nc" id="L21">                    .forEach(items -&gt; download(items[0], items[1], cacheDirectory));</span>
+<span class="nc" id="L22">        } catch (IOException e) {</span>
+<span class="nc" id="L23">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L24">        }</span>
+<span class="nc" id="L25">    }</span>
 
     private static void download(String url, String toFilename, File cacheDirectory) {
-<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (new File(cacheDirectory, toFilename).exists()) {</span>
-<span class="nc" id="L30">            System.out.println(&quot;[INFO] &quot; + toFilename + &quot; exists alread in cache &quot; + cacheDirectory);</span>
-<span class="nc" id="L31">            return;</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (new File(cacheDirectory, toFilename).exists()) {</span>
+<span class="nc" id="L29">            System.out.println(&quot;[INFO] &quot; + toFilename + &quot; exists alread in cache &quot; + cacheDirectory);</span>
+<span class="nc" id="L30">            return;</span>
         }
-<span class="nc" id="L33">        System.out.println(&quot;[INFO] downloading &quot; + url);</span>
+<span class="nc" id="L32">        System.out.println(&quot;[INFO] downloading &quot; + url);</span>
         try {
-<span class="nc" id="L35">            URL u = new URL(url);</span>
-<span class="nc" id="L36">            HttpURLConnection con = (HttpURLConnection) u.openConnection();</span>
-<span class="nc" id="L37">            con.setRequestMethod(&quot;GET&quot;);</span>
-<span class="nc" id="L38">            con.setDoInput(true);</span>
-<span class="nc" id="L39">            File tmp = new File(cacheDirectory, toFilename + &quot;.tmp&quot;);</span>
-<span class="nc" id="L40">            try (InputStream in = con.getInputStream(); OutputStream out = new FileOutputStream(tmp)) {</span>
-<span class="nc" id="L41">                copy(in, out);</span>
+<span class="nc" id="L34">            URL u = new URL(url);</span>
+<span class="nc" id="L35">            HttpURLConnection con = (HttpURLConnection) u.openConnection();</span>
+<span class="nc" id="L36">            con.setRequestMethod(&quot;GET&quot;);</span>
+<span class="nc" id="L37">            con.setDoInput(true);</span>
+<span class="nc" id="L38">            File tmp = new File(cacheDirectory, toFilename + &quot;.tmp&quot;);</span>
+<span class="nc" id="L39">            try (InputStream in = con.getInputStream(); OutputStream out = Files.newOutputStream(tmp.toPath())) {</span>
+<span class="nc" id="L40">                copy(in, out);</span>
             }
-<span class="nc" id="L43">            File destination = new File(cacheDirectory, toFilename);</span>
-<span class="nc" id="L44">            tmp.renameTo(destination);</span>
-<span class="nc" id="L45">            System.out.println(&quot;[INFO] downloaded &quot; + toFilename + &quot; to cache &quot; + cacheDirectory);</span>
-<span class="nc" id="L46">        } catch (IOException e) {</span>
-<span class="nc" id="L47">            throw new UncheckedIOException(e);</span>
-<span class="nc" id="L48">        }</span>
-<span class="nc" id="L49">    }</span>
+<span class="nc" id="L42">            File destination = new File(cacheDirectory, toFilename);</span>
+<span class="nc" id="L43">            tmp.renameTo(destination);</span>
+<span class="nc" id="L44">            System.out.println(&quot;[INFO] downloaded &quot; + toFilename + &quot; to cache &quot; + cacheDirectory);</span>
+<span class="nc" id="L45">        } catch (IOException e) {</span>
+<span class="nc" id="L46">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L47">        }</span>
+<span class="nc" id="L48">    }</span>
 
     private static void copy(InputStream in, OutputStream out) throws IOException {
-<span class="nc" id="L52">        byte[] buffer = new byte[8192];</span>
+<span class="nc" id="L51">        byte[] buffer = new byte[8192];</span>
         int n;
-<span class="nc bnc" id="L54" title="All 2 branches missed.">        while ((n = in.read(buffer)) != -1) {</span>
-<span class="nc" id="L55">            out.write(buffer, 0, n);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        while ((n = in.read(buffer)) != -1) {</span>
+<span class="nc" id="L54">            out.write(buffer, 0, n);</span>
         }
-<span class="nc" id="L57">    }</span>
+<span class="nc" id="L56">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

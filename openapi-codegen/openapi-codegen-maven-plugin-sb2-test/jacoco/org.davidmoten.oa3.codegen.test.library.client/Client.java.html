@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.library.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.library.client;
+
+import jakarta.annotation.Generated;
+
+import java.lang.String;
+import java.lang.Void;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
+import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.Http.Builder;
+import org.davidmoten.oa3.codegen.http.Http.RequestBuilder;
+import org.davidmoten.oa3.codegen.http.HttpMethod;
+import org.davidmoten.oa3.codegen.http.Interceptor;
+import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
+import org.davidmoten.oa3.codegen.test.library.Globals;
+import org.davidmoten.oa3.codegen.test.library.schema.Item;
+import org.davidmoten.oa3.codegen.test.library.schema.User;
+import org.davidmoten.oa3.codegen.test.library.schema.UsersPage;
+
+/**
+ * &lt;p&gt;Library Demo
+ * &lt;p&gt;Library demonstration of some features of OpenAPI 3 and &lt;em&gt;openapi-codegen&lt;/em&gt;
+ */
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public class Client {
+
+    private final Serializer serializer;
+    private final List&lt;Interceptor&gt; interceptors;
+    private final String basePath;
+    private final HttpService httpService;
+
+<span class="fc" id="L35">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath, HttpService httpService) {</span>
+<span class="fc" id="L36">        this.serializer = serializer;</span>
+<span class="fc" id="L37">        this.interceptors = interceptors;</span>
+<span class="fc" id="L38">        this.basePath = basePath;</span>
+<span class="fc" id="L39">        this.httpService = httpService;</span>
+<span class="fc" id="L40">    }</span>
+
+    public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
+<span class="fc" id="L43">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), basePath);</span>
+    }
+
+    public static ClientBuilder&lt;Client&gt; basePath(Server server) {
+<span class="nc" id="L47">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), server.url());</span>
+    }
+
+<span class="nc" id="L50">    public enum Server {</span>
+
+<span class="nc" id="L52">        SERVER1(&quot;/&quot;);</span>
+
+        private String url;
+
+<span class="nc" id="L56">        Server(String url) {</span>
+<span class="nc" id="L57">            this.url = url;</span>
+<span class="nc" id="L58">        }</span>
+
+        public String url() {
+<span class="nc" id="L61">            return url;</span>
+        }
+    }
+
+    private Builder http(HttpMethod method, String path) {
+<span class="fc" id="L66">        return Http</span>
+<span class="fc" id="L67">                .method(method)</span>
+<span class="fc" id="L68">                .basePath(this.basePath)</span>
+<span class="fc" id="L69">                .path(path)</span>
+<span class="fc" id="L70">                .serializer(this.serializer)</span>
+<span class="fc" id="L71">                .interceptors(this.interceptors)</span>
+<span class="fc" id="L72">                .httpService(this.httpService);</span>
+    }
+
+    /**
+     * &lt;p&gt;List users page by page, filtered by search if present
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code UsersPage}
+     * 
+     * @param search
+     *            &lt;p&gt;search
+     * @param continuationToken
+     *            &lt;p&gt;continuationToken
+     * @return call builder
+     */
+    public RequestBuilder&lt;UsersPage&gt; getUsers(
+            Optional&lt;String&gt; search, 
+            Optional&lt;String&gt; continuationToken) {
+<span class="fc" id="L89">        return http(HttpMethod.GET, &quot;/user&quot;)</span>
+<span class="fc" id="L90">                .acceptApplicationJson()</span>
+<span class="fc" id="L91">                .queryParam(&quot;search&quot;, search)</span>
+<span class="fc" id="L92">                .queryParam(&quot;continuationToken&quot;, continuationToken)</span>
+<span class="fc" id="L93">                .responseAs(UsersPage.class)</span>
+<span class="fc" id="L94">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L95">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L96">                .&lt;UsersPage&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Creates a new user
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; createUser(
+            User requestBody) {
+<span class="nc" id="L108">        return http(HttpMethod.POST, &quot;/user&quot;)</span>
+<span class="nc" id="L109">                .body(requestBody)</span>
+<span class="nc" id="L110">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L111">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Gets user details
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code User}
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     * @return call builder
+     */
+    public RequestBuilder&lt;User&gt; getUser(
+            String id) {
+<span class="nc" id="L125">        return http(HttpMethod.GET, &quot;/user/{id}&quot;)</span>
+<span class="nc" id="L126">                .acceptApplicationJson()</span>
+<span class="nc" id="L127">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L128">                .responseAs(User.class)</span>
+<span class="nc" id="L129">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L130">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L131">                .&lt;User&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Updates a user
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @param id
+     *            &lt;p&gt;id
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; updateUser(
+            String id, 
+            User requestBody) {
+<span class="nc" id="L146">        return http(HttpMethod.PUT, &quot;/user/{id}&quot;)</span>
+<span class="nc" id="L147">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L148">                .body(requestBody)</span>
+<span class="nc" id="L149">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L150">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Deletes a user (logically)
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; deleteUser(
+            String id) {
+<span class="nc" id="L162">        return http(HttpMethod.DELETE, &quot;/user/{id}&quot;)</span>
+<span class="nc" id="L163">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L164">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Gets item details
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Item}
+     * 
+     * @param itemId
+     *            &lt;p&gt;itemId
+     * @return call builder
+     */
+    public RequestBuilder&lt;Item&gt; getItem(
+            String itemId) {
+<span class="nc" id="L178">        return http(HttpMethod.GET, &quot;/item/{itemId}&quot;)</span>
+<span class="nc" id="L179">                .acceptApplicationJson()</span>
+<span class="nc" id="L180">                .pathParam(&quot;itemId&quot;, itemId)</span>
+<span class="nc" id="L181">                .responseAs(Item.class)</span>
+<span class="nc" id="L182">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L183">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L184">                .&lt;Item&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    public Builder _custom(HttpMethod method, String path) {
+<span class="nc" id="L188">        return Http</span>
+<span class="nc" id="L189">                .method(method)</span>
+<span class="nc" id="L190">                .basePath(this.basePath)</span>
+<span class="nc" id="L191">                .path(path)</span>
+<span class="nc" id="L192">                .serializer(this.serializer)</span>
+<span class="nc" id="L193">                .httpService(this.httpService);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

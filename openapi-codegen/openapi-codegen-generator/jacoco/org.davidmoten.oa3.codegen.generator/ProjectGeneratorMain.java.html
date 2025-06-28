@@ -13,33 +13,35 @@ import java.nio.file.Files;
 <span class="nc" id="L13">        String version = System.getProperty(&quot;version&quot;, &quot;1.0&quot;);</span>
 <span class="nc" id="L14">        String file = System.getProperty(&quot;file&quot;, &quot;openapi.yaml&quot;);</span>
 <span class="nc" id="L15">        String output = System.getProperty(&quot;output&quot;);</span>
-<span class="nc bnc" id="L16" title="All 2 branches missed.">        if (output == null) {</span>
-<span class="nc" id="L17">            output = Files.createTempDirectory(&quot;client&quot;).toFile().getCanonicalPath();</span>
+<span class="nc" id="L16">        int maxClassNameLength = Integer.parseInt(System.getProperty(&quot;maxClassNameLength&quot;, &quot;255&quot;));</span>
+<span class="nc" id="L17">        boolean failOnParseErrors = System.getProperty(&quot;failOnParseErrors&quot;, &quot;true&quot;).equalsIgnoreCase(&quot;true&quot;);</span>
+<span class="nc bnc" id="L18" title="All 2 branches missed.">        if (output == null) {</span>
+<span class="nc" id="L19">            output = Files.createTempDirectory(&quot;client&quot;).toFile().getCanonicalPath();</span>
         }
-<span class="nc" id="L19">        File out = new File(output);</span>
-<span class="nc" id="L20">        out.mkdirs();</span>
-<span class="nc" id="L21">        boolean clean = System.getProperty(&quot;clean&quot;, &quot;false&quot;).equals(&quot;true&quot;);</span>
-<span class="nc bnc" id="L22" title="All 2 branches missed.">        if (clean) {</span>
-<span class="nc" id="L23">            deleteContents(out);</span>
+<span class="nc" id="L21">        File out = new File(output);</span>
+<span class="nc" id="L22">        out.mkdirs();</span>
+<span class="nc" id="L23">        boolean clean = System.getProperty(&quot;clean&quot;, &quot;false&quot;).equals(&quot;true&quot;);</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (clean) {</span>
+<span class="nc" id="L25">            deleteContents(out);</span>
         }
-<span class="nc" id="L25">        ProjectGenerator.generate(file, groupId, artifactId, version, basePackage, true, false, out);</span>
-<span class="nc" id="L26">        System.out.println(output);</span>
-<span class="nc" id="L27">    }</span>
+<span class="nc" id="L27">        ProjectGenerator.generate(file, groupId, artifactId, version, basePackage, true, false, out, maxClassNameLength, failOnParseErrors);</span>
+<span class="nc" id="L28">        System.out.println(output);</span>
+<span class="nc" id="L29">    }</span>
 
     private static void deleteContents(File file) {
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (file == null) {</span>
-<span class="nc" id="L31">            return;</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L33">            return;</span>
         }
-<span class="nc" id="L33">        File[] list = file.listFiles();</span>
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (list != null) {</span>
-<span class="nc bnc" id="L35" title="All 2 branches missed.">            for (File f : list) {</span>
-<span class="nc bnc" id="L36" title="All 2 branches missed.">                if (f.isDirectory()) {</span>
-<span class="nc" id="L37">                    deleteContents(f);</span>
+<span class="nc" id="L35">        File[] list = file.listFiles();</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (list != null) {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">            for (File f : list) {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">                if (f.isDirectory()) {</span>
+<span class="nc" id="L39">                    deleteContents(f);</span>
                 }
-<span class="nc" id="L39">                f.delete();</span>
+<span class="nc" id="L41">                f.delete();</span>
             }
         }
-<span class="nc" id="L42">    }</span>
+<span class="nc" id="L44">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

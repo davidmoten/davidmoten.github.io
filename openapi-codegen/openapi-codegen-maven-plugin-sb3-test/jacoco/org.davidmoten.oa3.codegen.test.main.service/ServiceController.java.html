@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServiceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb3-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.service</a> &gt; <span class="el_source">ServiceController.java</span></div><h1>ServiceController.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.service;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Boolean;
+import java.lang.String;
+import java.lang.Throwable;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.spring.runtime.ControllerExceptionHandler;
+import org.davidmoten.oa3.codegen.spring.runtime.RequestPreconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.test.main.path.GetMsis200Response;
+import org.davidmoten.oa3.codegen.test.main.path.GetMsisStatus;
+import org.davidmoten.oa3.codegen.test.main.schema.AuthenticationRequestBody;
+import org.davidmoten.oa3.codegen.test.main.schema.AuthenticationResponse;
+import org.davidmoten.oa3.codegen.test.main.schema.BroadcastType;
+import org.davidmoten.oa3.codegen.test.main.schema.Error;
+import org.davidmoten.oa3.codegen.test.main.schema.Msi;
+import org.davidmoten.oa3.codegen.test.main.schema.MsiContent;
+import org.davidmoten.oa3.codegen.test.main.schema.MsiId;
+import org.davidmoten.oa3.codegen.test.main.schema.Status;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public class ServiceController implements ControllerExceptionHandler {
+
+    private final Service service;
+
+<span class="nc" id="L42">    public ServiceController(@Autowired(required = false) Service service) {</span>
+<span class="nc" id="L43">        this.service = Util.orElse(service, Service.DEFAULT);</span>
+<span class="nc" id="L44">    }</span>
+
+    /**
+     * &lt;p&gt;Obtains a token that will be passed in a request header to calls
+     * to other paths on this API for authentication and authorization
+     * purposes.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code AuthenticationResponse}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/authenticate&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; getToken(
+            @RequestBody AuthenticationRequestBody requestBody) {
+        try {
+<span class="nc" id="L68">            return ResponseEntity.status(200).body(service.getToken(requestBody));</span>
+<span class="nc" id="L69">        } catch (Throwable e) {</span>
+<span class="nc" id="L70">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns Maritime Safety Information broadcasts requested to
+     * be sent by the user.
+     * &lt;p&gt;Note that none of the parameters are required. If no parameters
+     * are supplied then all MSIs for the current user will be returned
+     * (paged).
+     * &lt;p&gt;The &lt;code&gt;limit&lt;/code&gt; field may not be honoured exactly by the server
+     * side (in that it might exceed a maximum limit of the server).
+     * &lt;p&gt;The results of this query may return in any order and that order
+     * may vary in repeated calls (for example, the returned MSIs &lt;em&gt;may&lt;/em&gt;
+     * not be ordered by timestamp). If the client requires an ordering
+     * by time then all pages should be requested and then sorted
+     * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code GetMsis200Response}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param endTimeMaxInclusive
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive not specified then has no effect.
+     * @param endTimeMax
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     * @param endTimeMin
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param startTimeMin
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param limit
+     *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
+     *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
+     *            returned). To request the next page available include the
+     *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
+     *            no more items available then the response will not contain
+     *            a &lt;code&gt;continuationToken&lt;/code&gt;.
+     * @param startTimeMinInclusive
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive not specified then has no effect.
+     * @param endTimeMinInclusive
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;gt;= endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
+     *            on endTime &amp;gt; endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
+     * @param startTimeMax
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
+     * @param startTimeMaxInclusive
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param continuationToken
+     *            &lt;p&gt;Describes to the server the starting point of
+     *            the next page of results and is obtained from
+     *            the current page. May contain an offset if desired
+     *            but is at the discretion of implementer. Note that
+     *            it is possible that a call specifying a continuation
+     *            token may return en empty list (but an empty list return
+     *            should not have a continuation token on it so at
+     *            that point paging would stop).
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/msi&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; getMsis(
+            @RequestParam(name = &quot;startTimeMin&quot;, required = false) Optional&lt;OffsetDateTime&gt; startTimeMin, 
+            @RequestParam(name = &quot;startTimeMinInclusive&quot;, defaultValue = &quot;true&quot;, required = false) boolean startTimeMinInclusive, 
+            @RequestParam(name = &quot;startTimeMax&quot;, required = false) Optional&lt;OffsetDateTime&gt; startTimeMax, 
+            @RequestParam(name = &quot;startTimeMaxInclusive&quot;, defaultValue = &quot;true&quot;, required = false) boolean startTimeMaxInclusive, 
+            @RequestParam(name = &quot;endTimeMin&quot;, required = false) Optional&lt;OffsetDateTime&gt; endTimeMin, 
+            @RequestParam(name = &quot;endTimeMinInclusive&quot;, required = false) Optional&lt;Boolean&gt; endTimeMinInclusive, 
+            @RequestParam(name = &quot;endTimeMax&quot;, required = false) Optional&lt;OffsetDateTime&gt; endTimeMax, 
+            @RequestParam(name = &quot;endTimeMaxInclusive&quot;, defaultValue = &quot;true&quot;, required = false) boolean endTimeMaxInclusive, 
+            @RequestParam(name = &quot;limit&quot;, defaultValue = &quot;10&quot;, required = false) int limit, 
+            @ModelAttribute(name = &quot;status&quot;) Optional&lt;List&lt;GetMsisStatus&gt;&gt; status, 
+            @ModelAttribute(name = &quot;broadcastType&quot;) Optional&lt;BroadcastType&gt; broadcastType, 
+            @RequestParam(name = &quot;continuationToken&quot;, required = false) Optional&lt;String&gt; continuationToken) {
+        try {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsis&quot;)) {</span>
+<span class="nc" id="L182">                RequestPreconditions.checkMinimum(limit, &quot;1&quot;, &quot;limit&quot;, false);</span>
+<span class="nc" id="L183">                RequestPreconditions.checkMinLength(continuationToken, 1, &quot;continuationToken&quot;);</span>
+<span class="nc" id="L184">                RequestPreconditions.checkMaxLength(continuationToken, 4096, &quot;continuationToken&quot;);</span>
+            }
+<span class="nc" id="L186">            return ResponseEntity.status(200).body(service.getMsis(startTimeMin, startTimeMinInclusive, startTimeMax, startTimeMaxInclusive, endTimeMin, endTimeMinInclusive, endTimeMax, endTimeMaxInclusive, limit, status, broadcastType, continuationToken));</span>
+<span class="nc" id="L187">        } catch (Throwable e) {</span>
+<span class="nc" id="L188">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Submits message content and returns a unique id (across all
+     * users) that is to be used in the send method. It is ok for
+     * a message to never be sent but the provider should have the
+     * freedom to clean up (delete) unsent messages after some
+     * reasonable period or after more than N unsent messages are created.
+     * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
+     * maximum number of unsent messages so it can be documented here).
+     * 
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code MsiId}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 201
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/msi&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; createMsi(
+            @RequestBody MsiContent requestBody) {
+        try {
+<span class="nc" id="L219">            return ResponseEntity.status(201).body(service.createMsi(requestBody));</span>
+<span class="nc" id="L220">        } catch (Throwable e) {</span>
+<span class="nc" id="L221">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Msi}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/msi/{id}&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; getMsi(
+            @PathVariable(name = &quot;id&quot;, required = true) String id) {
+        try {
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsi&quot;)) {</span>
+<span class="nc" id="L247">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L248">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+            }
+<span class="nc" id="L250">            return ResponseEntity.status(200).body(service.getMsi(id));</span>
+<span class="nc" id="L251">        } catch (Throwable e) {</span>
+<span class="nc" id="L252">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Requests that an existing unsent MSI be sent. If the MSI
+     * has already been sent or the MSI has been cancelled then
+     * nothing occurs (this method is idempotent).
+     * 
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     */
+    @RequestMapping(
+        method = RequestMethod.PUT,
+        value = &quot;/msi/{id}&quot;)
+    public ResponseEntity&lt;?&gt; sendMsi(
+            @PathVariable(name = &quot;id&quot;, required = true) String id) {
+        try {
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;sendMsi&quot;)) {</span>
+<span class="nc" id="L277">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L278">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+            }
+<span class="nc" id="L280">            service.sendMsi(id);</span>
+<span class="nc" id="L281">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L282">        } catch (Throwable e) {</span>
+<span class="nc" id="L283">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;This is a logical delete of a broadcast in that it
+     * prevents future broadcasts happening for this msiId
+     * (be it a single or repeating broadcast). Once cancelled
+     * an MSI cannot be resent. However, the broadcast details
+     * are still available to be queried.
+     * 
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     */
+    @RequestMapping(
+        method = RequestMethod.DELETE,
+        value = &quot;/msi/{id}&quot;)
+    public ResponseEntity&lt;?&gt; cancelMsi(
+            @PathVariable(name = &quot;id&quot;, required = true) String id) {
+        try {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;cancelMsi&quot;)) {</span>
+<span class="nc" id="L310">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L311">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+            }
+<span class="nc" id="L313">            service.cancelMsi(id);</span>
+<span class="nc" id="L314">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L315">        } catch (Throwable e) {</span>
+<span class="nc" id="L316">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Status}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/msi/{id}/status&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; getMsiStatus(
+            @PathVariable(name = &quot;id&quot;, required = true) String id) {
+        try {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;getMsiStatus&quot;)) {</span>
+<span class="nc" id="L342">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L343">                RequestPreconditions.checkMaxLength(id, 255, &quot;id&quot;);</span>
+            }
+<span class="nc" id="L345">            return ResponseEntity.status(200).body(service.getMsiStatus(id));</span>
+<span class="nc" id="L346">        } catch (Throwable e) {</span>
+<span class="nc" id="L347">            return service.errorResponse(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

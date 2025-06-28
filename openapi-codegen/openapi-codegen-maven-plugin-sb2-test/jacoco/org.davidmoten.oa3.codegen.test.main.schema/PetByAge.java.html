@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PetByAge.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">PetByAge.java</span></div><h1>PetByAge.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class PetByAge {
+
+    @JsonProperty(&quot;age&quot;)
+    private final long age;
+
+    @JsonProperty(&quot;nickname&quot;)
+    private final Optional&lt;String&gt; nickname;
+
+    @JsonCreator
+    public PetByAge(
+            @JsonProperty(&quot;age&quot;) long age,
+<span class="nc" id="L40">            @JsonProperty(&quot;nickname&quot;) Optional&lt;String&gt; nickname) {</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(PetByAge.class)) {</span>
+<span class="nc" id="L42">            Preconditions.checkNotNull(nickname, &quot;nickname&quot;);</span>
+        }
+<span class="nc" id="L44">        this.age = age;</span>
+<span class="nc" id="L45">        this.nickname = nickname;</span>
+<span class="nc" id="L46">    }</span>
+
+    public long age() {
+<span class="nc" id="L49">        return age;</span>
+    }
+
+    public Optional&lt;String&gt; nickname() {
+<span class="nc" id="L53">        return nickname;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L57">        return Maps</span>
+<span class="nc" id="L58">                .put(&quot;age&quot;, (Object) age)</span>
+<span class="nc" id="L59">                .put(&quot;nickname&quot;, (Object) nickname)</span>
+<span class="nc" id="L60">                .build();</span>
+    }
+
+    public PetByAge withAge(long age) {
+<span class="nc" id="L64">        return new PetByAge(age, nickname);</span>
+    }
+
+    public PetByAge withNickname(Optional&lt;String&gt; nickname) {
+<span class="nc" id="L68">        return new PetByAge(age, nickname);</span>
+    }
+
+    public PetByAge withNickname(String nickname) {
+<span class="nc" id="L72">        return new PetByAge(age, Optional.of(nickname));</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L76">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private long age;
+<span class="nc" id="L82">        private Optional&lt;String&gt; nickname = Optional.empty();</span>
+
+<span class="nc" id="L84">        Builder() {</span>
+<span class="nc" id="L85">        }</span>
+
+        public BuilderWithAge age(long age) {
+<span class="nc" id="L88">            this.age = age;</span>
+<span class="nc" id="L89">            return new BuilderWithAge(this);</span>
+        }
+    }
+
+    public static final class BuilderWithAge {
+
+        private final Builder b;
+
+<span class="nc" id="L97">        BuilderWithAge(Builder b) {</span>
+<span class="nc" id="L98">            this.b = b;</span>
+<span class="nc" id="L99">        }</span>
+
+        public BuilderWithAge nickname(String nickname) {
+<span class="nc" id="L102">            this.b.nickname = Optional.of(nickname);</span>
+<span class="nc" id="L103">            return this;</span>
+        }
+
+        public BuilderWithAge nickname(Optional&lt;String&gt; nickname) {
+<span class="nc" id="L107">            this.b.nickname = nickname;</span>
+<span class="nc" id="L108">            return this;</span>
+        }
+
+        public PetByAge build() {
+<span class="nc" id="L112">            return new PetByAge(this.b.age, this.b.nickname);</span>
+        }
+    }
+
+    public static BuilderWithAge age(long age) {
+<span class="nc" id="L117">        return builder().age(age);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L123">            return true;</span>
+        }
+<span class="nc bnc" id="L125" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L126">            return false;</span>
+        }
+<span class="nc" id="L128">        PetByAge other = (PetByAge) o;</span>
+<span class="nc" id="L129">        return </span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            Objects.deepEquals(this.age, other.age) &amp;&amp; </span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            Objects.deepEquals(this.nickname, other.nickname);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L136">        return Objects.hash(age, nickname);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L141">        return Util.toString(PetByAge.class, &quot;age&quot;, age, &quot;nickname&quot;, nickname);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

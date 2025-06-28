@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserWithId.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb3-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.library.schema</a> &gt; <span class="el_source">UserWithId.java</span></div><h1>UserWithId.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.library.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.PolymorphicDeserializer;
+import org.davidmoten.oa3.codegen.runtime.PolymorphicType;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.library.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = UserWithId._Deserializer.class)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class UserWithId {
+
+    @JsonUnwrapped
+    private final User user;
+
+    @JsonUnwrapped
+    private final UserIdWrapped userIdWrapped;
+
+    public UserWithId(
+            User user,
+<span class="fc" id="L41">            UserIdWrapped userIdWrapped) {</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(UserWithId.class)) {</span>
+<span class="fc" id="L43">            Preconditions.checkNotNull(user, &quot;user&quot;);</span>
+<span class="fc" id="L44">            Preconditions.checkNotNull(userIdWrapped, &quot;userIdWrapped&quot;);</span>
+        }
+<span class="fc" id="L46">        this.user = user;</span>
+<span class="fc" id="L47">        this.userIdWrapped = userIdWrapped;</span>
+<span class="fc" id="L48">    }</span>
+
+    public User asUser() {
+<span class="nc" id="L51">        return user;</span>
+    }
+
+    public UserIdWrapped asUserIdWrapped() {
+<span class="nc" id="L55">        return userIdWrapped;</span>
+    }
+
+    public String firstName() {
+<span class="fc" id="L59">        return user.firstName();</span>
+    }
+
+    public String lastName() {
+<span class="nc" id="L63">        return user.lastName();</span>
+    }
+
+    public String email() {
+<span class="nc" id="L67">        return user.email();</span>
+    }
+
+    public Optional&lt;String&gt; mobile() {
+<span class="nc" id="L71">        return user.mobile();</span>
+    }
+
+    public UserId userId() {
+<span class="nc" id="L75">        return userIdWrapped.userId();</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L79">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private User user;
+        private UserIdWrapped userIdWrapped;
+
+<span class="nc" id="L87">        Builder() {</span>
+<span class="nc" id="L88">        }</span>
+
+        public BuilderWithUser user(User user) {
+<span class="nc" id="L91">            this.user = user;</span>
+<span class="nc" id="L92">            return new BuilderWithUser(this);</span>
+        }
+    }
+
+    public static final class BuilderWithUser {
+
+        private final Builder b;
+
+<span class="nc" id="L100">        BuilderWithUser(Builder b) {</span>
+<span class="nc" id="L101">            this.b = b;</span>
+<span class="nc" id="L102">        }</span>
+
+        public BuilderWithUserIdWrapped userIdWrapped(UserIdWrapped userIdWrapped) {
+<span class="nc" id="L105">            this.b.userIdWrapped = userIdWrapped;</span>
+<span class="nc" id="L106">            return new BuilderWithUserIdWrapped(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithUserIdWrapped {
+
+        private final Builder b;
+
+<span class="nc" id="L114">        BuilderWithUserIdWrapped(Builder b) {</span>
+<span class="nc" id="L115">            this.b = b;</span>
+<span class="nc" id="L116">        }</span>
+
+        public UserWithId build() {
+<span class="nc" id="L119">            return new UserWithId(this.b.user, this.b.userIdWrapped);</span>
+        }
+    }
+
+    public static BuilderWithUser user(User user) {
+<span class="nc" id="L124">        return builder().user(user);</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends PolymorphicDeserializer&lt;UserWithId&gt; {
+
+        public _Deserializer() {
+<span class="fc" id="L131">            super(Globals.config(), PolymorphicType.ALL_OF, UserWithId.class, User.class, UserIdWrapped.class);</span>
+<span class="fc" id="L132">        }</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L138">            return true;</span>
+        }
+<span class="nc bnc" id="L140" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L141">            return false;</span>
+        }
+<span class="nc" id="L143">        UserWithId other = (UserWithId) o;</span>
+<span class="nc" id="L144">        return </span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            Objects.deepEquals(this.user, other.user) &amp;&amp; </span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            Objects.deepEquals(this.userIdWrapped, other.userIdWrapped);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L151">        return Objects.hash(user, userIdWrapped);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L156">        return Util.toString(UserWithId.class, &quot;user&quot;, user, &quot;userIdWrapped&quot;, userIdWrapped);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

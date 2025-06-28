@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Dog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Dog.java</span></div><h1>Dog.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.IllegalArgumentException;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.PolymorphicDeserializer;
+import org.davidmoten.oa3.codegen.runtime.PolymorphicType;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = Dog._Deserializer.class)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class Dog {
+
+    @JsonUnwrapped
+    private final Pet pet;
+
+    @JsonUnwrapped
+    private final Option1 option1;
+
+    public Dog(
+            Pet pet,
+<span class="fc" id="L47">            Option1 option1) {</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (Globals.config().validateInConstructor().test(Dog.class)) {</span>
+<span class="fc" id="L49">            Preconditions.checkNotNull(pet, &quot;pet&quot;);</span>
+<span class="fc" id="L50">            Preconditions.checkNotNull(option1, &quot;option1&quot;);</span>
+        }
+<span class="fc" id="L52">        this.pet = pet;</span>
+<span class="fc" id="L53">        this.option1 = option1;</span>
+<span class="fc" id="L54">    }</span>
+
+    public Pet asPet() {
+<span class="fc" id="L57">        return pet;</span>
+    }
+
+    public Option1 asOption1() {
+<span class="fc" id="L61">        return option1;</span>
+    }
+
+    public String description() {
+<span class="nc" id="L65">        return pet.description();</span>
+    }
+
+    public Optional&lt;Option1.Breed&gt; breed() {
+<span class="nc" id="L69">        return option1.breed();</span>
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L73">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private Pet pet;
+        private Option1 option1;
+
+<span class="fc" id="L81">        Builder() {</span>
+<span class="fc" id="L82">        }</span>
+
+        public BuilderWithPet pet(Pet pet) {
+<span class="fc" id="L85">            this.pet = pet;</span>
+<span class="fc" id="L86">            return new BuilderWithPet(this);</span>
+        }
+    }
+
+    public static final class BuilderWithPet {
+
+        private final Builder b;
+
+<span class="fc" id="L94">        BuilderWithPet(Builder b) {</span>
+<span class="fc" id="L95">            this.b = b;</span>
+<span class="fc" id="L96">        }</span>
+
+        public BuilderWithOption1 option1(Option1 option1) {
+<span class="fc" id="L99">            this.b.option1 = option1;</span>
+<span class="fc" id="L100">            return new BuilderWithOption1(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithOption1 {
+
+        private final Builder b;
+
+<span class="fc" id="L108">        BuilderWithOption1(Builder b) {</span>
+<span class="fc" id="L109">            this.b = b;</span>
+<span class="fc" id="L110">        }</span>
+
+        public Dog build() {
+<span class="fc" id="L113">            return new Dog(this.b.pet, this.b.option1);</span>
+        }
+    }
+
+    public static BuilderWithPet pet(Pet pet) {
+<span class="fc" id="L118">        return builder().pet(pet);</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends PolymorphicDeserializer&lt;Dog&gt; {
+
+        public _Deserializer() {
+<span class="fc" id="L125">            super(Globals.config(), PolymorphicType.ALL_OF, Dog.class, Pet.class, Option1.class);</span>
+<span class="fc" id="L126">        }</span>
+    }
+
+    @JsonInclude(Include.NON_ABSENT)
+    @JsonAutoDetect(
+            fieldVisibility = JsonAutoDetect.Visibility.ANY,
+            creatorVisibility = JsonAutoDetect.Visibility.ANY,
+            setterVisibility = JsonAutoDetect.Visibility.ANY)
+    public static final class Option1 {
+
+        @JsonProperty(&quot;breed&quot;)
+        private final Optional&lt;Option1.Breed&gt; breed;
+
+        @JsonCreator
+        public Option1(
+<span class="fc" id="L141">                @JsonProperty(&quot;breed&quot;) Optional&lt;Option1.Breed&gt; breed) {</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (Globals.config().validateInConstructor().test(Option1.class)) {</span>
+<span class="fc" id="L143">                Preconditions.checkNotNull(breed, &quot;breed&quot;);</span>
+            }
+<span class="fc" id="L145">            this.breed = breed;</span>
+<span class="fc" id="L146">        }</span>
+
+        public Optional&lt;Option1.Breed&gt; breed() {
+<span class="fc" id="L149">            return breed;</span>
+        }
+
+        Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L153">            return Maps</span>
+<span class="nc" id="L154">                    .put(&quot;breed&quot;, (Object) breed)</span>
+<span class="nc" id="L155">                    .build();</span>
+        }
+
+        public static Option1 breed(Optional&lt;Option1.Breed&gt; breed) {
+<span class="nc" id="L159">            return new Option1(breed);</span>
+        }
+
+        public static Option1 breed(Option1.Breed breed) {
+<span class="fc" id="L163">            return new Option1(Optional.of(breed));</span>
+        }
+
+<span class="fc" id="L166">        public enum Breed {</span>
+
+<span class="fc" id="L168">            POODLE(&quot;poodle&quot;),</span>
+<span class="fc" id="L169">            CROSS(&quot;cross&quot;);</span>
+
+            @JsonValue
+            private final String value;
+
+            Breed(
+<span class="fc" id="L175">                    String value) {</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">                if (Globals.config().validateInConstructor().test(Breed.class)) {</span>
+<span class="fc" id="L177">                    Preconditions.checkNotNull(value, &quot;value&quot;);</span>
+                }
+<span class="fc" id="L179">                this.value = value;</span>
+<span class="fc" id="L180">            }</span>
+
+            public String value() {
+<span class="nc" id="L183">                return value;</span>
+            }
+
+            @JsonCreator
+            public static Breed fromValue(Object value) {
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                for (Breed x: Breed.values()) {</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                    if (Objects.equals(value, x.value)) {</span>
+<span class="fc" id="L190">                        return x;</span>
+                    }
+                }
+<span class="nc" id="L193">                throw new IllegalArgumentException(&quot;unexpected enum value: '&quot; + value + &quot;'&quot;);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L200">                return true;</span>
+            }
+<span class="nc bnc" id="L202" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L203">                return false;</span>
+            }
+<span class="nc" id="L205">            Option1 other = (Option1) o;</span>
+<span class="nc" id="L206">            return </span>
+<span class="nc" id="L207">                Objects.deepEquals(this.breed, other.breed);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L212">            return Objects.hash(breed);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L217">            return Util.toString(Option1.class, &quot;breed&quot;, breed);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L224">            return true;</span>
+        }
+<span class="nc bnc" id="L226" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L227">            return false;</span>
+        }
+<span class="nc" id="L229">        Dog other = (Dog) o;</span>
+<span class="nc" id="L230">        return </span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            Objects.deepEquals(this.pet, other.pet) &amp;&amp; </span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">            Objects.deepEquals(this.option1, other.option1);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L237">        return Objects.hash(pet, option1);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L242">        return Util.toString(Dog.class, &quot;pet&quot;, pet, &quot;option1&quot;, option1);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

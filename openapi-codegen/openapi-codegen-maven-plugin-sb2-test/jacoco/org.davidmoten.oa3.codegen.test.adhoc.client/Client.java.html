@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.adhoc.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.adhoc.client;
+
+import jakarta.annotation.Generated;
+
+import java.lang.String;
+import java.lang.Void;
+import java.util.List;
+
+import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
+import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.Http.Builder;
+import org.davidmoten.oa3.codegen.http.Http.RequestBuilder;
+import org.davidmoten.oa3.codegen.http.HttpMethod;
+import org.davidmoten.oa3.codegen.http.Interceptor;
+import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
+import org.davidmoten.oa3.codegen.test.adhoc.Globals;
+
+/**
+ * &lt;p&gt;Small test
+ * &lt;p&gt;Used to isolate small fragments for testing
+ */
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public class Client {
+
+    private final Serializer serializer;
+    private final List&lt;Interceptor&gt; interceptors;
+    private final String basePath;
+    private final HttpService httpService;
+
+<span class="nc" id="L31">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath, HttpService httpService) {</span>
+<span class="nc" id="L32">        this.serializer = serializer;</span>
+<span class="nc" id="L33">        this.interceptors = interceptors;</span>
+<span class="nc" id="L34">        this.basePath = basePath;</span>
+<span class="nc" id="L35">        this.httpService = httpService;</span>
+<span class="nc" id="L36">    }</span>
+
+    public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
+<span class="nc" id="L39">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), basePath);</span>
+    }
+
+    public static ClientBuilder&lt;Client&gt; basePath(Server server) {
+<span class="nc" id="L43">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), server.url());</span>
+    }
+
+<span class="nc" id="L46">    public enum Server {</span>
+
+<span class="nc" id="L48">        PRIMARY_ENDPOINT(&quot;https://myserver.com/api&quot;),</span>
+<span class="nc" id="L49">        SECONDARY_ENDPOINT(&quot;https://myotherserver.com/api&quot;);</span>
+
+        private String url;
+
+<span class="nc" id="L53">        Server(String url) {</span>
+<span class="nc" id="L54">            this.url = url;</span>
+<span class="nc" id="L55">        }</span>
+
+        public String url() {
+<span class="nc" id="L58">            return url;</span>
+        }
+    }
+
+    private Builder http(HttpMethod method, String path) {
+<span class="nc" id="L63">        return Http</span>
+<span class="nc" id="L64">                .method(method)</span>
+<span class="nc" id="L65">                .basePath(this.basePath)</span>
+<span class="nc" id="L66">                .path(path)</span>
+<span class="nc" id="L67">                .serializer(this.serializer)</span>
+<span class="nc" id="L68">                .interceptors(this.interceptors)</span>
+<span class="nc" id="L69">                .httpService(this.httpService);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; dummyGet() {
+<span class="nc" id="L78">        return http(HttpMethod.GET, &quot;/dummy&quot;)</span>
+<span class="nc" id="L79">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    public Builder _custom(HttpMethod method, String path) {
+<span class="nc" id="L83">        return Http</span>
+<span class="nc" id="L84">                .method(method)</span>
+<span class="nc" id="L85">                .basePath(this.basePath)</span>
+<span class="nc" id="L86">                .path(path)</span>
+<span class="nc" id="L87">                .serializer(this.serializer)</span>
+<span class="nc" id="L88">                .httpService(this.httpService);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

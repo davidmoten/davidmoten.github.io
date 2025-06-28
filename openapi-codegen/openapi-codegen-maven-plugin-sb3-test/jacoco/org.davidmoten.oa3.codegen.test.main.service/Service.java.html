@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Service.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb3-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.service</a> &gt; <span class="el_source">Service.java</span></div><h1>Service.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.service;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Boolean;
+import java.lang.String;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.spring.runtime.ErrorHandler;
+import org.davidmoten.oa3.codegen.spring.runtime.ServiceException;
+import org.davidmoten.oa3.codegen.test.main.path.GetMsis200Response;
+import org.davidmoten.oa3.codegen.test.main.path.GetMsisStatus;
+import org.davidmoten.oa3.codegen.test.main.schema.AuthenticationRequestBody;
+import org.davidmoten.oa3.codegen.test.main.schema.AuthenticationResponse;
+import org.davidmoten.oa3.codegen.test.main.schema.BroadcastType;
+import org.davidmoten.oa3.codegen.test.main.schema.Error;
+import org.davidmoten.oa3.codegen.test.main.schema.Msi;
+import org.davidmoten.oa3.codegen.test.main.schema.MsiContent;
+import org.davidmoten.oa3.codegen.test.main.schema.MsiId;
+import org.davidmoten.oa3.codegen.test.main.schema.Status;
+
+/**
+ * &lt;p&gt;EGC API
+ * &lt;h1&gt;EGC API&lt;/h1&gt;
+ * &lt;h2&gt;Design considerations&lt;/h2&gt;
+ * &lt;h3&gt;Two-phase send&lt;/h3&gt;
+ * &lt;p&gt;Sending a new MSI is two-phase (create then send). This is
+ * because the msiId value is a critical piece of information
+ * for the client (to be able to check status and/or cancel)
+ * and the API design must ensure that the client is safely
+ * in possession of msiID before a send happens. If the
+ * method was one phase then there would be no guarantee that
+ * the msiID was received (a failure could happen in any link
+ * in the return snetworking chain like a router, firewall, proxy
+ * server or indeed a problem at the client application end
+ * that prevented persistence of the msiID for later use).
+ * Moreover, if the method was one phase and a failure in the
+ * network chain occurred then not only would an orphan MSI
+ * be sent by the provider but the client would not have
+ * knowledge that the MSI had been successfully queued for
+ * sending and would naturally retry the send (multiple times
+ * even) and we end up with the same MSI being sent 2+ times.
+ * &lt;p&gt;To further clarify the problem being solved by a two phase
+ * send here is a &lt;a href=&quot;https://stackoverflow.com/questions/49444723/how-to-make-sure-the-http-response-was-delivered&quot;&gt;discussion&lt;/a&gt;
+ * of the delivery guarantees of HTTP responses.
+ * &lt;p&gt;Note that a one phase call where the client generated a new
+ * unique id (using a UUID for instance) is a possible solution
+ * but is less desirable because it introduces a problematic
+ * edge case where the client accidentally uses the same id more
+ * than once. If two different messages are sent with the same id
+ * (concurrently even) then the service should ensure that only
+ * one message is accepted and that the service consumer is aware
+ * that the other message failed. To do this demands coordination
+ * with a single transactional resource (like a relational database) which
+ * also demands that that resource is highly available (relational
+ * databases are often not great at that during upgrade cycles). There
+ * are ways to get high availability (highly available cloud services like
+ * DynamoDB and many more can offer conditional updates) but there is
+ * a much simpler way with two-phase.
+ * &lt;p&gt;If instead of the one-phase call the server creates the msiId and communicates
+ * it to the client then the server side can potentially be scaled
+ * with ease if the msiID is a &lt;a href=&quot;https://en.wikipedia.org/wiki/Universally_unique_identifier&quot;&gt;UUID&lt;/a&gt;
+ * for instance (which is effectively unique without coordination
+ * with other nodes).
+ * &lt;p&gt;For example, a highly available and scalable
+ * service could be constructed in AWS cloud using API Gateway with
+ * Lambda integrations that for the create message and send actions
+ * does this
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;strong&gt;Create:&lt;/strong&gt; Generate a new UUID, place the message content and UUID on
+ * to a queue for processing , return the UUID&lt;/li&gt;
+ * &lt;li&gt;&lt;strong&gt;Send:&lt;/strong&gt; Place the UUID parameter on to a queue for processing&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;A separate component then actions items on the queue(s). When both
+ * the send and create messages have been read then an actual send can take
+ * place. What is clear from this design is that many concurrent nodes could
+ * be receiving messages without coordinating with a central node/service
+ * to ensure id uniqueness.
+ * &lt;p&gt;Note also that to support two-phase send the status value of
+ * &lt;code&gt;CREATED&lt;/code&gt; is included.
+ * &lt;h3&gt;Pagination&lt;/h3&gt;
+ * &lt;p&gt;The List MSIs action uses a paginated response as the number of
+ * MSIs in a response can get large. Pagination can reduce server
+ * overhead and improve response times. Client-driven pagination is
+ * where the client specifies an offset (skip) field and that number
+ * of rows is skipped by the server to return the next page. This
+ * can be inefficient for the server-side (see &lt;a href=&quot;https://use-the-index-luke.com/no-offset&quot;&gt;discussion&lt;/a&gt;) and it is preferred to
+ * use server-driven pagination which is where each page returned
+ * also includes a continuation token to be included in the next page
+ * call. The nice thing about this approach is that the server side
+ * can simply return an offset in the continuation token if desired but
+ * we enable more efficient techniques if wanted later.
+ * &lt;h3&gt;Client specific identifiers&lt;/h3&gt;
+ * &lt;p&gt;Early versions of this API have suggested the inclusion of a
+ * &lt;code&gt;NationalSASId&lt;/code&gt; field in the created MSI with the purpose of allowing
+ * a client to correlate an MSI with its internal data.
+ * &lt;p&gt;This field is a convenience only and thus theoretically should not be
+ * included. A client should manage its correlations itself by storing the
+ * unique msiId returned by the service paired with its internal identifiers.
+ * &lt;p&gt;If something is required then it should be labelled something
+ * like &lt;code&gt;tag&lt;/code&gt; and have arbitrary values so that the client can use it for
+ * anything. Labelling it &lt;code&gt;NationalSASId&lt;/code&gt; suggests more meaning to the
+ * field than it may have. &lt;strong&gt;TODO&lt;/strong&gt; confirm.
+ * &lt;h3&gt;Geometry&lt;/h3&gt;
+ * &lt;p&gt;Note that the api below allows for float precision locations for
+ * geographic circles and rectangles. An implementation of this API
+ * may choose to use the location with reduced precision (for example
+ * lat longs rounded to nearest integer).
+ * &lt;h3&gt;Cancellation&lt;/h3&gt;
+ * &lt;p&gt;A PUT to an &lt;code&gt;/msi/[id}&lt;/code&gt; path ]with content like &lt;code&gt;{&amp;quot;isCancelled&amp;quot;:true}&lt;/code&gt;
+ * has been suggested as a way of cancelling a broadcast. This can be
+ * achieved in a much simpler way with the DELETE verb without content
+ * (a cancel action can be considered as a logical delete in the context
+ * of this API). A cancelled broadcast cannot be changed in status but
+ * can be queried.
+ * &lt;h3&gt;Abstraction of C-Codes&lt;/h3&gt;
+ * &lt;p&gt;Initial proposals for the API suggested a partial abstraction of C-Codes.
+ * In particular Priority, MsiType and AreaType were abstracted. This API
+ * demonstrates a full abstraction of C-Codes. It is equivalent to C-Codes
+ * but has an easier to read and process representation and the mapping to C-Codes
+ * then becomes a server-side implementation detail. By using the data modelling
+ * constructs of OpenAPI v3 and JSON Schema users can generate code for their
+ * API-consuming application that imposes compile-time checking (varies on language)
+ * instead of experiencing runtime failures.
+ * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; is there a requirement for full explicit C-Code support (zero
+ * abstraction)?
+ * &lt;h3&gt;Auth&lt;/h3&gt;
+ * &lt;p&gt;Initial proposals for this API included a re-authenticate
+ * method whereby a new token was returned if a currently valid token was
+ * supplied. This is a security hole in that anyone in possession of one
+ * valid token (but not the username and password) can stay authenticated
+ * forever. In the same vein, a sensible limit on validity duration of a
+ * token should be imposed so that a leaked token cannot be used for long.
+ * Given the likely usage of the API (in terms of the number of calls made
+ * in a time interval by a client) there should be no significant performance
+ * penalty forcing a refresh of the token each hour (or even less).
+ * &lt;p&gt;Bearer authentication is used (&lt;a href=&quot;https://www.rfc-editor.org/rfc/rfc6750.html#page-5&quot;&gt;RFC6750&lt;/a&gt;).
+ * Bearer authentication is carried in the &lt;code&gt;Authorization&lt;/code&gt; request header in this format:
+ * &lt;pre&gt;&lt;code&gt;Authorization: Bearer BASE64_ENCODED_TOKEN
+ * &lt;/code&gt;&lt;/pre&gt;
+ * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; The encoded content of the token is not defined (for example, JWT could be used)
+ * but is left to the implementer. Should the authentication flow follow an existing
+ * standard like OAuth 2.0?
+ * &lt;h3&gt;Naming&lt;/h3&gt;
+ * &lt;p&gt;Previous API drafts used the field names &lt;code&gt;startDate&lt;/code&gt; and &lt;code&gt;endDate&lt;/code&gt; for an MSI.
+ * Given that those fields refer to timestamps not just dates the names &lt;code&gt;startTime&lt;/code&gt;
+ * and &lt;code&gt;endTime&lt;/code&gt; have been used.
+ * &lt;h3&gt;Acknowledgments&lt;/h3&gt;
+ * &lt;p&gt;Iridium can at times provide receive and read acknowledgements. &lt;strong&gt;TODO&lt;/strong&gt; get
+ * better documentation of the capability and a proper specification for their
+ * response from a list acks call.
+ * &lt;h3&gt;Timings&lt;/h3&gt;
+ * &lt;p&gt;There may be use cases for the following additional fields on an MSI:
+ * &lt;ul&gt;
+ * &lt;li&gt;createdTime&lt;/li&gt;
+ * &lt;li&gt;cancelledTime&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;A user could record in their own systems when they created or cancelled a broadcast
+ * but it might help problem diagnosis if that information was together.
+ * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; confirm
+ * &lt;p&gt;It would also be useful in some circumstances for users to know exactly when a
+ * message was broadcast by satellite. Although messages may be scheduled for
+ * immediate or later broadcast there may be significant delays till the broadcast
+ * occurs and the user should be able to see the actual broadcast times.
+ * &lt;p&gt;&lt;strong&gt;TODO&lt;/strong&gt; discuss with satellite providers
+ */
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public interface Service extends ErrorHandler {
+
+<span class="nc" id="L172">    Service DEFAULT = new Service() {};</span>
+
+    /**
+     * &lt;p&gt;Obtains a token that will be passed in a request header to calls
+     * to other paths on this API for authentication and authorization
+     * purposes.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code AuthenticationResponse}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    default AuthenticationResponse getToken(
+            AuthenticationRequestBody requestBody) throws ServiceException {
+<span class="nc" id="L190">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns Maritime Safety Information broadcasts requested to
+     * be sent by the user.
+     * &lt;p&gt;Note that none of the parameters are required. If no parameters
+     * are supplied then all MSIs for the current user will be returned
+     * (paged).
+     * &lt;p&gt;The &lt;code&gt;limit&lt;/code&gt; field may not be honoured exactly by the server
+     * side (in that it might exceed a maximum limit of the server).
+     * &lt;p&gt;The results of this query may return in any order and that order
+     * may vary in repeated calls (for example, the returned MSIs &lt;em&gt;may&lt;/em&gt;
+     * not be ordered by timestamp). If the client requires an ordering
+     * by time then all pages should be requested and then sorted
+     * client-side. &lt;strong&gt;TODO&lt;/strong&gt; confirm expectations
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code GetMsis200Response}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param endTimeMaxInclusive
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive not specified then has no effect.
+     * @param endTimeMax
+     *            &lt;p&gt;If endTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;lt;= endTimeMax.
+     *            &lt;p&gt;If endTimeMaxInclusive is false then filters MSIs
+     *            on endTime &amp;lt; endTimeMax.
+     * @param endTimeMin
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param startTimeMin
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     * @param limit
+     *            &lt;p&gt;Requests that at most &lt;code&gt;limit&lt;/code&gt; MSIs are returned in the call.
+     *            The server may cap the requested &lt;code&gt;limit&lt;/code&gt; (fewer items may be
+     *            returned). To request the next page available include the
+     *            returned &lt;code&gt;continuationToken&lt;/code&gt; in the next call. If there are
+     *            no more items available then the response will not contain
+     *            a &lt;code&gt;continuationToken&lt;/code&gt;.
+     * @param startTimeMinInclusive
+     *            &lt;p&gt;If startTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;gt;= startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive is false then filters MSIs
+     *            on startTime &amp;gt; startTimeMin.
+     *            &lt;p&gt;If startTimeMinInclusive not specified then has no effect.
+     * @param endTimeMinInclusive
+     *            &lt;p&gt;If endTimeMinInclusive is true (the default value if not specified)
+     *            then filters MSIs on endTime &amp;gt;= endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive is false then filters MSIs
+     *            on endTime &amp;gt; endTimeMin.
+     *            &lt;p&gt;If endTimeMinInclusive not specified then has no effect.
+     * @param startTimeMax
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     * @param broadcastType
+     *            &lt;p&gt;the type of broadcast
+     * @param startTimeMaxInclusive
+     *            &lt;p&gt;If startTimeMaxInclusive is true (the default value if not specified)
+     *            then filters MSIs on startTime &amp;lt;= startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive is false then filters MSIs
+     *            on startTime &amp;lt; startTimeMax.
+     *            &lt;p&gt;If startTimeMaxInclusive not specified then has no effect.
+     * @param status
+     *            &lt;p&gt;Only MSIs that have a status in the given list
+     *            are returned. If the list is empty (or the parameter
+     *            is not present) then no filtering on status occurs.
+     *            &lt;strong&gt;TODO&lt;/strong&gt; support multi-status filtering or just one?
+     * @param continuationToken
+     *            &lt;p&gt;Describes to the server the starting point of
+     *            the next page of results and is obtained from
+     *            the current page. May contain an offset if desired
+     *            but is at the discretion of implementer. Note that
+     *            it is possible that a call specifying a continuation
+     *            token may return en empty list (but an empty list return
+     *            should not have a continuation token on it so at
+     *            that point paging would stop).
+     * @return primary response status code 200
+     */
+    default GetMsis200Response getMsis(
+            Optional&lt;OffsetDateTime&gt; startTimeMin, 
+            boolean startTimeMinInclusive, 
+            Optional&lt;OffsetDateTime&gt; startTimeMax, 
+            boolean startTimeMaxInclusive, 
+            Optional&lt;OffsetDateTime&gt; endTimeMin, 
+            Optional&lt;Boolean&gt; endTimeMinInclusive, 
+            Optional&lt;OffsetDateTime&gt; endTimeMax, 
+            boolean endTimeMaxInclusive, 
+            int limit, 
+            Optional&lt;List&lt;GetMsisStatus&gt;&gt; status, 
+            Optional&lt;BroadcastType&gt; broadcastType, 
+            Optional&lt;String&gt; continuationToken) throws ServiceException {
+<span class="nc" id="L295">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;Submits message content and returns a unique id (across all
+     * users) that is to be used in the send method. It is ok for
+     * a message to never be sent but the provider should have the
+     * freedom to clean up (delete) unsent messages after some
+     * reasonable period or after more than N unsent messages are created.
+     * (&lt;strong&gt;TODO&lt;/strong&gt; ask providers what is reasonable minimum period and
+     * maximum number of unsent messages so it can be documented here).
+     * 
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code MsiId}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 201
+     */
+    default MsiId createMsi(
+            MsiContent requestBody) throws ServiceException {
+<span class="nc" id="L319">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns the details of an MSI broadcast using the unique MSI identifier.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Msi}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     * @return primary response status code 200
+     */
+    default Msi getMsi(
+            String id) throws ServiceException {
+<span class="nc" id="L338">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;Requests that an existing unsent MSI be sent. If the MSI
+     * has already been sent or the MSI has been cancelled then
+     * nothing occurs (this method is idempotent).
+     * 
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     */
+    default void sendMsi(
+            String id) throws ServiceException {
+<span class="nc" id="L357">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;This is a logical delete of a broadcast in that it
+     * prevents future broadcasts happening for this msiId
+     * (be it a single or repeating broadcast). Once cancelled
+     * an MSI cannot be resent. However, the broadcast details
+     * are still available to be queried.
+     * 
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     */
+    default void cancelMsi(
+            String id) throws ServiceException {
+<span class="nc" id="L378">        throw notImplemented();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns the status of an MSI broadcast using the unique MSI identifier.
+     * 
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Status}
+     * &lt;p&gt;[status=400, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=401, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=403, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=404, application/json] --&amp;gt; {@code Error}
+     * &lt;p&gt;[status=500, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;unique msi identifier
+     * @return primary response status code 200
+     */
+    default Status getMsiStatus(
+            String id) throws ServiceException {
+<span class="nc" id="L397">        throw notImplemented();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

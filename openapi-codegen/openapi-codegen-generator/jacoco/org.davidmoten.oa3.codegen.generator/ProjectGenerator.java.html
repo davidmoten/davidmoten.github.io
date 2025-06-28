@@ -27,11 +27,11 @@ public final class ProjectGenerator {
     }
 
     public static void generateZipped(String openapiFilename, String groupId, String artifactId, String version,
-            String basePackage, boolean generateClient, boolean generateServer, OutputStream zip) {
+            String basePackage, boolean generateClient, boolean generateServer, OutputStream zip, int maxClassNameLength, boolean failOnParseErrors) {
         try {
 <span class="fc" id="L32">            File directory = Files.createTempDirectory(&quot;openapi-codegen&quot;).toFile();</span>
 <span class="fc" id="L33">            generate(openapiFilename, groupId, artifactId, version, basePackage, generateClient, generateServer,</span>
-                    directory);
+                    directory, maxClassNameLength, failOnParseErrors);
 <span class="fc" id="L35">            zipDirectory(directory, zip);</span>
 <span class="nc" id="L36">        } catch (IOException e) {</span>
 <span class="nc" id="L37">            throw new UncheckedIOException(e);</span>
@@ -39,11 +39,11 @@ public final class ProjectGenerator {
 <span class="fc" id="L39">    }</span>
 
     public static void generate(String openapiFilename, String groupId, String artifactId, String version,
-            String basePackage, boolean generateClient, boolean generateServer, File directory) throws IOException {
+            String basePackage, boolean generateClient, boolean generateServer, File directory, int maxClassNameLength, boolean failOnParseErrors) throws IOException {
 <span class="fc" id="L43">        File generatedSourceDirectory = new File(directory, &quot;src/main/java&quot;);</span>
 <span class="fc" id="L44">        generatedSourceDirectory.mkdirs();</span>
 <span class="fc" id="L45">        Definition definition = new Definition(openapiFilename, new Packages(basePackage), generatedSourceDirectory,</span>
-<span class="pc" id="L46">                x -&gt; x, Collections.emptySet(), Collections.emptySet(), false, false, true, Optional.empty(), generateServer, true, true);</span>
+<span class="pc" id="L46">                x -&gt; x, Collections.emptySet(), Collections.emptySet(), false, false, failOnParseErrors, Optional.empty(), generateServer, true, true, maxClassNameLength);</span>
 <span class="fc" id="L47">        Generator g = new Generator(definition);</span>
 <span class="fc" id="L48">        g.generate();</span>
 
@@ -104,7 +104,7 @@ public final class ProjectGenerator {
 <span class="fc" id="L104">                        Files.copy(path, zs);</span>
 <span class="fc" id="L105">                        zs.closeEntry();</span>
 <span class="nc" id="L106">                    } catch (IOException e) {</span>
-<span class="nc" id="L107">                        System.err.println(e);</span>
+<span class="nc" id="L107">                        e.printStackTrace(System.err);</span>
 <span class="fc" id="L108">                    }</span>
 <span class="fc" id="L109">                });</span>
             }
@@ -112,4 +112,4 @@ public final class ProjectGenerator {
 <span class="fc" id="L112">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

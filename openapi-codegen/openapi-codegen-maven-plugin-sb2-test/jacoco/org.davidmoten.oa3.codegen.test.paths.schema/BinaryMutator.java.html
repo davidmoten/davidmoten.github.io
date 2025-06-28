@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BinaryMutator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.paths.schema</a> &gt; <span class="el_source">BinaryMutator.java</span></div><h1>BinaryMutator.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.paths.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.OctetsDeserializer;
+import org.davidmoten.oa3.codegen.runtime.OctetsSerializer;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.paths.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class BinaryMutator {
+
+    @JsonProperty(&quot;document&quot;)
+    @JsonSerialize(using = OctetsSerializer.class)
+    private final byte[] document;
+
+    @JsonProperty(&quot;name&quot;)
+    private final Optional&lt;String&gt; name;
+
+    @JsonCreator
+    public BinaryMutator(
+            @JsonProperty(&quot;document&quot;) @JsonDeserialize(using = OctetsDeserializer.class) byte[] document,
+<span class="nc" id="L45">            @JsonProperty(&quot;name&quot;) Optional&lt;String&gt; name) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(BinaryMutator.class)) {</span>
+<span class="nc" id="L47">            Preconditions.checkNotNull(document, &quot;document&quot;);</span>
+<span class="nc" id="L48">            Preconditions.checkNotNull(name, &quot;name&quot;);</span>
+        }
+<span class="nc" id="L50">        this.document = document;</span>
+<span class="nc" id="L51">        this.name = name;</span>
+<span class="nc" id="L52">    }</span>
+
+    public byte[] document() {
+<span class="nc" id="L55">        return document;</span>
+    }
+
+    public Optional&lt;String&gt; name() {
+<span class="nc" id="L59">        return name;</span>
+    }
+
+    Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L63">        return Maps</span>
+<span class="nc" id="L64">                .put(&quot;document&quot;, (Object) document)</span>
+<span class="nc" id="L65">                .put(&quot;name&quot;, (Object) name)</span>
+<span class="nc" id="L66">                .build();</span>
+    }
+
+    public BinaryMutator withDocument(byte[] document) {
+<span class="nc" id="L70">        return new BinaryMutator(document, name);</span>
+    }
+
+    public BinaryMutator withName(Optional&lt;String&gt; name) {
+<span class="nc" id="L74">        return new BinaryMutator(document, name);</span>
+    }
+
+    public BinaryMutator withName(String name) {
+<span class="nc" id="L78">        return new BinaryMutator(document, Optional.of(name));</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L82">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private byte[] document;
+<span class="nc" id="L88">        private Optional&lt;String&gt; name = Optional.empty();</span>
+
+<span class="nc" id="L90">        Builder() {</span>
+<span class="nc" id="L91">        }</span>
+
+        public BuilderWithDocument document(byte[] document) {
+<span class="nc" id="L94">            this.document = document;</span>
+<span class="nc" id="L95">            return new BuilderWithDocument(this);</span>
+        }
+    }
+
+    public static final class BuilderWithDocument {
+
+        private final Builder b;
+
+<span class="nc" id="L103">        BuilderWithDocument(Builder b) {</span>
+<span class="nc" id="L104">            this.b = b;</span>
+<span class="nc" id="L105">        }</span>
+
+        public BuilderWithDocument name(String name) {
+<span class="nc" id="L108">            this.b.name = Optional.of(name);</span>
+<span class="nc" id="L109">            return this;</span>
+        }
+
+        public BuilderWithDocument name(Optional&lt;String&gt; name) {
+<span class="nc" id="L113">            this.b.name = name;</span>
+<span class="nc" id="L114">            return this;</span>
+        }
+
+        public BinaryMutator build() {
+<span class="nc" id="L118">            return new BinaryMutator(this.b.document, this.b.name);</span>
+        }
+    }
+
+    public static BuilderWithDocument document(byte[] document) {
+<span class="nc" id="L123">        return builder().document(document);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L129">            return true;</span>
+        }
+<span class="nc bnc" id="L131" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L132">            return false;</span>
+        }
+<span class="nc" id="L134">        BinaryMutator other = (BinaryMutator) o;</span>
+<span class="nc" id="L135">        return </span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            Objects.deepEquals(this.document, other.document) &amp;&amp; </span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            Objects.deepEquals(this.name, other.name);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L142">        return Objects.hash(document, name);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L147">        return Util.toString(BinaryMutator.class, &quot;document&quot;, document, &quot;name&quot;, name);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

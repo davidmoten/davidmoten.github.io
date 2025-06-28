@@ -132,7 +132,7 @@ public final class SchemasCodeWriter {
 <span class="fc" id="L132">        writeClassDeclaration(out, cls, fullClassNameInterfaces);</span>
 <span class="fc" id="L133">        writeEnumMembers(out, cls);</span>
 <span class="fc bfc" id="L134" title="All 2 branches covered.">        if (isPolymorphic(cls)) {</span>
-<span class="fc" id="L135">            writePolymorphicClassContent(out, cls, names);</span>
+<span class="fc" id="L135">            writePolymorphicClassContent(out, cls, names, fullClassNameInterfaces);</span>
         } else {
 <span class="fc" id="L137">            writeFields(out, cls);</span>
 <span class="fc" id="L138">            writeConstructor(out, cls, fullClassNameInterfaces, names);</span>
@@ -285,7 +285,7 @@ public final class SchemasCodeWriter {
 <span class="fc" id="L285">            Stream&lt;String&gt; c = Stream.of(HasStringValue.class.getCanonicalName()) //</span>
 <span class="fc bfc" id="L286" title="All 4 branches covered.">                    .filter(x -&gt; cls.hasEncoding() &amp;&amp; cls.classType == ClassType.ENUM);</span>
 <span class="fc" id="L287">            implemented = &quot; implements &quot; + Stream.concat(a, Stream.concat(b, c)) //</span>
-<span class="fc" id="L288">                    .map(x -&gt; imports.add(x)) //</span>
+<span class="fc" id="L288">                    .map(imports::add) //</span>
 <span class="fc" id="L289">                    .collect(Collectors.joining(&quot;, &quot;));</span>
         }
 <span class="fc" id="L291">        return implemented;</span>
@@ -357,16 +357,16 @@ public final class SchemasCodeWriter {
 <span class="fc bfc" id="L357" title="All 2 branches covered.">                    } else if (parameterFullClassName.equals(BigInteger.class.getCanonicalName())</span>
 <span class="pc bpc" id="L358" title="1 of 2 branches missed.">                            || parameterFullClassName.equals(BigDecimal.class.getCanonicalName())) {</span>
 <span class="fc" id="L359">                        return String.format(&quot;%s%s(new %s(\&quot;\&quot;))&quot;, out.indent(), memberName,</span>
-<span class="fc" id="L360">                                out.add(parameterFullClassName), x.parameter);</span>
+<span class="fc" id="L360">                                out.add(parameterFullClassName));</span>
                     } else {
-<span class="fc bfc" id="L362" title="All 2 branches covered.">                        String delim = x.parameter instanceof String //</span>
-                                || //
+                        String delim = x.parameter instanceof String //
+<span class="fc bfc" id="L363" title="All 2 branches covered.">                                || //</span>
 <span class="pc bpc" id="L364" title="1 of 4 branches missed.">                                cls.enumValueFullType.equals(String.class.getCanonicalName()) //</span>
-                                        &amp;&amp; x.parameter instanceof Boolean ? &quot;\&quot;&quot; : &quot;&quot;;
+<span class="fc" id="L365">                                        &amp;&amp; x.parameter instanceof Boolean ? &quot;\&quot;&quot; : &quot;&quot;;</span>
 <span class="fc bfc" id="L366" title="All 2 branches covered.">                        if (x.nullable) {</span>
 <span class="fc bfc" id="L367" title="All 2 branches covered.">                            if (x.parameter == null) {</span>
 <span class="fc" id="L368">                                return String.format(&quot;%s%s(%s.empty())&quot;, out.indent(), memberName,</span>
-<span class="fc" id="L369">                                        out.add(Optional.class), delim, x.parameter, delim);</span>
+<span class="fc" id="L369">                                        out.add(Optional.class));</span>
                             } else {
 <span class="fc" id="L371">                                return String.format(&quot;%s%s(%s.of(%s%s%s))&quot;, out.indent(), memberName,</span>
 <span class="fc" id="L372">                                        out.add(Optional.class), delim, x.parameter, delim);</span>
@@ -381,7 +381,7 @@ public final class SchemasCodeWriter {
         }
 <span class="fc" id="L382">    }</span>
 
-    private static void writePolymorphicClassContent(CodePrintWriter out, Cls cls, Names names) {
+    private static void writePolymorphicClassContent(CodePrintWriter out, Cls cls, Names names, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
 <span class="fc bfc" id="L385" title="All 2 branches covered.">        if (cls.classType == ClassType.ONE_OR_ANY_OF_DISCRIMINATED) {</span>
 <span class="fc" id="L386">            out.println();</span>
 <span class="fc" id="L387">            out.line(&quot;%s %s();&quot;, String.class, cls.discriminator.fieldName);</span>
@@ -396,730 +396,745 @@ public final class SchemasCodeWriter {
                 // annotations so polymorphic stuff can't be used to bind to rest method
                 // parameters
 <span class="fc" id="L398">                writeOneOfAnyOfNonDiscriminatedObjectConstructor(out, cls);</span>
-<span class="fc" id="L399">                cls.fields.forEach(f -&gt; writeOneOfAnyOfNonDiscriminatedMemberSpecificConstructor(out, cls, f));</span>
-<span class="fc" id="L400">                out.println();</span>
-<span class="fc" id="L401">                writeGetter(out, out.add(Object.class), &quot;value&quot;, &quot;value&quot;);</span>
-<span class="fc" id="L402">                writeNonDiscriminatedBuilder(out, cls);</span>
-<span class="fc bfc" id="L403" title="All 2 branches covered.">            } else if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
-<span class="fc" id="L404">                writeFields(out, cls);</span>
+<span class="fc" id="L399">                Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L400">                cls.fields.forEach(f -&gt; writeOneOfAnyOfNonDiscriminatedMemberSpecificConstructor(out, cls, f, used));</span>
+<span class="fc" id="L401">                out.println();</span>
+<span class="fc" id="L402">                writeGetter(out, out.add(Object.class), &quot;value&quot;, &quot;value&quot;);</span>
+<span class="fc" id="L403">                writeNonDiscriminatedFactoryMethod(out, cls, names, fullClassNameInterfaces);</span>
+<span class="fc bfc" id="L404" title="All 2 branches covered.">            } else if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
+<span class="fc" id="L405">                writeFields(out, cls);</span>
 
                 // write constructor
-<span class="fc" id="L407">                out.right().right();</span>
-<span class="fc" id="L408">                final String parameters = cls.fields //</span>
-<span class="fc" id="L409">                        .stream() ///</span>
-<span class="fc" id="L410">                        .map(x -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(), x.resolvedType(out.imports()),</span>
-<span class="fc" id="L411">                                x.fieldName(cls)))</span>
-<span class="fc" id="L412">                        .collect(Collectors.joining(&quot;,&quot;));</span>
-<span class="fc" id="L413">                out.left().left();</span>
-<span class="fc" id="L414">                out.println();</span>
-<span class="fc" id="L415">                out.line(&quot;private %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
-<span class="fc" id="L416">                ifValidate(cls, out, names, //</span>
-<span class="fc" id="L417">                        o -&gt; cls.fields.stream().forEach(x -&gt; {</span>
-<span class="fc" id="L418">                            checkNotNull(cls, o, x);</span>
-<span class="fc" id="L419">                        }));</span>
-<span class="fc" id="L420">                cls.fields.stream().forEach(x -&gt; {</span>
-<span class="fc" id="L421">                    assignField(out, cls, x);</span>
-<span class="fc" id="L422">                });</span>
-<span class="fc" id="L423">                out.closeParen();</span>
-<span class="fc" id="L424">                out.println();</span>
-<span class="fc" id="L425">                out.line(&quot;public static %s of(%s) {&quot;, cls.simpleName(), parameters);</span>
-<span class="fc" id="L426">                String fields = cls.fields.stream().map(x -&gt; x.fieldName).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L427">                out.line(&quot;%s $o = new %s(%s);&quot;, cls.simpleName(), cls.simpleName(), fields);</span>
-<span class="fc" id="L428">                out.line(&quot;%s.checkCanSerialize(%s.config(), $o);&quot;, //</span>
+<span class="fc" id="L408">                out.right().right();</span>
+<span class="fc" id="L409">                final String parameters = cls.fields //</span>
+<span class="fc" id="L410">                        .stream() ///</span>
+<span class="fc" id="L411">                        .map(x -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(), x.resolvedType(out.imports()),</span>
+<span class="fc" id="L412">                                x.fieldName(cls)))</span>
+<span class="fc" id="L413">                        .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="fc" id="L414">                out.left().left();</span>
+<span class="fc" id="L415">                out.println();</span>
+<span class="fc" id="L416">                out.line(&quot;private %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
+<span class="fc" id="L417">                ifValidate(cls, out, names, //</span>
+<span class="fc" id="L418">                        o -&gt; cls.fields.forEach(x -&gt; checkNotNull(cls, o, x)));</span>
+<span class="fc" id="L419">                cls.fields.forEach(x -&gt; assignField(out, cls, x));</span>
+<span class="fc" id="L420">                out.closeParen();</span>
+<span class="fc" id="L421">                out.println();</span>
+<span class="fc" id="L422">                out.line(&quot;public static %s of(%s) {&quot;, cls.simpleName(), parameters);</span>
+<span class="fc" id="L423">                String fields = cls.fields.stream().map(x -&gt; x.fieldName).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L424">                out.line(&quot;%s $o = new %s(%s);&quot;, cls.simpleName(), cls.simpleName(), fields);</span>
+<span class="fc" id="L425">                out.line(&quot;%s.checkCanSerialize(%s.config(), $o);&quot;, //</span>
                         RuntimeUtil.class, //
-<span class="fc" id="L430">                        out.add(names.globalsFullClassName()));</span>
-<span class="fc" id="L431">                out.line(&quot;return $o;&quot;);</span>
-<span class="fc" id="L432">                out.closeParen();</span>
+<span class="fc" id="L427">                        out.add(names.globalsFullClassName()));</span>
+<span class="fc" id="L428">                out.line(&quot;return $o;&quot;);</span>
+<span class="fc" id="L429">                out.closeParen();</span>
 
                 // write getters
-<span class="fc" id="L435">                cls.fields.forEach(f -&gt; {</span>
-<span class="fc" id="L436">                    out.println();</span>
-<span class="fc" id="L437">                    writeGetter(out, f.resolvedType(out.imports()), f.fieldName(cls), f.fieldName(cls));</span>
-<span class="fc" id="L438">                });</span>
+<span class="fc" id="L432">                cls.fields.forEach(f -&gt; {</span>
+<span class="fc" id="L433">                    out.println();</span>
+<span class="fc" id="L434">                    writeGetter(out, f.resolvedType(out.imports()), f.fieldName(cls), f.fieldName(cls));</span>
+<span class="fc" id="L435">                });</span>
 
-<span class="fc" id="L440">                writeAnyOfOrAllOfBuilder(out, cls, true);</span>
-<span class="pc bpc" id="L441" title="1 of 2 branches missed.">            } else if (cls.classType == ClassType.ALL_OF) {</span>
+<span class="fc" id="L437">                writeAnyOfOrAllOfBuilder(out, cls, true);</span>
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">            } else if (cls.classType == ClassType.ALL_OF) {</span>
                 // allof
-<span class="fc" id="L443">                writeFields(out, cls);</span>
+<span class="fc" id="L440">                writeFields(out, cls);</span>
 
-<span class="fc" id="L445">                out.right().right();</span>
-<span class="fc" id="L446">                final String parameters = cls //</span>
+<span class="fc" id="L442">                out.right().right();</span>
+<span class="fc" id="L443">                final String parameters = cls //</span>
                         .fields //
-<span class="fc" id="L448">                        .stream() //</span>
-<span class="fc" id="L449">                        .map(x -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(), x.resolvedType(out.imports()),</span>
-<span class="fc" id="L450">                                x.fieldName(cls))) //</span>
-<span class="fc" id="L451">                        .collect(Collectors.joining(&quot;,&quot;));</span>
-<span class="fc" id="L452">                out.left().left();</span>
-<span class="fc" id="L453">                out.println();</span>
-<span class="fc" id="L454">                out.line(&quot;public %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
-<span class="fc" id="L455">                ifValidate(cls, out, names, //</span>
-<span class="fc" id="L456">                        o -&gt; cls.fields.stream().forEach(x -&gt; {</span>
-<span class="pc bpc" id="L457" title="2 of 4 branches missed.">                            if (!x.isPrimitive() &amp;&amp; x.required) {</span>
-<span class="fc" id="L458">                                checkNotNull(cls, o, x);</span>
+<span class="fc" id="L445">                        .stream() //</span>
+<span class="fc" id="L446">                        .map(x -&gt; String.format(&quot;\n%s%s %s&quot;, out.indent(), x.resolvedType(out.imports()),</span>
+<span class="fc" id="L447">                                x.fieldName(cls))) //</span>
+<span class="fc" id="L448">                        .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="fc" id="L449">                out.left().left();</span>
+<span class="fc" id="L450">                out.println();</span>
+<span class="fc" id="L451">                out.line(&quot;public %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
+<span class="fc" id="L452">                ifValidate(cls, out, names, //</span>
+<span class="fc" id="L453">                        o -&gt; cls.fields.stream().forEach(x -&gt; {</span>
+<span class="pc bpc" id="L454" title="2 of 4 branches missed.">                            if (!x.isPrimitive() &amp;&amp; x.required) {</span>
+<span class="fc" id="L455">                                checkNotNull(cls, o, x);</span>
                             } else {
-<span class="nc" id="L460">                                o.line(&quot;// TODO %s&quot;, x.fieldName);</span>
+<span class="nc" id="L457">                                o.line(&quot;// TODO %s&quot;, x.fieldName);</span>
                             }
-<span class="fc" id="L462">                            validateMore(o, cls, x);</span>
-<span class="fc" id="L463">                        }));</span>
-<span class="fc" id="L464">                cls.fields.stream().forEach(x -&gt; {</span>
-<span class="fc" id="L465">                    assignField(out, cls, x);</span>
-<span class="fc" id="L466">                });</span>
-<span class="fc" id="L467">                out.closeParen();</span>
+<span class="fc" id="L459">                            validateMore(o, cls, x);</span>
+<span class="fc" id="L460">                        }));</span>
+<span class="fc" id="L461">                cls.fields.stream().forEach(x -&gt; assignField(out, cls, x));</span>
+<span class="fc" id="L462">                out.closeParen();</span>
 
                 // write getters for allOf members
                 {   
                     // avoid name clashes
-<span class="fc" id="L472">                    Map&lt;Field, String&gt; getterNames = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L473">                    Set&lt;String&gt; usedNames = new HashSet&lt;&gt;(); </span>
-<span class="fc" id="L474">                    cls.fields.forEach(f -&gt; {</span>
-<span class="fc" id="L475">                        String name = &quot;as&quot; + Names.simpleClassName(f.resolvedType(out.imports()));</span>
-<span class="fc" id="L476">                        int i = 0;</span>
-<span class="fc" id="L477">                        String modifiedName = name;</span>
-<span class="pc bpc" id="L478" title="1 of 2 branches missed.">                        while (usedNames.contains(modifiedName)) {</span>
-<span class="nc" id="L479">                            i++;</span>
-<span class="nc" id="L480">                            modifiedName = name + i;</span>
+<span class="fc" id="L467">                    Map&lt;Field, String&gt; getterNames = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L468">                    Set&lt;String&gt; usedNames = new HashSet&lt;&gt;(); </span>
+<span class="fc" id="L469">                    cls.fields.forEach(f -&gt; {</span>
+<span class="fc" id="L470">                        String name = &quot;as&quot; + Names.simpleClassName(f.resolvedType(out.imports()));</span>
+<span class="fc" id="L471">                        int i = 0;</span>
+<span class="fc" id="L472">                        String modifiedName = name;</span>
+<span class="pc bpc" id="L473" title="1 of 2 branches missed.">                        while (usedNames.contains(modifiedName)) {</span>
+<span class="nc" id="L474">                            i++;</span>
+<span class="nc" id="L475">                            modifiedName = name + i;</span>
                         }
-<span class="fc" id="L482">                        getterNames.put(f, modifiedName);</span>
-<span class="fc" id="L483">                        usedNames.add(modifiedName);</span>
-<span class="fc" id="L484">                    });</span>
-<span class="fc" id="L485">                    cls.fields.forEach(f -&gt; {</span>
-<span class="fc" id="L486">                        out.println();</span>
-<span class="fc" id="L487">                        writeGetter(out, f.resolvedType(out.imports()), getterNames.get(f), f.fieldName(cls));</span>
-<span class="fc" id="L488">                    });</span>
+<span class="fc" id="L477">                        getterNames.put(f, modifiedName);</span>
+<span class="fc" id="L478">                        usedNames.add(modifiedName);</span>
+<span class="fc" id="L479">                    });</span>
+<span class="fc" id="L480">                    cls.fields.forEach(f -&gt; {</span>
+<span class="fc" id="L481">                        out.println();</span>
+<span class="fc" id="L482">                        writeGetter(out, f.resolvedType(out.imports()), getterNames.get(f), f.fieldName(cls));</span>
+<span class="fc" id="L483">                    });</span>
                 }
 
                 // write all field getters
-<span class="fc" id="L492">                Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L493">                cls.fields.forEach(field -&gt; {</span>
-<span class="fc" id="L494">                    Optional&lt;Cls&gt; c = names.cls(field.fullClassName);</span>
-<span class="pc bpc" id="L495" title="1 of 4 branches missed.">                    if (c.isPresent() &amp;&amp; c.get().classType != ClassType.ONE_OF_NON_DISCRIMINATED) {</span>
-<span class="fc" id="L496">                        c.get().fields //</span>
-<span class="fc" id="L497">                                .stream() //</span>
-<span class="fc bfc" id="L498" title="All 2 branches covered.">                                .filter(f -&gt; !f.mapType.isPresent()) //</span>
-<span class="fc" id="L499">                                .forEach(f -&gt; {</span>
-<span class="fc" id="L500">                                    String fieldName = f.fieldName(c.get());</span>
-<span class="fc bfc" id="L501" title="All 2 branches covered.">                                    if (!used.contains(fieldName)) {</span>
-<span class="fc" id="L502">                                        used.add(fieldName);</span>
-<span class="fc" id="L503">                                        String type = f.resolvedTypePublicConstructor(out.imports());</span>
-<span class="fc" id="L504">                                        out.println();</span>
-<span class="fc" id="L505">                                        out.line(&quot;public %s %s() {&quot;, type, fieldName);</span>
+<span class="fc" id="L487">                Set&lt;String&gt; used = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L488">                cls.fields.forEach(field -&gt; {</span>
+<span class="fc" id="L489">                    Optional&lt;Cls&gt; c = names.cls(field.fullClassName);</span>
+<span class="pc bpc" id="L490" title="1 of 4 branches missed.">                    if (c.isPresent() &amp;&amp; c.get().classType != ClassType.ONE_OF_NON_DISCRIMINATED) {</span>
+<span class="fc" id="L491">                        c.get().fields //</span>
+<span class="fc" id="L492">                                .stream() //</span>
+<span class="fc bfc" id="L493" title="All 2 branches covered.">                                .filter(f -&gt; !f.mapType.isPresent()) //</span>
+<span class="fc" id="L494">                                .forEach(f -&gt; {</span>
+<span class="fc" id="L495">                                    String fieldName = f.fieldName(c.get());</span>
+<span class="fc bfc" id="L496" title="All 2 branches covered.">                                    if (!used.contains(fieldName)) {</span>
+<span class="fc" id="L497">                                        used.add(fieldName);</span>
+<span class="fc" id="L498">                                        String type = f.resolvedTypePublicConstructor(out.imports());</span>
+<span class="fc" id="L499">                                        out.println();</span>
+<span class="fc" id="L500">                                        out.line(&quot;public %s %s() {&quot;, type, fieldName);</span>
                                         final String getter;
-<span class="fc bfc" id="L507" title="All 2 branches covered.">                                        if (c.get().classType == ClassType.ALL_OF) {</span>
-<span class="fc" id="L508">                                            getter = &quot;as&quot; + Names.upperFirst(fieldName);</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">                                        if (c.get().classType == ClassType.ALL_OF) {</span>
+<span class="fc" id="L503">                                            getter = &quot;as&quot; + Names.upperFirst(fieldName);</span>
                                         } else {
-<span class="fc" id="L510">                                            getter = fieldName;</span>
+<span class="fc" id="L505">                                            getter = fieldName;</span>
                                         }
-<span class="fc" id="L512">                                        out.line(&quot;return %s.%s();&quot;, field.fieldName(cls), getter);</span>
-<span class="fc" id="L513">                                        out.closeParen();</span>
+<span class="fc" id="L507">                                        out.line(&quot;return %s.%s();&quot;, field.fieldName(cls), getter);</span>
+<span class="fc" id="L508">                                        out.closeParen();</span>
                                     }
-<span class="fc" id="L515">                                });</span>
+<span class="fc" id="L510">                                });</span>
                     }
-<span class="fc" id="L517">                });</span>
+<span class="fc" id="L512">                });</span>
                 // write allof builder
-<span class="fc" id="L519">                writeAnyOfOrAllOfBuilder(out, cls, false);</span>
+<span class="fc" id="L514">                writeAnyOfOrAllOfBuilder(out, cls, false);</span>
             }
 
-<span class="fc" id="L522">            out.println();</span>
-<span class="fc" id="L523">            out.line(&quot;@%s(\&quot;serial\&quot;)&quot;, SuppressWarnings.class);</span>
+<span class="fc" id="L517">            out.println();</span>
+<span class="fc" id="L518">            out.line(&quot;@%s(\&quot;serial\&quot;)&quot;, SuppressWarnings.class);</span>
             final Class&lt;?&gt; polymorphicDeserializer;
-<span class="fc bfc" id="L525" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
-<span class="fc" id="L526">                polymorphicDeserializer = AnyOfDeserializer.class;</span>
+<span class="fc bfc" id="L520" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
+<span class="fc" id="L521">                polymorphicDeserializer = AnyOfDeserializer.class;</span>
             } else {
-<span class="fc" id="L528">                polymorphicDeserializer = PolymorphicDeserializer.class;</span>
+<span class="fc" id="L523">                polymorphicDeserializer = PolymorphicDeserializer.class;</span>
             }
-<span class="fc" id="L530">            out.line(&quot;public static final class _Deserializer extends %s&lt;%s&gt; {&quot;, polymorphicDeserializer,</span>
-<span class="fc" id="L531">                    cls.simpleName());</span>
-<span class="fc" id="L532">            out.println();</span>
-<span class="fc" id="L533">            out.line(&quot;public _Deserializer() {&quot;);</span>
-<span class="fc" id="L534">            String classes = cls.fields //</span>
-<span class="fc" id="L535">                    .stream() //</span>
-<span class="fc" id="L536">                    .map(x -&gt; out.add(toPrimitive(x.fullClassName)) + &quot;.class&quot;) //</span>
-<span class="fc" id="L537">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L525">            out.line(&quot;public static final class _Deserializer extends %s&lt;%s&gt; {&quot;, polymorphicDeserializer,</span>
+<span class="fc" id="L526">                    cls.simpleName());</span>
+<span class="fc" id="L527">            out.println();</span>
+<span class="fc" id="L528">            out.line(&quot;public _Deserializer() {&quot;);</span>
+<span class="fc" id="L529">            String classes = cls.fields //</span>
+<span class="fc" id="L530">                    .stream() //</span>
+<span class="fc" id="L531">                    .map(x -&gt; out.add(toPrimitive(x.fullClassName)) + &quot;.class&quot;) //</span>
+<span class="fc" id="L532">                    .collect(Collectors.joining(&quot;, &quot;));</span>
 
-<span class="fc bfc" id="L539" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
+<span class="fc bfc" id="L534" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
                 // members is used with anyOf only
-<span class="fc" id="L541">                String members = cls.fields //</span>
-<span class="fc" id="L542">                        .stream() //</span>
-<span class="fc" id="L543">                        .map(x -&gt; {</span>
-<span class="fc" id="L544">                            String c = out.add(x.fullClassName) + &quot;.class&quot;;</span>
-<span class="fc bfc" id="L545" title="All 2 branches covered.">                            String method = x.nullable ? &quot;nullable&quot; : &quot;nonNullable&quot;;</span>
-<span class="fc" id="L546">                            return String.format(&quot;%s.%s(%s)&quot;, out.add(AnyOfMember.class), method, c);</span>
+<span class="fc" id="L536">                String members = cls.fields //</span>
+<span class="fc" id="L537">                        .stream() //</span>
+<span class="fc" id="L538">                        .map(x -&gt; {</span>
+<span class="fc" id="L539">                            String c = out.add(x.fullClassName) + &quot;.class&quot;;</span>
+<span class="fc bfc" id="L540" title="All 2 branches covered.">                            String method = x.nullable ? &quot;nullable&quot; : &quot;nonNullable&quot;;</span>
+<span class="fc" id="L541">                            return String.format(&quot;%s.%s(%s)&quot;, out.add(AnyOfMember.class), method, c);</span>
                         }) //
-<span class="fc" id="L548">                        .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L549">                out.line(&quot;super(%s.config(), %s.class, %s);&quot;, out.add(names.globalsFullClassName()), cls.simpleName(),</span>
+<span class="fc" id="L543">                        .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L544">                out.line(&quot;super(%s.config(), %s.class, %s);&quot;, out.add(names.globalsFullClassName()), cls.simpleName(),</span>
                         members);
-<span class="fc" id="L551">            } else {</span>
-<span class="fc" id="L552">                out.line(&quot;super(%s.config(), %s.%s, %s.class, %s);&quot;, out.add(names.globalsFullClassName()),</span>
-<span class="fc" id="L553">                        PolymorphicType.class, cls.polymorphicType.name(), cls.simpleName(), classes);</span>
+<span class="fc" id="L546">            } else {</span>
+<span class="fc" id="L547">                out.line(&quot;super(%s.config(), %s.%s, %s.class, %s);&quot;, out.add(names.globalsFullClassName()),</span>
+<span class="fc" id="L548">                        PolymorphicType.class, cls.polymorphicType.name(), cls.simpleName(), classes);</span>
             }
-<span class="fc" id="L555">            out.closeParen();</span>
-<span class="fc" id="L556">            out.closeParen();</span>
-<span class="fc bfc" id="L557" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
-<span class="fc" id="L558">                out.println();</span>
-<span class="fc" id="L559">                out.line(&quot;@%s(\&quot;serial\&quot;)&quot;, SuppressWarnings.class);</span>
-<span class="fc" id="L560">                out.line(&quot;public static final class _Serializer extends %s&lt;%s&gt; {&quot;, AnyOfSerializer.class,</span>
-<span class="fc" id="L561">                        cls.simpleName());</span>
-<span class="fc" id="L562">                out.println();</span>
-<span class="fc" id="L563">                out.line(&quot;public _Serializer() {&quot;);</span>
-<span class="fc" id="L564">                out.line(&quot;super(%s.config(), %s.class);&quot;, out.add(names.globalsFullClassName()), cls.simpleName());</span>
-<span class="fc" id="L565">                out.closeParen();</span>
-<span class="fc" id="L566">                out.closeParen();</span>
+<span class="fc" id="L550">            out.closeParen();</span>
+<span class="fc" id="L551">            out.closeParen();</span>
+<span class="fc bfc" id="L552" title="All 2 branches covered.">            if (cls.classType == ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
+<span class="fc" id="L553">                out.println();</span>
+<span class="fc" id="L554">                out.line(&quot;@%s(\&quot;serial\&quot;)&quot;, SuppressWarnings.class);</span>
+<span class="fc" id="L555">                out.line(&quot;public static final class _Serializer extends %s&lt;%s&gt; {&quot;, AnyOfSerializer.class,</span>
+<span class="fc" id="L556">                        cls.simpleName());</span>
+<span class="fc" id="L557">                out.println();</span>
+<span class="fc" id="L558">                out.line(&quot;public _Serializer() {&quot;);</span>
+<span class="fc" id="L559">                out.line(&quot;super(%s.config(), %s.class);&quot;, out.add(names.globalsFullClassName()), cls.simpleName());</span>
+<span class="fc" id="L560">                out.closeParen();</span>
+<span class="fc" id="L561">                out.closeParen();</span>
             }
         }
-<span class="fc" id="L569">    }</span>
+<span class="fc" id="L564">    }</span>
 
     private static void writeAnyOfOrAllOfBuilder(CodePrintWriter out, Cls cls, boolean useOf) {
-<span class="fc" id="L572">        List&lt;BuilderWriter.Field&gt; fields = //</span>
-<span class="fc" id="L573">                cls.fields.stream() //</span>
-<span class="fc" id="L574">                        .map(f -&gt; new BuilderWriter.Field(f.fieldName(cls), f.fullClassName, f.required, f.isArray,</span>
-<span class="fc" id="L575">                                f.mapType, f.nullable, Optional.empty())) //</span>
-<span class="fc" id="L576">                        .collect(Collectors.toList());</span>
-<span class="fc" id="L577">        BuilderWriter.write(out, fields, cls.simpleName(), useOf);</span>
-<span class="fc" id="L578">    }</span>
+<span class="fc" id="L567">        List&lt;BuilderWriter.Field&gt; fields = //</span>
+<span class="fc" id="L568">                cls.fields.stream() //</span>
+<span class="fc" id="L569">                        .map(f -&gt; new BuilderWriter.Field(f.fieldName(cls), f.fullClassName, f.required, f.isArray,</span>
+<span class="fc" id="L570">                                f.mapType, f.nullable, Optional.empty())) //</span>
+<span class="fc" id="L571">                        .collect(Collectors.toList());</span>
+<span class="fc" id="L572">        BuilderWriter.write(out, fields, cls.simpleName(), useOf);</span>
+<span class="fc" id="L573">    }</span>
 
-    private static void writeNonDiscriminatedBuilder(CodePrintWriter out, Cls cls) {
-<span class="fc" id="L581">        cls.fields.forEach(f -&gt; {</span>
-<span class="fc" id="L582">            out.println();</span>
-<span class="fc" id="L583">            out.line(&quot;public static %s of(%s value) {&quot;, cls.simpleName(), out.add(f.fullClassName));</span>
-<span class="fc" id="L584">            out.line(&quot;return new %s(value);&quot;, cls.simpleName());</span>
-<span class="fc" id="L585">            out.closeParen();</span>
-<span class="fc" id="L586">        });</span>
-<span class="fc" id="L587">    }</span>
+    private static void writeNonDiscriminatedFactoryMethod(CodePrintWriter out, Cls cls, Names names, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
+<span class="fc" id="L576">        Set&lt;Cls&gt; interfaces = interfaces(cls, fullClassNameInterfaces);</span>
+<span class="fc" id="L577">        Set&lt;String&gt; used = new HashSet&lt;&gt;(); </span>
+<span class="fc" id="L578">        int[] count = new int[] {2};</span>
+<span class="fc" id="L579">        cls.fields.forEach(f -&gt; {</span>
+<span class="fc" id="L580">            out.println();</span>
+            final String methodName;
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            if (used.contains(f.fullClassName)) {</span>
+<span class="fc" id="L583">                methodName = &quot;of&quot; + count[0];</span>
+<span class="fc" id="L584">                count[0]++;</span>
+            } else {
+<span class="fc" id="L586">                methodName = &quot;of&quot;;</span>
+            }
+<span class="fc" id="L588">            used.add(f.fullClassName);</span>
+<span class="fc" id="L589">            out.line(&quot;public static %s %s(%s value) {&quot;, cls.simpleName(), methodName, out.add(f.fullClassName));</span>
+<span class="fc" id="L590">            writeConstraintValidations(out, cls, names, interfaces, false, Collections.singletonList(f));</span>
+<span class="fc" id="L591">            out.line(&quot;return new %s(value);&quot;, cls.simpleName());</span>
+<span class="fc" id="L592">            out.closeParen();</span>
+<span class="fc" id="L593">        });</span>
+<span class="fc" id="L594">    }</span>
 
     private static void writeOneOfAnyOfNonDiscriminatedMemberSpecificConstructor(CodePrintWriter out, Cls cls,
-            Field f) {
-<span class="fc" id="L591">        String className = toPrimitive(f.fullClassName);</span>
-<span class="fc" id="L592">        out.println();</span>
-<span class="fc" id="L593">        out.line(&quot;public %s(%s value) {&quot;, cls.simpleName(), out.add(className));</span>
-<span class="fc bfc" id="L594" title="All 2 branches covered.">        if (org.davidmoten.oa3.codegen.generator.internal.Util.isPrimitiveFullClassName(className)) {</span>
-<span class="fc" id="L595">            out.line(&quot;this.value = value;&quot;);</span>
-        } else {
-<span class="fc" id="L597">            out.line(&quot;this.value = %s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
+            Field f, Set&lt;String&gt; used) {
+<span class="fc bfc" id="L598" title="All 2 branches covered.">        if (used.contains(f.fullClassName)) {</span>
+<span class="fc" id="L599">            return;</span>
         }
-<span class="fc" id="L599">        out.closeParen();</span>
-<span class="fc" id="L600">    }</span>
+<span class="fc" id="L601">        used.add(f.fullClassName);</span>
+<span class="fc" id="L602">        String className = toPrimitive(f.fullClassName);</span>
+<span class="fc" id="L603">        out.println();</span>
+<span class="fc" id="L604">        out.line(&quot;private %s(%s value) {&quot;, cls.simpleName(), out.add(className));</span>
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        if (org.davidmoten.oa3.codegen.generator.internal.Util.isPrimitiveFullClassName(className)) {</span>
+<span class="fc" id="L606">            out.line(&quot;this.value = value;&quot;);</span>
+        } else {
+<span class="fc" id="L608">            out.line(&quot;this.value = %s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
+        }
+<span class="fc" id="L610">        out.closeParen();</span>
+<span class="fc" id="L611">    }</span>
 
     private static void writeOneOfAnyOfNonDiscriminatedObjectConstructor(CodePrintWriter out, Cls cls) {
-<span class="fc" id="L603">        out.println();</span>
-<span class="fc" id="L604">        out.line(&quot;private %s(%s value) {&quot;, cls.simpleName(), Object.class);</span>
-<span class="fc" id="L605">        out.line(&quot;this.value = %s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
-<span class="fc" id="L606">        out.closeParen();</span>
-<span class="fc" id="L607">    }</span>
+<span class="fc" id="L614">        out.println();</span>
+<span class="fc" id="L615">        out.line(&quot;private %s(%s value) {&quot;, cls.simpleName(), Object.class);</span>
+<span class="fc" id="L616">        out.line(&quot;this.value = %s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
+<span class="fc" id="L617">        out.closeParen();</span>
+<span class="fc" id="L618">    }</span>
 
     private static void writeFields(CodePrintWriter out, Cls cls) {
-<span class="pc bpc" id="L610" title="1 of 2 branches missed.">        if (!cls.fields.isEmpty()) {</span>
-<span class="fc" id="L611">            out.println();</span>
+<span class="pc bpc" id="L621" title="1 of 2 branches missed.">        if (!cls.fields.isEmpty()) {</span>
+<span class="fc" id="L622">            out.println();</span>
         }
-<span class="fc" id="L613">        Mutable&lt;Boolean&gt; first = Mutable.create(true);</span>
-<span class="fc" id="L614">        cls.fields.forEach(f -&gt; {</span>
-<span class="fc bfc" id="L615" title="All 2 branches covered.">            if (!first.value) {</span>
-<span class="fc" id="L616">                out.println();</span>
+<span class="fc" id="L624">        Mutable&lt;Boolean&gt; first = Mutable.create(true);</span>
+<span class="fc" id="L625">        cls.fields.forEach(f -&gt; {</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">            if (!first.value) {</span>
+<span class="fc" id="L627">                out.println();</span>
             }
-<span class="fc" id="L618">            first.value = false;</span>
-<span class="fc bfc" id="L619" title="All 2 branches covered.">            if (cls.classType != ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
-<span class="pc bpc" id="L620" title="1 of 4 branches missed.">                if (f.isAdditionalProperties() &amp;&amp; !f.isArray) {</span>
-<span class="fc" id="L621">                    out.line(&quot;@%s&quot;, JsonAnyGetter.class);</span>
-<span class="fc" id="L622">                    out.line(&quot;@%s&quot;, JsonAnySetter.class);</span>
-<span class="fc bfc" id="L623" title="All 2 branches covered.">                } else if (cls.classType == ClassType.ALL_OF) {</span>
-<span class="fc" id="L624">                    out.line(&quot;@%s&quot;, JsonUnwrapped.class);</span>
-<span class="fc bfc" id="L625" title="All 2 branches covered.">                } else if (cls.unwrapSingleField()) {</span>
-<span class="fc" id="L626">                    writeJsonValueAnnotation(out);</span>
-<span class="fc bfc" id="L627" title="All 2 branches covered.">                } else if (f.readOnly) {</span>
-<span class="fc" id="L628">                    out.line(&quot;@%s&quot;, JsonIgnore.class);</span>
+<span class="fc" id="L629">            first.value = false;</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">            if (cls.classType != ClassType.ANY_OF_NON_DISCRIMINATED) {</span>
+<span class="pc bpc" id="L631" title="1 of 4 branches missed.">                if (f.isAdditionalProperties() &amp;&amp; !f.isArray) {</span>
+<span class="fc" id="L632">                    out.line(&quot;@%s&quot;, JsonAnyGetter.class);</span>
+<span class="fc" id="L633">                    out.line(&quot;@%s&quot;, JsonAnySetter.class);</span>
+<span class="fc bfc" id="L634" title="All 2 branches covered.">                } else if (cls.classType == ClassType.ALL_OF) {</span>
+<span class="fc" id="L635">                    out.line(&quot;@%s&quot;, JsonUnwrapped.class);</span>
+<span class="fc bfc" id="L636" title="All 2 branches covered.">                } else if (cls.unwrapSingleField()) {</span>
+<span class="fc" id="L637">                    writeJsonValueAnnotation(out);</span>
+<span class="fc bfc" id="L638" title="All 2 branches covered.">                } else if (f.readOnly) {</span>
+<span class="fc" id="L639">                    out.line(&quot;@%s&quot;, JsonIgnore.class);</span>
                 } else {
-<span class="fc" id="L630">                    out.line(&quot;@%s(\&quot;%s\&quot;)&quot;, JsonProperty.class, f.name);</span>
+<span class="fc" id="L641">                    out.line(&quot;@%s(\&quot;%s\&quot;)&quot;, JsonProperty.class, f.name);</span>
                 }
             }
-<span class="fc bfc" id="L633" title="All 6 branches covered.">            if (f.required &amp;&amp; f.nullable &amp;&amp; !f.readOnly) {</span>
-<span class="fc" id="L634">                out.line(&quot;@%s(%s.ALWAYS)&quot;, JsonInclude.class, JsonInclude.Include.class);</span>
+<span class="fc bfc" id="L644" title="All 6 branches covered.">            if (f.required &amp;&amp; f.nullable &amp;&amp; !f.readOnly) {</span>
+<span class="fc" id="L645">                out.line(&quot;@%s(%s.ALWAYS)&quot;, JsonInclude.class, JsonInclude.Include.class);</span>
             }
-<span class="fc bfc" id="L636" title="All 4 branches covered.">            if (f.isOctets() &amp;&amp; !f.readOnly) {</span>
+<span class="fc bfc" id="L647" title="All 4 branches covered.">            if (f.isOctets() &amp;&amp; !f.readOnly) {</span>
                 // TODO handle f.isArray (more serializers?)
-<span class="fc bfc" id="L638" title="All 4 branches covered.">                if (f.required &amp;&amp; f.writeOnly) {</span>
-<span class="fc" id="L639">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OptionalMustBePresentOctetsSerializer.class);</span>
-<span class="pc bpc" id="L640" title="1 of 4 branches missed.">                } else if (!f.required &amp;&amp; f.nullable) {</span>
-<span class="nc" id="L641">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, JsonNullableOctetsSerializer.class);</span>
-<span class="pc bpc" id="L642" title="1 of 4 branches missed.">                } else if (!f.required || f.nullable) {</span>
-<span class="fc" id="L643">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OptionalOctetsSerializer.class);</span>
+<span class="fc bfc" id="L649" title="All 4 branches covered.">                if (f.required &amp;&amp; f.writeOnly) {</span>
+<span class="fc" id="L650">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OptionalMustBePresentOctetsSerializer.class);</span>
+<span class="pc bpc" id="L651" title="1 of 4 branches missed.">                } else if (!f.required &amp;&amp; f.nullable) {</span>
+<span class="nc" id="L652">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, JsonNullableOctetsSerializer.class);</span>
+<span class="pc bpc" id="L653" title="1 of 4 branches missed.">                } else if (!f.required || f.nullable) {</span>
+<span class="fc" id="L654">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OptionalOctetsSerializer.class);</span>
                 } else {
-<span class="fc" id="L645">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OctetsSerializer.class);</span>
+<span class="fc" id="L656">                    out.line(&quot;@%s(using = %s.class)&quot;, JsonSerialize.class, OctetsSerializer.class);</span>
                 }
-<span class="fc bfc" id="L647" title="All 6 branches covered.">            } else if (f.required &amp;&amp; f.writeOnly &amp;&amp; !f.nullable) {</span>
-<span class="fc" id="L648">                out.line(&quot;@%s(converter = %s.class)&quot;, JsonSerialize.class, OptionalMustBePresentConverter.class);</span>
+<span class="fc bfc" id="L658" title="All 6 branches covered.">            } else if (f.required &amp;&amp; f.writeOnly &amp;&amp; !f.nullable) {</span>
+<span class="fc" id="L659">                out.line(&quot;@%s(converter = %s.class)&quot;, JsonSerialize.class, OptionalMustBePresentConverter.class);</span>
             }
             final String fieldType;
-<span class="fc bfc" id="L651" title="All 4 branches covered.">            if (cls.classType == ClassType.ENUM &amp;&amp; cls.enumValueFullType.equals(Map.class.getCanonicalName())) {</span>
-<span class="fc" id="L652">                fieldType = String.format(&quot;%s&lt;%s, %s&gt;&quot;, out.add(Map.class), out.add(String.class),</span>
-<span class="fc" id="L653">                        out.add(Object.class));</span>
+<span class="fc bfc" id="L662" title="All 4 branches covered.">            if (cls.classType == ClassType.ENUM &amp;&amp; cls.enumValueFullType.equals(Map.class.getCanonicalName())) {</span>
+<span class="fc" id="L663">                fieldType = String.format(&quot;%s&lt;%s, %s&gt;&quot;, out.add(Map.class), out.add(String.class),</span>
+<span class="fc" id="L664">                        out.add(Object.class));</span>
             } else {
-<span class="fc" id="L655">                fieldType = f.resolvedType(out.imports());</span>
+<span class="fc" id="L666">                fieldType = f.resolvedType(out.imports());</span>
             }
-<span class="fc" id="L657">            out.line(&quot;private final %s %s;&quot;, fieldType, cls.fieldName(f));</span>
-<span class="fc" id="L658">        });</span>
-<span class="fc" id="L659">    }</span>
+<span class="fc" id="L668">            out.line(&quot;private final %s %s;&quot;, fieldType, cls.fieldName(f));</span>
+<span class="fc" id="L669">        });</span>
+<span class="fc" id="L670">    }</span>
 
     private static void writeJsonValueAnnotation(CodePrintWriter out) {
-<span class="fc" id="L662">        out.line(&quot;@%s&quot;, JsonValue.class);</span>
-<span class="fc" id="L663">    }</span>
+<span class="fc" id="L673">        out.line(&quot;@%s&quot;, JsonValue.class);</span>
+<span class="fc" id="L674">    }</span>
 
     private static void writeConstructor(CodePrintWriter out, Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces,
             Names names) {
 
-<span class="fc" id="L668">        Set&lt;Cls&gt; interfaces = interfaces(cls, fullClassNameInterfaces);</span>
+<span class="fc" id="L679">        Set&lt;Cls&gt; interfaces = interfaces(cls, fullClassNameInterfaces);</span>
 
-<span class="fc" id="L670">        boolean hasAdditionalProperties = cls.fields.stream().anyMatch(Field::isAdditionalProperties);</span>
-<span class="fc" id="L671">        boolean hasDiscriminator = cls.fields.stream().anyMatch(x -&gt; isDiscriminator(interfaces, x));</span>
-<span class="fc" id="L672">        boolean extraConstructor = hasAdditionalProperties;</span>
-<span class="fc bfc" id="L673" title="All 2 branches covered.">        if (extraConstructor) {</span>
+<span class="fc" id="L681">        boolean hasAdditionalProperties = cls.fields.stream().anyMatch(Field::isAdditionalProperties);</span>
+<span class="fc" id="L682">        boolean hasDiscriminator = cls.fields.stream().anyMatch(x -&gt; isDiscriminator(interfaces, x));</span>
+<span class="pc bpc" id="L683" title="1 of 4 branches missed.">        boolean extraConstructor = hasAdditionalProperties &amp;&amp; cls.classType == ClassType.CLASS;</span>
+<span class="fc bfc" id="L684" title="All 2 branches covered.">        if (extraConstructor) {</span>
             // if has additionalProperties then we make the JsonCreator constructor private
             // (excluding properties) and make another public constructor that includes the
             // Map for additional properties as a parameter)
-<span class="fc" id="L677">            out.right().right();</span>
-<span class="fc" id="L678">            String parameters = cls //</span>
+<span class="fc" id="L688">            out.right().right();</span>
+<span class="fc" id="L689">            String parameters = cls //</span>
                     .fields //
-<span class="fc" id="L680">                    .stream() //</span>
+<span class="fc" id="L691">                    .stream() //</span>
                     // ignore discriminators that should be constants
 //                    .filter(x -&gt; !isDiscriminator(interfaces, x)) //
-<span class="fc" id="L683">                    .map(x -&gt; {</span>
+<span class="fc" id="L694">                    .map(x -&gt; {</span>
                         final String t;
-<span class="fc bfc" id="L685" title="All 2 branches covered.">                        if (x.mapType.isPresent()) {</span>
-<span class="fc" id="L686">                            t = x.resolvedTypeMapPublic(out.imports());</span>
+<span class="fc bfc" id="L696" title="All 2 branches covered.">                        if (x.mapType.isPresent()) {</span>
+<span class="fc" id="L697">                            t = x.resolvedTypeMapPublic(out.imports());</span>
                         } else {
-<span class="fc" id="L688">                            t = x.resolvedTypePublicConstructor(out.imports());</span>
+<span class="fc" id="L699">                            t = x.resolvedTypePublicConstructor(out.imports());</span>
                         }
-<span class="fc" id="L690">                        return String.format(&quot;\n%s%s %s&quot;, out.indent(), t, x.fieldName(cls));</span>
+<span class="fc" id="L701">                        return String.format(&quot;\n%s%s %s&quot;, out.indent(), t, x.fieldName(cls));</span>
                     }) //
-<span class="fc" id="L692">                    .collect(Collectors.joining(&quot;,&quot;));</span>
-<span class="fc" id="L693">            out.left().left();</span>
-<span class="fc" id="L694">            out.println();</span>
-<span class="fc" id="L695">            out.line(&quot;public %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
-<span class="fc" id="L696">            writeConstructorBody(out, cls, names, interfaces, true);</span>
-<span class="fc" id="L697">            out.closeParen();</span>
+<span class="fc" id="L703">                    .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="fc" id="L704">            out.left().left();</span>
+<span class="fc" id="L705">            out.println();</span>
+<span class="fc" id="L706">            out.line(&quot;public %s(%s) {&quot;, Names.simpleClassName(cls.fullClassName), parameters);</span>
+<span class="fc" id="L707">            writeConstructorBody(out, cls, names, interfaces, true);</span>
+<span class="fc" id="L708">            out.closeParen();</span>
         }
-<span class="fc" id="L699">        out.right().right();</span>
-<span class="fc" id="L700">        String parameters = cls //</span>
+<span class="fc" id="L710">        out.right().right();</span>
+<span class="fc" id="L711">        String parameters = cls //</span>
                 .fields //
-<span class="fc" id="L702">                .stream() //</span>
+<span class="fc" id="L713">                .stream() //</span>
                 // ignore discriminators that should be constants
 //                    .filter(x -&gt; !isDiscriminator(interfaces, x)) //
-<span class="fc bfc" id="L705" title="All 2 branches covered.">                .filter(x -&gt; !x.isAdditionalProperties()) //</span>
-<span class="fc" id="L706">                .map(f -&gt; {</span>
+<span class="fc bfc" id="L716" title="All 2 branches covered.">                .filter(x -&gt; !x.isAdditionalProperties()) //</span>
+<span class="fc" id="L717">                .map(f -&gt; {</span>
                     final String t;
-<span class="fc bfc" id="L708" title="All 2 branches covered.">                    if (f.mapType.isPresent()) {</span>
-<span class="fc" id="L709">                        t = f.resolvedTypeMapPublic(out.imports());</span>
+<span class="fc bfc" id="L719" title="All 2 branches covered.">                    if (f.mapType.isPresent()) {</span>
+<span class="fc" id="L720">                        t = f.resolvedTypeMapPublic(out.imports());</span>
                     } else {
-<span class="fc" id="L711">                        t = f.resolvedTypePublicConstructor(out.imports());</span>
+<span class="fc" id="L722">                        t = f.resolvedTypePublicConstructor(out.imports());</span>
                     }
-<span class="fc bfc" id="L713" title="All 2 branches covered.">                    String annotations = cls.unwrapSingleField() ? &quot;&quot; //</span>
-<span class="fc" id="L714">                            : String.format(&quot;@%s(\&quot;%s\&quot;) &quot;, out.add(JsonProperty.class), f.name);</span>
-<span class="fc bfc" id="L715" title="All 2 branches covered.">                    if (f.writeOnly) {</span>
-<span class="fc" id="L716">                        annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="fc" id="L717">                                out.add(OptionalEmptyDeserializer.class));</span>
-<span class="fc bfc" id="L718" title="All 2 branches covered.">                    } else if (f.isOctets()) {</span>
-<span class="fc bfc" id="L719" title="All 4 branches covered.">                        if (f.required &amp;&amp; f.readOnly) {</span>
-<span class="fc" id="L720">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="fc" id="L721">                                    out.add(OptionalPresentOctetsDeserializer.class));</span>
-<span class="pc bpc" id="L722" title="1 of 4 branches missed.">                        } else if (!f.required &amp;&amp; f.nullable) {</span>
-<span class="nc" id="L723">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="nc" id="L724">                                    out.add(JsonNullableOctetsDeserializer.class));</span>
-<span class="pc bpc" id="L725" title="3 of 8 branches missed.">                        } else if (!f.required || f.nullable || f.required &amp;&amp; f.readOnly) {</span>
-<span class="fc" id="L726">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="fc" id="L727">                                    out.add(OptionalOctetsDeserializer.class));</span>
+<span class="fc bfc" id="L724" title="All 2 branches covered.">                    String annotations = cls.unwrapSingleField() ? &quot;&quot; //</span>
+<span class="fc" id="L725">                            : String.format(&quot;@%s(\&quot;%s\&quot;) &quot;, out.add(JsonProperty.class), f.name);</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">                    if (f.writeOnly) {</span>
+<span class="fc" id="L727">                        annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="fc" id="L728">                                out.add(OptionalEmptyDeserializer.class));</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">                    } else if (f.isOctets()) {</span>
+<span class="fc bfc" id="L730" title="All 4 branches covered.">                        if (f.required &amp;&amp; f.readOnly) {</span>
+<span class="fc" id="L731">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="fc" id="L732">                                    out.add(OptionalPresentOctetsDeserializer.class));</span>
+<span class="pc bpc" id="L733" title="1 of 4 branches missed.">                        } else if (!f.required &amp;&amp; f.nullable) {</span>
+<span class="nc" id="L734">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="nc" id="L735">                                    out.add(JsonNullableOctetsDeserializer.class));</span>
+<span class="pc bpc" id="L736" title="1 of 4 branches missed.">                        } else if (!f.required || f.nullable) {</span>
+<span class="fc" id="L737">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="fc" id="L738">                                    out.add(OptionalOctetsDeserializer.class));</span>
                         } else {
-<span class="fc" id="L729">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="fc" id="L730">                                    out.add(OctetsDeserializer.class));</span>
+<span class="fc" id="L740">                            annotations += String.format(&quot;@%s(using = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="fc" id="L741">                                    out.add(OctetsDeserializer.class));</span>
                         }
-<span class="fc bfc" id="L732" title="All 6 branches covered.">                    } else if (f.required &amp;&amp; f.readOnly &amp;&amp; !f.nullable) {</span>
-<span class="fc" id="L733">                        annotations += String.format(&quot;@%s(converter = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
-<span class="fc" id="L734">                                out.add(OptionalMustBePresentConverter.class));</span>
+<span class="fc bfc" id="L743" title="All 6 branches covered.">                    } else if (f.required &amp;&amp; f.readOnly &amp;&amp; !f.nullable) {</span>
+<span class="fc" id="L744">                        annotations += String.format(&quot;@%s(converter = %s.class) &quot;, out.add(JsonDeserialize.class),</span>
+<span class="fc" id="L745">                                out.add(OptionalMustBePresentConverter.class));</span>
                     }
-<span class="fc" id="L736">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, t, f.fieldName(cls));</span>
+<span class="fc" id="L747">                    return String.format(&quot;\n%s%s%s %s&quot;, out.indent(), annotations, t, f.fieldName(cls));</span>
                 }) //
-<span class="fc" id="L738">                .collect(Collectors.joining(&quot;,&quot;));</span>
-<span class="fc" id="L739">        out.left().left();</span>
-<span class="fc" id="L740">        out.println();</span>
+<span class="fc" id="L749">                .collect(Collectors.joining(&quot;,&quot;));</span>
+<span class="fc" id="L750">        out.left().left();</span>
+<span class="fc" id="L751">        out.println();</span>
         final String modifier;
-<span class="fc bfc" id="L742" title="All 2 branches covered.">        if (cls.classType == ClassType.ENUM) {</span>
-<span class="fc" id="L743">            modifier = &quot;&quot;;</span>
-<span class="fc bfc" id="L744" title="All 4 branches covered.">        } else if (hasDiscriminator || extraConstructor) {</span>
-<span class="fc" id="L745">            modifier = &quot;private &quot;;</span>
+<span class="fc bfc" id="L753" title="All 2 branches covered.">        if (cls.classType == ClassType.ENUM) {</span>
+<span class="fc" id="L754">            modifier = &quot;&quot;;</span>
+<span class="fc bfc" id="L755" title="All 4 branches covered.">        } else if (hasDiscriminator || extraConstructor) {</span>
+<span class="fc" id="L756">            modifier = &quot;private &quot;;</span>
         } else {
-<span class="fc" id="L747">            modifier = &quot;public &quot;;</span>
+<span class="fc" id="L758">            modifier = &quot;public &quot;;</span>
         }
-<span class="fc bfc" id="L749" title="All 2 branches covered.">        if (modifier.equals(&quot;private &quot;)) {</span>
-<span class="fc" id="L750">            addConstructorBindingAnnotation(out, names);</span>
+<span class="fc bfc" id="L760" title="All 2 branches covered.">        if (modifier.equals(&quot;private &quot;)) {</span>
+<span class="fc" id="L761">            addConstructorBindingAnnotation(out, names);</span>
         }
-<span class="fc bfc" id="L752" title="All 2 branches covered.">        if (cls.classType != ClassType.ENUM) {</span>
-<span class="fc" id="L753">            out.line(&quot;@%s&quot;, JsonCreator.class);</span>
+<span class="fc bfc" id="L763" title="All 2 branches covered.">        if (cls.classType != ClassType.ENUM) {</span>
+<span class="fc" id="L764">            out.line(&quot;@%s&quot;, JsonCreator.class);</span>
         }
-<span class="fc" id="L755">        out.line(&quot;%s%s(%s) {&quot;, modifier, Names.simpleClassName(cls.fullClassName), parameters);</span>
-<span class="fc" id="L756">        writeConstructorBody(out, cls, names, interfaces, false);</span>
-<span class="fc" id="L757">        out.closeParen();</span>
-<span class="fc" id="L758">    }</span>
+<span class="fc" id="L766">        out.line(&quot;%s%s(%s) {&quot;, modifier, Names.simpleClassName(cls.fullClassName), parameters);</span>
+<span class="fc" id="L767">        writeConstructorBody(out, cls, names, interfaces, false);</span>
+<span class="fc" id="L768">        out.closeParen();</span>
+<span class="fc" id="L769">    }</span>
 
     private static void addConstructorBindingAnnotation(CodePrintWriter out, Names names) {
-<span class="fc bfc" id="L761" title="All 2 branches covered.">        if (names.generateService()) {</span>
-<span class="pc bpc" id="L762" title="1 of 2 branches missed.">            if (names.generatorType() == ServerGeneratorType.SPRING3) {</span>
-<span class="nc" id="L763">                out.line(&quot;@%s&quot;, out.add(</span>
-<span class="nc" id="L764">                        ConstructorBinding.class.getName().replace(&quot;ConstructorBinding&quot;, &quot;bind.ConstructorBinding&quot;)));</span>
+<span class="fc bfc" id="L772" title="All 2 branches covered.">        if (names.generateService()) {</span>
+<span class="pc bpc" id="L773" title="1 of 2 branches missed.">            if (names.generatorType() == ServerGeneratorType.SPRING_BOOT_3) {</span>
+<span class="nc" id="L774">                out.line(&quot;@%s&quot;, out.add(</span>
+<span class="nc" id="L775">                        ConstructorBinding.class.getName().replace(&quot;ConstructorBinding&quot;, &quot;bind.ConstructorBinding&quot;)));</span>
             } else {
-<span class="fc" id="L766">                out.line(&quot;@%s&quot;, ConstructorBinding.class);</span>
+<span class="fc" id="L777">                out.line(&quot;@%s&quot;, ConstructorBinding.class);</span>
             }
         }
-<span class="fc" id="L769">    }</span>
+<span class="fc" id="L780">    }</span>
 
     private static void writeConstructorBody(CodePrintWriter out, Cls cls, Names names, Set&lt;Cls&gt; interfaces,
             boolean additionalPropertiesIsParameter) {
         // validate
-<span class="fc" id="L774">        ifValidate(cls, out, names, //</span>
-<span class="fc" id="L775">                out2 -&gt; cls.fields.stream() //</span>
-<span class="fc bfc" id="L776" title="All 4 branches covered.">                        .filter(x -&gt; !x.isAdditionalProperties() || additionalPropertiesIsParameter) //</span>
-<span class="fc" id="L777">                        .forEach(x -&gt; {</span>
-<span class="fc bfc" id="L778" title="All 2 branches covered.">                            if (!isDiscriminator(interfaces, x)) {</span>
-<span class="fc bfc" id="L779" title="All 4 branches covered.">                                if (x.isOctets() || !x.isPrimitive()) {</span>
-<span class="fc" id="L780">                                    checkNotNull(cls, out2, x);</span>
-                                }
-<span class="fc" id="L782">                                validateMore(out2, cls, x);</span>
-                            }
-<span class="fc" id="L784">                        }));</span>
+<span class="fc" id="L785">        writeConstraintValidations(out, cls, names, interfaces, additionalPropertiesIsParameter, cls.fields);</span>
         // assign
-<span class="fc" id="L786">        cls //</span>
+<span class="fc" id="L787">        cls //</span>
                 .fields //
-<span class="fc" id="L788">                .stream() //</span>
-<span class="fc" id="L789">                .forEach(x -&gt; writeConstructorBodyFieldAssignment(out, cls, interfaces, x,</span>
+<span class="fc" id="L789">                .stream() //</span>
+<span class="fc" id="L790">                .forEach(x -&gt; writeConstructorBodyFieldAssignment(out, cls, interfaces, x,</span>
                         additionalPropertiesIsParameter));
-<span class="fc" id="L791">    }</span>
+<span class="fc" id="L792">    }</span>
+
+    private static void writeConstraintValidations(CodePrintWriter out, Cls cls, Names names, Set&lt;Cls&gt; interfaces,
+            boolean additionalPropertiesIsParameter, List&lt;Field&gt; fields) {
+<span class="fc" id="L796">        ifValidate(cls, out, names, //</span>
+<span class="fc" id="L797">                out2 -&gt; fields.stream() //</span>
+<span class="fc bfc" id="L798" title="All 4 branches covered.">                        .filter(x -&gt; !x.isAdditionalProperties() || additionalPropertiesIsParameter) //</span>
+<span class="fc" id="L799">                        .forEach(x -&gt; {</span>
+<span class="fc bfc" id="L800" title="All 2 branches covered.">                            if (!isDiscriminator(interfaces, x)) {</span>
+<span class="fc bfc" id="L801" title="All 4 branches covered.">                                if (x.isOctets() || !x.isPrimitive()) {</span>
+<span class="fc" id="L802">                                    checkNotNull(cls, out2, x);</span>
+                                }
+<span class="fc" id="L804">                                validateMore(out2, cls, x);</span>
+                            }
+<span class="fc" id="L806">                        }));</span>
+<span class="fc" id="L807">    }</span>
 
     private static void writeConstructorBodyFieldAssignment(CodePrintWriter out, Cls cls, Set&lt;Cls&gt; interfaces, Field x,
             boolean additionalPropertiesIsParameter) {
-<span class="fc bfc" id="L795" title="All 4 branches covered.">        if (x.isAdditionalProperties() &amp;&amp; !additionalPropertiesIsParameter) {</span>
-<span class="fc" id="L796">            out.line(&quot;this.%s = new %s&lt;&gt;();&quot;, x.fieldName(cls), HashMap.class);</span>
-<span class="fc bfc" id="L797" title="All 2 branches covered.">        } else if (x.mapType.isPresent()) {</span>
-<span class="fc bfc" id="L798" title="All 2 branches covered.">            if (x.isArray) {</span>
-<span class="fc" id="L799">                out.line(&quot;this.%s = new %s&lt;&gt;();&quot;, x.fieldName(cls), ArrayList.class);</span>
-<span class="fc bfc" id="L800" title="All 4 branches covered.">            } else if (x.required &amp;&amp; !x.nullable) {</span>
-<span class="fc" id="L801">                out.line(&quot;this.%s = %s.createMapIfNull(%s);&quot;, x.fieldName(cls), Util.class, x.fieldName(cls));</span>
+<span class="fc bfc" id="L811" title="All 4 branches covered.">        if (x.isAdditionalProperties() &amp;&amp; !additionalPropertiesIsParameter) {</span>
+<span class="fc" id="L812">            out.line(&quot;this.%s = new %s&lt;&gt;();&quot;, x.fieldName(cls), HashMap.class);</span>
+<span class="fc bfc" id="L813" title="All 2 branches covered.">        } else if (x.mapType.isPresent()) {</span>
+<span class="fc bfc" id="L814" title="All 2 branches covered.">            if (x.isArray) {</span>
+<span class="fc" id="L815">                out.line(&quot;this.%s = new %s&lt;&gt;();&quot;, x.fieldName(cls), ArrayList.class);</span>
+<span class="fc bfc" id="L816" title="All 4 branches covered.">            } else if (x.required &amp;&amp; !x.nullable) {</span>
+<span class="fc" id="L817">                out.line(&quot;this.%s = %s.createMapIfNull(%s);&quot;, x.fieldName(cls), Util.class, x.fieldName(cls));</span>
             } else {
-<span class="fc" id="L803">                out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc" id="L819">                out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
             }
         } else {
-<span class="fc" id="L806">            Optional&lt;Discriminator&gt; disc = discriminator(interfaces, x);</span>
-<span class="fc bfc" id="L807" title="All 2 branches covered.">            if (disc.isPresent()) {</span>
+<span class="fc" id="L822">            Optional&lt;Discriminator&gt; disc = discriminator(interfaces, x);</span>
+<span class="fc bfc" id="L823" title="All 2 branches covered.">            if (disc.isPresent()) {</span>
                 // write constant value for discriminator, if is enum then
                 // grab it's value using the DiscriminatorHelper
-<span class="fc" id="L810">                out.line(&quot;%s.checkEquals(%s.value(%s.class, \&quot;%s\&quot;), %s, \&quot;%s\&quot;);&quot;, //</span>
+<span class="fc" id="L826">                out.line(&quot;%s.checkEquals(%s.value(%s.class, \&quot;%s\&quot;), %s, \&quot;%s\&quot;);&quot;, //</span>
                         Preconditions.class, //
                         DiscriminatorHelper.class, //
-<span class="fc" id="L813">                        out.add(x.fullClassName), //</span>
-<span class="fc" id="L814">                        disc.get().discriminatorValueFromFullClassName(cls.fullClassName), //</span>
-<span class="fc" id="L815">                        x.fieldName(cls), //</span>
-<span class="fc" id="L816">                        x.fieldName(cls));</span>
-<span class="fc" id="L817">                out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
-<span class="fc bfc" id="L818" title="All 2 branches covered.">            } else if (x.nullable) {</span>
-<span class="fc bfc" id="L819" title="All 2 branches covered.">                if (x.required) {</span>
-<span class="fc" id="L820">                    out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc" id="L829">                        out.add(x.fullClassName), //</span>
+<span class="fc" id="L830">                        disc.get().discriminatorValueFromFullClassName(cls.fullClassName), //</span>
+<span class="fc" id="L831">                        x.fieldName(cls), //</span>
+<span class="fc" id="L832">                        x.fieldName(cls));</span>
+<span class="fc" id="L833">                out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc bfc" id="L834" title="All 2 branches covered.">            } else if (x.nullable) {</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">                if (x.required) {</span>
+<span class="fc" id="L836">                    out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
                 } else {
-<span class="fc" id="L822">                    assignField(out, cls, x);</span>
+<span class="fc" id="L838">                    assignField(out, cls, x);</span>
                 }
-<span class="fc bfc" id="L824" title="All 2 branches covered.">            } else if (!x.isPrimitive()) {</span>
-<span class="fc bfc" id="L825" title="All 2 branches covered.">                if (x.required) {</span>
-<span class="fc" id="L826">                    assignField(out, cls, x);</span>
+<span class="fc bfc" id="L840" title="All 2 branches covered.">            } else if (!x.isPrimitive()) {</span>
+<span class="fc bfc" id="L841" title="All 2 branches covered.">                if (x.required) {</span>
+<span class="fc" id="L842">                    assignField(out, cls, x);</span>
                 } else {
-<span class="fc" id="L828">                    assignOptionalField(out, cls, x);</span>
+<span class="fc" id="L844">                    assignOptionalField(out, cls, x);</span>
                 }
             } else {
-<span class="fc" id="L831">                assignField(out, cls, x);</span>
+<span class="fc" id="L847">                assignField(out, cls, x);</span>
             }
         }
-<span class="fc" id="L834">    }</span>
+<span class="fc" id="L850">    }</span>
 
     private static Set&lt;Cls&gt; interfaces(Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
-<span class="fc" id="L837">        Set&lt;Cls&gt; interfaces = Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
-<span class="fc" id="L838">        return interfaces;</span>
+<span class="fc" id="L853">        return Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
     }
 
     private static void writeBuilder(CodePrintWriter out, Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
-<span class="fc bfc" id="L842" title="All 2 branches covered.">        if (cls.classType == ClassType.ENUM) {</span>
-<span class="fc" id="L843">            return;</span>
+<span class="fc bfc" id="L857" title="All 2 branches covered.">        if (cls.classType == ClassType.ENUM) {</span>
+<span class="fc" id="L858">            return;</span>
         }
-<span class="fc" id="L845">        Set&lt;Cls&gt; interfaces = Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
-<span class="fc" id="L846">        List&lt;BuilderWriter.Field&gt; fields = cls.fields //</span>
-<span class="fc" id="L847">                .stream() //</span>
+<span class="fc" id="L860">        Set&lt;Cls&gt; interfaces = Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
+<span class="fc" id="L861">        List&lt;BuilderWriter.Field&gt; fields = cls.fields //</span>
+<span class="fc" id="L862">                .stream() //</span>
 //                .filter(x -&gt; !isDiscriminator(interfaces, x)) //
-<span class="fc" id="L849">                .map(f -&gt; {</span>
+<span class="fc" id="L864">                .map(f -&gt; {</span>
                     Optional&lt;Function&lt;String, String&gt;&gt; expressionFactory;
-<span class="fc" id="L851">                    Optional&lt;Discriminator&gt; disc = discriminator(interfaces, f);</span>
-<span class="fc bfc" id="L852" title="All 2 branches covered.">                    if (disc.isPresent()) {</span>
+<span class="fc" id="L866">                    Optional&lt;Discriminator&gt; disc = discriminator(interfaces, f);</span>
+<span class="fc bfc" id="L867" title="All 2 branches covered.">                    if (disc.isPresent()) {</span>
                         // write constant value for discriminator, if is enum then
                         // grab it's value using the DiscriminatorHelper
-<span class="fc" id="L855">                        String expression = String.format(&quot;%s.value(%s.class, \&quot;%s\&quot;)&quot;,</span>
-<span class="fc" id="L856">                                out.add(DiscriminatorHelper.class), out.add(f.fullClassName),</span>
-<span class="fc" id="L857">                                disc.get().discriminatorValueFromFullClassName(cls.fullClassName));</span>
-<span class="fc" id="L858">                        expressionFactory = Optional.of(x -&gt; expression);</span>
-<span class="fc" id="L859">                    } else {</span>
-<span class="fc" id="L860">                        expressionFactory = Optional.empty();</span>
+<span class="fc" id="L870">                        String expression = String.format(&quot;%s.value(%s.class, \&quot;%s\&quot;)&quot;,</span>
+<span class="fc" id="L871">                                out.add(DiscriminatorHelper.class), out.add(f.fullClassName),</span>
+<span class="fc" id="L872">                                disc.get().discriminatorValueFromFullClassName(cls.fullClassName));</span>
+<span class="fc" id="L873">                        expressionFactory = Optional.of(x -&gt; expression);</span>
+<span class="fc" id="L874">                    } else {</span>
+<span class="fc" id="L875">                        expressionFactory = Optional.empty();</span>
                     }
-<span class="fc bfc" id="L862" title="All 2 branches covered.">                    boolean required = f.required //</span>
-<span class="fc bfc" id="L863" title="All 10 branches covered.">                            &amp;&amp; !f.isAdditionalProperties() //</span>
+<span class="fc bfc" id="L877" title="All 2 branches covered.">                    boolean required = f.required //</span>
+<span class="fc bfc" id="L878" title="All 10 branches covered.">                            &amp;&amp; !f.isAdditionalProperties() //</span>
                             &amp;&amp; (!f.readOnly || f.nullable) //
                             &amp;&amp; (!f.writeOnly || f.nullable);
-<span class="fc" id="L866">                    return new BuilderWriter.Field(f.fieldName(cls), f.fullClassName, required, //</span>
+<span class="fc" id="L881">                    return new BuilderWriter.Field(f.fieldName(cls), f.fullClassName, required, //</span>
                             f.isArray, //
                             f.mapType, //
                             f.nullable, //
                             expressionFactory);
-<span class="fc" id="L871">                }).collect(Collectors.toList());</span>
-<span class="fc" id="L872">        BuilderWriter.write(out, fields, cls.simpleName());</span>
-<span class="fc" id="L873">    }</span>
+<span class="fc" id="L886">                }).collect(Collectors.toList());</span>
+<span class="fc" id="L887">        BuilderWriter.write(out, fields, cls.simpleName());</span>
+<span class="fc" id="L888">    }</span>
 
     private static void checkNotNull(Cls cls, CodePrintWriter out, Field x) {
-<span class="fc" id="L876">        out.line(&quot;%s.checkNotNull(%s, \&quot;%s\&quot;);&quot;, Preconditions.class, x.fieldName(cls), x.fieldName(cls));</span>
-<span class="fc" id="L877">    }</span>
+<span class="fc" id="L891">        out.line(&quot;%s.checkNotNull(%s, \&quot;%s\&quot;);&quot;, Preconditions.class, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc" id="L892">    }</span>
 
     private static void assignOptionalField(CodePrintWriter out, Cls cls, Field x) {
-<span class="fc" id="L880">        out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
-<span class="fc" id="L881">    }</span>
+<span class="fc" id="L895">        out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc" id="L896">    }</span>
 
     private static boolean isDiscriminator(Set&lt;Cls&gt; interfaces, Field x) {
-<span class="fc" id="L884">        return discriminator(interfaces, x).isPresent();</span>
+<span class="fc" id="L899">        return discriminator(interfaces, x).isPresent();</span>
     }
 
     private static Optional&lt;Discriminator&gt; discriminator(Set&lt;Cls&gt; interfaces, Field x) {
-<span class="fc" id="L888">        return interfaces.stream().filter(y -&gt; x.name.equals(y.discriminator.propertyName)) //</span>
-<span class="fc" id="L889">                .map(y -&gt; y.discriminator).findFirst();</span>
+<span class="fc" id="L903">        return interfaces.stream().filter(y -&gt; y.discriminator.propertyName.equals(x.name)) //</span>
+<span class="fc" id="L904">                .map(y -&gt; y.discriminator).findFirst();</span>
     }
 
     private static void validateMore(CodePrintWriter out, Cls cls, Field x) {
-<span class="fc bfc" id="L893" title="All 2 branches covered.">        if (x.isAdditionalProperties()) {</span>
+<span class="fc bfc" id="L908" title="All 2 branches covered.">        if (x.isAdditionalProperties()) {</span>
             // TODO check values of map
-<span class="fc" id="L895">            return;</span>
+<span class="fc" id="L910">            return;</span>
         }
-<span class="fc" id="L897">        String raw = x.fieldName(cls);</span>
-<span class="pc bpc" id="L898" title="1 of 4 branches missed.">        if (x.minLength.isPresent() &amp;&amp; !x.isDateOrTime()) {</span>
-<span class="fc" id="L899">            out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.minLength.get(), raw);</span>
+<span class="fc" id="L912">        String raw = x.fieldName(cls);</span>
+<span class="pc bpc" id="L913" title="1 of 4 branches missed.">        if (x.minLength.isPresent() &amp;&amp; !x.isDateOrTime()) {</span>
+<span class="fc" id="L914">            out.line(&quot;%s.checkMinLength(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.minLength.get(), raw);</span>
         }
-<span class="pc bpc" id="L901" title="1 of 4 branches missed.">        if (x.maxLength.isPresent() &amp;&amp; !x.isDateOrTime()) {</span>
-<span class="fc" id="L902">            out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.maxLength.get(), raw);</span>
+<span class="pc bpc" id="L916" title="1 of 4 branches missed.">        if (x.maxLength.isPresent() &amp;&amp; !x.isDateOrTime()) {</span>
+<span class="fc" id="L917">            out.line(&quot;%s.checkMaxLength(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.maxLength.get(), raw);</span>
         }
-<span class="pc bpc" id="L904" title="3 of 8 branches missed.">        if (x.pattern.isPresent() &amp;&amp; !x.isDateOrTime() &amp;&amp; !x.isByteArray() &amp;&amp; !x.isOctets()) {</span>
-<span class="fc" id="L905">            out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, Preconditions.class, raw,</span>
-<span class="fc" id="L906">                    WriterUtil.escapePattern(x.pattern.get()), raw);</span>
+<span class="pc bpc" id="L919" title="3 of 8 branches missed.">        if (x.pattern.isPresent() &amp;&amp; !x.isDateOrTime() &amp;&amp; !x.isByteArray() &amp;&amp; !x.isOctets()) {</span>
+<span class="fc" id="L920">            out.line(&quot;%s.checkMatchesPattern(%s, \&quot;%s\&quot;, \&quot;%s\&quot;);&quot;, Preconditions.class, raw,</span>
+<span class="fc" id="L921">                    WriterUtil.escapePattern(x.pattern.get()), raw);</span>
         }
-<span class="fc bfc" id="L908" title="All 4 branches covered.">        if (x.min.isPresent() &amp;&amp; x.isNumber()) {</span>
-<span class="fc" id="L909">            out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, Preconditions.class, raw, x.min.get().toString(), raw,</span>
-<span class="fc" id="L910">                    x.exclusiveMin);</span>
+<span class="fc bfc" id="L923" title="All 4 branches covered.">        if (x.min.isPresent() &amp;&amp; x.isNumber()) {</span>
+<span class="fc" id="L924">            out.line(&quot;%s.checkMinimum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, Preconditions.class, raw, x.min.get().toString(), raw,</span>
+<span class="fc" id="L925">                    x.exclusiveMin);</span>
         }
-<span class="fc bfc" id="L912" title="All 4 branches covered.">        if (x.max.isPresent() &amp;&amp; x.isNumber()) {</span>
-<span class="fc" id="L913">            out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, Preconditions.class, raw, x.max.get().toString(), raw,</span>
-<span class="fc" id="L914">                    x.exclusiveMax);</span>
+<span class="fc bfc" id="L927" title="All 4 branches covered.">        if (x.max.isPresent() &amp;&amp; x.isNumber()) {</span>
+<span class="fc" id="L928">            out.line(&quot;%s.checkMaximum(%s, \&quot;%s\&quot;, \&quot;%s\&quot;, %s);&quot;, Preconditions.class, raw, x.max.get().toString(), raw,</span>
+<span class="fc" id="L929">                    x.exclusiveMax);</span>
         }
-<span class="fc bfc" id="L916" title="All 4 branches covered.">        if (x.isArray &amp;&amp; x.minItems.isPresent()) {</span>
-<span class="fc" id="L917">            out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.minItems.get(), raw);</span>
+<span class="fc bfc" id="L931" title="All 4 branches covered.">        if (x.isArray &amp;&amp; x.minItems.isPresent()) {</span>
+<span class="fc" id="L932">            out.line(&quot;%s.checkMinSize(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.minItems.get(), raw);</span>
         }
-<span class="fc bfc" id="L919" title="All 4 branches covered.">        if (x.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
-<span class="fc" id="L920">            out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.maxItems.get(), raw);</span>
+<span class="fc bfc" id="L934" title="All 4 branches covered.">        if (x.isArray &amp;&amp; x.maxItems.isPresent()) {</span>
+<span class="fc" id="L935">            out.line(&quot;%s.checkMaxSize(%s, %s, \&quot;%s\&quot;);&quot;, Preconditions.class, raw, x.maxItems.get(), raw);</span>
         }
-<span class="fc" id="L922">    }</span>
+<span class="fc" id="L937">    }</span>
 
     private static void writeEqualsMethod(CodePrintWriter out, Cls cls) {
-<span class="fc" id="L925">        addOverrideAnnotation(out);</span>
-<span class="fc" id="L926">        out.line(&quot;public boolean equals(%s o) {&quot;, Object.class);</span>
-<span class="fc" id="L927">        out.line(&quot;if (this == o) {&quot;);</span>
-<span class="fc" id="L928">        out.line(&quot;return true;&quot;);</span>
-<span class="fc" id="L929">        out.closeParen();</span>
-<span class="fc" id="L930">        out.line(&quot;if (o == null || getClass() != o.getClass()) {&quot;);</span>
-<span class="fc" id="L931">        out.line(&quot;return false;&quot;);</span>
-<span class="fc" id="L932">        out.closeParen();</span>
-<span class="fc" id="L933">        out.right();</span>
-<span class="fc" id="L934">        String s = cls.fields.stream() //</span>
-<span class="fc" id="L935">                .map(x -&gt; String.format(&quot;\n%s%s.deepEquals(this.%s, other.%s)&quot;, out.indent(), out.add(Objects.class),</span>
-<span class="fc" id="L936">                        x.fieldName(cls), x.fieldName(cls)))</span>
-<span class="fc" id="L937">                .distinct().collect(Collectors.joining(&quot; &amp;&amp; &quot;));</span>
-<span class="fc" id="L938">        out.left();</span>
-<span class="pc bpc" id="L939" title="1 of 2 branches missed.">        if (!s.isEmpty()) {</span>
-<span class="fc" id="L940">            out.line(&quot;%s other = (%s) o;&quot;, cls.simpleName(), cls.simpleName());</span>
+<span class="fc" id="L940">        addOverrideAnnotation(out);</span>
+<span class="fc" id="L941">        out.line(&quot;public boolean equals(%s o) {&quot;, Object.class);</span>
+<span class="fc" id="L942">        out.line(&quot;if (this == o) {&quot;);</span>
+<span class="fc" id="L943">        out.line(&quot;return true;&quot;);</span>
+<span class="fc" id="L944">        out.closeParen();</span>
+<span class="fc" id="L945">        out.line(&quot;if (o == null || getClass() != o.getClass()) {&quot;);</span>
+<span class="fc" id="L946">        out.line(&quot;return false;&quot;);</span>
+<span class="fc" id="L947">        out.closeParen();</span>
+<span class="fc" id="L948">        out.right();</span>
+<span class="fc" id="L949">        String s = cls.fields.stream() //</span>
+<span class="fc" id="L950">                .map(x -&gt; String.format(&quot;\n%s%s.deepEquals(this.%s, other.%s)&quot;, out.indent(), out.add(Objects.class),</span>
+<span class="fc" id="L951">                        x.fieldName(cls), x.fieldName(cls)))</span>
+<span class="fc" id="L952">                .distinct().collect(Collectors.joining(&quot; &amp;&amp; &quot;));</span>
+<span class="fc" id="L953">        out.left();</span>
+<span class="pc bpc" id="L954" title="1 of 2 branches missed.">        if (!s.isEmpty()) {</span>
+<span class="fc" id="L955">            out.line(&quot;%s other = (%s) o;&quot;, cls.simpleName(), cls.simpleName());</span>
         }
-<span class="pc bpc" id="L942" title="1 of 2 branches missed.">        out.line(&quot;return %s;&quot;, s.isEmpty() ? &quot;true&quot; : s);</span>
-<span class="fc" id="L943">        out.closeParen();</span>
-<span class="fc" id="L944">    }</span>
+<span class="pc bpc" id="L957" title="1 of 2 branches missed.">        out.line(&quot;return %s;&quot;, s.isEmpty() ? &quot;true&quot; : s);</span>
+<span class="fc" id="L958">        out.closeParen();</span>
+<span class="fc" id="L959">    }</span>
 
     private static void writeHashCodeMethod(CodePrintWriter out, Cls cls) {
         final String s;
-<span class="fc bfc" id="L948" title="All 2 branches covered.">        if (cls.fields.size() &lt;= 3) {</span>
-<span class="fc" id="L949">            s = cls.fields.stream().map(x -&gt; x.fieldName(cls)).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc bfc" id="L963" title="All 2 branches covered.">        if (cls.fields.size() &lt;= 3) {</span>
+<span class="fc" id="L964">            s = cls.fields.stream().map(x -&gt; x.fieldName(cls)).collect(Collectors.joining(&quot;, &quot;));</span>
         } else {
-<span class="fc" id="L951">            out.right().right().right();</span>
-<span class="fc" id="L952">            s = cls.fields.stream().map(x -&gt; String.format(&quot;\n%s%s&quot;, out.indent(), x.fieldName(cls)))</span>
-<span class="fc" id="L953">                    .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L954">            out.left().left().left();</span>
+<span class="fc" id="L966">            out.right().right().right();</span>
+<span class="fc" id="L967">            s = cls.fields.stream().map(x -&gt; String.format(&quot;\n%s%s&quot;, out.indent(), x.fieldName(cls)))</span>
+<span class="fc" id="L968">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L969">            out.left().left().left();</span>
         }
-<span class="fc" id="L956">        addOverrideAnnotation(out);</span>
-<span class="fc" id="L957">        out.line(&quot;public int hashCode() {&quot;);</span>
-<span class="fc" id="L958">        out.line(&quot;return %s.hash(%s);&quot;, Objects.class, s);</span>
-<span class="fc" id="L959">        out.closeParen();</span>
-<span class="fc" id="L960">    }</span>
+<span class="fc" id="L971">        addOverrideAnnotation(out);</span>
+<span class="fc" id="L972">        out.line(&quot;public int hashCode() {&quot;);</span>
+<span class="fc" id="L973">        out.line(&quot;return %s.hash(%s);&quot;, Objects.class, s);</span>
+<span class="fc" id="L974">        out.closeParen();</span>
+<span class="fc" id="L975">    }</span>
 
     private static void writeToStringMethod(CodePrintWriter out, Cls cls) {
         final String s;
-<span class="fc bfc" id="L964" title="All 2 branches covered.">        if (cls.fields.size() &gt; 3) {</span>
-<span class="fc" id="L965">            out.right().right().right();</span>
-<span class="fc" id="L966">            s = cls.fields.stream()</span>
-<span class="fc" id="L967">                    .map(x -&gt; String.format(&quot;,\n%s\&quot;%s\&quot;, %s&quot;, out.indent(), x.fieldName(cls), x.fieldName(cls)))</span>
-<span class="fc" id="L968">                    .collect(Collectors.joining());</span>
-<span class="fc" id="L969">            out.left().left().left();</span>
+<span class="fc bfc" id="L979" title="All 2 branches covered.">        if (cls.fields.size() &gt; 3) {</span>
+<span class="fc" id="L980">            out.right().right().right();</span>
+<span class="fc" id="L981">            s = cls.fields.stream()</span>
+<span class="fc" id="L982">                    .map(x -&gt; String.format(&quot;,\n%s\&quot;%s\&quot;, %s&quot;, out.indent(), x.fieldName(cls), x.fieldName(cls)))</span>
+<span class="fc" id="L983">                    .collect(Collectors.joining());</span>
+<span class="fc" id="L984">            out.left().left().left();</span>
         } else {
-<span class="fc" id="L971">            s = cls.fields.stream().map(x -&gt; String.format(&quot;, \&quot;%s\&quot;, %s&quot;, x.fieldName(cls), x.fieldName(cls)))</span>
-<span class="fc" id="L972">                    .collect(Collectors.joining(&quot;&quot;));</span>
+<span class="fc" id="L986">            s = cls.fields.stream().map(x -&gt; String.format(&quot;, \&quot;%s\&quot;, %s&quot;, x.fieldName(cls), x.fieldName(cls)))</span>
+<span class="fc" id="L987">                    .collect(Collectors.joining(&quot;&quot;));</span>
         }
-<span class="fc" id="L974">        addOverrideAnnotation(out);</span>
-<span class="fc" id="L975">        out.line(&quot;public %s toString() {&quot;, String.class);</span>
-<span class="fc" id="L976">        out.line(&quot;return %s.toString(%s.class%s);&quot;, Util.class, cls.simpleName(), s);</span>
-<span class="fc" id="L977">        out.closeParen();</span>
-<span class="fc" id="L978">    }</span>
+<span class="fc" id="L989">        addOverrideAnnotation(out);</span>
+<span class="fc" id="L990">        out.line(&quot;public %s toString() {&quot;, String.class);</span>
+<span class="fc" id="L991">        out.line(&quot;return %s.toString(%s.class%s);&quot;, Util.class, cls.simpleName(), s);</span>
+<span class="fc" id="L992">        out.closeParen();</span>
+<span class="fc" id="L993">    }</span>
 
     private static void ifValidate(Cls cls, CodePrintWriter out, Names names, Consumer&lt;CodePrintWriter&gt; consumer) {
-<span class="fc" id="L981">        CodePrintWriter b = CodePrintWriter.create(out);</span>
-<span class="fc" id="L982">        out.right();</span>
-<span class="fc" id="L983">        consumer.accept(b);</span>
-<span class="fc" id="L984">        out.left();</span>
-<span class="fc" id="L985">        b.close();</span>
-<span class="fc" id="L986">        String text = b.text();</span>
-<span class="fc bfc" id="L987" title="All 2 branches covered.">        if (!text.isEmpty()) {</span>
-<span class="fc" id="L988">            out.line(&quot;if (%s.config().validateInConstructor().test(%s.class)) {&quot;, out.add(names.globalsFullClassName()),</span>
-<span class="fc" id="L989">                    cls.simpleName());</span>
-<span class="fc" id="L990">            out.left();</span>
-<span class="fc" id="L991">            out.print(text);</span>
-<span class="fc" id="L992">            out.line(&quot;}&quot;);</span>
+<span class="fc" id="L996">        CodePrintWriter b = CodePrintWriter.create(out);</span>
+<span class="fc" id="L997">        out.right();</span>
+<span class="fc" id="L998">        consumer.accept(b);</span>
+<span class="fc" id="L999">        out.left();</span>
+<span class="fc" id="L1000">        b.close();</span>
+<span class="fc" id="L1001">        String text = b.text();</span>
+<span class="fc bfc" id="L1002" title="All 2 branches covered.">        if (!text.isEmpty()) {</span>
+<span class="fc" id="L1003">            out.line(&quot;if (%s.config().validateInConstructor().test(%s.class)) {&quot;, out.add(names.globalsFullClassName()),</span>
+<span class="fc" id="L1004">                    cls.simpleName());</span>
+<span class="fc" id="L1005">            out.left();</span>
+<span class="fc" id="L1006">            out.print(text);</span>
+<span class="fc" id="L1007">            out.line(&quot;}&quot;);</span>
         }
-<span class="fc" id="L994">    }</span>
+<span class="fc" id="L1009">    }</span>
 
     private static void assignField(CodePrintWriter out, Cls cls, Field x) {
-<span class="fc" id="L997">        out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
-<span class="fc" id="L998">    }</span>
+<span class="fc" id="L1012">        out.line(&quot;this.%s = %s;&quot;, x.fieldName(cls), x.fieldName(cls));</span>
+<span class="fc" id="L1013">    }</span>
 
     private static void writeGetters(CodePrintWriter out, Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
-<span class="fc" id="L1001">        Set&lt;Cls&gt; interfaces = Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
-<span class="fc" id="L1002">        cls.fields.forEach(f -&gt; {</span>
-<span class="fc" id="L1003">            out.println();</span>
-<span class="fc" id="L1004">            Optional&lt;Discriminator&gt; disc = discriminator(interfaces, f);</span>
-<span class="fc bfc" id="L1005" title="All 2 branches covered.">            if (disc.isPresent()) {</span>
+<span class="fc" id="L1016">        Set&lt;Cls&gt; interfaces = Util.orElse(fullClassNameInterfaces.get(cls.fullClassName), Collections.emptySet());</span>
+<span class="fc" id="L1017">        cls.fields.forEach(f -&gt; {</span>
+<span class="fc" id="L1018">            out.println();</span>
+<span class="fc" id="L1019">            Optional&lt;Discriminator&gt; disc = discriminator(interfaces, f);</span>
+<span class="fc bfc" id="L1020" title="All 2 branches covered.">            if (disc.isPresent()) {</span>
                 // write constant value for discriminator, if is enum then
                 // grab it's value using the DiscriminatorHelper
-<span class="fc" id="L1008">                String value = discriminatorHelperExpression(out, f.fieldName(cls));</span>
-<span class="fc" id="L1009">                addOverrideAnnotation(out);</span>
-<span class="fc" id="L1010">                writeGetter(out, out.add(String.class), f.fieldName(cls), value);</span>
-<span class="fc bfc" id="L1011" title="All 2 branches covered.">            } else if (f.mapType.isPresent()) {</span>
-<span class="fc bfc" id="L1012" title="All 4 branches covered.">                if (!f.isArray &amp;&amp; f.isAdditionalProperties()) {</span>
-<span class="fc" id="L1013">                    writeJsonAnySetter(out, cls, f);</span>
+<span class="fc" id="L1023">                String value = discriminatorHelperExpression(out, f.fieldName(cls));</span>
+<span class="fc" id="L1024">                addOverrideAnnotation(out);</span>
+<span class="fc" id="L1025">                writeGetter(out, out.add(String.class), f.fieldName(cls), value);</span>
+<span class="fc bfc" id="L1026" title="All 2 branches covered.">            } else if (f.mapType.isPresent()) {</span>
+<span class="fc bfc" id="L1027" title="All 4 branches covered.">                if (!f.isArray &amp;&amp; f.isAdditionalProperties()) {</span>
+<span class="fc" id="L1028">                    writeJsonAnySetter(out, cls, f);</span>
                 }
-<span class="fc" id="L1015">                final String expression = f.fieldName(cls);</span>
-<span class="fc" id="L1016">                writeGetter(out, f.resolvedTypeMapPublic(out.imports()), f.fieldName(cls), expression);</span>
-<span class="fc" id="L1017">            } else {</span>
-<span class="fc" id="L1018">                final String value = f.fieldName(cls);</span>
+<span class="fc" id="L1030">                final String expression = f.fieldName(cls);</span>
+<span class="fc" id="L1031">                writeGetter(out, f.resolvedTypeMapPublic(out.imports()), f.fieldName(cls), expression);</span>
+<span class="fc" id="L1032">            } else {</span>
+<span class="fc" id="L1033">                final String value = f.fieldName(cls);</span>
                 final String returnType;
-<span class="fc bfc" id="L1020" title="All 4 branches covered.">                if (cls.classType == ClassType.ENUM &amp;&amp; f.fullClassName.equals(Map.class.getCanonicalName())) {</span>
-<span class="fc" id="L1021">                    returnType = String.format(&quot;%s&lt;%s, %s&gt;&quot;, out.add(Map.class), out.add(String.class),</span>
-<span class="fc" id="L1022">                            out.add(Object.class));</span>
+<span class="fc bfc" id="L1035" title="All 4 branches covered.">                if (cls.classType == ClassType.ENUM &amp;&amp; f.fullClassName.equals(Map.class.getCanonicalName())) {</span>
+<span class="fc" id="L1036">                    returnType = String.format(&quot;%s&lt;%s, %s&gt;&quot;, out.add(Map.class), out.add(String.class),</span>
+<span class="fc" id="L1037">                            out.add(Object.class));</span>
                 } else {
-<span class="fc" id="L1024">                    returnType = f.resolvedTypePublicConstructor(out.imports());</span>
+<span class="fc" id="L1039">                    returnType = f.resolvedTypePublicConstructor(out.imports());</span>
                 }
-<span class="fc" id="L1026">                writeGetter(out, returnType, f.fieldName(cls), value);</span>
+<span class="fc" id="L1041">                writeGetter(out, returnType, f.fieldName(cls), value);</span>
             }
-<span class="fc" id="L1028">        });</span>
+<span class="fc" id="L1043">        });</span>
 
-<span class="fc" id="L1030">    }</span>
+<span class="fc" id="L1045">    }</span>
 
     private static String discriminatorHelperExpression(CodePrintWriter out, String fieldExpression) {
-<span class="fc" id="L1033">        return String.format(&quot;%s.value(%s)&quot;, out.add(DiscriminatorHelper.class), fieldExpression);</span>
+<span class="fc" id="L1048">        return String.format(&quot;%s.value(%s)&quot;, out.add(DiscriminatorHelper.class), fieldExpression);</span>
     }
 
     private static void writePropertiesMapGetter(CodePrintWriter out, Cls cls) {
-<span class="pc bpc" id="L1037" title="1 of 4 branches missed.">        if (cls.fields.isEmpty() || cls.classType == ClassType.ENUM) {</span>
-<span class="fc" id="L1038">            return;</span>
+<span class="pc bpc" id="L1052" title="1 of 4 branches missed.">        if (cls.fields.isEmpty() || cls.classType == ClassType.ENUM) {</span>
+<span class="fc" id="L1053">            return;</span>
         }
-<span class="fc" id="L1040">        Indent indent = out.indent().copy().right().right().right();</span>
-<span class="fc" id="L1041">        String puts = cls.fields.stream().map(f -&gt; String.format(&quot;\n%s.put(\&quot;%s\&quot;, (%s) %s)&quot;, indent, f.name,</span>
-<span class="fc" id="L1042">                out.add(Object.class), cls.fieldName(f))).collect(Collectors.joining());</span>
-<span class="fc" id="L1043">        out.println();</span>
-<span class="fc" id="L1044">        out.line(&quot;%s&lt;%s, %s&gt; _internal_properties() {&quot;, Map.class, String.class, Object.class);</span>
-<span class="fc" id="L1045">        out.line(&quot;return %s%s\n%s.build();&quot;, Maps.class, puts, indent);</span>
-<span class="fc" id="L1046">        out.closeParen();</span>
-<span class="fc" id="L1047">    }</span>
+<span class="fc" id="L1055">        Indent indent = out.indent().copy().right().right().right();</span>
+<span class="fc" id="L1056">        String puts = cls.fields.stream().map(f -&gt; String.format(&quot;\n%s.put(\&quot;%s\&quot;, (%s) %s)&quot;, indent, f.name,</span>
+<span class="fc" id="L1057">                out.add(Object.class), cls.fieldName(f))).collect(Collectors.joining());</span>
+<span class="fc" id="L1058">        out.println();</span>
+<span class="fc" id="L1059">        out.line(&quot;%s&lt;%s, %s&gt; _internal_properties() {&quot;, Map.class, String.class, Object.class);</span>
+<span class="fc" id="L1060">        out.line(&quot;return %s%s\n%s.build();&quot;, Maps.class, puts, indent);</span>
+<span class="fc" id="L1061">        out.closeParen();</span>
+<span class="fc" id="L1062">    }</span>
 
     private static void writeMutators(CodePrintWriter out, Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces) {
-<span class="fc" id="L1050">        List&lt;Field&gt; fields = cls.fields //</span>
-<span class="fc" id="L1051">                .stream() //</span>
-<span class="fc" id="L1052">                .collect(Collectors.toList());</span>
-<span class="fc bfc" id="L1053" title="All 2 branches covered.">        if (fields.size() &lt;= 1) {</span>
-<span class="fc" id="L1054">            return;</span>
+<span class="fc" id="L1065">        List&lt;Field&gt; fields = cls.fields //</span>
+<span class="fc" id="L1066">                .stream() //</span>
+<span class="fc" id="L1067">                .collect(Collectors.toList());</span>
+<span class="fc bfc" id="L1068" title="All 2 branches covered.">        if (fields.size() &lt;= 1) {</span>
+<span class="fc" id="L1069">            return;</span>
         }
-<span class="fc" id="L1056">        fields //</span>
-<span class="fc" id="L1057">                .stream() //</span>
+<span class="fc" id="L1071">        fields //</span>
+<span class="fc" id="L1072">                .stream() //</span>
                 // ignore discriminators that should be constants so don't need a mutator
-<span class="fc bfc" id="L1059" title="All 2 branches covered.">                .filter(x -&gt; !isDiscriminator(interfaces(cls, fullClassNameInterfaces), x)) //</span>
-<span class="fc" id="L1060">                .forEach(x -&gt; {</span>
-<span class="fc bfc" id="L1061" title="All 2 branches covered.">                    String t = x.mapType.isPresent() ? x.resolvedTypeMapPublic(out.imports())</span>
-<span class="fc" id="L1062">                            : x.resolvedTypePublicConstructor(out.imports());</span>
-<span class="fc" id="L1063">                    out.println();</span>
-<span class="fc" id="L1064">                    out.line(&quot;public %s with%s(%s %s) {&quot;, cls.simpleName(), Names.upperFirst(x.fieldName(cls)), t,</span>
-<span class="fc" id="L1065">                            x.fieldName(cls));</span>
+<span class="fc bfc" id="L1074" title="All 2 branches covered.">                .filter(x -&gt; !isDiscriminator(interfaces(cls, fullClassNameInterfaces), x)) //</span>
+<span class="fc" id="L1075">                .forEach(x -&gt; {</span>
+<span class="fc bfc" id="L1076" title="All 2 branches covered.">                    String t = x.mapType.isPresent() ? x.resolvedTypeMapPublic(out.imports())</span>
+<span class="fc" id="L1077">                            : x.resolvedTypePublicConstructor(out.imports());</span>
+<span class="fc" id="L1078">                    out.println();</span>
+<span class="fc" id="L1079">                    out.line(&quot;public %s with%s(%s %s) {&quot;, cls.simpleName(), Names.upperFirst(x.fieldName(cls)), t,</span>
+<span class="fc" id="L1080">                            x.fieldName(cls));</span>
                     {
-<span class="fc" id="L1067">                        String params = fields.stream() //</span>
-<span class="fc" id="L1068">                                .map(y -&gt; y.fieldName(cls)) //</span>
-<span class="fc" id="L1069">                                .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L1070">                        out.line(&quot;return new %s(%s);&quot;, cls.simpleName(), params);</span>
-<span class="fc" id="L1071">                        out.closeParen();</span>
+<span class="fc" id="L1082">                        String params = fields.stream() //</span>
+<span class="fc" id="L1083">                                .map(y -&gt; y.fieldName(cls)) //</span>
+<span class="fc" id="L1084">                                .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L1085">                        out.line(&quot;return new %s(%s);&quot;, cls.simpleName(), params);</span>
+<span class="fc" id="L1086">                        out.closeParen();</span>
                     }
-<span class="fc bfc" id="L1073" title="All 2 branches covered.">                    if (!x.mapType.isPresent()) {</span>
-<span class="fc" id="L1074">                        Optional&lt;String&gt; tNonOptional = x.resolvedTypePublicConstructorNonOptional(out.imports());</span>
-<span class="pc bpc" id="L1075" title="1 of 4 branches missed.">                        if (tNonOptional.isPresent() &amp;&amp; !tNonOptional.get().equals(t)) {</span>
-<span class="fc" id="L1076">                            out.println();</span>
-<span class="fc" id="L1077">                            out.line(&quot;public %s with%s(%s %s) {&quot;, cls.simpleName(), Names.upperFirst(x.fieldName(cls)),</span>
-<span class="fc" id="L1078">                                    tNonOptional.get(), x.fieldName(cls));</span>
-<span class="fc" id="L1079">                            String params = fields.stream() //</span>
-<span class="fc" id="L1080">                                    .map(y -&gt; {</span>
-<span class="fc bfc" id="L1081" title="All 2 branches covered.">                                        if (y.fieldName(cls).equals(x.fieldName(cls))) {</span>
-<span class="fc bfc" id="L1082" title="All 4 branches covered.">                                            if (y.nullable &amp;&amp; !y.required) {</span>
-<span class="fc" id="L1083">                                                return String.format(&quot;%s.of(%s)&quot;, out.add(JsonNullable.class),</span>
-<span class="fc" id="L1084">                                                        y.fieldName(cls));</span>
+<span class="fc bfc" id="L1088" title="All 2 branches covered.">                    if (!x.mapType.isPresent()) {</span>
+<span class="fc" id="L1089">                        Optional&lt;String&gt; tNonOptional = x.resolvedTypePublicConstructorNonOptional(out.imports());</span>
+<span class="pc bpc" id="L1090" title="1 of 4 branches missed.">                        if (tNonOptional.isPresent() &amp;&amp; !tNonOptional.get().equals(t)) {</span>
+<span class="fc" id="L1091">                            out.println();</span>
+<span class="fc" id="L1092">                            out.line(&quot;public %s with%s(%s %s) {&quot;, cls.simpleName(), Names.upperFirst(x.fieldName(cls)),</span>
+<span class="fc" id="L1093">                                    tNonOptional.get(), x.fieldName(cls));</span>
+<span class="fc" id="L1094">                            String params = fields.stream() //</span>
+<span class="fc" id="L1095">                                    .map(y -&gt; {</span>
+<span class="fc bfc" id="L1096" title="All 2 branches covered.">                                        if (y.fieldName(cls).equals(x.fieldName(cls))) {</span>
+<span class="fc bfc" id="L1097" title="All 4 branches covered.">                                            if (y.nullable &amp;&amp; !y.required) {</span>
+<span class="fc" id="L1098">                                                return String.format(&quot;%s.of(%s)&quot;, out.add(JsonNullable.class),</span>
+<span class="fc" id="L1099">                                                        y.fieldName(cls));</span>
                                             } else {
-<span class="fc" id="L1086">                                                return String.format(&quot;%s.of(%s)&quot;, out.add(Optional.class),</span>
-<span class="fc" id="L1087">                                                        y.fieldName(cls));</span>
+<span class="fc" id="L1101">                                                return String.format(&quot;%s.of(%s)&quot;, out.add(Optional.class),</span>
+<span class="fc" id="L1102">                                                        y.fieldName(cls));</span>
                                             }
                                         } else {
-<span class="fc" id="L1090">                                            return y.fieldName(cls);</span>
+<span class="fc" id="L1105">                                            return y.fieldName(cls);</span>
                                         }
-<span class="fc" id="L1092">                                    }).collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L1093">                            out.line(&quot;return new %s(%s);&quot;, cls.simpleName(), params);</span>
-<span class="fc" id="L1094">                            out.closeParen();</span>
+<span class="fc" id="L1107">                                    }).collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L1108">                            out.line(&quot;return new %s(%s);&quot;, cls.simpleName(), params);</span>
+<span class="fc" id="L1109">                            out.closeParen();</span>
                         }
                     }
-<span class="fc" id="L1097">                });</span>
-<span class="fc" id="L1098">    }</span>
+<span class="fc" id="L1112">                });</span>
+<span class="fc" id="L1113">    }</span>
 
     private static void writeJsonAnySetter(CodePrintWriter out, Cls cls, Field f) {
-<span class="fc" id="L1101">        out.println();</span>
-<span class="fc" id="L1102">        out.line(&quot;@%s&quot;, JsonAnySetter.class);</span>
-<span class="fc bfc" id="L1103" title="All 2 branches covered.">        if (f.nullable) {</span>
-<span class="fc" id="L1104">            out.line(&quot;private void put(%s key, %s&lt;%s&gt; value) {&quot;, String.class, JsonNullable.class,</span>
-<span class="fc" id="L1105">                    out.add(f.fullClassName));</span>
+<span class="fc" id="L1116">        out.println();</span>
+<span class="fc" id="L1117">        out.line(&quot;@%s&quot;, JsonAnySetter.class);</span>
+<span class="fc bfc" id="L1118" title="All 2 branches covered.">        if (f.nullable) {</span>
+<span class="fc" id="L1119">            out.line(&quot;private void put(%s key, %s&lt;%s&gt; value) {&quot;, String.class, JsonNullable.class,</span>
+<span class="fc" id="L1120">                    out.add(f.fullClassName));</span>
         } else {
-<span class="fc" id="L1107">            out.line(&quot;private void put(%s key, %s value) {&quot;, String.class, out.add(f.fullClassName));</span>
+<span class="fc" id="L1122">            out.line(&quot;private void put(%s key, %s value) {&quot;, String.class, out.add(f.fullClassName));</span>
         }
-<span class="fc" id="L1109">        out.line(&quot;this.%s.put(key, value);&quot;, f.fieldName(cls));</span>
-<span class="fc" id="L1110">        out.closeParen();</span>
-<span class="fc" id="L1111">    }</span>
+<span class="fc" id="L1124">        out.line(&quot;this.%s.put(key, value);&quot;, f.fieldName(cls));</span>
+<span class="fc" id="L1125">        out.closeParen();</span>
+<span class="fc" id="L1126">    }</span>
 
     private static void writeGetter(CodePrintWriter out, String returnImportedType, String fieldName, String value) {
-<span class="fc" id="L1114">        out.line(&quot;public %s %s() {&quot;, returnImportedType, fieldName);</span>
-<span class="fc" id="L1115">        out.line(&quot;return %s;&quot;, value);</span>
-<span class="fc" id="L1116">        out.closeParen();</span>
-<span class="fc" id="L1117">    }</span>
+<span class="fc" id="L1129">        out.line(&quot;public %s %s() {&quot;, returnImportedType, fieldName);</span>
+<span class="fc" id="L1130">        out.line(&quot;return %s;&quot;, value);</span>
+<span class="fc" id="L1131">        out.closeParen();</span>
+<span class="fc" id="L1132">    }</span>
 
     private static void writeMemberClasses(CodePrintWriter out, Cls cls, Map&lt;String, Set&lt;Cls&gt;&gt; fullClassNameInterfaces,
             Names names) {
-<span class="fc" id="L1121">        cls.classes.forEach(c -&gt; writeClass(out, c, fullClassNameInterfaces, names));</span>
-<span class="fc" id="L1122">    }</span>
+<span class="fc" id="L1136">        cls.classes.forEach(c -&gt; writeClass(out, c, fullClassNameInterfaces, names));</span>
+<span class="fc" id="L1137">    }</span>
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

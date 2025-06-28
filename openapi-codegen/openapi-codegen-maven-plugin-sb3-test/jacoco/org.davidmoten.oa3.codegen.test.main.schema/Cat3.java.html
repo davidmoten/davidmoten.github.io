@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Cat3.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb3-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.main.schema</a> &gt; <span class="el_source">Cat3.java</span></div><h1>Cat3.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.main.schema;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.davidmoten.guavamini.Maps;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Boolean;
+import java.lang.Long;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.lang.SuppressWarnings;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.runtime.PolymorphicDeserializer;
+import org.davidmoten.oa3.codegen.runtime.PolymorphicType;
+import org.davidmoten.oa3.codegen.runtime.Preconditions;
+import org.davidmoten.oa3.codegen.test.main.Globals;
+import org.davidmoten.oa3.codegen.util.Util;
+
+@JsonDeserialize(using = Cat3._Deserializer.class)
+@JsonInclude(Include.NON_ABSENT)
+@JsonAutoDetect(
+        fieldVisibility = JsonAutoDetect.Visibility.ANY,
+        creatorVisibility = JsonAutoDetect.Visibility.ANY,
+        setterVisibility = JsonAutoDetect.Visibility.ANY)
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public final class Cat3 {
+
+    @JsonUnwrapped
+    private final Pet3 pet3;
+
+    @JsonUnwrapped
+    private final Detail detail;
+
+    public Cat3(
+            Pet3 pet3,
+<span class="nc" id="L47">            Detail detail) {</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (Globals.config().validateInConstructor().test(Cat3.class)) {</span>
+<span class="nc" id="L49">            Preconditions.checkNotNull(pet3, &quot;pet3&quot;);</span>
+<span class="nc" id="L50">            Preconditions.checkNotNull(detail, &quot;detail&quot;);</span>
+        }
+<span class="nc" id="L52">        this.pet3 = pet3;</span>
+<span class="nc" id="L53">        this.detail = detail;</span>
+<span class="nc" id="L54">    }</span>
+
+    public Pet3 asPet3() {
+<span class="nc" id="L57">        return pet3;</span>
+    }
+
+    public Detail asDetail() {
+<span class="nc" id="L61">        return detail;</span>
+    }
+
+    public String petType() {
+<span class="nc" id="L65">        return pet3.petType();</span>
+    }
+
+    public Optional&lt;Boolean&gt; hunts() {
+<span class="nc" id="L69">        return detail.hunts();</span>
+    }
+
+    public Optional&lt;Long&gt; age() {
+<span class="nc" id="L73">        return detail.age();</span>
+    }
+
+    public static Builder builder() {
+<span class="nc" id="L77">        return new Builder();</span>
+    }
+
+    public static final class Builder {
+
+        private Pet3 pet3;
+        private Detail detail;
+
+<span class="nc" id="L85">        Builder() {</span>
+<span class="nc" id="L86">        }</span>
+
+        public BuilderWithPet3 pet3(Pet3 pet3) {
+<span class="nc" id="L89">            this.pet3 = pet3;</span>
+<span class="nc" id="L90">            return new BuilderWithPet3(this);</span>
+        }
+    }
+
+    public static final class BuilderWithPet3 {
+
+        private final Builder b;
+
+<span class="nc" id="L98">        BuilderWithPet3(Builder b) {</span>
+<span class="nc" id="L99">            this.b = b;</span>
+<span class="nc" id="L100">        }</span>
+
+        public BuilderWithDetail detail(Detail detail) {
+<span class="nc" id="L103">            this.b.detail = detail;</span>
+<span class="nc" id="L104">            return new BuilderWithDetail(this.b);</span>
+        }
+    }
+
+    public static final class BuilderWithDetail {
+
+        private final Builder b;
+
+<span class="nc" id="L112">        BuilderWithDetail(Builder b) {</span>
+<span class="nc" id="L113">            this.b = b;</span>
+<span class="nc" id="L114">        }</span>
+
+        public Cat3 build() {
+<span class="nc" id="L117">            return new Cat3(this.b.pet3, this.b.detail);</span>
+        }
+    }
+
+    public static BuilderWithPet3 pet3(Pet3 pet3) {
+<span class="nc" id="L122">        return builder().pet3(pet3);</span>
+    }
+
+    @SuppressWarnings(&quot;serial&quot;)
+    public static final class _Deserializer extends PolymorphicDeserializer&lt;Cat3&gt; {
+
+        public _Deserializer() {
+<span class="nc" id="L129">            super(Globals.config(), PolymorphicType.ALL_OF, Cat3.class, Pet3.class, Detail.class);</span>
+<span class="nc" id="L130">        }</span>
+    }
+
+    @JsonInclude(Include.NON_ABSENT)
+    @JsonAutoDetect(
+            fieldVisibility = JsonAutoDetect.Visibility.ANY,
+            creatorVisibility = JsonAutoDetect.Visibility.ANY,
+            setterVisibility = JsonAutoDetect.Visibility.ANY)
+    public static final class Detail {
+
+        @JsonProperty(&quot;hunts&quot;)
+        private final Optional&lt;Boolean&gt; hunts;
+
+        @JsonProperty(&quot;age&quot;)
+        private final Optional&lt;Long&gt; age;
+
+        @JsonCreator
+        public Detail(
+                @JsonProperty(&quot;hunts&quot;) Optional&lt;Boolean&gt; hunts,
+<span class="nc" id="L149">                @JsonProperty(&quot;age&quot;) Optional&lt;Long&gt; age) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (Globals.config().validateInConstructor().test(Detail.class)) {</span>
+<span class="nc" id="L151">                Preconditions.checkNotNull(hunts, &quot;hunts&quot;);</span>
+<span class="nc" id="L152">                Preconditions.checkNotNull(age, &quot;age&quot;);</span>
+            }
+<span class="nc" id="L154">            this.hunts = hunts;</span>
+<span class="nc" id="L155">            this.age = age;</span>
+<span class="nc" id="L156">        }</span>
+
+        public Optional&lt;Boolean&gt; hunts() {
+<span class="nc" id="L159">            return hunts;</span>
+        }
+
+        public Optional&lt;Long&gt; age() {
+<span class="nc" id="L163">            return age;</span>
+        }
+
+        Map&lt;String, Object&gt; _internal_properties() {
+<span class="nc" id="L167">            return Maps</span>
+<span class="nc" id="L168">                    .put(&quot;hunts&quot;, (Object) hunts)</span>
+<span class="nc" id="L169">                    .put(&quot;age&quot;, (Object) age)</span>
+<span class="nc" id="L170">                    .build();</span>
+        }
+
+        public Detail withHunts(Optional&lt;Boolean&gt; hunts) {
+<span class="nc" id="L174">            return new Detail(hunts, age);</span>
+        }
+
+        public Detail withHunts(boolean hunts) {
+<span class="nc" id="L178">            return new Detail(Optional.of(hunts), age);</span>
+        }
+
+        public Detail withAge(Optional&lt;Long&gt; age) {
+<span class="nc" id="L182">            return new Detail(hunts, age);</span>
+        }
+
+        public Detail withAge(long age) {
+<span class="nc" id="L186">            return new Detail(hunts, Optional.of(age));</span>
+        }
+
+        public static Builder builder() {
+<span class="nc" id="L190">            return new Builder();</span>
+        }
+
+        public static final class Builder {
+
+<span class="nc" id="L195">            private Optional&lt;Boolean&gt; hunts = Optional.empty();</span>
+<span class="nc" id="L196">            private Optional&lt;Long&gt; age = Optional.empty();</span>
+
+<span class="nc" id="L198">            Builder() {</span>
+<span class="nc" id="L199">            }</span>
+
+            public Builder hunts(boolean hunts) {
+<span class="nc" id="L202">                this.hunts = Optional.of(hunts);</span>
+<span class="nc" id="L203">                return this;</span>
+            }
+
+            public Builder hunts(Optional&lt;Boolean&gt; hunts) {
+<span class="nc" id="L207">                this.hunts = hunts;</span>
+<span class="nc" id="L208">                return this;</span>
+            }
+
+            public Builder age(long age) {
+<span class="nc" id="L212">                this.age = Optional.of(age);</span>
+<span class="nc" id="L213">                return this;</span>
+            }
+
+            public Builder age(Optional&lt;Long&gt; age) {
+<span class="nc" id="L217">                this.age = age;</span>
+<span class="nc" id="L218">                return this;</span>
+            }
+
+            public Detail build() {
+<span class="nc" id="L222">                return new Detail(this.hunts, this.age);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L229">                return true;</span>
+            }
+<span class="nc bnc" id="L231" title="All 4 branches missed.">            if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L232">                return false;</span>
+            }
+<span class="nc" id="L234">            Detail other = (Detail) o;</span>
+<span class="nc" id="L235">            return </span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                Objects.deepEquals(this.hunts, other.hunts) &amp;&amp; </span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                Objects.deepEquals(this.age, other.age);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L242">            return Objects.hash(hunts, age);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L247">            return Util.toString(Detail.class, &quot;hunts&quot;, hunts, &quot;age&quot;, age);</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L254">            return true;</span>
+        }
+<span class="nc bnc" id="L256" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L257">            return false;</span>
+        }
+<span class="nc" id="L259">        Cat3 other = (Cat3) o;</span>
+<span class="nc" id="L260">        return </span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            Objects.deepEquals(this.pet3, other.pet3) &amp;&amp; </span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            Objects.deepEquals(this.detail, other.detail);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L267">        return Objects.hash(pet3, detail);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L272">        return Util.toString(Cat3.class, &quot;pet3&quot;, pet3, &quot;detail&quot;, detail);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

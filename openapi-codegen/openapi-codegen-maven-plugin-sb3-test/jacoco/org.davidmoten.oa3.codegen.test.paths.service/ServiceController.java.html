@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServiceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb3-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.paths.service</a> &gt; <span class="el_source">ServiceController.java</span></div><h1>ServiceController.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.paths.service;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Long;
+import java.lang.String;
+import java.lang.Throwable;
+import java.time.OffsetDateTime;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.spring.runtime.ControllerExceptionHandler;
+import org.davidmoten.oa3.codegen.spring.runtime.RequestPreconditions;
+import org.davidmoten.oa3.codegen.test.paths.Globals;
+import org.davidmoten.oa3.codegen.test.paths.path.ParamsGetFourth;
+import org.davidmoten.oa3.codegen.test.paths.path.QueryObjectGetId;
+import org.davidmoten.oa3.codegen.test.paths.path.RequestBodyMultiTypePostRequestApplicationOctetStream;
+import org.davidmoten.oa3.codegen.test.paths.response.Response4;
+import org.davidmoten.oa3.codegen.test.paths.schema.Error;
+import org.davidmoten.oa3.codegen.test.paths.schema.Fifth;
+import org.davidmoten.oa3.codegen.test.paths.schema.Name;
+import org.davidmoten.oa3.codegen.test.paths.schema.Point;
+import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody1;
+import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody2;
+import org.davidmoten.oa3.codegen.test.paths.schema.Response1;
+import org.davidmoten.oa3.codegen.test.paths.schema.Response2;
+import org.davidmoten.oa3.codegen.util.Util;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public class ServiceController implements ControllerExceptionHandler {
+
+    private final Service service;
+
+<span class="fc" id="L45">    public ServiceController(@Autowired(required = false) Service service) {</span>
+<span class="fc" id="L46">        this.service = Util.orElse(service, Service.DEFAULT);</span>
+<span class="fc" id="L47">    }</span>
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/requestBodyRequired&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; requestBodyRequiredPost(
+            @RequestBody RequestBody1 requestBody) {
+        try {
+<span class="nc" id="L66">            return ResponseEntity.status(200).body(service.requestBodyRequiredPost(requestBody));</span>
+<span class="nc" id="L67">        } catch (Throwable e) {</span>
+<span class="nc" id="L68">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/requestBodyNotRequired&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; requestBodyNotRequiredPost(
+            @RequestBody Optional&lt;RequestBody2&gt; requestBody) {
+        try {
+<span class="nc" id="L89">            return ResponseEntity.status(200).body(service.requestBodyNotRequiredPost(requestBody));</span>
+<span class="nc" id="L90">        } catch (Throwable e) {</span>
+<span class="nc" id="L91">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/requestBodyRef&quot;,
+        consumes = {&quot;application/json&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; requestBodyRefPost(
+            @RequestBody RequestBody1 requestBody) {
+        try {
+<span class="nc" id="L112">            return ResponseEntity.status(200).body(service.requestBodyRefPost(requestBody));</span>
+<span class="nc" id="L113">        } catch (Throwable e) {</span>
+<span class="nc" id="L114">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; byte[]
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param accept
+     *            &lt;p&gt;accept
+     * @param username
+     *            &lt;p&gt;username
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/responseMultiType&quot;,
+        produces = {&quot;application/json&quot;, &quot;application/octet-stream&quot;})
+    public ResponseEntity&lt;?&gt; responseMultiTypeGet(
+            @RequestHeader(name = &quot;Accept&quot;, defaultValue = &quot;application/json&quot;, required = false) String accept, 
+            @RequestParam(name = &quot;username&quot;, required = true) String username) {
+        try {
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;responseMultiTypeGet&quot;)) {</span>
+<span class="fc" id="L139">                RequestPreconditions.checkMinLength(username, 1, &quot;username&quot;);</span>
+            }
+<span class="fc" id="L141">            return ResponseEntity.status(200).body(service.responseMultiTypeGet(accept, username));</span>
+<span class="fc" id="L142">        } catch (Throwable e) {</span>
+<span class="fc" id="L143">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@code RequestBodyMultiTypePostRequestApplicationOctetStream}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/bytes&quot;,
+        produces = {&quot;application/octet-stream&quot;})
+    public ResponseEntity&lt;?&gt; bytesGet() {
+        try {
+<span class="fc" id="L160">            return ResponseEntity.status(200).body(service.bytesGet());</span>
+<span class="nc" id="L161">        } catch (Throwable e) {</span>
+<span class="nc" id="L162">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/uploadImage&quot;,
+        consumes = {&quot;image/png&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; uploadImagePost() {
+        try {
+<span class="nc" id="L179">            return ResponseEntity.status(200).body(service.uploadImagePost());</span>
+<span class="nc" id="L180">        } catch (Throwable e) {</span>
+<span class="nc" id="L181">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/defaultError&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; defaultErrorGet() {
+        try {
+<span class="nc" id="L198">            return ResponseEntity.status(200).body(service.defaultErrorGet());</span>
+<span class="fc" id="L199">        } catch (Throwable e) {</span>
+<span class="fc" id="L200">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/text&quot;,
+        produces = {&quot;text/plain&quot;})
+    public ResponseEntity&lt;?&gt; textGet() {
+        try {
+<span class="fc" id="L217">            return ResponseEntity.status(200).body(service.textGet());</span>
+<span class="nc" id="L218">        } catch (Throwable e) {</span>
+<span class="nc" id="L219">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/jsonString&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; jsonStringGet() {
+        try {
+<span class="fc" id="L236">            return ResponseEntity.status(200).body(service.jsonStringGet());</span>
+<span class="nc" id="L237">        } catch (Throwable e) {</span>
+<span class="nc" id="L238">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.POST,
+        value = &quot;/requestBodyMultiType&quot;,
+        consumes = {&quot;application/json&quot;, &quot;application/octet-stream&quot;},
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; requestBodyMultiTypePost(
+            @RequestBody RequestBody1 requestBody) {
+        try {
+<span class="nc" id="L259">            return ResponseEntity.status(200).body(service.requestBodyMultiTypePost(requestBody));</span>
+<span class="nc" id="L260">        } catch (Throwable e) {</span>
+<span class="nc" id="L261">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/item&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; itemGet() {
+        try {
+<span class="fc" id="L278">            return ResponseEntity.status(200).body(service.itemGet());</span>
+<span class="nc" id="L279">        } catch (Throwable e) {</span>
+<span class="nc" id="L280">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 201
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/item201&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; item201Get() {
+        try {
+<span class="nc" id="L297">            return ResponseEntity.status(201).body(service.item201Get());</span>
+<span class="fc" id="L298">        } catch (Throwable e) {</span>
+<span class="fc" id="L299">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/responseRef&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; responseRefGet() {
+        try {
+<span class="nc" id="L316">            return ResponseEntity.status(200).body(service.responseRefGet());</span>
+<span class="fc" id="L317">        } catch (Throwable e) {</span>
+<span class="fc" id="L318">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/responseRef2&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; responseRef2Get() {
+        try {
+<span class="nc" id="L335">            return ResponseEntity.status(200).body(service.responseRef2Get());</span>
+<span class="nc" id="L336">        } catch (Throwable e) {</span>
+<span class="nc" id="L337">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/empty&quot;)
+    public ResponseEntity&lt;?&gt; emptyGet() {
+        try {
+<span class="nc" id="L350">            service.emptyGet();</span>
+<span class="nc" id="L351">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L352">        } catch (Throwable e) {</span>
+<span class="nc" id="L353">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=2XX, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return primary response status code 2XX
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/wildcardStatusCode&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; wildcardStatusCodeGet() {
+        try {
+<span class="nc" id="L370">            return ResponseEntity.status(200).body(service.wildcardStatusCodeGet());</span>
+<span class="fc" id="L371">        } catch (Throwable e) {</span>
+<span class="fc" id="L372">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param third
+     *            &lt;p&gt;third
+     * @param fifth
+     *            &lt;p&gt;fifth
+     * @param id
+     *            &lt;h2&gt;heading&lt;/h2&gt;
+     *            &lt;h3&gt;subheading&lt;/h3&gt;
+     *            &lt;p&gt;Here's a long identifier description that is &lt;em&gt;more&lt;/em&gt; of an &lt;strong&gt;essay&lt;/strong&gt;
+     *            written in &lt;code&gt;markdown&lt;/code&gt; and is expected to be converted to html at generation time
+     *            when appearing in javadoc and is &amp;gt; 80 chars with an illegal javadoc char
+     *            &lt;p&gt;And a &lt;em&gt;table&lt;/em&gt;
+     *            &lt;p&gt;| Item Type  | Description                    |
+     *            | ---        | ---                            |
+     *            | vehicle    | car, truck, bike, motorbike    |
+     *            | aircraft   | monoplane, biplane, helicopter |
+     *            &lt;pre&gt;&lt;code&gt;what happens to stuff like &amp;lt;this&amp;gt;?
+     *            &lt;/code&gt;&lt;/pre&gt;
+     *            &lt;p&gt;Note that tables in commonMark are done with html not like with GitHub flavoured mark
+     *            down
+     *            &lt;table&gt;
+     *              &lt;thead&gt;
+     *                &lt;tr&gt;
+     *                  &lt;th&gt;Header&lt;/th&gt;
+     *                  &lt;th&gt;Another Header&lt;/th&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/thead&gt;
+     *              &lt;tbody&gt;
+     *                &lt;tr&gt;
+     *                  &lt;td&gt;field 1&lt;/td&gt;
+     *                  &lt;td&gt;value one&lt;/td&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/tbody&gt;
+     *            &lt;/table&gt;
+     * @param fourth
+     *            &lt;p&gt;fourth
+     * @param first
+     *            &lt;p&gt;first
+     * @param second
+     *            &lt;p&gt;second
+     * @return primary response status code 203
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/params&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; paramsGet(
+            @RequestParam(name = &quot;id&quot;, required = true) String id, 
+            @RequestParam(name = &quot;first&quot;, required = true) OffsetDateTime first, 
+            @RequestParam(name = &quot;second&quot;, required = false) Optional&lt;Long&gt; second, 
+            @RequestParam(name = &quot;third&quot;, defaultValue = &quot;10&quot;, required = false) int third, 
+            @ModelAttribute(name = &quot;fourth&quot;) Optional&lt;ParamsGetFourth&gt; fourth, 
+            @ModelAttribute(name = &quot;fifth&quot;) Optional&lt;Fifth&gt; fifth) {
+        try {
+<span class="pc bpc" id="L434" title="1 of 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsGet&quot;)) {</span>
+<span class="fc" id="L435">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+            }
+<span class="fc" id="L437">            return ResponseEntity.status(203).body(service.paramsGet(id, first, second, third, fourth, fifth));</span>
+<span class="nc" id="L438">        } catch (Throwable e) {</span>
+<span class="nc" id="L439">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param apiKey
+     *            &lt;p&gt;apiKey
+     * @param bickie
+     *            &lt;p&gt;bickie
+     * @param id
+     *            &lt;p&gt;id
+     * @return primary response status code 200
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/params/{id}&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; paramsIdGet(
+            @PathVariable(name = &quot;id&quot;, required = true) String id, 
+            @RequestHeader(name = &quot;ApiKey&quot;, required = true) String apiKey, 
+            @CookieValue(name = &quot;bickie&quot;, required = true) String bickie) {
+        try {
+<span class="nc bnc" id="L465" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramsIdGet&quot;)) {</span>
+<span class="nc" id="L466">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+<span class="nc" id="L467">                RequestPreconditions.checkMinLength(apiKey, 1, &quot;apiKey&quot;);</span>
+<span class="nc" id="L468">                RequestPreconditions.checkMinLength(bickie, 1, &quot;bickie&quot;);</span>
+            }
+<span class="nc" id="L470">            return ResponseEntity.status(200).body(service.paramsIdGet(id, apiKey, bickie));</span>
+<span class="nc" id="L471">        } catch (Throwable e) {</span>
+<span class="nc" id="L472">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/query-object&quot;)
+    public ResponseEntity&lt;?&gt; queryObjectGet(
+            @ModelAttribute(name = &quot;id&quot;) QueryObjectGetId id) {
+        try {
+<span class="fc" id="L488">            service.queryObjectGet(id);</span>
+<span class="fc" id="L489">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L490">        } catch (Throwable e) {</span>
+<span class="nc" id="L491">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param a
+     *            &lt;p&gt;a
+     * @param b
+     *            &lt;p&gt;b
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/points&quot;)
+    public ResponseEntity&lt;?&gt; pointsGet(
+            @ModelAttribute(name = &quot;a&quot;) Point a, 
+            @ModelAttribute(name = &quot;b&quot;) Point b) {
+        try {
+<span class="nc" id="L510">            service.pointsGet(a, b);</span>
+<span class="nc" id="L511">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L512">        } catch (Throwable e) {</span>
+<span class="nc" id="L513">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     * @param first
+     *            &lt;p&gt;first
+     * @return primary response status code 203
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/paramRef&quot;,
+        produces = {&quot;application/json&quot;})
+    public ResponseEntity&lt;?&gt; paramRefGet(
+            @RequestParam(name = &quot;id&quot;, required = true) String id, 
+            @RequestParam(name = &quot;first&quot;, required = true) OffsetDateTime first) {
+        try {
+<span class="nc bnc" id="L536" title="All 2 branches missed.">            if (Globals.config().validateInControllerMethod().test(&quot;paramRefGet&quot;)) {</span>
+<span class="nc" id="L537">                RequestPreconditions.checkMinLength(id, 1, &quot;id&quot;);</span>
+            }
+<span class="nc" id="L539">            return ResponseEntity.status(203).body(service.paramRefGet(id, first));</span>
+<span class="nc" id="L540">        } catch (Throwable e) {</span>
+<span class="nc" id="L541">            return service.errorResponse(e);</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param a
+     *            &lt;p&gt;a
+     * @param a2
+     *            &lt;p&gt;a2
+     */
+    @RequestMapping(
+        method = RequestMethod.GET,
+        value = &quot;/parameterNameCollision&quot;)
+    public ResponseEntity&lt;?&gt; parameterNameCollisionGet(
+            @RequestParam(name = &quot;a&quot;, required = true) String a, 
+            @RequestParam(name = &quot;A&quot;, required = true) String a2) {
+        try {
+<span class="nc" id="L560">            service.parameterNameCollisionGet(a, a2);</span>
+<span class="nc" id="L561">            return ResponseEntity.status(200).build();</span>
+<span class="nc" id="L562">        } catch (Throwable e) {</span>
+<span class="nc" id="L563">            return service.errorResponse(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

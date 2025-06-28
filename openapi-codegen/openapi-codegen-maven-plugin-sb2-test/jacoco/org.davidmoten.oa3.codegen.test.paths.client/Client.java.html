@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Client.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">openapi-codegen-maven-plugin-sb2-test</a> &gt; <a href="index.source.html" class="el_package">org.davidmoten.oa3.codegen.test.paths.client</a> &gt; <span class="el_source">Client.java</span></div><h1>Client.java</h1><pre class="source lang-java linenums">package org.davidmoten.oa3.codegen.test.paths.client;
+
+import jakarta.annotation.Generated;
+
+import java.lang.Long;
+import java.lang.Object;
+import java.lang.String;
+import java.lang.Void;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.davidmoten.oa3.codegen.client.runtime.ClientBuilder;
+import org.davidmoten.oa3.codegen.http.Http;
+import org.davidmoten.oa3.codegen.http.Http.Builder;
+import org.davidmoten.oa3.codegen.http.Http.RequestBuilder;
+import org.davidmoten.oa3.codegen.http.HttpMethod;
+import org.davidmoten.oa3.codegen.http.Interceptor;
+import org.davidmoten.oa3.codegen.http.Serializer;
+import org.davidmoten.oa3.codegen.http.service.HttpService;
+import org.davidmoten.oa3.codegen.test.paths.Globals;
+import org.davidmoten.oa3.codegen.test.paths.path.ParamsGetFourth;
+import org.davidmoten.oa3.codegen.test.paths.path.QueryObjectGetId;
+import org.davidmoten.oa3.codegen.test.paths.path.RequestBodyMultiTypePostRequestApplicationOctetStream;
+import org.davidmoten.oa3.codegen.test.paths.path.SubmitPostRequestApplicationXWwwFormUrlencoded;
+import org.davidmoten.oa3.codegen.test.paths.path.UploadPostRequestMultipartFormData;
+import org.davidmoten.oa3.codegen.test.paths.response.Response4;
+import org.davidmoten.oa3.codegen.test.paths.schema.Error;
+import org.davidmoten.oa3.codegen.test.paths.schema.Fifth;
+import org.davidmoten.oa3.codegen.test.paths.schema.Name;
+import org.davidmoten.oa3.codegen.test.paths.schema.Point;
+import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody1;
+import org.davidmoten.oa3.codegen.test.paths.schema.RequestBody2;
+import org.davidmoten.oa3.codegen.test.paths.schema.Response1;
+import org.davidmoten.oa3.codegen.test.paths.schema.Response2;
+
+/**
+ * &lt;p&gt;path tests
+ */
+@Generated(value = &quot;com.github.davidmoten:openapi-codegen-runtime:0.2.1&quot;)
+public class Client {
+
+    private final Serializer serializer;
+    private final List&lt;Interceptor&gt; interceptors;
+    private final String basePath;
+    private final HttpService httpService;
+
+<span class="fc" id="L48">    private Client(Serializer serializer, List&lt;Interceptor&gt; interceptors, String basePath, HttpService httpService) {</span>
+<span class="fc" id="L49">        this.serializer = serializer;</span>
+<span class="fc" id="L50">        this.interceptors = interceptors;</span>
+<span class="fc" id="L51">        this.basePath = basePath;</span>
+<span class="fc" id="L52">        this.httpService = httpService;</span>
+<span class="fc" id="L53">    }</span>
+
+    public static ClientBuilder&lt;Client&gt; basePath(String basePath) {
+<span class="fc" id="L56">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), basePath);</span>
+    }
+
+    public static ClientBuilder&lt;Client&gt; basePath(Server server) {
+<span class="nc" id="L60">        return new ClientBuilder&lt;&gt;(b -&gt; new Client(b.serializer(), b.interceptors(), b.basePath(), b.httpService()), Globals.config(), server.url());</span>
+    }
+
+<span class="nc" id="L63">    public enum Server {</span>
+
+<span class="nc" id="L65">        THE_AWS_MARKETPLACE_CATALOG_MULTI_REGION_ENDPOINT(&quot;http://catalog.marketplace.{region}.amazonaws.com&quot;),</span>
+<span class="nc" id="L66">        SERVER2(&quot;https://catalog.marketplace.{region}.amazonaws.com&quot;),</span>
+<span class="nc" id="L67">        THE_AWS_MARKETPLACE_CATALOG_ENDPOINT_FOR_CHINA_BEIJING_AND_CHINA_NINGXIA_(&quot;http://catalog.marketplace.{region}.amazonaws.com.cn&quot;),</span>
+<span class="nc" id="L68">        SERVER4(&quot;https://catalog.marketplace.{region}.amazonaws.com.cn&quot;);</span>
+
+        private String url;
+
+<span class="nc" id="L72">        Server(String url) {</span>
+<span class="nc" id="L73">            this.url = url;</span>
+<span class="nc" id="L74">        }</span>
+
+        public String url() {
+<span class="nc" id="L77">            return url;</span>
+        }
+    }
+
+    private Builder http(HttpMethod method, String path) {
+<span class="fc" id="L82">        return Http</span>
+<span class="fc" id="L83">                .method(method)</span>
+<span class="fc" id="L84">                .basePath(this.basePath)</span>
+<span class="fc" id="L85">                .path(path)</span>
+<span class="fc" id="L86">                .serializer(this.serializer)</span>
+<span class="fc" id="L87">                .interceptors(this.interceptors)</span>
+<span class="fc" id="L88">                .httpService(this.httpService);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; requestBodyRequiredPost(
+            RequestBody1 requestBody) {
+<span class="nc" id="L102">        return http(HttpMethod.POST, &quot;/requestBodyRequired&quot;)</span>
+<span class="nc" id="L103">                .acceptApplicationJson()</span>
+<span class="nc" id="L104">                .body(requestBody)</span>
+<span class="nc" id="L105">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L106">                .responseAs(Response1.class)</span>
+<span class="nc" id="L107">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L108">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L109">                .responseAs(Error.class)</span>
+<span class="nc" id="L110">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L111">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L112">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; requestBodyNotRequiredPost(
+            Optional&lt;RequestBody2&gt; requestBody) {
+<span class="nc" id="L126">        return http(HttpMethod.POST, &quot;/requestBodyNotRequired&quot;)</span>
+<span class="nc" id="L127">                .acceptApplicationJson()</span>
+<span class="nc" id="L128">                .body(requestBody)</span>
+<span class="nc" id="L129">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L130">                .responseAs(Response2.class)</span>
+<span class="nc" id="L131">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L132">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L133">                .responseAs(Error.class)</span>
+<span class="nc" id="L134">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L135">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L136">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; requestBodyRefPost(
+            RequestBody1 requestBody) {
+<span class="nc" id="L150">        return http(HttpMethod.POST, &quot;/requestBodyRef&quot;)</span>
+<span class="nc" id="L151">                .acceptApplicationJson()</span>
+<span class="nc" id="L152">                .body(requestBody)</span>
+<span class="nc" id="L153">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L154">                .responseAs(Response1.class)</span>
+<span class="nc" id="L155">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L156">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L157">                .responseAs(Error.class)</span>
+<span class="nc" id="L158">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L159">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L160">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; byte[]
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param accept
+     *            &lt;p&gt;accept
+     * @param username
+     *            &lt;p&gt;username
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; responseMultiTypeGet(
+            String accept, 
+            String username) {
+<span class="fc" id="L178">        return http(HttpMethod.GET, &quot;/responseMultiType&quot;)</span>
+<span class="fc" id="L179">                .acceptApplicationJson()</span>
+<span class="fc" id="L180">                .accept(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L181">                .header(&quot;Accept&quot;, accept)</span>
+<span class="fc" id="L182">                .queryParam(&quot;username&quot;, username)</span>
+<span class="fc" id="L183">                .responseAs(Response1.class)</span>
+<span class="fc" id="L184">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L185">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L186">                .responseAs(byte[].class)</span>
+<span class="fc" id="L187">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L188">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L189">                .responseAs(Error.class)</span>
+<span class="fc" id="L190">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L191">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L192">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/octet-stream] --&amp;gt; {@code RequestBodyMultiTypePostRequestApplicationOctetStream}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;byte[]&gt; bytesGet() {
+<span class="fc" id="L203">        return http(HttpMethod.GET, &quot;/bytes&quot;)</span>
+<span class="fc" id="L204">                .accept(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L205">                .acceptApplicationJson()</span>
+<span class="fc" id="L206">                .responseAs(RequestBodyMultiTypePostRequestApplicationOctetStream.class)</span>
+<span class="fc" id="L207">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L208">                .whenContentTypeMatches(&quot;application/octet-stream&quot;)</span>
+<span class="fc" id="L209">                .responseAs(Error.class)</span>
+<span class="fc" id="L210">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L211">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L212">                .&lt;byte[]&gt;requestBuilder(&quot;200&quot;, &quot;application/octet-stream&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Object&gt; uploadPost(
+            UploadPostRequestMultipartFormData requestBody) {
+<span class="fc" id="L225">        return http(HttpMethod.POST, &quot;/upload&quot;)</span>
+<span class="fc" id="L226">                .acceptApplicationJson()</span>
+<span class="fc" id="L227">                .multipartFormData(requestBody)</span>
+<span class="fc" id="L228">                .responseAs(byte[].class)</span>
+<span class="fc" id="L229">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L230">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L231">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Object&gt; submitPost(
+            SubmitPostRequestApplicationXWwwFormUrlencoded requestBody) {
+<span class="fc" id="L244">        return http(HttpMethod.POST, &quot;/submit&quot;)</span>
+<span class="fc" id="L245">                .acceptApplicationJson()</span>
+<span class="fc" id="L246">                .formUrlEncoded(requestBody)</span>
+<span class="fc" id="L247">                .responseAs(byte[].class)</span>
+<span class="fc" id="L248">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L249">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L250">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; byte[]
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Object&gt; uploadImagePost() {
+<span class="nc" id="L260">        return http(HttpMethod.POST, &quot;/uploadImage&quot;)</span>
+<span class="nc" id="L261">                .acceptApplicationJson()</span>
+<span class="nc" id="L262">                .responseAs(byte[].class)</span>
+<span class="nc" id="L263">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L264">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L265">                .&lt;Object&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; defaultErrorGet() {
+<span class="fc" id="L276">        return http(HttpMethod.GET, &quot;/defaultError&quot;)</span>
+<span class="fc" id="L277">                .acceptApplicationJson()</span>
+<span class="fc" id="L278">                .responseAs(Response1.class)</span>
+<span class="fc" id="L279">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L280">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L281">                .responseAs(Error.class)</span>
+<span class="fc" id="L282">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L283">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L284">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, text/plain] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;String&gt; textGet() {
+<span class="nc" id="L295">        return http(HttpMethod.GET, &quot;/text&quot;)</span>
+<span class="nc" id="L296">                .accept(&quot;text/plain&quot;)</span>
+<span class="nc" id="L297">                .acceptApplicationJson()</span>
+<span class="nc" id="L298">                .responseAs(Name.class)</span>
+<span class="nc" id="L299">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L300">                .whenContentTypeMatches(&quot;text/plain&quot;)</span>
+<span class="nc" id="L301">                .responseAs(Error.class)</span>
+<span class="nc" id="L302">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L303">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L304">                .&lt;String&gt;requestBuilder(&quot;200&quot;, &quot;text/plain&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Name}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Name&gt; jsonStringGet() {
+<span class="fc" id="L315">        return http(HttpMethod.GET, &quot;/jsonString&quot;)</span>
+<span class="fc" id="L316">                .acceptApplicationJson()</span>
+<span class="fc" id="L317">                .responseAs(Name.class)</span>
+<span class="fc" id="L318">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L319">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L320">                .responseAs(Error.class)</span>
+<span class="fc" id="L321">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L322">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L323">                .&lt;Name&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response1}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param requestBody
+     *            &lt;p&gt;requestBody
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response1&gt; requestBodyMultiTypePost(
+            RequestBody1 requestBody) {
+<span class="nc" id="L337">        return http(HttpMethod.POST, &quot;/requestBodyMultiType&quot;)</span>
+<span class="nc" id="L338">                .acceptApplicationJson()</span>
+<span class="nc" id="L339">                .body(requestBody)</span>
+<span class="nc" id="L340">                .contentTypeApplicationJson()</span>
+<span class="nc" id="L341">                .responseAs(Response1.class)</span>
+<span class="nc" id="L342">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L343">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L344">                .responseAs(Error.class)</span>
+<span class="nc" id="L345">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L346">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L347">                .&lt;Response1&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; itemGet() {
+<span class="fc" id="L358">        return http(HttpMethod.GET, &quot;/item&quot;)</span>
+<span class="fc" id="L359">                .acceptApplicationJson()</span>
+<span class="fc" id="L360">                .responseAs(Response2.class)</span>
+<span class="fc" id="L361">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="fc" id="L362">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L363">                .responseAs(Error.class)</span>
+<span class="fc" id="L364">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L365">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L366">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=201, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; item201Get() {
+<span class="nc" id="L377">        return http(HttpMethod.GET, &quot;/item201&quot;)</span>
+<span class="nc" id="L378">                .acceptApplicationJson()</span>
+<span class="nc" id="L379">                .responseAs(Response2.class)</span>
+<span class="nc" id="L380">                .whenStatusCodeMatches(&quot;201&quot;)</span>
+<span class="nc" id="L381">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L382">                .responseAs(Error.class)</span>
+<span class="nc" id="L383">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L384">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L385">                .&lt;Response2&gt;requestBuilder(&quot;201&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; responseRefGet() {
+<span class="nc" id="L396">        return http(HttpMethod.GET, &quot;/responseRef&quot;)</span>
+<span class="nc" id="L397">                .acceptApplicationJson()</span>
+<span class="nc" id="L398">                .responseAs(Response2.class)</span>
+<span class="nc" id="L399">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L400">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L401">                .responseAs(Error.class)</span>
+<span class="nc" id="L402">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L403">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L404">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response4&gt; responseRef2Get() {
+<span class="nc" id="L415">        return http(HttpMethod.GET, &quot;/responseRef2&quot;)</span>
+<span class="nc" id="L416">                .acceptApplicationJson()</span>
+<span class="nc" id="L417">                .responseAs(Response4.class)</span>
+<span class="nc" id="L418">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L419">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L420">                .responseAs(Error.class)</span>
+<span class="nc" id="L421">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L422">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L423">                .&lt;Response4&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; emptyGet() {
+<span class="nc" id="L433">        return http(HttpMethod.GET, &quot;/empty&quot;)</span>
+<span class="nc" id="L434">                .acceptApplicationJson()</span>
+<span class="nc" id="L435">                .responseAs(Error.class)</span>
+<span class="nc" id="L436">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L437">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L438">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=2XX, application/json] --&amp;gt; {@code Response4}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response4&gt; wildcardStatusCodeGet() {
+<span class="fc" id="L449">        return http(HttpMethod.GET, &quot;/wildcardStatusCode&quot;)</span>
+<span class="fc" id="L450">                .acceptApplicationJson()</span>
+<span class="fc" id="L451">                .responseAs(Response4.class)</span>
+<span class="fc" id="L452">                .whenStatusCodeMatches(&quot;2XX&quot;)</span>
+<span class="fc" id="L453">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L454">                .responseAs(Error.class)</span>
+<span class="fc" id="L455">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="fc" id="L456">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="fc" id="L457">                .&lt;Response4&gt;requestBuilder(&quot;2XX&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param third
+     *            &lt;p&gt;third
+     * @param fifth
+     *            &lt;p&gt;fifth
+     * @param id
+     *            &lt;h2&gt;heading&lt;/h2&gt;
+     *            &lt;h3&gt;subheading&lt;/h3&gt;
+     *            &lt;p&gt;Here's a long identifier description that is &lt;em&gt;more&lt;/em&gt; of an &lt;strong&gt;essay&lt;/strong&gt;
+     *            written in &lt;code&gt;markdown&lt;/code&gt; and is expected to be converted to html at generation time
+     *            when appearing in javadoc and is &amp;gt; 80 chars with an illegal javadoc char
+     *            &lt;p&gt;And a &lt;em&gt;table&lt;/em&gt;
+     *            &lt;p&gt;| Item Type  | Description                    |
+     *            | ---        | ---                            |
+     *            | vehicle    | car, truck, bike, motorbike    |
+     *            | aircraft   | monoplane, biplane, helicopter |
+     *            &lt;pre&gt;&lt;code&gt;what happens to stuff like &amp;lt;this&amp;gt;?
+     *            &lt;/code&gt;&lt;/pre&gt;
+     *            &lt;p&gt;Note that tables in commonMark are done with html not like with GitHub flavoured mark
+     *            down
+     *            &lt;table&gt;
+     *              &lt;thead&gt;
+     *                &lt;tr&gt;
+     *                  &lt;th&gt;Header&lt;/th&gt;
+     *                  &lt;th&gt;Another Header&lt;/th&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/thead&gt;
+     *              &lt;tbody&gt;
+     *                &lt;tr&gt;
+     *                  &lt;td&gt;field 1&lt;/td&gt;
+     *                  &lt;td&gt;value one&lt;/td&gt;
+     *                &lt;/tr&gt;
+     *              &lt;/tbody&gt;
+     *            &lt;/table&gt;
+     * @param fourth
+     *            &lt;p&gt;fourth
+     * @param first
+     *            &lt;p&gt;first
+     * @param second
+     *            &lt;p&gt;second
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; paramsGet(
+            String id, 
+            OffsetDateTime first, 
+            Optional&lt;Long&gt; second, 
+            int third, 
+            Optional&lt;ParamsGetFourth&gt; fourth, 
+            Optional&lt;Fifth&gt; fifth) {
+<span class="nc" id="L513">        return http(HttpMethod.GET, &quot;/params&quot;)</span>
+<span class="nc" id="L514">                .acceptApplicationJson()</span>
+<span class="nc" id="L515">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L516">                .queryParam(&quot;first&quot;, first)</span>
+<span class="nc" id="L517">                .queryParam(&quot;second&quot;, second)</span>
+<span class="nc" id="L518">                .queryParam(&quot;third&quot;, third)</span>
+<span class="nc" id="L519">                .queryParam(&quot;fourth&quot;, fourth)</span>
+<span class="nc" id="L520">                .queryParam(&quot;fifth&quot;, fifth)</span>
+<span class="nc" id="L521">                .responseAs(Response2.class)</span>
+<span class="nc" id="L522">                .whenStatusCodeMatches(&quot;203&quot;)</span>
+<span class="nc" id="L523">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L524">                .responseAs(Error.class)</span>
+<span class="nc" id="L525">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L526">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L527">                .&lt;Response2&gt;requestBuilder(&quot;203&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=200, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param apiKey
+     *            &lt;p&gt;apiKey
+     * @param bickie
+     *            &lt;p&gt;bickie
+     * @param id
+     *            &lt;p&gt;id
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; paramsIdGet(
+            String id, 
+            String apiKey, 
+            String bickie) {
+<span class="nc" id="L547">        return http(HttpMethod.GET, &quot;/params/{id}&quot;)</span>
+<span class="nc" id="L548">                .acceptApplicationJson()</span>
+<span class="nc" id="L549">                .pathParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L550">                .header(&quot;ApiKey&quot;, apiKey)</span>
+<span class="nc" id="L551">                .cookie(&quot;bickie&quot;, bickie)</span>
+<span class="nc" id="L552">                .responseAs(Response2.class)</span>
+<span class="nc" id="L553">                .whenStatusCodeMatches(&quot;200&quot;)</span>
+<span class="nc" id="L554">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L555">                .responseAs(Error.class)</span>
+<span class="nc" id="L556">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L557">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L558">                .&lt;Response2&gt;requestBuilder(&quot;200&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; queryObjectGet(
+            QueryObjectGetId id) {
+<span class="nc" id="L570">        return http(HttpMethod.GET, &quot;/query-object&quot;)</span>
+<span class="nc" id="L571">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L572">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param a
+     *            &lt;p&gt;a
+     * @param b
+     *            &lt;p&gt;b
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; pointsGet(
+            Point a, 
+            Point b) {
+<span class="nc" id="L587">        return http(HttpMethod.GET, &quot;/points&quot;)</span>
+<span class="nc" id="L588">                .queryParam(&quot;a&quot;, a)</span>
+<span class="nc" id="L589">                .queryParam(&quot;b&quot;, b)</span>
+<span class="nc" id="L590">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * &lt;p&gt;[status=203, application/json] --&amp;gt; {@code Response2}
+     * &lt;p&gt;[status=default, application/json] --&amp;gt; {@code Error}
+     * 
+     * @param id
+     *            &lt;p&gt;id
+     * @param first
+     *            &lt;p&gt;first
+     * @return call builder
+     */
+    public RequestBuilder&lt;Response2&gt; paramRefGet(
+            String id, 
+            OffsetDateTime first) {
+<span class="nc" id="L607">        return http(HttpMethod.GET, &quot;/paramRef&quot;)</span>
+<span class="nc" id="L608">                .acceptApplicationJson()</span>
+<span class="nc" id="L609">                .queryParam(&quot;id&quot;, id)</span>
+<span class="nc" id="L610">                .queryParam(&quot;first&quot;, first)</span>
+<span class="nc" id="L611">                .responseAs(Response2.class)</span>
+<span class="nc" id="L612">                .whenStatusCodeMatches(&quot;203&quot;)</span>
+<span class="nc" id="L613">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L614">                .responseAs(Error.class)</span>
+<span class="nc" id="L615">                .whenStatusCodeMatches(&quot;default&quot;)</span>
+<span class="nc" id="L616">                .whenContentTypeMatches(&quot;application/json&quot;)</span>
+<span class="nc" id="L617">                .&lt;Response2&gt;requestBuilder(&quot;203&quot;, &quot;application/json&quot;);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns response from call to path &lt;i&gt;%s&lt;/i&gt;.
+     * 
+     * @param a
+     *            &lt;p&gt;a
+     * @param a2
+     *            &lt;p&gt;a2
+     * @return call builder
+     */
+    public RequestBuilder&lt;Void&gt; parameterNameCollisionGet(
+            String a, 
+            String a2) {
+<span class="nc" id="L632">        return http(HttpMethod.GET, &quot;/parameterNameCollision&quot;)</span>
+<span class="nc" id="L633">                .queryParam(&quot;a&quot;, a)</span>
+<span class="nc" id="L634">                .queryParam(&quot;A&quot;, a2)</span>
+<span class="nc" id="L635">                .&lt;Void&gt;requestBuilder();</span>
+    }
+
+    public Builder _custom(HttpMethod method, String path) {
+<span class="fc" id="L639">        return Http</span>
+<span class="fc" id="L640">                .method(method)</span>
+<span class="fc" id="L641">                .basePath(this.basePath)</span>
+<span class="fc" id="L642">                .path(path)</span>
+<span class="fc" id="L643">                .serializer(this.serializer)</span>
+<span class="fc" id="L644">                .httpService(this.httpService);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

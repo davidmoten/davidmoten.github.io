@@ -51,425 +51,431 @@ import org.openapitools.jackson.nullable.JsonNullable;
         @Override
         public String toString() {
 <span class="nc" id="L53">            StringBuilder builder = new StringBuilder();</span>
-<span class="nc" id="L54">            builder.append(&quot;Field [fieldName=&quot;).append(fieldName).append(&quot;, fullClassName=&quot;).append(fullClassName)</span>
-<span class="nc" id="L55">                    .append(&quot;, required=&quot;).append(required).append(&quot;, isArray=&quot;).append(isArray).append(&quot;, mapType=&quot;)</span>
-<span class="nc" id="L56">                    .append(mapType).append(&quot;, nullable=&quot;).append(nullable) //</span>
-<span class="nc" id="L57">                    .append(&quot;, valueExpressionFactory=&quot; + valueExpressionFactory.map(x -&gt; &quot;present&quot;).orElse(&quot;&quot;)).append(&quot;]&quot;);</span>
-<span class="nc" id="L58">            return builder.toString();</span>
+<span class="nc" id="L54">            builder.append(&quot;Field [fieldName=&quot;) //</span>
+<span class="nc" id="L55">                    .append(fieldName) //</span>
+<span class="nc" id="L56">                    .append(&quot;, fullClassName=&quot;) //</span>
+<span class="nc" id="L57">                    .append(fullClassName) //</span>
+<span class="nc" id="L58">                    .append(&quot;, required=&quot;) //</span>
+<span class="nc" id="L59">                    .append(required) //</span>
+<span class="nc" id="L60">                    .append(&quot;, isArray=&quot;) //</span>
+<span class="nc" id="L61">                    .append(isArray) //</span>
+<span class="nc" id="L62">                    .append(&quot;, mapType=&quot;) //</span>
+<span class="nc" id="L63">                    .append(mapType) //</span>
+<span class="nc" id="L64">                    .append(&quot;, nullable=&quot;) //</span>
+<span class="nc" id="L65">                    .append(nullable) //</span>
+<span class="nc" id="L66">                    .append(&quot;, valueExpressionFactory=&quot;) //</span>
+<span class="nc" id="L67">                    .append(valueExpressionFactory.map(x -&gt; &quot;present&quot;).orElse(&quot;&quot;)) //</span>
+<span class="nc" id="L68">                    .append(&quot;]&quot;);</span>
+<span class="nc" id="L69">            return builder.toString();</span>
         }
         
     }
 
     public static void write(CodePrintWriter out, List&lt;Field&gt; fields, String importedBuiltType) {
-<span class="fc" id="L64">        write(out, fields, importedBuiltType, false);</span>
-<span class="fc" id="L65">    }</span>
+<span class="fc" id="L75">        write(out, fields, importedBuiltType, false);</span>
+<span class="fc" id="L76">    }</span>
     
     public static void write(CodePrintWriter out, List&lt;Field&gt; fields, String importedBuiltType, boolean useOf) {
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (fields.isEmpty()) {</span>
-<span class="nc" id="L69">            return;</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (fields.isEmpty()) {</span>
+<span class="nc" id="L80">            return;</span>
         }
-<span class="fc bfc" id="L71" title="All 2 branches covered.">        List&lt;Field&gt; settableFields = fields.stream().filter(x -&gt; !x.valueExpressionFactory.isPresent())</span>
-<span class="fc" id="L72">                .collect(Collectors.toList());</span>
-<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (settableFields.size() == 1) {</span>
-<span class="fc" id="L74">            writeSingleValueStaticFactoryMethods(out, fields, settableFields.get(0), importedBuiltType);</span>
-<span class="fc" id="L75">            return;</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        List&lt;Field&gt; settableFields = fields.stream().filter(x -&gt; !x.valueExpressionFactory.isPresent())</span>
+<span class="fc" id="L83">                .collect(Collectors.toList());</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (settableFields.size() == 1) {</span>
+<span class="fc" id="L85">            writeSingleValueStaticFactoryMethods(out, fields, settableFields.get(0), importedBuiltType);</span>
+<span class="fc" id="L86">            return;</span>
         }
-<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (settableFields.isEmpty()) {</span>
-<span class="fc" id="L78">            writeSingletonInstanceGetter(out, fields, importedBuiltType);</span>
-<span class="fc" id="L79">            return;</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (settableFields.isEmpty()) {</span>
+<span class="fc" id="L89">            writeSingletonInstanceGetter(out, fields, importedBuiltType);</span>
+<span class="fc" id="L90">            return;</span>
         }
-<span class="fc" id="L81">        List&lt;Field&gt; sortedFields = new ArrayList&lt;&gt;(settableFields);</span>
+<span class="fc" id="L92">        List&lt;Field&gt; sortedFields = new ArrayList&lt;&gt;(settableFields);</span>
         // sort so required are first
-<span class="fc" id="L83">        sortedFields.sort((a, b) -&gt; Boolean.compare(b.mandatory(), a.mandatory()));</span>
+<span class="fc" id="L94">        sortedFields.sort((a, b) -&gt; Boolean.compare(b.mandatory(), a.mandatory()));</span>
 
-<span class="fc" id="L85">        String builderName = &quot;Builder&quot;;</span>
-<span class="fc" id="L86">        boolean passBuilderIntoConstructor = false;</span>
-<span class="fc" id="L87">        boolean previousWasMandatory = true;</span>
-<span class="fc" id="L88">        boolean inFirstBuilder = true;</span>
-<span class="fc" id="L89">        Field last = sortedFields.get(sortedFields.size() - 1);</span>
-<span class="fc" id="L90">        Optional&lt;String&gt; firstFieldStaticMethod = Optional.empty();</span>
-<span class="fc bfc" id="L91" title="All 2 branches covered.">        for (Field f : sortedFields) {</span>
+<span class="fc" id="L96">        String builderName = &quot;Builder&quot;;</span>
+<span class="fc" id="L97">        boolean passBuilderIntoConstructor = false;</span>
+<span class="fc" id="L98">        boolean previousWasMandatory = true;</span>
+<span class="fc" id="L99">        boolean inFirstBuilder = true;</span>
+<span class="fc" id="L100">        Field last = sortedFields.get(sortedFields.size() - 1);</span>
+<span class="fc" id="L101">        Optional&lt;String&gt; firstFieldStaticMethod = Optional.empty();</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        for (Field f : sortedFields) {</span>
             final String nextBuilderName;
-<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (f.mandatory()) {</span>
-<span class="fc" id="L94">                nextBuilderName = &quot;BuilderWith&quot; + Names.upperFirst(f.fieldName);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (f.mandatory()) {</span>
+<span class="fc" id="L105">                nextBuilderName = Names.removeLowerCaseVowels(&quot;BuilderWith&quot; + Names.upperFirst(f.fieldName), 80);</span>
             } else {
-<span class="fc" id="L96">                nextBuilderName = builderName;</span>
+<span class="fc" id="L107">                nextBuilderName = builderName;</span>
             }
-<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (previousWasMandatory) {</span>
-<span class="fc bfc" id="L99" title="All 2 branches covered.">                if (!passBuilderIntoConstructor) {</span>
-<span class="fc" id="L100">                    out.println();</span>
-<span class="fc" id="L101">                    out.line(&quot;public static %s builder() {&quot;, builderName);</span>
-<span class="fc" id="L102">                    out.line(&quot;return new %s();&quot;, builderName);</span>
-<span class="fc" id="L103">                    out.closeParen();</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (previousWasMandatory) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">                if (!passBuilderIntoConstructor) {</span>
+<span class="fc" id="L111">                    out.println();</span>
+<span class="fc" id="L112">                    out.line(&quot;public static %s builder() {&quot;, builderName);</span>
+<span class="fc" id="L113">                    out.line(&quot;return new %s();&quot;, builderName);</span>
+<span class="fc" id="L114">                    out.closeParen();</span>
                 }
-<span class="fc" id="L105">                out.println();</span>
-<span class="fc" id="L106">                out.line(&quot;public static final class %s {&quot;, builderName);</span>
-<span class="fc bfc" id="L107" title="All 2 branches covered.">                if (passBuilderIntoConstructor) {</span>
-<span class="fc" id="L108">                    out.println();</span>
-<span class="fc" id="L109">                    out.line(&quot;private final Builder b;&quot;);</span>
-<span class="fc" id="L110">                    out.println();</span>
-<span class="fc" id="L111">                    out.line(&quot;%s(Builder b) {&quot;, builderName);</span>
-<span class="fc" id="L112">                    out.line(&quot;this.b = b;&quot;);</span>
-<span class="fc" id="L113">                    out.closeParen();</span>
-<span class="fc" id="L114">                    inFirstBuilder = false;</span>
+<span class="fc" id="L116">                out.println();</span>
+<span class="fc" id="L117">                out.line(&quot;public static final class %s {&quot;, builderName);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (passBuilderIntoConstructor) {</span>
+<span class="fc" id="L119">                    out.println();</span>
+<span class="fc" id="L120">                    out.line(&quot;private final Builder b;&quot;);</span>
+<span class="fc" id="L121">                    out.println();</span>
+<span class="fc" id="L122">                    out.line(&quot;%s(Builder b) {&quot;, builderName);</span>
+<span class="fc" id="L123">                    out.line(&quot;this.b = b;&quot;);</span>
+<span class="fc" id="L124">                    out.closeParen();</span>
+<span class="fc" id="L125">                    inFirstBuilder = false;</span>
                 } else {
                     // we are in the first Builder
                     // write the field declarations
-<span class="fc" id="L118">                    boolean first = true;</span>
-<span class="fc bfc" id="L119" title="All 2 branches covered.">                    for (Field fld : sortedFields) {</span>
-<span class="fc bfc" id="L120" title="All 2 branches covered.">                        if (first) {</span>
-<span class="fc" id="L121">                            out.println();</span>
-<span class="fc" id="L122">                            first = false;</span>
+<span class="fc" id="L129">                    boolean first = true;</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                    for (Field fld : sortedFields) {</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                        if (first) {</span>
+<span class="fc" id="L132">                            out.println();</span>
+<span class="fc" id="L133">                            first = false;</span>
                         }
-<span class="fc bfc" id="L124" title="All 2 branches covered.">                        if (fld.mapType.isPresent()) {</span>
-<span class="pc bpc" id="L125" title="1 of 2 branches missed.">                            if (fld.isArray) {</span>
-<span class="nc bnc" id="L126" title="All 2 branches missed.">                                if (fld.nullable) {</span>
-<span class="nc" id="L127">                                    out.line(&quot;private %s&lt;%s&lt;%s&lt;%s, %s&gt; %s = new %s&lt;&gt;();&quot;, List.class,</span>
-<span class="nc" id="L128">                                            JsonNullable.class, Map.class, String.class, out.add(fld.fullClassName),</span>
-<span class="nc" id="L129">                                            fld.fieldName, ArrayList.class);</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                        if (fld.mapType.isPresent()) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                            if (fld.isArray) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                                if (fld.nullable) {</span>
+<span class="nc" id="L138">                                    out.line(&quot;private %s&lt;%s&lt;%s&lt;%s, %s&gt; %s = new %s&lt;&gt;();&quot;, List.class,</span>
+<span class="nc" id="L139">                                            JsonNullable.class, Map.class, String.class, out.add(fld.fullClassName),</span>
+<span class="nc" id="L140">                                            fld.fieldName, ArrayList.class);</span>
                                 } else {
-<span class="nc" id="L131">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = new %s&lt;&gt;();&quot;, List.class, Map.class,</span>
-<span class="nc" id="L132">                                            String.class, out.add(fld.fullClassName), fld.fieldName, ArrayList.class);</span>
+<span class="nc" id="L142">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = new %s&lt;&gt;();&quot;, List.class, Map.class,</span>
+<span class="nc" id="L143">                                            String.class, out.add(fld.fullClassName), fld.fieldName, ArrayList.class);</span>
                                 }
-<span class="fc bfc" id="L134" title="All 2 branches covered.">                            } else if (fld.nullable) {</span>
-<span class="pc bpc" id="L135" title="3 of 4 branches missed.">                                if (fld.required &amp;&amp; fld.isMapType(MapType.FIELD)) {</span>
-<span class="nc" id="L136">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.empty();&quot;, Optional.class, Map.class,</span>
-<span class="nc" id="L137">                                            String.class, out.add(fld.fullClassName), fld.fieldName, Optional.class);</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                            } else if (fld.nullable) {</span>
+<span class="pc bpc" id="L146" title="3 of 4 branches missed.">                                if (fld.required &amp;&amp; fld.isMapType(MapType.FIELD)) {</span>
+<span class="nc" id="L147">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.empty();&quot;, Optional.class, Map.class,</span>
+<span class="nc" id="L148">                                            String.class, out.add(fld.fullClassName), fld.fieldName, Optional.class);</span>
                                 } else {
-<span class="fc" id="L139">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.undefined();&quot;, JsonNullable.class,</span>
-<span class="fc" id="L140">                                            Map.class, String.class, out.add(fld.fullClassName), fld.fieldName,</span>
+<span class="fc" id="L150">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.undefined();&quot;, JsonNullable.class,</span>
+<span class="fc" id="L151">                                            Map.class, String.class, out.add(fld.fullClassName), fld.fieldName,</span>
                                             JsonNullable.class);
                                 }
                             } else {
-<span class="fc bfc" id="L144" title="All 4 branches covered.">                                if (fld.required || fld.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="fc" id="L145">                                    out.line(&quot;private %s&lt;%s, %s&gt; %s = new %s&lt;&gt;();&quot;, Map.class, String.class,</span>
-<span class="fc" id="L146">                                            out.add(fld.fullClassName), fld.fieldName, HashMap.class);</span>
+<span class="fc bfc" id="L155" title="All 4 branches covered.">                                if (fld.required || fld.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
+<span class="fc" id="L156">                                    out.line(&quot;private %s&lt;%s, %s&gt; %s = new %s&lt;&gt;();&quot;, Map.class, String.class,</span>
+<span class="fc" id="L157">                                            out.add(fld.fullClassName), fld.fieldName, HashMap.class);</span>
                                 } else {
-<span class="fc" id="L148">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.empty();&quot;, Optional.class, Map.class,</span>
-<span class="fc" id="L149">                                            String.class, out.add(fld.fullClassName), fld.fieldName, Optional.class);</span>
+<span class="fc" id="L159">                                    out.line(&quot;private %s&lt;%s&lt;%s, %s&gt;&gt; %s = %s.empty();&quot;, Optional.class, Map.class,</span>
+<span class="fc" id="L160">                                            String.class, out.add(fld.fullClassName), fld.fieldName, Optional.class);</span>
                                 }
                             }
-<span class="fc bfc" id="L152" title="All 2 branches covered.">                        } else if (fld.nullable) {</span>
-<span class="fc bfc" id="L153" title="All 2 branches covered.">                            if (fld.required) {</span>
-<span class="fc" id="L154">                                out.line(&quot;private %s&lt;%s&gt; %s = %s.empty();&quot;, Optional.class, out.add(fld.fullClassName),</span>
-<span class="fc" id="L155">                                        fld.fieldName, Optional.class);</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                        } else if (fld.nullable) {</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                            if (fld.required) {</span>
+<span class="fc" id="L165">                                out.line(&quot;private %s&lt;%s&gt; %s = %s.empty();&quot;, Optional.class, out.add(fld.fullClassName),</span>
+<span class="fc" id="L166">                                        fld.fieldName, Optional.class);</span>
                             } else {
-<span class="fc" id="L157">                                out.line(&quot;private %s&lt;%s&gt; %s = %s.undefined();&quot;, JsonNullable.class,</span>
-<span class="fc" id="L158">                                        out.add(fld.fullClassName), fld.fieldName, JsonNullable.class);</span>
+<span class="fc" id="L168">                                out.line(&quot;private %s&lt;%s&gt; %s = %s.undefined();&quot;, JsonNullable.class,</span>
+<span class="fc" id="L169">                                        out.add(fld.fullClassName), fld.fieldName, JsonNullable.class);</span>
                             }
-<span class="fc bfc" id="L160" title="All 2 branches covered.">                        } else if (fld.required) {</span>
-<span class="fc bfc" id="L161" title="All 2 branches covered.">                            if (fld.isArray) {</span>
-<span class="fc" id="L162">                                out.line(&quot;private %s&lt;%s&gt; %s;&quot;, List.class, out.add(fld.fullClassName), fld.fieldName);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">                        } else if (fld.required) {</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                            if (fld.isArray) {</span>
+<span class="fc" id="L173">                                out.line(&quot;private %s&lt;%s&gt; %s;&quot;, List.class, out.add(fld.fullClassName), fld.fieldName);</span>
                             } else {
-<span class="fc" id="L164">                                out.line(&quot;private %s %s;&quot;, out.add(Util.toPrimitive(fld.fullClassName)), fld.fieldName);</span>
+<span class="fc" id="L175">                                out.line(&quot;private %s %s;&quot;, out.add(Util.toPrimitive(fld.fullClassName)), fld.fieldName);</span>
                             }
                         } else {
-<span class="fc" id="L167">                            out.line(&quot;private %s %s = %s.empty();&quot;, enhancedImportedType(fld, out.imports()),</span>
-<span class="fc" id="L168">                                    fld.fieldName, Optional.class);</span>
+<span class="fc" id="L178">                            out.line(&quot;private %s %s = %s.empty();&quot;, enhancedImportedType(fld, out.imports()),</span>
+<span class="fc" id="L179">                                    fld.fieldName, Optional.class);</span>
                         }
-<span class="fc" id="L170">                    }</span>
-<span class="fc" id="L171">                    out.println();</span>
-<span class="fc" id="L172">                    out.line(&quot;%s() {&quot;, builderName);</span>
-<span class="fc" id="L173">                    out.closeParen();</span>
+<span class="fc" id="L181">                    }</span>
+<span class="fc" id="L182">                    out.println();</span>
+<span class="fc" id="L183">                    out.line(&quot;%s() {&quot;, builderName);</span>
+<span class="fc" id="L184">                    out.closeParen();</span>
                 }
             }
-<span class="fc bfc" id="L176" title="All 2 branches covered.">            String builderField = inFirstBuilder ? &quot;&quot; : &quot;.b&quot;;</span>
-<span class="fc" id="L177">            out.println();</span>
-<span class="fc bfc" id="L178" title="All 4 branches covered.">            if (f.mapType.isPresent() &amp;&amp; f.mapType.get() == MapType.ADDITIONAL_PROPERTIES) {</span>
-<span class="fc" id="L179">                out.line(&quot;public %s&lt;%s, %s&gt; addTo%s(%s key, %s value) {&quot;, MapBuilder.class, out.add(f.fullClassName),</span>
-<span class="fc" id="L180">                        nextBuilderName, Names.upperFirst(f.fieldName), String.class, out.add(f.fullClassName));</span>
-<span class="fc" id="L181">                out.line(&quot;%s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
-<span class="fc" id="L182">                out.line(&quot;return new %s&lt;%s, %s&gt;(this, x -&gt; this%s.%s = x).add(key, value);&quot;, MapBuilder.class,</span>
-<span class="fc" id="L183">                        out.add(f.fullClassName), nextBuilderName, builderField, f.fieldName);</span>
-<span class="fc" id="L184">                out.closeParen();</span>
-<span class="fc" id="L185">                out.println();</span>
-<span class="fc" id="L186">                out.line(&quot;public %s&lt;%s, %s&gt; addAllTo%s(%s&lt;%s, %s&gt; map) {&quot;, MapBuilder.class, out.add(f.fullClassName),</span>
-<span class="fc" id="L187">                        nextBuilderName, Names.upperFirst(f.fieldName), Map.class, String.class,</span>
-<span class="fc" id="L188">                        out.add(f.fullClassName));</span>
-<span class="fc" id="L189">                out.line(&quot;return new %s&lt;%s, %s&gt;(this, x -&gt; this%s.%s = x).addAll(map);&quot;, MapBuilder.class,</span>
-<span class="fc" id="L190">                        out.add(f.fullClassName), nextBuilderName, builderField, f.fieldName);</span>
-<span class="fc" id="L191">                out.closeParen();</span>
-<span class="fc" id="L192">                out.println();</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">            String builderField = inFirstBuilder ? &quot;&quot; : &quot;.b&quot;;</span>
+<span class="fc" id="L188">            out.println();</span>
+<span class="fc bfc" id="L189" title="All 4 branches covered.">            if (f.mapType.isPresent() &amp;&amp; f.mapType.get() == MapType.ADDITIONAL_PROPERTIES) {</span>
+<span class="fc" id="L190">                out.line(&quot;public %s&lt;%s, %s&gt; addTo%s(%s key, %s value) {&quot;, MapBuilder.class, out.add(f.fullClassName),</span>
+<span class="fc" id="L191">                        nextBuilderName, Names.upperFirst(f.fieldName), String.class, out.add(f.fullClassName));</span>
+<span class="fc" id="L192">                out.line(&quot;%s.checkNotNull(value, \&quot;value\&quot;);&quot;, Preconditions.class);</span>
+<span class="fc" id="L193">                out.line(&quot;return new %s&lt;%s, %s&gt;(this, x -&gt; this%s.%s = x).add(key, value);&quot;, MapBuilder.class,</span>
+<span class="fc" id="L194">                        out.add(f.fullClassName), nextBuilderName, builderField, f.fieldName);</span>
+<span class="fc" id="L195">                out.closeParen();</span>
+<span class="fc" id="L196">                out.println();</span>
+<span class="fc" id="L197">                out.line(&quot;public %s&lt;%s, %s&gt; addAllTo%s(%s&lt;%s, %s&gt; map) {&quot;, MapBuilder.class, out.add(f.fullClassName),</span>
+<span class="fc" id="L198">                        nextBuilderName, Names.upperFirst(f.fieldName), Map.class, String.class,</span>
+<span class="fc" id="L199">                        out.add(f.fullClassName));</span>
+<span class="fc" id="L200">                out.line(&quot;return new %s&lt;%s, %s&gt;(this, x -&gt; this%s.%s = x).addAll(map);&quot;, MapBuilder.class,</span>
+<span class="fc" id="L201">                        out.add(f.fullClassName), nextBuilderName, builderField, f.fieldName);</span>
+<span class="fc" id="L202">                out.closeParen();</span>
+<span class="fc" id="L203">                out.println();</span>
             }
-<span class="fc" id="L194">            out.line(&quot;public %s %s(%s %s) {&quot;, nextBuilderName, f.fieldName, baseImportedType(f, out.imports()),</span>
-<span class="fc" id="L195">                    f.fieldName);</span>
-<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (f.mapType.isPresent()) {</span>
-<span class="fc bfc" id="L197" title="All 6 branches covered.">                if (f.isMapType(MapType.FIELD) &amp;&amp; !f.required &amp;&amp; !f.nullable) {</span>
-<span class="fc" id="L198">                    out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
-//                    out.line(&quot;this%s.%s = %s.of(%s);&quot;, builderField, f.fieldName, Optional.class, f.fieldName);
-                } else {
-<span class="fc" id="L201">                    out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
-                }
-<span class="fc bfc" id="L203" title="All 2 branches covered.">            } else if (f.mandatory()) {</span>
-<span class="fc" id="L204">                out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
-<span class="fc bfc" id="L205" title="All 4 branches covered.">            } else if (f.nullable &amp;&amp; !f.required) {</span>
-<span class="fc" id="L206">                out.line(&quot;this%s.%s = %s.of(%s);&quot;, builderField, f.fieldName, JsonNullable.class, f.fieldName);</span>
+<span class="fc" id="L205">            out.line(&quot;public %s %s(%s %s) {&quot;, nextBuilderName, f.fieldName, baseImportedType(f, out.imports()),</span>
+<span class="fc" id="L206">                    f.fieldName);</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (f.mapType.isPresent()) {</span>
+<span class="fc" id="L208">                out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            } else if (f.mandatory()) {</span>
+<span class="fc" id="L210">                out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
+<span class="fc bfc" id="L211" title="All 4 branches covered.">            } else if (f.nullable &amp;&amp; !f.required) {</span>
+<span class="fc" id="L212">                out.line(&quot;this%s.%s = %s.of(%s);&quot;, builderField, f.fieldName, JsonNullable.class, f.fieldName);</span>
             } else {
-<span class="fc" id="L208">                out.line(&quot;this%s.%s = %s.of(%s);&quot;, builderField, f.fieldName, Optional.class, f.fieldName);</span>
+<span class="fc" id="L214">                out.line(&quot;this%s.%s = %s.of(%s);&quot;, builderField, f.fieldName, Optional.class, f.fieldName);</span>
             }
-<span class="fc bfc" id="L210" title="All 2 branches covered.">            if (f.mandatory()) {</span>
-<span class="fc" id="L211">                out.line(&quot;return new %s(this%s);&quot;, nextBuilderName, builderField);</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            if (f.mandatory()) {</span>
+<span class="fc" id="L217">                out.line(&quot;return new %s(this%s);&quot;, nextBuilderName, builderField);</span>
             } else {
-<span class="fc" id="L213">                out.line(&quot;return this;&quot;);</span>
+<span class="fc" id="L219">                out.line(&quot;return this;&quot;);</span>
             }
-<span class="fc" id="L215">            out.closeParen();</span>
+<span class="fc" id="L221">            out.closeParen();</span>
 
-<span class="fc bfc" id="L217" title="All 4 branches covered.">            if (!f.mandatory() &amp;&amp; !f.mapType.isPresent()) {</span>
-<span class="fc" id="L218">                out.println();</span>
-<span class="fc" id="L219">                out.line(&quot;public %s %s(%s %s) {&quot;, nextBuilderName, f.fieldName, enhancedImportedType(f, out.imports()),</span>
-<span class="fc" id="L220">                        f.fieldName);</span>
-<span class="fc" id="L221">                out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
-<span class="fc" id="L222">                out.line(&quot;return this;&quot;);</span>
-<span class="fc" id="L223">                out.closeParen();</span>
-<span class="fc bfc" id="L224" title="All 2 branches covered.">                if (f == last) {</span>
-<span class="fc" id="L225">                    writeBuildMethod(out, fields, importedBuiltType, builderField, useOf);</span>
+<span class="fc bfc" id="L223" title="All 4 branches covered.">            if (!f.mandatory() &amp;&amp; !f.mapType.isPresent()) {</span>
+<span class="fc" id="L224">                out.println();</span>
+<span class="fc" id="L225">                out.line(&quot;public %s %s(%s %s) {&quot;, nextBuilderName, f.fieldName, enhancedImportedType(f, out.imports()),</span>
+<span class="fc" id="L226">                        f.fieldName);</span>
+<span class="fc" id="L227">                out.line(&quot;this%s.%s = %s;&quot;, builderField, f.fieldName, f.fieldName);</span>
+<span class="fc" id="L228">                out.line(&quot;return this;&quot;);</span>
+<span class="fc" id="L229">                out.closeParen();</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">                if (f == last) {</span>
+<span class="fc" id="L231">                    writeBuildMethod(out, fields, importedBuiltType, builderField, useOf);</span>
                 }
             }
-<span class="fc bfc" id="L228" title="All 2 branches covered.">            if (!firstFieldStaticMethod.isPresent()) {</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            if (!firstFieldStaticMethod.isPresent()) {</span>
                 // only do this if field is mandatory
-<span class="fc bfc" id="L230" title="All 2 branches covered.">                if (f.mandatory()) {</span>
-<span class="fc" id="L231">                    Indent indent = out.indent().copy().left();</span>
-<span class="fc" id="L232">                    String s = String.format(&quot;%spublic static %s %s(%s %s) {\n&quot;, indent, nextBuilderName, f.fieldName,</span>
-<span class="fc" id="L233">                            baseImportedType(f, out.imports()), f.fieldName) //</span>
-<span class="fc" id="L234">                            + String.format(&quot;%sreturn builder().%s(%s);\n&quot;, indent.right(), f.fieldName, f.fieldName) //</span>
-<span class="fc" id="L235">                            + String.format(&quot;%s}\n&quot;, indent.left());</span>
-<span class="fc" id="L236">                    firstFieldStaticMethod = Optional.of(s);</span>
-<span class="fc" id="L237">                } else {</span>
-<span class="fc" id="L238">                    firstFieldStaticMethod = Optional.of(&quot;&quot;);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">                if (f.mandatory()) {</span>
+<span class="fc" id="L237">                    Indent indent = out.indent().copy().left();</span>
+<span class="fc" id="L238">                    String s = String.format(&quot;%spublic static %s %s(%s %s) {\n&quot;, indent, nextBuilderName, f.fieldName,</span>
+<span class="fc" id="L239">                            baseImportedType(f, out.imports()), f.fieldName) //</span>
+<span class="fc" id="L240">                            + String.format(&quot;%sreturn builder().%s(%s);\n&quot;, indent.right(), f.fieldName, f.fieldName) //</span>
+<span class="fc" id="L241">                            + String.format(&quot;%s}\n&quot;, indent.left());</span>
+<span class="fc" id="L242">                    firstFieldStaticMethod = Optional.of(s);</span>
+<span class="fc" id="L243">                } else {</span>
+<span class="fc" id="L244">                    firstFieldStaticMethod = Optional.of(&quot;&quot;);</span>
                 }
             }
-<span class="fc bfc" id="L241" title="All 4 branches covered.">            if (f.mapType.isPresent() &amp;&amp; f == last) {</span>
-<span class="fc" id="L242">                writeBuildMethod(out, fields, importedBuiltType, builderField, useOf);</span>
+<span class="fc bfc" id="L247" title="All 4 branches covered.">            if (f.mapType.isPresent() &amp;&amp; f == last) {</span>
+<span class="fc" id="L248">                writeBuildMethod(out, fields, importedBuiltType, builderField, useOf);</span>
             }
-<span class="fc bfc" id="L244" title="All 4 branches covered.">            if (f.mandatory() || f == last) {</span>
-<span class="fc" id="L245">                out.closeParen();</span>
+<span class="fc bfc" id="L250" title="All 4 branches covered.">            if (f.mandatory() || f == last) {</span>
+<span class="fc" id="L251">                out.closeParen();</span>
             }
-<span class="fc bfc" id="L247" title="All 4 branches covered.">            if (f == last &amp;&amp; f.mandatory()) {</span>
-<span class="fc" id="L248">                out.println();</span>
-<span class="fc" id="L249">                out.line(&quot;public static final class %s {&quot;, nextBuilderName);</span>
-<span class="fc" id="L250">                out.println();</span>
-<span class="fc" id="L251">                out.line(&quot;private final Builder b;&quot;);</span>
-<span class="fc" id="L252">                out.println();</span>
-<span class="fc" id="L253">                out.line(&quot;%s(%s b) {&quot;, nextBuilderName, &quot;Builder&quot;);</span>
-<span class="fc" id="L254">                out.line(&quot;this.b = b;&quot;);</span>
-<span class="fc" id="L255">                out.closeParen();</span>
-<span class="fc" id="L256">                writeBuildMethod(out, fields, importedBuiltType, &quot;.b&quot;, useOf);</span>
-<span class="fc" id="L257">                out.closeParen();</span>
+<span class="fc bfc" id="L253" title="All 4 branches covered.">            if (f == last &amp;&amp; f.mandatory()) {</span>
+<span class="fc" id="L254">                out.println();</span>
+<span class="fc" id="L255">                out.line(&quot;public static final class %s {&quot;, nextBuilderName);</span>
+<span class="fc" id="L256">                out.println();</span>
+<span class="fc" id="L257">                out.line(&quot;private final Builder b;&quot;);</span>
+<span class="fc" id="L258">                out.println();</span>
+<span class="fc" id="L259">                out.line(&quot;%s(%s b) {&quot;, nextBuilderName, &quot;Builder&quot;);</span>
+<span class="fc" id="L260">                out.line(&quot;this.b = b;&quot;);</span>
+<span class="fc" id="L261">                out.closeParen();</span>
+<span class="fc" id="L262">                writeBuildMethod(out, fields, importedBuiltType, &quot;.b&quot;, useOf);</span>
+<span class="fc" id="L263">                out.closeParen();</span>
             }
-<span class="fc" id="L259">            passBuilderIntoConstructor = f.mandatory();</span>
-<span class="fc" id="L260">            builderName = nextBuilderName;</span>
-<span class="fc" id="L261">            previousWasMandatory = f.mandatory();</span>
-<span class="fc" id="L262">            out.flush();</span>
-<span class="fc" id="L263">        }</span>
-<span class="pc bpc" id="L264" title="1 of 4 branches missed.">        if (firstFieldStaticMethod.isPresent() &amp;&amp; !firstFieldStaticMethod.get().isEmpty()) {</span>
-<span class="fc" id="L265">            out.println();</span>
-<span class="fc" id="L266">            out.print(firstFieldStaticMethod.get());</span>
+<span class="fc" id="L265">            passBuilderIntoConstructor = f.mandatory();</span>
+<span class="fc" id="L266">            builderName = nextBuilderName;</span>
+<span class="fc" id="L267">            previousWasMandatory = f.mandatory();</span>
+<span class="fc" id="L268">            out.flush();</span>
+<span class="fc" id="L269">        }</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (!firstFieldStaticMethod.get().isEmpty()) {</span>
+<span class="fc" id="L271">            out.println();</span>
+<span class="fc" id="L272">            out.print(firstFieldStaticMethod.get());</span>
         }
-<span class="fc" id="L268">    }</span>
+<span class="fc" id="L274">    }</span>
 
     private static void writeSingleValueStaticFactoryMethods(CodePrintWriter out, List&lt;Field&gt; fields, Field field, String importedBuiltType) {
         final String methodName;
-<span class="fc bfc" id="L272" title="All 2 branches covered.">        if (&quot;value&quot;.equals(field.fieldName)) {</span>
-<span class="fc" id="L273">            methodName = &quot;of&quot;;</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (&quot;value&quot;.equals(field.fieldName)) {</span>
+<span class="fc" id="L279">            methodName = &quot;of&quot;;</span>
         } else {
-<span class="fc" id="L275">            methodName = field.fieldName;</span>
+<span class="fc" id="L281">            methodName = field.fieldName;</span>
         }
         
-<span class="fc" id="L278">        out.println();</span>
-<span class="fc" id="L279">        out.line(&quot;public static %s %s(%s %s) {&quot;, importedBuiltType, methodName, </span>
-<span class="fc" id="L280">                enhancedImportedType(field, out.imports()), field.fieldName);</span>
+<span class="fc" id="L284">        out.println();</span>
+<span class="fc" id="L285">        out.line(&quot;public static %s %s(%s %s) {&quot;, importedBuiltType, methodName, </span>
+<span class="fc" id="L286">                enhancedImportedType(field, out.imports()), field.fieldName);</span>
         
-<span class="fc" id="L282">        String params = fields //</span>
-<span class="fc" id="L283">                .stream() //</span>
-<span class="fc" id="L284">                .map(x -&gt; fieldExpression(x)) //</span>
-<span class="fc" id="L285">                .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L286">        out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params);</span>
-<span class="fc" id="L287">        out.closeParen();</span>
+<span class="fc" id="L288">        String params = fields //</span>
+<span class="fc" id="L289">                .stream() //</span>
+<span class="fc" id="L290">                .map(BuilderWriter::fieldExpression) //</span>
+<span class="fc" id="L291">                .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L292">        out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params);</span>
+<span class="fc" id="L293">        out.closeParen();</span>
 
-<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (!field.mandatory() //</span>
-<span class="fc bfc" id="L290" title="All 4 branches covered.">                &amp;&amp; !field.mapType.isPresent() &amp;&amp; !field.isArray) {</span>
-<span class="fc" id="L291">            out.println();</span>
-<span class="fc" id="L292">            out.line(&quot;public static %s %s(%s %s) {&quot;, importedBuiltType, field.fieldName,</span>
-<span class="fc" id="L293">                    baseImportedType(field, out.imports()), field.fieldName);</span>
-<span class="pc bpc" id="L294" title="1 of 4 branches missed.">            Class&lt;?&gt; c = field.nullable &amp;&amp; !field.required ? JsonNullable.class : Optional.class;</span>
-<span class="fc" id="L295">            String params2 = fields //</span>
-<span class="fc" id="L296">                    .stream() //</span>
-<span class="fc" id="L297">                    .map(x -&gt; {</span>
-<span class="fc bfc" id="L298" title="All 2 branches covered.">                        if (x.fieldName.equals(field.fieldName)) {</span>
-<span class="fc" id="L299">                            return String.format(&quot;%s.of(%s)&quot;, out.add(c), x.fieldName);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        if (!field.mandatory() //</span>
+<span class="fc bfc" id="L296" title="All 4 branches covered.">                &amp;&amp; !field.mapType.isPresent() &amp;&amp; !field.isArray) {</span>
+<span class="fc" id="L297">            out.println();</span>
+<span class="fc" id="L298">            out.line(&quot;public static %s %s(%s %s) {&quot;, importedBuiltType, field.fieldName,</span>
+<span class="fc" id="L299">                    baseImportedType(field, out.imports()), field.fieldName);</span>
+<span class="pc bpc" id="L300" title="1 of 4 branches missed.">            Class&lt;?&gt; c = field.nullable &amp;&amp; !field.required ? JsonNullable.class : Optional.class;</span>
+<span class="fc" id="L301">            String params2 = fields //</span>
+<span class="fc" id="L302">                    .stream() //</span>
+<span class="fc" id="L303">                    .map(x -&gt; {</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">                        if (x.fieldName.equals(field.fieldName)) {</span>
+<span class="fc" id="L305">                            return String.format(&quot;%s.of(%s)&quot;, out.add(c), x.fieldName);</span>
                         } else {
-<span class="fc" id="L301">                            return fieldExpression(x);</span>
+<span class="fc" id="L307">                            return fieldExpression(x);</span>
                         }
                     }) //
-<span class="fc" id="L304">                    .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L305">            out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params2);</span>
-<span class="fc" id="L306">            out.closeParen();</span>
+<span class="fc" id="L310">                    .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L311">            out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params2);</span>
+<span class="fc" id="L312">            out.closeParen();</span>
         }
-<span class="fc" id="L308">    }</span>
+<span class="fc" id="L314">    }</span>
     
     private static void writeSingletonInstanceGetter(CodePrintWriter out, List&lt;Field&gt; fields, String importedBuiltType) {
-<span class="fc" id="L311">        out.println();</span>
-<span class="fc" id="L312">        out.line(&quot;private static final %s INSTANCE = &quot;, importedBuiltType);</span>
-<span class="fc" id="L313">        String params = fields //</span>
-<span class="fc" id="L314">                .stream() //</span>
-<span class="fc" id="L315">                .map(x -&gt; fieldExpression(x))</span>
-<span class="fc" id="L316">                .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc" id="L317">        out.right().right();</span>
-<span class="fc" id="L318">        out.line(&quot;new %s(%s);&quot;, importedBuiltType, params);</span>
-<span class="fc" id="L319">        out.left().left();</span>
-<span class="fc" id="L320">        out.println();</span>
-<span class="fc" id="L321">        out.line(&quot;public static %s instance() {&quot;, importedBuiltType);</span>
-<span class="fc" id="L322">        out.line(&quot;return INSTANCE;&quot;);</span>
-<span class="fc" id="L323">        out.closeParen();</span>
-<span class="fc" id="L324">    }</span>
+<span class="fc" id="L317">        out.println();</span>
+<span class="fc" id="L318">        out.line(&quot;private static final %s INSTANCE = &quot;, importedBuiltType);</span>
+<span class="fc" id="L319">        String params = fields //</span>
+<span class="fc" id="L320">                .stream() //</span>
+<span class="fc" id="L321">                .map(BuilderWriter::fieldExpression)</span>
+<span class="fc" id="L322">                .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc" id="L323">        out.right().right();</span>
+<span class="fc" id="L324">        out.line(&quot;new %s(%s);&quot;, importedBuiltType, params);</span>
+<span class="fc" id="L325">        out.left().left();</span>
+<span class="fc" id="L326">        out.println();</span>
+<span class="fc" id="L327">        out.line(&quot;public static %s instance() {&quot;, importedBuiltType);</span>
+<span class="fc" id="L328">        out.line(&quot;return INSTANCE;&quot;);</span>
+<span class="fc" id="L329">        out.closeParen();</span>
+<span class="fc" id="L330">    }</span>
 
     private static void writeBuildMethod(CodePrintWriter out, List&lt;Field&gt; fields, String importedBuiltType,
             String builderField, boolean useOf) {
-<span class="fc" id="L328">        out.println();</span>
-<span class="fc" id="L329">        out.line(&quot;public %s build() {&quot;, importedBuiltType);</span>
-<span class="fc" id="L330">        String params = fields //</span>
-<span class="fc" id="L331">                .stream() //</span>
-<span class="fc" id="L332">                .map(x -&gt; fieldExpression(builderField, x))</span>
-<span class="fc" id="L333">                .collect(Collectors.joining(&quot;, &quot;));</span>
-<span class="fc bfc" id="L334" title="All 2 branches covered.">        if (useOf) {</span>
-<span class="fc" id="L335">            out.line(&quot;return %s.of(%s);&quot;, importedBuiltType, params);</span>
+<span class="fc" id="L334">        out.println();</span>
+<span class="fc" id="L335">        out.line(&quot;public %s build() {&quot;, importedBuiltType);</span>
+<span class="fc" id="L336">        String params = fields //</span>
+<span class="fc" id="L337">                .stream() //</span>
+<span class="fc" id="L338">                .map(x -&gt; fieldExpression(builderField, x))</span>
+<span class="fc" id="L339">                .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">        if (useOf) {</span>
+<span class="fc" id="L341">            out.line(&quot;return %s.of(%s);&quot;, importedBuiltType, params);</span>
         } else {
-<span class="fc" id="L337">            out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params);</span>
+<span class="fc" id="L343">            out.line(&quot;return new %s(%s);&quot;, importedBuiltType, params);</span>
         }
-<span class="fc" id="L339">        out.closeParen();</span>
-<span class="fc" id="L340">    }</span>
+<span class="fc" id="L345">        out.closeParen();</span>
+<span class="fc" id="L346">    }</span>
 
     private static String fieldExpression(Field x) {
-<span class="fc" id="L343">        return x.valueExpressionFactory.map(factory -&gt; factory.apply(x.fieldName)).orElse(x.fieldName);</span>
+<span class="fc" id="L349">        return x.valueExpressionFactory.map(factory -&gt; factory.apply(x.fieldName)).orElse(x.fieldName);</span>
     }
     
     private static String fieldExpression(String builderField, Field x) {
-<span class="fc" id="L347">        String fieldExpression = String.format(&quot;this%s.%s&quot;, builderField, x.fieldName);</span>
-<span class="fc" id="L348">        return x.valueExpressionFactory.map(factory -&gt; factory.apply(fieldExpression)).orElse(fieldExpression);</span>
+<span class="fc" id="L353">        String fieldExpression = String.format(&quot;this%s.%s&quot;, builderField, x.fieldName);</span>
+<span class="fc" id="L354">        return x.valueExpressionFactory.map(factory -&gt; factory.apply(fieldExpression)).orElse(fieldExpression);</span>
     }
 
     private static String baseImportedType(Field f, Imports imports) {
-<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (f.mapType.isPresent()) {</span>
-<span class="fc" id="L353">            return mapImportedTypeNonOptional(f, imports);</span>
-<span class="fc bfc" id="L354" title="All 2 branches covered.">        } else if (f.isArray) {</span>
-<span class="fc" id="L355">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        if (f.mapType.isPresent()) {</span>
+<span class="fc" id="L359">            return mapImportedTypeNonOptional(f, imports);</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        } else if (f.isArray) {</span>
+<span class="fc" id="L361">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(f.fullClassName));</span>
         } else {
-<span class="fc" id="L357">            return imports.add(Util.toPrimitive(f.fullClassName));</span>
+<span class="fc" id="L363">            return imports.add(Util.toPrimitive(f.fullClassName));</span>
         }
     }
 
     private static String mapImportedTypeNonOptional(Field f, Imports imports) {
-<span class="pc bpc" id="L362" title="1 of 2 branches missed.">        if (f.isArray) {</span>
-<span class="nc bnc" id="L363" title="All 2 branches missed.">            if (f.nullable) {</span>
-<span class="nc bnc" id="L364" title="All 2 branches missed.">                if (f.required) {</span>
-<span class="nc" id="L365">                    return listMapType(f, imports);</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">        if (f.isArray) {</span>
+<span class="nc bnc" id="L369" title="All 2 branches missed.">            if (f.nullable) {</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">                if (f.required) {</span>
+<span class="nc" id="L371">                    return listMapType(f, imports);</span>
                 } else {
-<span class="nc" id="L367">                    return jsonNullableListMapType(f, imports);</span>
+<span class="nc" id="L373">                    return jsonNullableListMapType(f, imports);</span>
                 }
             } else {
-<span class="nc" id="L370">                return listMapType(f, imports);</span>
+<span class="nc" id="L376">                return listMapType(f, imports);</span>
             }
-<span class="pc bpc" id="L372" title="1 of 4 branches missed.">        } else if (f.nullable &amp;&amp; !f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="pc bpc" id="L373" title="1 of 2 branches missed.">            if (f.required) {</span>
-<span class="nc" id="L374">                return mapType(f, imports);</span>
+<span class="pc bpc" id="L378" title="1 of 4 branches missed.">        } else if (f.nullable &amp;&amp; !f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">            if (f.required) {</span>
+<span class="nc" id="L380">                return mapType(f, imports);</span>
             } else {
-<span class="fc" id="L376">                return jsonNullableMap(f, imports);</span>
+<span class="fc" id="L382">                return jsonNullableMap(f, imports);</span>
             }
         } else {
-<span class="fc" id="L379">            return mapType(f, imports);</span>
+<span class="fc" id="L385">            return mapType(f, imports);</span>
         }
     }
 
     private static String mapImportedTypePublic(Field f, Imports imports) {
-<span class="fc bfc" id="L384" title="All 2 branches covered.">        if (f.isArray) {</span>
-<span class="fc bfc" id="L385" title="All 2 branches covered.">            if (f.nullable) {</span>
-<span class="fc" id="L386">                return listJsonNullableMap(f, imports);</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (f.isArray) {</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">            if (f.nullable) {</span>
+<span class="fc" id="L392">                return listJsonNullableMap(f, imports);</span>
             } else {
-<span class="fc" id="L388">                return listMapType(f, imports);</span>
+<span class="fc" id="L394">                return listMapType(f, imports);</span>
             }
-<span class="fc bfc" id="L390" title="All 2 branches covered.">        } else if (f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="fc" id="L391">            return mapType(f, imports);</span>
-<span class="fc bfc" id="L392" title="All 2 branches covered.">        } else if (f.nullable) {</span>
-<span class="fc bfc" id="L393" title="All 2 branches covered.">            if (f.required) {</span>
-<span class="fc" id="L394">                return optionalMapType(f, imports);</span>
+<span class="fc bfc" id="L396" title="All 2 branches covered.">        } else if (f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
+<span class="fc" id="L397">            return mapType(f, imports);</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">        } else if (f.nullable) {</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            if (f.required) {</span>
+<span class="fc" id="L400">                return optionalMapType(f, imports);</span>
             } else {
-<span class="fc" id="L396">                return jsonNullableMap(f, imports);</span>
+<span class="fc" id="L402">                return jsonNullableMap(f, imports);</span>
             }
         } else {
-<span class="fc" id="L399">            return mapType(f, imports);</span>
+<span class="fc" id="L405">            return mapType(f, imports);</span>
         }
     }
 
     private static String listJsonNullableMap(Field f, Imports imports) {
-<span class="fc" id="L404">        return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
-<span class="fc" id="L405">                imports.add(Map.class), imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L410">        return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
+<span class="fc" id="L411">                imports.add(Map.class), imports.add(String.class), imports.add(f.fullClassName));</span>
     }
 
     private static String jsonNullableListMapType(Field f, Imports imports) {
-<span class="nc" id="L409">        return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(List.class),</span>
-<span class="nc" id="L410">                imports.add(Map.class), imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="nc" id="L415">        return String.format(&quot;%s&lt;%s&lt;%s&lt;%s, %s&gt;&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(List.class),</span>
+<span class="nc" id="L416">                imports.add(Map.class), imports.add(String.class), imports.add(f.fullClassName));</span>
     }
 
     private static String listMapType(Field f, Imports imports) {
-<span class="fc" id="L414">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(List.class), imports.add(Map.class),</span>
-<span class="fc" id="L415">                imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L420">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(List.class), imports.add(Map.class),</span>
+<span class="fc" id="L421">                imports.add(String.class), imports.add(f.fullClassName));</span>
     }
 
     private static String jsonNullableMap(Field f, Imports imports) {
-<span class="fc" id="L419">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
-<span class="fc" id="L420">                imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L425">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(JsonNullable.class), imports.add(Map.class),</span>
+<span class="fc" id="L426">                imports.add(String.class), imports.add(f.fullClassName));</span>
     }
 
     private static String mapType(Field f, Imports imports) {
-<span class="fc bfc" id="L424" title="All 2 branches covered.">        if (f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
-<span class="fc bfc" id="L425" title="All 2 branches covered.">            if (f.nullable) {</span>
-<span class="fc" id="L426">                return String.format(&quot;%s&lt;%s, %s&lt;%s&gt;&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
-<span class="fc" id="L427">                        imports.add(JsonNullable.class), imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        if (f.isMapType(MapType.ADDITIONAL_PROPERTIES)) {</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            if (f.nullable) {</span>
+<span class="fc" id="L432">                return String.format(&quot;%s&lt;%s, %s&lt;%s&gt;&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
+<span class="fc" id="L433">                        imports.add(JsonNullable.class), imports.add(f.fullClassName));</span>
             } else {
-<span class="fc" id="L429">                return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
-<span class="fc" id="L430">                        imports.add(f.fullClassName));</span>
+<span class="fc" id="L435">                return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
+<span class="fc" id="L436">                        imports.add(f.fullClassName));</span>
             }
-<span class="pc bpc" id="L432" title="1 of 2 branches missed.">        } else if (f.nullable) {</span>
-<span class="nc bnc" id="L433" title="All 4 branches missed.">            if (f.required &amp;&amp; f.isMapType(MapType.FIELD)) {</span>
-<span class="nc" id="L434">                return optionalMapType(f, imports);</span>
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">        } else if (f.nullable) {</span>
+<span class="nc bnc" id="L439" title="All 4 branches missed.">            if (f.required &amp;&amp; f.isMapType(MapType.FIELD)) {</span>
+<span class="nc" id="L440">                return optionalMapType(f, imports);</span>
             } else {
-<span class="nc" id="L436">                return jsonNullableMap(f, imports);</span>
+<span class="nc" id="L442">                return jsonNullableMap(f, imports);</span>
             }
         } else {
-<span class="fc bfc" id="L439" title="All 2 branches covered.">            if (f.required) {</span>
-<span class="fc" id="L440">                return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
-<span class="fc" id="L441">                        imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">            if (f.required) {</span>
+<span class="fc" id="L446">                return String.format(&quot;%s&lt;%s, %s&gt;&quot;, imports.add(Map.class), imports.add(String.class),</span>
+<span class="fc" id="L447">                        imports.add(f.fullClassName));</span>
             } else {
-<span class="fc" id="L443">                return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
-<span class="fc" id="L444">                        imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L449">                return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
+<span class="fc" id="L450">                        imports.add(String.class), imports.add(f.fullClassName));</span>
             }
         }
     }
 
     private static String optionalMapType(Field f, Imports imports) {
-<span class="fc" id="L450">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
-<span class="fc" id="L451">                imports.add(String.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L456">        return String.format(&quot;%s&lt;%s&lt;%s, %s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(Map.class),</span>
+<span class="fc" id="L457">                imports.add(String.class), imports.add(f.fullClassName));</span>
     }
 
     private static String enhancedImportedType(Field f, Imports imports) {
-<span class="fc bfc" id="L455" title="All 2 branches covered.">        if (f.mapType.isPresent()) {</span>
-<span class="fc" id="L456">            return mapImportedTypePublic(f, imports);</span>
-<span class="fc bfc" id="L457" title="All 2 branches covered.">        } else if (f.isArray) {</span>
-<span class="fc bfc" id="L458" title="All 2 branches covered.">            if (f.nullable) {</span>
-<span class="fc" id="L459">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
-<span class="fc" id="L460">                        imports.add(f.fullClassName));</span>
-<span class="fc bfc" id="L461" title="All 2 branches covered.">            } else if (f.required) {</span>
-<span class="fc" id="L462">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (f.mapType.isPresent()) {</span>
+<span class="fc" id="L462">            return mapImportedTypePublic(f, imports);</span>
+<span class="fc bfc" id="L463" title="All 2 branches covered.">        } else if (f.isArray) {</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">            if (f.nullable) {</span>
+<span class="fc" id="L465">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(List.class), imports.add(JsonNullable.class),</span>
+<span class="fc" id="L466">                        imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L467" title="All 2 branches covered.">            } else if (f.required) {</span>
+<span class="fc" id="L468">                return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(List.class), imports.add(f.fullClassName));</span>
             } else {
-<span class="fc" id="L464">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
-<span class="fc" id="L465">                        imports.add(f.fullClassName));</span>
+<span class="fc" id="L470">                return String.format(&quot;%s&lt;%s&lt;%s&gt;&gt;&quot;, imports.add(Optional.class), imports.add(List.class),</span>
+<span class="fc" id="L471">                        imports.add(f.fullClassName));</span>
             }
-<span class="fc bfc" id="L467" title="All 4 branches covered.">        } else if (f.required &amp;&amp; !f.nullable) {</span>
-<span class="fc" id="L468">            return imports.add(Util.toPrimitive(f.fullClassName));</span>
-<span class="fc bfc" id="L469" title="All 4 branches covered.">        } else if (f.nullable &amp;&amp; !f.required) {</span>
-<span class="fc" id="L470">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(f.fullClassName));</span>
+<span class="fc bfc" id="L473" title="All 4 branches covered.">        } else if (f.required &amp;&amp; !f.nullable) {</span>
+<span class="fc" id="L474">            return imports.add(Util.toPrimitive(f.fullClassName));</span>
+<span class="fc bfc" id="L475" title="All 4 branches covered.">        } else if (f.nullable &amp;&amp; !f.required) {</span>
+<span class="fc" id="L476">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(JsonNullable.class), imports.add(f.fullClassName));</span>
         } else
-<span class="fc" id="L472">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(f.fullClassName));</span>
+<span class="fc" id="L478">            return String.format(&quot;%s&lt;%s&gt;&quot;, imports.add(Optional.class), imports.add(f.fullClassName));</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

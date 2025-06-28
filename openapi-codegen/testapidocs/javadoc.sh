@@ -1,0 +1,1 @@
+/home/linuxbrew/.linuxbrew/Cellar/openjdk@21/21.0.6/libexec/bin/javadoc -J-Duser.language= -J-Duser.country= @options @packages

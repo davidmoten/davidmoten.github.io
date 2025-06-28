@@ -60,497 +60,515 @@ public final class Names {
 
     private final ServerGeneratorType generatorType;
 
-<span class="fc" id="L63">    Names(Definition definition) {</span>
-<span class="fc" id="L64">        StreamReadConstraints streamReadConstraints = StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE)</span>
-<span class="fc" id="L65">                .build();</span>
-<span class="fc" id="L66">        ObjectMapperFactory.createJson31().getFactory().setStreamReadConstraints(streamReadConstraints);</span>
-<span class="fc" id="L67">        this.definition = definition;</span>
-<span class="pc" id="L68">        this.generatorType = definition.generator().map(x -&gt; ServerGeneratorType.valueOf(x.toUpperCase(Locale.ENGLISH)))</span>
-<span class="fc" id="L69">                .orElse(ServerGeneratorType.SPRING2);</span>
-<span class="fc" id="L70">        ParseOptions options = new ParseOptions();</span>
-<span class="fc" id="L71">        options.setResolve(true);</span>
+    private final int maxClassNameLength;
+
+<span class="fc" id="L65">    Names(Definition definition) {</span>
+<span class="fc" id="L66">        StreamReadConstraints streamReadConstraints = StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE)</span>
+<span class="fc" id="L67">                .build();</span>
+<span class="fc" id="L68">        ObjectMapperFactory.createJson31().getFactory().setStreamReadConstraints(streamReadConstraints);</span>
+<span class="fc" id="L69">        this.definition = definition;</span>
+<span class="pc" id="L70">        this.generatorType = definition.generator().map(x -&gt; ServerGeneratorType.from(x.toUpperCase(Locale.ENGLISH)))</span>
+<span class="fc" id="L71">                .orElse(ServerGeneratorType.SPRING_BOOT_2);</span>
+<span class="fc" id="L72">        ParseOptions options = new ParseOptions();</span>
+<span class="fc" id="L73">        options.setResolve(true);</span>
         // github api goes over snake yaml parser max code points for 3.0
-<span class="fc" id="L73">        System.setProperty(&quot;maxYamlCodePoints&quot;, &quot;999999999&quot;);</span>
-<span class="fc" id="L74">        OpenAPIV3Parser parser = new EnhancedOpenAPIV3Parser();</span>
-<span class="fc" id="L75">        SwaggerParseResult result = parser.readLocation(definition.definition(), null, options);</span>
-<span class="fc" id="L76">        String errors = result.getMessages().stream().collect(Collectors.joining(&quot;\n&quot;));</span>
-<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (!errors.isEmpty()) {</span>
-<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (definition.failOnParseErrors()) {</span>
-<span class="nc" id="L79">                throw new RuntimeException(errors);</span>
+<span class="fc" id="L75">        System.setProperty(&quot;maxYamlCodePoints&quot;, &quot;999999999&quot;);</span>
+<span class="fc" id="L76">        OpenAPIV3Parser parser = new EnhancedOpenAPIV3Parser();</span>
+<span class="fc" id="L77">        SwaggerParseResult result = parser.readLocation(definition.definition(), null, options);</span>
+<span class="fc" id="L78">        String errors = result.getMessages().stream().collect(Collectors.joining(&quot;\n&quot;));</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (!errors.isEmpty()) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (definition.failOnParseErrors()) {</span>
+<span class="nc" id="L81">                throw new RuntimeException(errors);</span>
             } else {
                 // Destined for maven plugin output so following their logging format
-<span class="nc" id="L82">                System.out.println(&quot;[WARNING] Swagger Parse Errors:\n&quot; + errors);</span>
+<span class="nc" id="L84">                System.out.println(&quot;[WARNING] Swagger Parse Errors:\n&quot; + errors);</span>
             }
         }
-<span class="fc" id="L85">        this.api = result.getOpenAPI();</span>
-<span class="fc" id="L86">        superSchemas(api);</span>
-<span class="fc" id="L87">        logSchemaFullClassNames(api);</span>
-
-<span class="fc" id="L89">    }</span>
+<span class="fc" id="L87">        this.api = result.getOpenAPI();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (this.api == null) {</span>
+<span class="nc" id="L89">            throw new IllegalStateException(&quot;OpenAPI object could not be parsed&quot;);</span>
+        }
+<span class="fc" id="L91">        this.maxClassNameLength = definition.maxClassNameLength();</span>
+<span class="fc" id="L92">        superSchemas(api);</span>
+<span class="fc" id="L93">        logSchemaFullClassNames(api);</span>
+<span class="fc" id="L94">    }</span>
 
     private static void logSchemaFullClassNames(OpenAPI api) {
         if (LOG_SCHEMA_PATHS) {
             Apis.visitSchemas(api, (category, schemaPath) -&gt; {
-<span class="nc bnc" id="L94" title="All 2 branches missed.">                if (!Apis.isComplexSchema(schemaPath.last().schema)) {</span>
-<span class="nc" id="L95">                    System.out.println(schemaPath);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                if (!Apis.isComplexSchema(schemaPath.last().schema)) {</span>
+<span class="nc" id="L100">                    System.out.println(schemaPath);</span>
                 }
-<span class="nc" id="L97">            });</span>
+<span class="nc" id="L102">            });</span>
             System.out.println(&quot;////////////////////////////////////////////////&quot;);
         }
-<span class="fc" id="L100">    }</span>
+<span class="fc" id="L105">    }</span>
 
     public OpenAPI api() {
-<span class="fc" id="L103">        return api;</span>
+<span class="fc" id="L108">        return api;</span>
     }
 
     public List&lt;Server&gt; servers() {
-<span class="fc" id="L107">        return Util.&lt;List&lt;io.swagger.v3.oas.models.servers.Server&gt;&gt;nvl(api.getServers(), Collections.emptyList()) //</span>
-<span class="fc" id="L108">                .stream() //</span>
-<span class="fc" id="L109">                .map(x -&gt; new Server(x.getUrl(), Optional.ofNullable(x.getDescription()))) //</span>
-<span class="fc" id="L110">                .collect(Collectors.toList());</span>
+<span class="fc" id="L112">        return Util.&lt;List&lt;io.swagger.v3.oas.models.servers.Server&gt;&gt;nvl(api.getServers(), Collections.emptyList()) //</span>
+<span class="fc" id="L113">                .stream() //</span>
+<span class="fc" id="L114">                .map(x -&gt; new Server(x.getUrl(), Optional.ofNullable(x.getDescription()))) //</span>
+<span class="fc" id="L115">                .collect(Collectors.toList());</span>
     }
 
     public static final class Server {
         public final String url;
         public final Optional&lt;String&gt; description;
 
-<span class="fc" id="L117">        Server(String url, Optional&lt;String&gt; description) {</span>
-<span class="fc" id="L118">            this.url = url;</span>
-<span class="fc" id="L119">            this.description = description;</span>
-<span class="fc" id="L120">        }</span>
+<span class="fc" id="L122">        Server(String url, Optional&lt;String&gt; description) {</span>
+<span class="fc" id="L123">            this.url = url;</span>
+<span class="fc" id="L124">            this.description = description;</span>
+<span class="fc" id="L125">        }</span>
     }
 
     public String schemaNameToFullClassName(SchemaCategory category, String schemaName) {
-<span class="fc" id="L124">        return definition.packages().basePackage() + &quot;.&quot; + category.getPackageFragment() + &quot;.&quot;</span>
-<span class="fc" id="L125">                + schemaNameToSimpleClassName(schemaName);</span>
+<span class="fc" id="L129">        return definition.packages().basePackage() + &quot;.&quot; + category.getPackageFragment() + &quot;.&quot;</span>
+<span class="fc" id="L130">                + schemaNameToSimpleClassName(schemaName);</span>
     }
 
     public String schemaNameToSimpleClassName(String schemaName) {
-<span class="fc" id="L129">        return simpleClassNameFromSimpleName(schemaName);</span>
+<span class="fc" id="L134">        return simpleClassNameFromSimpleName(schemaName);</span>
     }
 
     public File fullClassNameToJavaFile(String fullClassName) {
-<span class="fc" id="L133">        return new File(definition.generatedSourceDirectory(), fullClassName.replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
+<span class="fc" id="L138">        return new File(definition.generatedSourceDirectory(), fullClassName.replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
     }
 
     public String refToFullClassName(String ref) {
-<span class="fc" id="L137">        Preconditions.checkNotNull(ref);</span>
+<span class="fc" id="L142">        Preconditions.checkNotNull(ref);</span>
         final String fullClassName;
-<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (!ref.startsWith(&quot;#&quot;)) {</span>
-<span class="nc" id="L140">            fullClassName = externalRefClassName(ref);</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        if (!ref.startsWith(&quot;#&quot;)) {</span>
+<span class="nc" id="L145">            fullClassName = externalRefClassName(ref);</span>
         } else {
             final SchemaCategory category;
-<span class="pc bpc" id="L143" title="1 of 2 branches missed.">            if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
-<span class="fc" id="L144">                category = SchemaCategory.SCHEMA;</span>
-<span class="nc bnc" id="L145" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
-<span class="nc" id="L146">                category = SchemaCategory.SCHEMA;</span>
-<span class="nc bnc" id="L147" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/responses&quot;)) {</span>
-<span class="nc" id="L148">                category = SchemaCategory.SCHEMA;</span>
-<span class="nc bnc" id="L149" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/parameters&quot;)) {</span>
-<span class="nc" id="L150">                category = SchemaCategory.SCHEMA;</span>
-<span class="nc bnc" id="L151" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/requestBodies&quot;)) {</span>
-<span class="nc" id="L152">                category = SchemaCategory.SCHEMA;</span>
-<span class="nc bnc" id="L153" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/pathItems&quot;)) {</span>
-<span class="nc" id="L154">                category = SchemaCategory.SCHEMA;</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
+<span class="fc" id="L149">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/schemas&quot;)) {</span>
+<span class="nc" id="L151">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/responses&quot;)) {</span>
+<span class="nc" id="L153">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/parameters&quot;)) {</span>
+<span class="nc" id="L155">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/requestBodies&quot;)) {</span>
+<span class="nc" id="L157">                category = SchemaCategory.SCHEMA;</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            } else if (ref.startsWith(&quot;#/components/pathItems&quot;)) {</span>
+<span class="nc" id="L159">                category = SchemaCategory.SCHEMA;</span>
             } else {
-<span class="nc" id="L156">                throw new RuntimeException(&quot;unexpected ref: &quot; + ref);</span>
+<span class="nc" id="L161">                throw new RuntimeException(&quot;unexpected ref: &quot; + ref);</span>
             }
-<span class="fc" id="L158">            String schemaName = ref.substring(ref.lastIndexOf(&quot;/&quot;) + 1);</span>
-<span class="fc" id="L159">            fullClassName = schemaNameToFullClassName(category, schemaName);</span>
+<span class="fc" id="L163">            String schemaName = ref.substring(ref.lastIndexOf(&quot;/&quot;) + 1);</span>
+<span class="fc" id="L164">            fullClassName = schemaNameToFullClassName(category, schemaName);</span>
         }
-<span class="fc" id="L161">        return fullClassName;</span>
+<span class="fc" id="L166">        return fullClassName;</span>
     }
 
     public static String simpleClassName(String fullClassName) {
-<span class="fc" id="L165">        return getLastItemInDotDelimitedString(stripGenerics(fullClassName));</span>
+<span class="fc" id="L170">        return getLastItemInDotDelimitedString(stripGenerics(fullClassName));</span>
     }
 
     private static String stripGenerics(String name) {
-<span class="fc" id="L169">        int i = name.indexOf(&quot;&lt;&quot;);</span>
-<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (i == -1) {</span>
-<span class="fc" id="L171">            return name;</span>
+<span class="fc" id="L174">        int i = name.indexOf(&quot;&lt;&quot;);</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        if (i == -1) {</span>
+<span class="fc" id="L176">            return name;</span>
         } else {
-<span class="nc" id="L173">            return name.substring(0, i);</span>
+<span class="nc" id="L178">            return name.substring(0, i);</span>
         }
     }
 
     public static String pkg(String className) {
-<span class="fc" id="L178">        return className.substring(0, className.lastIndexOf(&quot;.&quot;));</span>
+<span class="fc" id="L183">        return className.substring(0, className.lastIndexOf(&quot;.&quot;));</span>
     }
 
     public static String toIdentifier(String s) {
-<span class="fc" id="L182">        String candidate = lowerFirst(identifierCandidate(s));</span>
-<span class="fc" id="L183">        return adjustIfReservedWord(candidate);</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        Preconditions.checkArgument(!s.isEmpty(), &quot;string is empty&quot;);</span>
+<span class="fc" id="L188">        String candidate = lowerFirst(identifierCandidate(s));</span>
+<span class="fc" id="L189">        return adjustIfReservedWord(candidate);</span>
     }
 
     private static String adjustIfReservedWord(String candidate) {
-<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (javaReservedWords.contains(candidate)) {</span>
-<span class="fc" id="L188">            return candidate + &quot;_&quot;;</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (javaReservedWords.contains(candidate)) {</span>
+<span class="fc" id="L194">            return candidate + &quot;_&quot;;</span>
         } else {
-<span class="fc" id="L190">            return candidate;</span>
+<span class="fc" id="L196">            return candidate;</span>
         }
     }
 
     public static String toEnumIdentifier(String s) {
-<span class="fc" id="L195">        String candidate = identifierCandidate(s);</span>
-<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (javaReservedWords.contains(candidate.toUpperCase(Locale.ENGLISH))) {</span>
-<span class="nc" id="L197">            return candidate + &quot;_&quot;;</span>
+<span class="fc" id="L201">        String candidate = identifierCandidate(s);</span>
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (javaReservedWords.contains(candidate.toUpperCase(Locale.ENGLISH))) {</span>
+<span class="nc" id="L203">            return candidate + &quot;_&quot;;</span>
         } else {
-<span class="fc" id="L199">            return candidate;</span>
+<span class="fc" id="L205">            return candidate;</span>
         }
     }
 
     private static String identifierCandidate(String s) {
-<span class="fc" id="L204">        StringBuilder b = new StringBuilder();</span>
-<span class="fc" id="L205">        char lastCh = ' ';</span>
-<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
-<span class="fc" id="L207">            char ch = s.charAt(i);</span>
-<span class="fc bfc" id="L208" title="All 4 branches covered.">            if (i == 0 &amp;&amp; !Character.isJavaIdentifierStart(ch)) {</span>
-<span class="fc" id="L209">                b.append(&quot;_&quot;);</span>
+<span class="fc" id="L210">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L211">        char lastCh = ' ';</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc" id="L213">            char ch = s.charAt(i);</span>
+<span class="fc bfc" id="L214" title="All 4 branches covered.">            if (i == 0 &amp;&amp; !Character.isJavaIdentifierStart(ch)) {</span>
+<span class="fc" id="L215">                b.append(&quot;_&quot;);</span>
             }
-<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (Character.isJavaIdentifierPart(ch)) {</span>
-<span class="fc" id="L212">                b.append(ch);</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">            if (Character.isJavaIdentifierPart(ch)) {</span>
+<span class="fc" id="L218">                b.append(ch);</span>
             } else {
-<span class="fc" id="L214">                ch = '_';</span>
-<span class="fc bfc" id="L215" title="All 2 branches covered.">                if (lastCh != ch) {</span>
-<span class="fc" id="L216">                    b.append(ch);</span>
+<span class="fc" id="L220">                ch = '_';</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                if (lastCh != ch) {</span>
+<span class="fc" id="L222">                    b.append(ch);</span>
                 }
             }
-<span class="fc" id="L219">            lastCh = ch;</span>
+<span class="fc" id="L225">            lastCh = ch;</span>
         }
-<span class="fc" id="L221">        String candidate = b.toString();</span>
-<span class="fc" id="L222">        return candidate;</span>
+<span class="fc" id="L227">        return b.toString();</span>
     }
 
     public static String propertyNameToClassSimpleName(String propertyName) {
-<span class="nc" id="L226">        return upperFirst(toIdentifier(propertyName));</span>
+<span class="nc" id="L231">        return upperFirst(toIdentifier(propertyName));</span>
     }
 
     public static String upperFirst(String name) {
-<span class="fc bfc" id="L230" title="All 2 branches covered.">        if (name.isEmpty()) {</span>
-<span class="fc" id="L231">            return name;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (name.isEmpty()) {</span>
+<span class="fc" id="L236">            return name;</span>
         } else {
-<span class="fc" id="L233">            return name.substring(0, 1).toUpperCase(Locale.ENGLISH) + name.substring(1);</span>
+<span class="fc" id="L238">            return name.substring(0, 1).toUpperCase(Locale.ENGLISH) + name.substring(1);</span>
         }
     }
 
     private static String lowerFirst(String name) {
-<span class="fc" id="L238">        return name.substring(0, 1).toLowerCase(Locale.ENGLISH) + name.substring(1);</span>
+<span class="fc" id="L243">        return name.substring(0, 1).toLowerCase(Locale.ENGLISH) + name.substring(1);</span>
     }
 
     private static String getLastItemInDotDelimitedString(String name) {
-<span class="fc" id="L242">        int i = name.lastIndexOf(&quot;.&quot;);</span>
-<span class="fc bfc" id="L243" title="All 2 branches covered.">        if (i == -1) {</span>
-<span class="fc" id="L244">            return name;</span>
+<span class="fc" id="L247">        int i = name.lastIndexOf(&quot;.&quot;);</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">        if (i == -1) {</span>
+<span class="fc" id="L249">            return name;</span>
         } else {
-<span class="fc" id="L246">            return name.substring(i + 1);</span>
+<span class="fc" id="L251">            return name.substring(i + 1);</span>
         }
     }
 
     public String clientClassName() {
-<span class="nc" id="L251">        return definition.packages().basePackage() + &quot;client.Client&quot;;</span>
+<span class="nc" id="L256">        return definition.packages().basePackage() + &quot;client.Client&quot;;</span>
     }
 
     public File clientClassJavaFile() {
-<span class="nc" id="L255">        return new File(definition.generatedSourceDirectory(),</span>
-<span class="nc" id="L256">                clientClassName().replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
+<span class="nc" id="L260">        return new File(definition.generatedSourceDirectory(),</span>
+<span class="nc" id="L261">                clientClassName().replace(&quot;.&quot;, File.separator) + &quot;.java&quot;);</span>
     }
 
     public static String propertyNameToFieldName(String propertyName) {
-<span class="nc" id="L260">        return lowerFirst(toIdentifier(propertyName));</span>
+<span class="nc" id="L265">        return lowerFirst(toIdentifier(propertyName));</span>
     }
 
     public static String schemaNameToFieldName(String schemaName) {
-<span class="nc" id="L264">        return lowerFirst(toIdentifier(schemaName));</span>
+<span class="nc" id="L269">        return lowerFirst(toIdentifier(schemaName));</span>
     }
 
     public static String toFieldName(String name) {
-<span class="fc" id="L268">        return lowerFirst(toIdentifier(name));</span>
+<span class="fc" id="L273">        return lowerFirst(toIdentifier(name));</span>
     }
 
-    public static String simpleClassNameFromSimpleName(String name) {
-<span class="fc" id="L272">        return fixReservedSimpleClassName(upperFirst(underscoreToCamel(toIdentifier(skipUnderscoresAtStart(name)))));</span>
+    public String simpleClassNameFromSimpleName(String name) {
+<span class="fc" id="L277">        String s = upperFirst(underscoreToCamel(toIdentifier(skipUnderscoresAtStart(name))));</span>
+<span class="fc" id="L278">        s = removeLowerCaseVowels(s, maxClassNameLength);</span>
+<span class="fc" id="L279">        return fixReservedSimpleClassName(s);</span>
+    }
+    
+    public static String removeLowerCaseVowels(String s, int maxLength) {
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        if (s.length() &lt;= maxLength) {</span>
+<span class="fc" id="L284">            return s;</span>
+        }
+<span class="fc" id="L286">        StringBuilder b = new StringBuilder();</span>
+        // trim lowercase vowels from right to left
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        for (int i = s.length() - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L289">            char ch = s.charAt(i);</span>
+<span class="fc bfc" id="L290" title="All 4 branches covered.">            if (!isLowerCaseVowel(ch) || i + b.length() &lt; maxLength) {</span>
+<span class="fc" id="L291">                b.append(ch);</span>
+            }
+        }
+<span class="fc" id="L294">        return b.reverse().toString();</span>
+    }
+
+    private static boolean isLowerCaseVowel(char ch) {
+<span class="pc bpc" id="L298" title="3 of 10 branches missed.">        return ch == 'a'|| ch == 'e'||ch=='i'||ch == 'o'|| ch == 'u';</span>
     }
 
     private static String fixReservedSimpleClassName(String simpleClassName) {
-<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        if (reservedSimpleClassNames.contains(simpleClassName)) {</span>
-<span class="nc" id="L277">            return simpleClassName + &quot;_&quot;;</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">        if (reservedSimpleClassNames.contains(simpleClassName)) {</span>
+<span class="nc" id="L303">            return simpleClassName + &quot;_&quot;;</span>
         } else {
-<span class="fc" id="L279">            return simpleClassName;</span>
+<span class="fc" id="L305">            return simpleClassName;</span>
         }
     }
 
     @VisibleForTesting
     static String underscoreToCamel(String s) {
-<span class="fc" id="L285">        StringBuilder b = new StringBuilder();</span>
-<span class="fc" id="L286">        b.append(s.charAt(0));</span>
-<span class="fc bfc" id="L287" title="All 2 branches covered.">        for (int i = 1; i &lt; s.length() - 1; i++) {</span>
-<span class="fc" id="L288">            char ch = s.charAt(i);</span>
-<span class="fc" id="L289">            char next = s.charAt(i + 1);</span>
-<span class="fc bfc" id="L290" title="All 2 branches covered.">            if (ch == '_') {</span>
-<span class="fc bfc" id="L291" title="All 2 branches covered.">                if (next != '_') {</span>
-<span class="fc" id="L292">                    b.append(Character.toUpperCase(next));</span>
-<span class="fc" id="L293">                    i++;</span>
+<span class="fc" id="L311">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L312">        b.append(s.charAt(0));</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">        for (int i = 1; i &lt; s.length() - 1; i++) {</span>
+<span class="fc" id="L314">            char ch = s.charAt(i);</span>
+<span class="fc" id="L315">            char next = s.charAt(i + 1);</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">            if (ch == '_') {</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">                if (next != '_') {</span>
+<span class="fc" id="L318">                    b.append(Character.toUpperCase(next));</span>
+<span class="fc" id="L319">                    i++;</span>
                 }
             } else {
-<span class="fc" id="L296">                b.append(ch);</span>
+<span class="fc" id="L322">                b.append(ch);</span>
             }
         }
-<span class="fc bfc" id="L299" title="All 2 branches covered.">        if (s.length() &gt; 1) {</span>
-<span class="fc" id="L300">            char ch = s.charAt(s.length() - 1);</span>
-<span class="fc bfc" id="L301" title="All 2 branches covered.">            if (ch != '_') {</span>
-<span class="fc" id="L302">                b.append(ch);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        if (s.length() &gt; 1) {</span>
+<span class="fc" id="L326">            char ch = s.charAt(s.length() - 1);</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">            if (ch != '_') {</span>
+<span class="fc" id="L328">                b.append(ch);</span>
             }
         }
-<span class="fc" id="L305">        return b.toString();</span>
+<span class="fc" id="L331">        return b.toString();</span>
     }
 
     private static String skipUnderscoresAtStart(String s) {
-<span class="fc" id="L309">        int i = 0;</span>
-<span class="pc bpc" id="L310" title="1 of 4 branches missed.">        while (s.charAt(i) == '_' &amp;&amp; i &lt; s.length() - 1) {</span>
-<span class="fc" id="L311">            i++;</span>
+<span class="fc" id="L335">        int i = 0;</span>
+<span class="pc bpc" id="L336" title="1 of 4 branches missed.">        while (s.charAt(i) == '_' &amp;&amp; i &lt; s.length() - 1) {</span>
+<span class="fc" id="L337">            i++;</span>
         }
-<span class="fc" id="L313">        return s.substring(i);</span>
+<span class="fc" id="L339">        return s.substring(i);</span>
     }
 
     public static String enumNameToEnumConstant(String s) {
-<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (s.isEmpty()) {</span>
-<span class="fc" id="L318">            return &quot;BLANK&quot;;</span>
+<span class="fc bfc" id="L343" title="All 2 branches covered.">        if (s.isEmpty()) {</span>
+<span class="fc" id="L344">            return &quot;BLANK&quot;;</span>
         } else {
-<span class="fc" id="L320">            return camelToUpper(toEnumIdentifier(s));</span>
+<span class="fc" id="L346">            return camelToUpper(toEnumIdentifier(s));</span>
         }
     }
 
     public static String camelToUpper(String s) {
-<span class="fc" id="L325">        StringBuilder b = new StringBuilder();</span>
-<span class="fc bfc" id="L326" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
-<span class="fc bfc" id="L327" title="All 6 branches covered.">            if (i &gt; 0 &amp;&amp; i &lt; s.length() - 1 &amp;&amp; Character.isUpperCase(s.charAt(i))</span>
-<span class="fc bfc" id="L328" title="All 4 branches covered.">                    &amp;&amp; Character.isLowerCase(s.charAt(i + 1)) &amp;&amp; s.charAt(i - 1) != '_') {</span>
-<span class="fc" id="L329">                b.append(&quot;_&quot;);</span>
+<span class="fc" id="L351">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc bfc" id="L353" title="All 6 branches covered.">            if (i &gt; 0 &amp;&amp; i &lt; s.length() - 1 &amp;&amp; Character.isUpperCase(s.charAt(i))</span>
+<span class="fc bfc" id="L354" title="All 4 branches covered.">                    &amp;&amp; Character.isLowerCase(s.charAt(i + 1)) &amp;&amp; s.charAt(i - 1) != '_') {</span>
+<span class="fc" id="L355">                b.append(&quot;_&quot;);</span>
             }
-<span class="fc" id="L331">            b.append(Character.toUpperCase(s.charAt(i)));</span>
+<span class="fc" id="L357">            b.append(Character.toUpperCase(s.charAt(i)));</span>
         }
-<span class="fc" id="L333">        return b.toString();</span>
+<span class="fc" id="L359">        return b.toString();</span>
     }
 
     private static Map&lt;Schema&lt;?&gt;, Set&lt;Schema&lt;?&gt;&gt;&gt; superSchemas(OpenAPI api) {
-<span class="fc bfc" id="L337" title="All 4 branches covered.">        Predicate&lt;Schema&lt;?&gt;&gt; predicate = x -&gt; x instanceof ComposedSchema &amp;&amp; ((ComposedSchema) x).getOneOf() != null;</span>
-<span class="fc" id="L338">        Map&lt;Schema&lt;?&gt;, Set&lt;Schema&lt;?&gt;&gt;&gt; map = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L339">        schemas(api) //</span>
-<span class="fc" id="L340">                .entrySet() //</span>
-<span class="fc" id="L341">                .stream() //</span>
-<span class="fc" id="L342">                .flatMap(x -&gt; findSchemas(SchemaCategory.SCHEMA, x.getKey(), x.getValue(), predicate).stream()) //</span>
-<span class="fc" id="L343">                .map(x -&gt; (ComposedSchema) x) //</span>
-<span class="fc" id="L344">                .forEach(x -&gt; {</span>
-<span class="fc bfc" id="L345" title="All 2 branches covered.">                    for (Schema&lt;?&gt; sch : x.getOneOf()) {</span>
-<span class="fc" id="L346">                        Set&lt;Schema&lt;?&gt;&gt; set = map.get(sch);</span>
-<span class="fc bfc" id="L347" title="All 2 branches covered.">                        if (set == null) {</span>
-<span class="fc" id="L348">                            set = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L349">                            map.put(sch, set);</span>
-                        }
-<span class="fc" id="L351">                        set.add(x);</span>
-<span class="fc" id="L352">                    }</span>
-<span class="fc" id="L353">                });</span>
-<span class="fc" id="L354">        return map;</span>
+<span class="fc bfc" id="L363" title="All 4 branches covered.">        Predicate&lt;Schema&lt;?&gt;&gt; predicate = x -&gt; x instanceof ComposedSchema &amp;&amp; ((ComposedSchema) x).getOneOf() != null;</span>
+<span class="fc" id="L364">        Map&lt;Schema&lt;?&gt;, Set&lt;Schema&lt;?&gt;&gt;&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L365">        schemas(api) //</span>
+<span class="fc" id="L366">                .entrySet() //</span>
+<span class="fc" id="L367">                .stream() //</span>
+<span class="fc" id="L368">                .flatMap(x -&gt; findSchemas(SchemaCategory.SCHEMA, x.getKey(), x.getValue(), predicate).stream()) //</span>
+<span class="fc" id="L369">                .map(x -&gt; (ComposedSchema) x) //</span>
+<span class="fc" id="L370">                .forEach(x -&gt; {</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">                    for (Schema&lt;?&gt; sch : x.getOneOf()) {</span>
+<span class="fc" id="L372">                        Set&lt;Schema&lt;?&gt;&gt; set = map.computeIfAbsent(sch, k -&gt; new HashSet&lt;&gt;());</span>
+<span class="fc" id="L373">                        set.add(x);</span>
+<span class="fc" id="L374">                    }</span>
+<span class="fc" id="L375">                });</span>
+<span class="fc" id="L376">        return map;</span>
     }
 
     @SuppressWarnings(&quot;unchecked&quot;)
     private static Map&lt;String, Schema&lt;?&gt;&gt; schemas(OpenAPI api) {
-<span class="pc bpc" id="L359" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getSchemas() == null) {</span>
-<span class="nc" id="L360">            return Collections.emptyMap();</span>
+<span class="pc bpc" id="L381" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getSchemas() == null) {</span>
+<span class="nc" id="L382">            return Collections.emptyMap();</span>
         } else {
-<span class="fc" id="L362">            return (Map&lt;String, Schema&lt;?&gt;&gt;) (Map&lt;?, ?&gt;) api.getComponents() //</span>
-<span class="fc" id="L363">                    .getSchemas();</span>
+<span class="fc" id="L384">            return (Map&lt;String, Schema&lt;?&gt;&gt;) (Map&lt;?, ?&gt;) api.getComponents() //</span>
+<span class="fc" id="L385">                    .getSchemas();</span>
         }
     }
 
     private static List&lt;Schema&lt;?&gt;&gt; findSchemas(SchemaCategory category, String name, Schema&lt;?&gt; schema,
             Predicate&lt;Schema&lt;?&gt;&gt; predicate) {
-<span class="fc" id="L369">        List&lt;Schema&lt;?&gt;&gt; list = new ArrayList&lt;&gt;();</span>
-<span class="fc" id="L370">        Apis.visitSchemas(category, ImmutableList.of(new SchemaWithName(name, schema)), Maps.empty(),</span>
+<span class="fc" id="L391">        List&lt;Schema&lt;?&gt;&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L392">        Apis.visitSchemas(category, ImmutableList.of(new SchemaWithName(name, schema)), Maps.empty(),</span>
                 (c, schemaPath) -&gt; {
-<span class="fc bfc" id="L372" title="All 2 branches covered.">                    if (predicate.test(schemaPath.last().schema)) {</span>
-<span class="fc" id="L373">                        list.add(schemaPath.last().schema);</span>
+<span class="fc bfc" id="L394" title="All 2 branches covered.">                    if (predicate.test(schemaPath.last().schema)) {</span>
+<span class="fc" id="L395">                        list.add(schemaPath.last().schema);</span>
                     }
-<span class="fc" id="L375">                });</span>
-<span class="fc" id="L376">        return list;</span>
+<span class="fc" id="L397">                });</span>
+<span class="fc" id="L398">        return list;</span>
     }
 
     public String externalRefClassName(String ref) {
-<span class="nc" id="L380">        return definition.externalRefClassName(ref);</span>
+<span class="nc" id="L402">        return definition.externalRefClassName(ref);</span>
     }
 
     public String globalsFullClassName() {
-<span class="fc" id="L384">        return definition.packages().basePackage() + &quot;.Globals&quot;;</span>
+<span class="fc" id="L406">        return definition.packages().basePackage() + &quot;.Globals&quot;;</span>
     }
 
     static Map&lt;String, String&gt; getEnumValueToIdentifierMap(List&lt;?&gt; values) {
-<span class="fc" id="L388">        Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L389">        Set&lt;String&gt; set = new LinkedHashSet&lt;&gt;();</span>
-<span class="fc" id="L390">        values.forEach(o -&gt; set.add(String.valueOf(o)));</span>
-<span class="fc bfc" id="L391" title="All 2 branches covered.">        for (String o : set) {</span>
-<span class="fc" id="L392">            int i = 0;</span>
-<span class="fc" id="L393">            String name = enumNameToEnumConstant(o);</span>
+<span class="fc" id="L410">        Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L411">        Set&lt;String&gt; set = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L412">        values.forEach(o -&gt; set.add(String.valueOf(o)));</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">        for (String o : set) {</span>
+<span class="fc" id="L414">            int i = 0;</span>
+<span class="fc" id="L415">            String name = enumNameToEnumConstant(o);</span>
             while (true) {
-<span class="fc bfc" id="L395" title="All 2 branches covered.">                String candidate = name + (i == 0 ? &quot;&quot; : &quot;_&quot; + i);</span>
-<span class="fc bfc" id="L396" title="All 2 branches covered.">                if (!map.containsValue(candidate)) {</span>
-<span class="fc" id="L397">                    map.put(o, candidate);</span>
-<span class="fc" id="L398">                    break;</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">                String candidate = name + (i == 0 ? &quot;&quot; : &quot;_&quot; + i);</span>
+<span class="fc bfc" id="L418" title="All 2 branches covered.">                if (!map.containsValue(candidate)) {</span>
+<span class="fc" id="L419">                    map.put(o, candidate);</span>
+<span class="fc" id="L420">                    break;</span>
                 }
-<span class="fc" id="L400">                i++;</span>
-<span class="fc" id="L401">            }</span>
-<span class="fc" id="L402">        }</span>
-<span class="fc" id="L403">        return map;</span>
+<span class="fc" id="L422">                i++;</span>
+<span class="fc" id="L423">            }</span>
+<span class="fc" id="L424">        }</span>
+<span class="fc" id="L425">        return map;</span>
     }
 
     public boolean mapIntegerToBigInteger() {
-<span class="fc" id="L407">        return definition.mapIntegerToBigInteger();</span>
+<span class="fc" id="L429">        return definition.mapIntegerToBigInteger();</span>
     }
 
     public static String toIdentifier(ImmutableList&lt;String&gt; list) {
-<span class="fc" id="L411">        StringBuilder b = new StringBuilder();</span>
-<span class="fc bfc" id="L412" title="All 2 branches covered.">        for (String s : list) {</span>
-<span class="fc" id="L413">            b.append(upperFirst(camelifyOnSeparatorCharacters(s)));</span>
-<span class="fc" id="L414">        }</span>
-<span class="fc" id="L415">        return toIdentifier(b.toString());</span>
+<span class="fc" id="L433">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">        for (String s : list) {</span>
+<span class="fc" id="L435">            b.append(upperFirst(camelifyOnSeparatorCharacters(s)));</span>
+<span class="fc" id="L436">        }</span>
+<span class="fc" id="L437">        return toIdentifier(b.toString());</span>
     }
 
     private static String camelifyOnSeparatorCharacters(String s) {
-<span class="fc" id="L419">        StringBuilder b = new StringBuilder();</span>
-<span class="fc" id="L420">        boolean start = true;</span>
-<span class="fc bfc" id="L421" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
-<span class="fc" id="L422">            char ch = s.charAt(i);</span>
-<span class="pc bpc" id="L423" title="1 of 12 branches missed.">            if (ch == '/' || ch == '{' || ch == '}' || ch == '-' || ch == '_' || ch == '.') {</span>
-<span class="fc" id="L424">                start = true;</span>
+<span class="fc" id="L441">        StringBuilder b = new StringBuilder();</span>
+<span class="fc" id="L442">        boolean start = true;</span>
+<span class="fc bfc" id="L443" title="All 2 branches covered.">        for (int i = 0; i &lt; s.length(); i++) {</span>
+<span class="fc" id="L444">            char ch = s.charAt(i);</span>
+<span class="pc bpc" id="L445" title="1 of 12 branches missed.">            if (ch == '/' || ch == '{' || ch == '}' || ch == '-' || ch == '_' || ch == '.') {</span>
+<span class="fc" id="L446">                start = true;</span>
             } else {
-<span class="fc bfc" id="L426" title="All 2 branches covered.">                if (start) {</span>
-<span class="fc" id="L427">                    b.append(Character.toUpperCase(ch));</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">                if (start) {</span>
+<span class="fc" id="L449">                    b.append(Character.toUpperCase(ch));</span>
                 } else {
-<span class="fc" id="L429">                    b.append(ch);</span>
+<span class="fc" id="L451">                    b.append(ch);</span>
                 }
-<span class="fc" id="L431">                start = false;</span>
+<span class="fc" id="L453">                start = false;</span>
             }
         }
-<span class="fc" id="L434">        return b.toString();</span>
+<span class="fc" id="L456">        return b.toString();</span>
     }
 
     public String serviceControllerFullClassName() {
-<span class="fc" id="L438">        return definition.packages().basePackage() + &quot;.service.ServiceController&quot;;</span>
+<span class="fc" id="L460">        return definition.packages().basePackage() + &quot;.service.ServiceController&quot;;</span>
     }
 
     public String serviceInterfaceFullClassName() {
-<span class="fc" id="L442">        return definition.packages().basePackage() + &quot;.service.Service&quot;;</span>
+<span class="fc" id="L464">        return definition.packages().basePackage() + &quot;.service.Service&quot;;</span>
     }
 
     public String applicationFullClassName() {
-<span class="fc" id="L446">        return definition.packages().basePackage() + &quot;.Application&quot;;</span>
+<span class="fc" id="L468">        return definition.packages().basePackage() + &quot;.Application&quot;;</span>
     }
 
     public String clientFullClassName() {
-<span class="fc" id="L450">        return definition.packages().basePackage() + &quot;.client.Client&quot;;</span>
+<span class="fc" id="L472">        return definition.packages().basePackage() + &quot;.client.Client&quot;;</span>
     }
 
     public String jacksonConfigurationFullClassName() {
-<span class="fc" id="L454">        return definition.packages().basePackage() + &quot;.service.JacksonConfiguration&quot;;</span>
+<span class="fc" id="L476">        return definition.packages().basePackage() + &quot;.service.JacksonConfiguration&quot;;</span>
     }
 
     public Parameter lookupParameter(String name) {
-<span class="nc" id="L458">        return parameters(api).get(lastComponent(name));</span>
+<span class="nc" id="L480">        return parameters(api).get(lastComponent(name));</span>
     }
 
     private static Map&lt;String, Parameter&gt; parameters(OpenAPI api) {
-<span class="nc bnc" id="L462" title="All 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getParameters() == null) {</span>
-<span class="nc" id="L463">            return Collections.emptyMap();</span>
+<span class="nc bnc" id="L484" title="All 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getParameters() == null) {</span>
+<span class="nc" id="L485">            return Collections.emptyMap();</span>
         } else {
-<span class="nc" id="L465">            return api.getComponents().getParameters();</span>
+<span class="nc" id="L487">            return api.getComponents().getParameters();</span>
         }
     }
 
     public static String lastComponent(String ref) {
-<span class="fc" id="L470">        int i = ref.lastIndexOf('/');</span>
-<span class="fc" id="L471">        return ref.substring(i + 1);</span>
+<span class="fc" id="L492">        int i = ref.lastIndexOf('/');</span>
+<span class="fc" id="L493">        return ref.substring(i + 1);</span>
     }
 
     public RequestBody lookupRequestBody(String ref) {
-<span class="fc" id="L475">        return requestBodies(api).get(lastComponent(ref));</span>
+<span class="fc" id="L497">        return requestBodies(api).get(lastComponent(ref));</span>
     }
 
     private static Map&lt;String, RequestBody&gt; requestBodies(OpenAPI api) {
-<span class="pc bpc" id="L479" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getRequestBodies() == null) {</span>
-<span class="nc" id="L480">            return Collections.emptyMap();</span>
+<span class="pc bpc" id="L501" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getRequestBodies() == null) {</span>
+<span class="nc" id="L502">            return Collections.emptyMap();</span>
         } else {
-<span class="fc" id="L482">            return api.getComponents().getRequestBodies();</span>
+<span class="fc" id="L504">            return api.getComponents().getRequestBodies();</span>
         }
     }
 
     public ApiResponse lookupResponse(String ref) {
-<span class="nc" id="L487">        return responses(api).get(lastComponent(ref));</span>
+<span class="fc" id="L509">        return responses(api).get(lastComponent(ref));</span>
     }
 
     private Map&lt;String, ApiResponse&gt; responses(OpenAPI api) {
-<span class="nc bnc" id="L491" title="All 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getResponses() == null) {</span>
-<span class="nc" id="L492">            return Collections.emptyMap();</span>
+<span class="pc bpc" id="L513" title="2 of 4 branches missed.">        if (api.getComponents() == null || api.getComponents().getResponses() == null) {</span>
+<span class="nc" id="L514">            return Collections.emptyMap();</span>
         } else {
-<span class="nc" id="L494">            return api.getComponents().getResponses();</span>
+<span class="fc" id="L516">            return api.getComponents().getResponses();</span>
         }
     }
 
     public ServerGeneratorType generatorType() {
-<span class="fc" id="L499">        return generatorType;</span>
+<span class="fc" id="L521">        return generatorType;</span>
     }
 
     public boolean mapNumberToBigDecimal() {
-<span class="fc" id="L503">        return definition.mapNumberToBigDecimal();</span>
+<span class="fc" id="L525">        return definition.mapNumberToBigDecimal();</span>
     }
 
     public boolean generateService() {
-<span class="fc" id="L507">        return definition.generateService();</span>
+<span class="fc" id="L529">        return definition.generateService();</span>
     }
 
     public Predicate&lt;String&gt; simpleNameInPackage(String fullClassName) {
-<span class="fc" id="L511">        return x -&gt; {</span>
-<span class="fc" id="L512">            String pkg = pkg(fullClassName);</span>
-<span class="fc" id="L513">            String simple = simpleClassName(x);</span>
-<span class="fc" id="L514">            Set&lt;String&gt; set = packageSimpleClassNames.get(pkg);</span>
-<span class="fc bfc" id="L515" title="All 4 branches covered.">            return set != null &amp;&amp; set.contains(simple);</span>
+<span class="fc" id="L533">        return x -&gt; {</span>
+<span class="fc" id="L534">            String pkg = pkg(fullClassName);</span>
+<span class="fc" id="L535">            String simple = simpleClassName(x);</span>
+<span class="fc" id="L536">            Set&lt;String&gt; set = packageSimpleClassNames.get(pkg);</span>
+<span class="fc bfc" id="L537" title="All 4 branches covered.">            return set != null &amp;&amp; set.contains(simple);</span>
         };
     }
     
-<span class="fc" id="L519">    private final Map&lt;String, Set&lt;String&gt;&gt; packageSimpleClassNames = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L520">    private final Map&lt;String, Cls&gt; classes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L541">    private final Map&lt;String, Set&lt;String&gt;&gt; packageSimpleClassNames = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L542">    private final Map&lt;String, Cls&gt; classes = new HashMap&lt;&gt;();</span>
 
     private void registerFullClassName(String fullClassName) {
-<span class="fc" id="L523">        String pkg = pkg(fullClassName);</span>
-<span class="fc" id="L524">        String simple = simpleClassName(fullClassName);</span>
-<span class="fc" id="L525">        Set&lt;String&gt; set = packageSimpleClassNames.get(pkg);</span>
-<span class="fc bfc" id="L526" title="All 2 branches covered.">        if (set == null) {</span>
-<span class="fc" id="L527">            set = new HashSet&lt;&gt;();</span>
-<span class="fc" id="L528">            packageSimpleClassNames.put(pkg, set);</span>
-        }
-<span class="fc" id="L530">        set.add(simple);</span>
-<span class="fc" id="L531">    }</span>
+<span class="fc" id="L545">        String pkg = pkg(fullClassName);</span>
+<span class="fc" id="L546">        String simple = simpleClassName(fullClassName);</span>
+<span class="fc" id="L547">        Set&lt;String&gt; set = packageSimpleClassNames.computeIfAbsent(pkg, k -&gt; new HashSet&lt;&gt;());</span>
+<span class="fc" id="L548">        set.add(simple);</span>
+<span class="fc" id="L549">    }</span>
 
     public void registerCls(Cls cls) {
-<span class="fc" id="L534">        registerFullClassName(cls.fullClassName);</span>
-<span class="fc" id="L535">        registerTree(cls);</span>
-<span class="fc" id="L536">    }</span>
+<span class="fc" id="L552">        registerFullClassName(cls.fullClassName);</span>
+<span class="fc" id="L553">        registerTree(cls);</span>
+<span class="fc" id="L554">    }</span>
 
     private void registerTree(Cls cls) {
-<span class="fc" id="L539">        classes.put(cls.fullClassName, cls);</span>
-<span class="fc" id="L540">        cls.classes.forEach(c -&gt; registerTree(c));</span>
-<span class="fc" id="L541">    }</span>
+<span class="fc" id="L557">        classes.put(cls.fullClassName, cls);</span>
+<span class="fc" id="L558">        cls.classes.forEach(this::registerTree);</span>
+<span class="fc" id="L559">    }</span>
 
     public Optional&lt;Cls&gt; cls(String fullClassName) {
-<span class="fc" id="L544">        return Optional.ofNullable(classes.get(fullClassName));</span>
+<span class="fc" id="L562">        return Optional.ofNullable(classes.get(fullClassName));</span>
     }
 
     public boolean applyReadOnly() {
-<span class="fc" id="L548">        return definition.applyReadOnly();</span>
+<span class="fc" id="L566">        return definition.applyReadOnly();</span>
     }
 
     public boolean applyWriteOnly() {
-<span class="fc" id="L552">        return definition.applyWriteOnly();</span>
+<span class="fc" id="L570">        return definition.applyWriteOnly();</span>
     }
 
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
