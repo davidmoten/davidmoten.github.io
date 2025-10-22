@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bike Power Calculator</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px; }
+  h2 { margin-top: 30px; }
+  label { display: inline-block; width: 200px; margin: 5px 0; }
+  input { width: 100px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  .editing { background-color: #d4f0ff !important; }
+</style>
+</head>
+<body>
+
+<h1>Cycling Power Calculator</h1>
+
+<h2>Rider & Environment</h2>
+<div>
+  <label>Speed (km/h):</label><input id="v" type="number" step="0.1"><br>
+  <label>Gradient (%):</label><input id="grade" type="number" step="0.1"><br>
+  <label>Rider Mass (kg):</label><input id="massRider" type="number" step="0.1"><br>
+  <label>Temperature (°C):</label><input id="temp" type="number" step="0.1"><br>
+  <label>Altitude (m):</label><input id="alt" type="number" step="1"><br>
+  <label>Headwind (km/h):</label><input id="wind" type="number" step="0.1"><br>
+</div>
+
+<h2>Bikes</h2>
+<table id="bikeTable">
+  <thead>
+    <tr><th>Name</th><th>Mass (kg)</th><th>Crr</th><th>CdA</th><th>Eff.</th><th>Power (W)</th><th>Edit</th><th>Delete</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h3 id="formTitle">Add Bike</h3>
+<div>
+  <label>Name:</label><input type="text" id="bName"><br>
+  <label>Bike Mass (kg):</label><input type="number" id="bMass" step="0.1"><br>
+  <label>CRR:</label><input type="number" id="bCrr" step="0.0001"><br>
+  <label>CdA:</label><input type="number" id="bCda" step="0.01"><br>
+  <label>Efficiency:</label><input type="number" id="bEff" step="0.01" min="0" max="1"><br><br>
+  <button id="saveBtn" onclick="saveBike()">Save Bike</button>
+  <button id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+</div>
+
+<p><b>CRR</b> - Coefficient of Rolling Resistance. You can usually find this value for your specific tyre with a web search. Note that the surface you are riding affects this value signicantly as well.</p>
+<p><b>CdA</b> - Coefficient of Aerodynamic Drag. A slippery road bike and rider can get to around 0.30. A full aerodynamic setup for Remco Evenepoel gives him 0.16!</p>
+
+
+<script>
+let editingIndex = null;
+
+const KEY_BIKES = "bikes";
+const KEY_PARAMS = "bikePowerParams";
+
+// ----- load/save bikes -----
+const getBikes = () => JSON.parse(localStorage.getItem(KEY_BIKES) || "[]");
+const setBikes = bikes => localStorage.setItem(KEY_BIKES, JSON.stringify(bikes));
+
+// ----- load/save environment params -----
+function loadParams() {
+  const defaults = {
+    v: 28,
+    grade: 0,
+    massRider: 66,
+    temp: 25,
+    alt: 580,
+    wind: 20
+  };
+  const stored = JSON.parse(localStorage.getItem(KEY_PARAMS) || "null") || defaults;
+  Object.entries(stored).forEach(([id, val]) => {
+    document.getElementById(id).value = val;
+  });
+}
+
+function saveParams() {
+  const params = {
+    v: +v.value,
+    grade: +grade.value,
+    massRider: +massRider.value,
+    temp: +temp.value,
+    alt: +alt.value,
+    wind: +wind.value
+  };
+  localStorage.setItem(KEY_PARAMS, JSON.stringify(params));
+}
+
+// ----- physics -----
+function airDensity(tempC, altM){
+  const ro0 = 1.226;
+  const tempK = tempC + 273.15;
+  return ro0 * (288.15/tempK) * Math.pow(1 - 2.25577e-5 * altM, 5.25588);
+}
+
+function power(bike, vKmH, gradient, massRider, tempC, altM, windKmH){
+  const g = 9.81;
+  const m = massRider + bike.massKg;
+  const theta = Math.atan(gradient/100);
+  const ro = airDensity(tempC, altM);
+  const v = vKmH/3.6;
+  const vRel = v + (windKmH/3.6);
+  return (v*(m*g*bike.crr + m*g*Math.sin(theta)) +
+          0.5*ro*bike.cda*vRel*vRel*vRel) /
+          bike.drivetrainEfficiency;
+}
+
+// ----- render -----
+function renderBikes(){
+  const bikes = getBikes();
+  const tbody = document.querySelector("#bikeTable tbody");
+  tbody.innerHTML="";
+  bikes.forEach((b,i)=>{
+    const row=document.createElement("tr");
+    if(editingIndex===i) row.classList.add("editing");
+    row.innerHTML = `
+      <td>${b.name}</td>
+      <td>${b.massKg}</td>
+      <td>${b.crr}</td>
+      <td>${b.cda}</td>
+      <td>${b.drivetrainEfficiency}</td>
+      <td id="power-${i}"></td>
+      <td><button onclick="editBike(${i})">Edit</button></td>
+      <td><button onclick="deleteBike(${i})">X</button></td>`;
+    tbody.appendChild(row);
+  });
+  calculate();
+}
+
+// recalc & autosave environment
+function calculate(){
+  saveParams();
+  getBikes().forEach((b,i)=>{
+    const P = power(b, +v.value, +grade.value, +massRider.value, +temp.value, +alt.value, +wind.value);
+    const cell=document.getElementById(`power-${i}`);
+    if(cell) cell.textContent=P.toFixed(1);
+  });
+}
+
+// ----- bike CRUD -----
+function editBike(i){
+  const b = getBikes()[i];
+  editingIndex = i;
+  bName.value=b.name; bMass.value=b.massKg; bCrr.value=b.crr; bCda.value=b.cda; bEff.value=b.drivetrainEfficiency;
+  formTitle.textContent="Edit Bike";
+  saveBtn.textContent="Save Changes";
+  cancelEditBtn.style.display="inline";
+  renderBikes();
+}
+
+function cancelEdit(){
+  editingIndex=null;
+  formTitle.textContent="Add Bike";
+  saveBtn.textContent="Save Bike";
+  cancelEditBtn.style.display="none";
+  bName.value=bMass.value=bCrr.value=bCda.value=bEff.value="";
+  renderBikes();
+}
+
+function saveBike(){
+  const bikes=getBikes();
+  const bike={name:bName.value, massKg:+bMass.value, crr:+bCrr.value, cda:+bCda.value, drivetrainEfficiency:+bEff.value};
+  if(editingIndex!=null){
+    bikes[editingIndex]=bike;
+    cancelEdit();
+  } else { bikes.push(bike); }
+  setBikes(bikes);
+  renderBikes();
+}
+
+function deleteBike(i){
+  const bikes=getBikes(); bikes.splice(i,1); setBikes(bikes);
+  if(editingIndex===i) cancelEdit();
+  renderBikes();
+}
+
+// auto-calc when inputs change
+document.querySelectorAll("input").forEach(i=> i.addEventListener("input",calculate));
+
+// Initialise
+if(!localStorage.getItem(KEY_BIKES)){
+  setBikes([
+    {name:"road",massKg:9.7,crr:0.0048,cda:0.35,drivetrainEfficiency:0.97},
+    {name:"gravel",massKg:9.8,crr:0.008,cda:0.37,drivetrainEfficiency:0.95},
+    {name:"mtb",massKg:13.0,crr:0.01,cda:0.45,drivetrainEfficiency:0.95}
+  ]);
+}
+loadParams();
+renderBikes();
+</script>
+
+</body>
+</html>
+
