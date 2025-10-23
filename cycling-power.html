@@ -49,6 +49,31 @@
 <p><b>CRR</b> - Coefficient of Rolling Resistance. You can usually find this value for your specific tyre with a web search. Note that the surface you are riding affects this value signicantly as well.</p>
 <p><b>CdA</b> - Coefficient of Aerodynamic Drag. A slippery road bike and rider can get to around 0.30. A full aerodynamic setup for Remco Evenepoel gives him 0.16!</p>
 <p><b>Eff</b> - Drivetrain efficiency.</p>
+<h2>Formula</h2>
+<pre>
+Let
+
+  g = 9.81
+  m = massRiderKg + bike.massKg
+  theta = arctan(gradient/100)
+  ro = airDensity(tempC, altM)
+  v = vKmH/3.6
+  vRel = v + (windKmH/3.6)
+
+And define airDensity as:
+
+  ro0 = 1.226
+  tempK = tempC + 273.15
+  airDensity = ro0 
+          * (288.15/tempK) 
+          * (1 - 2.25577e-5 * altM)^5.25588
+  
+Then
+
+  power = (v*(m*g*bike.crr + m*g*sin(theta)) 
+           + 0.5*ro*bike.cda*vRel^3) 
+          / bike.drivetrainEfficiency
+</pre>
 
 <script>
 let editingIndex = null;
