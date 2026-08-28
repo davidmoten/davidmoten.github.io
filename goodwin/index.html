@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goodwin Exit Position Visualisation</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #d9dde3;
+    --o1: #3b82f6;
+    --o2: #10b981;
+    --o3: #f59e0b;
+    --close: #dc2626;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 45px;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 28px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .control label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: #4b5563;
+  }
+
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: right;
+    vertical-align: middle;
+  }
+
+  th {
+    background: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  th:first-child, td:first-child {
+    text-align: center;
+    width: 70px;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .option-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+  }
+
+  .bar-cell {
+    min-width: 190px;
+  }
+
+  .bar {
+    height: 9px;
+    background: #edf0f3;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+
+  .bar-inner {
+    height: 100%;
+    border-radius: inherit;
+    transition: width 100ms linear;
+  }
+
+  .o1 { background: var(--o1); }
+  .o2 { background: var(--o2); }
+  .o3 { background: var(--o3); }
+
+  .close {
+    font-weight: 800;
+    box-shadow: inset 4px 0 0 var(--close);
+  }
+
+  .max {
+    font-weight: 800;
+  }
+
+  .status {
+    margin-top: 15px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  @media (max-width: 800px) {
+    .controls {
+      grid-template-columns: 1fr;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      min-width: 760px;
+    }
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Goodwin exit-position model</h1>
+  <div class="subtitle">
+    Adjust the assumptions and see which options are within the selected percentage of the best exit position.
+  </div>
+
+  <div class="controls">
+    <div class="control">
+      <label>
+        <span>Cash interest rate</span>
+        <span class="value" id="cashInterestValue"></span>
+      </label>
+      <input id="cashInterest" type="range" min="0" max="0.10" step="0.001" value="0.045">
+      <div class="range-labels"><span>0%</span><span>10%</span></div>
+    </div>
+
+    <div class="control">
+      <label>
+        <span>Capital gain rate</span>
+        <span class="value" id="capitalGainValue"></span>
+      </label>
+      <input id="capitalGain" type="range" min="0" max="0.10" step="0.001" value="0.030">
+      <div class="range-labels"><span>0%</span><span>10%</span></div>
+    </div>
+
+    <div class="control">
+      <label>
+        <span>CPI rate</span>
+        <span class="value" id="cpiValue"></span>
+      </label>
+      <input id="cpi" type="range" min="0" max="0.10" step="0.001" value="0.035">
+      <div class="range-labels"><span>0%</span><span>10%</span></div>
+    </div>
+
+    <div class="control">
+      <label>
+        <span>Closeness</span>
+        <span class="value" id="closenessValue"></span>
+      </label>
+      <input id="closeness" type="range" min="0" max="0.10" step="0.001" value="0.01">
+      <div class="range-labels"><span>0%</span><span>10%</span></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:var(--o1)"></span>Option 1</div>
+    <div class="legend-item"><span class="dot" style="background:var(--o2)"></span>Option 2</div>
+    <div class="legend-item"><span class="dot" style="background:var(--o3)"></span>Option 3</div>
+    <div class="legend-item"><span class="dot" style="background:var(--close)"></span>Within closeness threshold</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>
+            <div class="option-head"><span class="dot" style="background:var(--o1)"></span>Option 1</div>
+          </th>
+          <th>
+            <div class="option-head"><span class="dot" style="background:var(--o2)"></span>Option 2</div>
+          </th>
+          <th>
+            <div class="option-head"><span class="dot" style="background:var(--o3)"></span>Option 3</div>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+"use strict";
+
+// Constants copied from the Java model.
+const unitValue = 1090000;
+const taxRate = 0.30;
+let cpiRate = 0.035;
+const initialAvailableCash = unitValue * 1.25;
+const capitalGainsShare = 0.30;
+const minimumCapitalGainsTaxRate = 0.30;
+const includeCapitalGainsTax = false;
+
+const ingoingContribution = [
+  unitValue,
+  0.7 * unitValue,
+  unitValue
+];
+
+const upfrontManagementFee = [
+  0,
+  0,
+  0.25 * unitValue
+];
+
+const departureFeeMaxAmortisationPeriodYears = [
+  6,
+  6,
+  0
+];
+
+const departureFeeAnnualRate = [
+  0.05,
+  0.08,
+  0
+];
+
+const capitalGainFactor = [
+  1,
+  0.7,
+  1
+];
+
+function exitPosition(year, option, cashInterestRate, capitalGainRate) {
+  if (year < 1) throw new Error("year must be >= 1");
+  if (option < 1 || option > 3) throw new Error("option must be 1, 2 or 3");
+
+  const optionIndex = option - 1;
+
+  const afterTaxInterestRate = cashInterestRate * (1 - taxRate);
+
+  const returnedInitialContribution =
+    ingoingContribution[optionIndex] *
+    (1 -
+      Math.min(year, departureFeeMaxAmortisationPeriodYears[optionIndex]) *
+        departureFeeAnnualRate[optionIndex]);
+
+  const cashRemainingAtStart =
+    initialAvailableCash -
+    ingoingContribution[optionIndex] -
+    upfrontManagementFee[optionIndex];
+
+  const interestEarnedLessTax =
+    Math.pow(1 + afterTaxInterestRate, year) * cashRemainingAtStart;
+
+  const returnedManagementFee =
+    upfrontManagementFee[optionIndex] *
+    (1 - Math.min(5, year) / 5.0);
+
+  const returnedCapitalGains =
+    unitValue *
+    capitalGainFactor[optionIndex] *
+    capitalGainsShare *
+    (Math.pow(1 + capitalGainRate, year) - 1);
+
+  const taxOnCapitalGainsAboveCpi =
+    unitValue *
+    capitalGainFactor[optionIndex] *
+    capitalGainsShare *
+    (Math.pow(1 + Math.max(0, capitalGainRate - cpiRate), year) - 1) *
+    Math.max(minimumCapitalGainsTaxRate, taxRate);
+
+  return (
+    returnedInitialContribution +
+    interestEarnedLessTax +
+    returnedManagementFee +
+    returnedCapitalGains -
+    (includeCapitalGainsTax ? taxOnCapitalGainsAboveCpi : 0)
+  );
+}
+
+function maxIndexes(vals, closeness) {
+  const max = Math.max(...vals);
+  const threshold = max - max * closeness;
+
+  const indexes = [];
+  vals.forEach((value, index) => {
+    if (value >= threshold) indexes.push(index);
+  });
+
+  return { indexes, max, threshold };
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 0
+  }).format(value);
+}
+
+function formatPercent(value, decimals = 1) {
+  return (value * 100).toFixed(decimals) + "%";
+}
+
+function update() {
+  const cashInterestRate = Number(document.getElementById("cashInterest").value);
+  const capitalGainRate = Number(document.getElementById("capitalGain").value);
+  cpiRate = Number(document.getElementById("cpi").value);
+  const closeness = Number(document.getElementById("closeness").value);
+
+  document.getElementById("cashInterestValue").textContent =
+    formatPercent(cashInterestRate, 1);
+
+  document.getElementById("capitalGainValue").textContent =
+    formatPercent(capitalGainRate, 1);
+
+  document.getElementById("cpiValue").textContent =
+    formatPercent(cpiRate, 1);
+
+  document.getElementById("closenessValue").textContent =
+    formatPercent(closeness, 1);
+
+  const tbody = document.getElementById("results");
+  tbody.innerHTML = "";
+
+  let closeCount = [0, 0, 0];
+
+  for (let year = 1; year <= 15; year++) {
+    const vals = [
+      exitPosition(year, 1, cashInterestRate, capitalGainRate),
+      exitPosition(year, 2, cashInterestRate, capitalGainRate),
+      exitPosition(year, 3, cashInterestRate, capitalGainRate)
+    ];
+
+    const { indexes, max } = maxIndexes(vals, closeness);
+    indexes.forEach(i => closeCount[i]++);
+
+    const tr = document.createElement("tr");
+
+    const yearCell = document.createElement("td");
+    yearCell.textContent = year;
+    tr.appendChild(yearCell);
+
+    vals.forEach((value, i) => {
+      const td = document.createElement("td");
+      td.className = "bar-cell";
+
+      if (indexes.includes(i)) td.classList.add("close");
+      if (value === max) td.classList.add("max");
+
+      const money = document.createElement("div");
+      money.textContent = formatMoney(value);
+
+      const bar = document.createElement("div");
+      bar.className = "bar";
+
+      const inner = document.createElement("div");
+      inner.className = "bar-inner o" + (i + 1);
+      inner.style.width = ((value / max) * 100) + "%";
+
+      bar.appendChild(inner);
+      td.appendChild(money);
+      td.appendChild(bar);
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById("status").textContent =
+    `At the current settings, options are within the closeness threshold in ` +
+    `${closeCount[0]}, ${closeCount[1]} and ${closeCount[2]} of the 15 years respectively. ` +
+    `A red marker means the option is close enough to the best option for that year.`;
+}
+
+document.querySelectorAll('input[type="range"]').forEach(input => {
+  input.addEventListener("input", update);
+});
+
+update();
+</script>
+</body>
+</html>
