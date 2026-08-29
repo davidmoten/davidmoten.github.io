@@ -313,7 +313,7 @@ const capitalGainFactor = [
   1
 ];
 
-function exitPosition(year, option, cashInterestRate, capitalGainRate) {
+function exitPositionRatio(year, option, cashInterestRate, capitalGainRate) {
   if (year < 1) throw new Error("year must be >= 1");
   if (option < 1 || option > 3) throw new Error("option must be 1, 2 or 3");
 
@@ -358,7 +358,7 @@ function exitPosition(year, option, cashInterestRate, capitalGainRate) {
     returnedManagementFee +
     returnedCapitalGains -
     (includeCapitalGainsTax ? taxOnCapitalGainsAboveCpi : 0)
-  );
+  )/initialAvailableCash;
 }
 
 function maxIndexes(vals, closeness) {
@@ -410,9 +410,9 @@ function update() {
 
   for (let year = 1; year <= 15; year++) {
     const vals = [
-      exitPosition(year, 1, cashInterestRate, capitalGainRate),
-      exitPosition(year, 2, cashInterestRate, capitalGainRate),
-      exitPosition(year, 3, cashInterestRate, capitalGainRate)
+      exitPositionRatio(year, 1, cashInterestRate, capitalGainRate),
+      exitPositionRatio(year, 2, cashInterestRate, capitalGainRate),
+      exitPositionRatio(year, 3, cashInterestRate, capitalGainRate)
     ];
 
     const { indexes, max } = maxIndexes(vals, closeness);
@@ -432,14 +432,14 @@ function update() {
       if (value === max) td.classList.add("max");
 
       const money = document.createElement("div");
-      money.textContent = formatMoney(value);
+      money.textContent = formatPercent(value);
 
       const bar = document.createElement("div");
       bar.className = "bar";
 
       const inner = document.createElement("div");
       inner.className = "bar-inner o" + (i + 1);
-      inner.style.width = ((value / max) * 100) + "%";
+      inner.style.width = (value  * 100) + "%";
 
       bar.appendChild(inner);
       td.appendChild(money);
